@@ -1,47 +1,33 @@
-// ./src/hlps/logger.js
+const path = require("path");
 
-const verbose = process.argv.includes("-v"); // Check for '-v' flag for verbose logging
-
-/**
- * Helper function to log verbose messages
- * @param {string} message
- */
-function verboseLog(message) {
-    if (verbose) {
-        console.log(`[VERBOSE]: ${message}`);
-    }
-}
+const isDevelopment = process.env.NODE_ENV === "development";
+const isDebug = process.env.DEBUG === "true";
 
 /**
- * General logger function
- * @param {string} message
+ * Custom logger that prefixes messages with the originating filename.
+ * @param {string} modulePath - The __filename from the calling module.
+ * @returns {object} log, warn, error functions
  */
-function log(message) {
-    console.log(`[INFO]: ${message}`);
+function createLogger(modulePath) {
+    const fileName = path.basename(modulePath);
+
+    return {
+        log: (...args) => {
+            if (isDevelopment || isDebug) {
+                console.log(`[${fileName}]`, ...args);
+            }
+        },
+        warn: (...args) => {
+            if (isDevelopment || isDebug) {
+                console.warn(`[${fileName}]`, ...args);
+            }
+        },
+        error: (...args) => {
+            if (isDevelopment || isDebug) {
+                console.error(`[${fileName}]`, ...args);
+            }
+        }
+    };
 }
 
-/**
- * Error logger function
- * @param {Error} error
- */
-function logError(error) {
-    console.error(`[ERROR]: ${error.message || error}`);
-}
-
-/**
- * Success logger function
- * @param {string} message
- */
-function logSuccess(message) {
-    console.log(`[SUCCESS]: ${message}`);
-}
-
-/**
- * Splash logger function
- * @param {string} message
- */
-function splash(message) {
-    console.log(`[INFO]: ${message}`);
-}
-
-module.exports = { verboseLog, log, logError, logSuccess, splash };
+module.exports = createLogger;

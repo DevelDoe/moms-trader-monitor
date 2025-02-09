@@ -1,6 +1,4 @@
-
-// ./renderer/docker/top.js
-
+// Local arrays for view processing (if needed)
 let tickersDaily = [];
 let tickersSessions = [];
 
@@ -10,16 +8,13 @@ let tickersSessions = [];
 function updateTickersTable(tickers, tableId) {
     const tableBody = document.querySelector(`#${tableId} tbody`);
     tableBody.innerHTML = "";
-
     tickers.forEach((item) => {
         const row = document.createElement("tr");
-
         Object.values(item).forEach((value) => {
             const cell = document.createElement("td");
             cell.textContent = value;
             row.appendChild(cell);
         });
-
         tableBody.appendChild(row);
     });
 }
@@ -34,14 +29,14 @@ function clearSessionList() {
         console.log("✅ Ticker session cleared at:", new Date());
     }
 }
-setInterval(clearSessionList, 60000); // Run every minute
+setInterval(clearSessionList, 60000);
 
 /**
  * Parses a float string (e.g., '4.5M', '1B') and converts to a numeric value.
  */
 function parseFloatValue(floatStr) {
     if (!floatStr) return 0;
-    let sanitized = floatStr.replace(/[^0-9.]/g, ""); // Remove non-numeric characters
+    let sanitized = floatStr.replace(/[^0-9.]/g, "");
     let value = parseFloat(sanitized) || 0;
     if (floatStr.includes("B")) value *= 1000;
     if (floatStr.includes("K")) value /= 1000;
@@ -50,17 +45,18 @@ function parseFloatValue(floatStr) {
 
 /**
  * Calculates ticker score based on count, float, and HOD status.
+ * (Handled in the view so that the view can decide which tickers are "top".)
  */
 function calculateScore(ticker) {
     let score = ticker.count;
-    if (ticker.HighOfDay) score += 3;
-
+    if (ticker.HighOfDay) score += 20;
     let floatValue = parseFloatValue(ticker.Float);
-    if (floatValue < 1) score += 5;
-    else if (floatValue < 10) score += 4;
-    else if (floatValue < 50) score += 3;
-    else if (floatValue < 100) score += 2;
-
+    if (floatValue < 1) score += 20;
+    else if (floatValue < 10) score += 10;
+    else if (floatValue < 50) score += 5;
+    else if (floatValue < 100) score += 0;
+    else if (floatValue > 100) score -= 10;
+    else if (floatValue > 500) score -= 20;
     return score;
 }
 
@@ -73,62 +69,45 @@ function sortTickersByScore() {
 }
 
 /**
- * Updates a ticker list by either updating an existing entry or adding a new one.
+ * Processes ticker data fetched from the store.
+ * Here, we simply copy the data into our local arrays.
  */
-function updateTickerList(tickerList, item) {
-    let existingTicker = tickerList.find((ticker) => ticker.Symbol === item.Symbol);
+function processTickerData(data) {
+    // For simplicity, we assign the same data to both arrays.
+    tickersDaily = data.slice();
+    tickersSessions = data.slice();
 
-    if (existingTicker) {
-        existingTicker.count += 1;
-        existingTicker.Price = item.Price;
-        existingTicker.ChangePercent = item.ChangePercent;
-        existingTicker.FiveM = item.FiveM;
-        existingTicker.Float = item.Float;
-        existingTicker.Volume = item.Volume;
-        existingTicker.SprPercent = item.SprPercent;
-        existingTicker.Time = item.Time;
-
-        if (existingTicker.HighOfDay !== item.HighOfDay) {
-            existingTicker.HighOfDay = item.HighOfDay;
-            existingTicker.score = calculateScore(existingTicker);
-        } else {
-            existingTicker.score += 1;
-        }
-    } else {
-        tickerList.push({
-            Symbol: item.Symbol,
-            count: 1,
-            score: calculateScore({
-                count: 1,
-                HighOfDay: item.HighOfDay,
-                Float: item.Float,
-            }),
-            Price: item.Price,
-            ChangePercent: item.ChangePercent,
-            FiveM: item.FiveM,
-            Float: item.Float,
-            Volume: item.Volume,
-            SprPercent: item.SprPercent,
-            Time: item.Time,
-            HighOfDay: item.HighOfDay,
-        });
-    }
+    // Update score for each ticker using our local calculation.
+    tickersDaily.forEach((ticker) => {
+        ticker.score = calculateScore(ticker);
+    });
+    tickersSessions.forEach((ticker) => {
+        ticker.score = calculateScore(ticker);
+    });
 }
 
 /**
- * Processes and updates tickers based on received WebSocket data.
+ * Fetches tickers from the centralized store and updates the UI.
  */
-window.electronTop.onWebSocketMessage((data) => { // ✅ Use `electronTop`
-    console.log("📩 Received WebSocket data:", data);
-    const parsedData = Array.isArray(data) ? data : [data];
+async function fetchAndUpdateTickers() {
+    try {
+        const data = await window.electronAPI.getTickers();
+        processTickerData(data);
+        sortTickersByScore();
+        updateTickersTable(tickersSessions, "tickers-session");
+        updateTickersTable(tickersDaily, "tickers-daily");
+    } catch (error) {
+        console.error("Error fetching tickers:", error);
+    }
+}
 
-    parsedData.forEach((item) => {
-        updateTickerList(tickersDaily, item);
-        updateTickerList(tickersSessions, item);
-    });
-
-    sortTickersByScore();
-    updateTickersTable(tickersSessions, "tickers-session");
-    updateTickersTable(tickersDaily, "tickers-daily");
+// Fetch tickers when the document loads
+document.addEventListener("DOMContentLoaded", () => {
+    fetchAndUpdateTickers();
 });
 
+// Listen for update notifications and refresh the UI
+window.electronAPI.onTickerUpdate(() => {
+    console.log("🔔 Ticker update received, fetching latest data...");
+    fetchAndUpdateTickers();
+});

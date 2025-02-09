@@ -1,12 +1,15 @@
-// ./src/main/main.js 🚀❌🛑⏳🟢 💾
-////////////////////////////////////////////////////////////////////////////////////
-// APP
-
+// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️
+const createLogger = require("../hlps/logger");
+const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
 
+////////////////////////////////////////////////////////////////////////////////////
+// INIT
+log.log("Init app");
+
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
-const { verboseLog, log, logError, logSuccess, splash } = require("../hlps/logger"); // ✅ Correct
 const { autoUpdater } = require("electron-updater");
+const tickerStore = require("./store");
 
 const path = require("path");
 const fs = require("fs");
@@ -25,11 +28,11 @@ autoUpdater.setFeedURL({
 
 ////////////////////////////////////////////////////////////////////////////////////
 // WINDOWS
+log.log("init windows");
 
 const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createTopWindow } = require("./windows/top");
-
 
 let windows = {};
 
@@ -43,6 +46,7 @@ const { collectTickers } = require("./collectors/tickers.js");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
+log.log("init data");
 
 // Use system settings file for production, separate file for development
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
@@ -61,12 +65,12 @@ const DEFAULT_SETTINGS = {
 
 // 🛠️ **Function to initialize settings**
 if (isFirstInstall()) {
-    log("Fresh install detected! Creating default settings...");
+    log.log("Fresh install detected! Creating default settings...");
 
     // Ensure the userData directory exists
     const settingsDir = path.dirname(SETTINGS_FILE);
     if (!fs.existsSync(settingsDir)) {
-        log(`Creating settings directory: ${settingsDir}`);
+        log.log(`Creating settings directory: ${settingsDir}`);
         fs.mkdirSync(settingsDir, { recursive: true }); // ✅ Ensure all parent folders exist
     }
 
@@ -76,23 +80,23 @@ if (isFirstInstall()) {
     // Create marker file to prevent future resets
     fs.writeFileSync(FIRST_RUN_FILE, "installed");
 
-    log("Settings file initialized:", SETTINGS_FILE);
+    log.log("Settings file initialized:", SETTINGS_FILE);
 } else {
-    log("App has been installed before. Keeping existing settings.");
+    log.log("Keeping existing settings");
 }
 
 // Function to load settings from a file
 function loadSettings() {
     try {
         if (!fs.existsSync(SETTINGS_FILE)) {
-            log.warn("⚠️ Settings file not found. Using default settings.");
+            log.warn("Settings file not found. Using default settings.");
             return { ...DEFAULT_SETTINGS };
         }
 
         const data = fs.readFileSync(SETTINGS_FILE, "utf-8");
         return JSON.parse(data);
     } catch (err) {
-        logError("⚠️ Error loading settings, resetting to defaults.", err);
+        log.error("Error loading settings, resetting to defaults.", err);
         return { ...DEFAULT_SETTINGS }; // Prevents crashes
     }
 }
@@ -105,116 +109,20 @@ function saveSettings() {
     // ✅ Ensure `top` is always an array
     appSettings.top = Array.isArray(appSettings.top) ? appSettings.top : [];
 
-    log("Saving settings file...");
+    log.log("Saving settings file...");
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(appSettings, null, 2));
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// UPDATES
 
-if (!isDevelopment) {
-    log("Production mode detected, checking for updates...");
-    autoUpdater.checkForUpdatesAndNotify();
-
-    autoUpdater.on("checking-for-update", () => {
-        log("Checking for update...");
-    });
-
-    autoUpdater.on("update-available", (info) => {
-        log(`🔔 Update found: ${info.version}`);
-
-        if (appSettings.hasDonated) {
-            // 🛠 If user has donated, let them decide
-            dialog
-                .showMessageBox({
-                    type: "info",
-                    title: "Update Available",
-                    message: `A new update (${info.version}) is available. Would you like to download it now?`,
-                    buttons: ["Download", "Later"],
-                })
-                .then((result) => {
-                    if (result.response === 0) {
-                        log("User confirmed download, starting...");
-                        autoUpdater.downloadUpdate();
-                    } else {
-                        log("User postponed update.");
-                    }
-                });
-        } else {
-            // 🛠 If user hasn’t donated, update automatically
-            log("User hasn't donated, auto-downloading update...");
-            autoUpdater.downloadUpdate();
-        }
-    });
-
-    autoUpdater.on("update-not-available", () => {
-        log("No update available.");
-    });
-
-    autoUpdater.on("error", (err) => {
-        logError("Update error:", err);
-    });
-    process.on("unhandledRejection", (reason, promise) => {
-        logError("Unhandled Promise Rejection:", reason);
-    });
-
-    autoUpdater.on("download-progress", (progressObj) => {
-        let logMessage = `Download speed: ${progressObj.bytesPerSecond} - `;
-        logMessage += `Downloaded ${progressObj.percent}% (${progressObj.transferred} / ${progressObj.total})`;
-        log(logMessage);
-    });
-
-    autoUpdater.on("update-downloaded", () => {
-        if (appSettings.hasDonated) {
-            // 🛠 Donors can choose when to install
-            dialog
-                .showMessageBox({
-                    type: "info",
-                    title: "Update Ready",
-                    message: "The update has been downloaded. Would you like to restart the app now to install it?",
-                    buttons: ["Restart", "Later"],
-                })
-                .then((result) => {
-                    if (result.response === 0) {
-                        autoUpdater.quitAndInstall();
-                    }
-                });
-        } else {
-            // 🛠 Non-donors get auto-installed updates
-            log("User hasn't donated, installing update now...");
-            autoUpdater.quitAndInstall();
-        }
-    });
-} else {
-    log("Skipping auto-updates in development mode.");
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-// SOCKETS
-
-const WebSocket = require("ws");
-
-const wss = new WebSocket.Server({ port: 8080 });
-
-wss.on("connection", (ws) => {
-    console.log("✅ WebSocket client connected");
-
-    ws.on("message", (message) => {
-        console.log("📩 Received from client:", message);
-    });
-
-    ws.on("close", () => {
-        console.log("⚠️ WebSocket client disconnected");
-    });
-});
 
 ////////////////////////////////////////////////////////////////////////////////////
 // IPC
+log.log("init ipc");
 
 // General
 
 ipcMain.on("exit-app", () => {
-    log("Exiting the app...");
+    log.log("Exiting the app...");
     app.quit();
 });
 
@@ -238,76 +146,59 @@ ipcMain.on("resize-window-to-content", (event, { width, height }) => {
 // Splash
 ipcMain.on("close-splash", () => {
     if (windows.splash) {
-        log("Closing Splash Screen");
+        log.log("Closing Splash Screen");
         windows.splash.close();
         delete windows.splash; // ✅ Ensure reference is cleared
     }
 });
 
+// Store
+ipcMain.handle("get-tickers", () => {
+    return tickerStore.getAllTickers();
+});
+
+tickerStore.on("update", () => {
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("tickers-updated");
+    });
+});
+
 // top
 ipcMain.on("toggle-top", () => {
     if (windows.top) {
-        log("Toggle Top Window");
+        log.log("Toggle Top Window");
         windows.top.isVisible() ? windows.top.hide() : windows.top.show();
-    }
-});
-
-ipcMain.on("new-tickers-collected", (event, data) => {
-    if (!Array.isArray(data) || data.length === 0) return; // ✅ Ignore invalid data
-
-    try {
-        const payload = JSON.stringify(data);
-
-        // ✅ Send to WebSocket clients
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(payload);
-            }
-        });
-
-        // ✅ Send to renderer processes
-        BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send("new-ticker-entries", data);
-        });
-
-    } catch (error) {
-        logError("❌ Failed to send WebSocket message:", error);
     }
 });
 
 
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
+log.log("init application");
 
 app.on("ready", () => {
-    log("App is starting...");
+    log.log("App ready, bootstrapping...");
 
     // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
 
-    log("📡 Starting scraper...");
-    collectTickers();  // ✅ Start scraper here (before splash closes)
+    log.log("Calling ticker collector");
+    collectTickers(); // ✅ Start scraper here (before splash closes)
 
     windows.splash.once("closed", () => {
-        log("Splash screen closed. Loading main app...");
+        log.log("Splash screen closed. Loading main app...");
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
 
         if (!windows.docker) {
-            logError("docker window could not be created.");
+            log.error("docker window could not be created.");
             return;
         }
 
         windows.top = createWindow("top", () => createTopWindow(isDevelopment));
+
         Object.values(windows).forEach((window) => window?.hide());
-
         windows.docker.show();
-        windows.top.show();
-
-        windows.top.webContents.once("dom-ready", () => {
-            if (!Array.isArray(appSettings.top)) appSettings.top = [];
-            windows.top.webContents.send("load-top-state", appSettings.top);
-        });
 
         // 🟢 Sync settings across windows
         Object.values(windows).forEach((window) => {
@@ -324,6 +215,87 @@ app.on("window-all-closed", () => {
 });
 
 process.on("exit", () => {
-    log("Saving settings before exit...");
+    log.log("Saving settings before exit...");
     saveSettings();
 });
+
+////////////////////////////////////////////////////////////////////////////////////
+// UPDATES
+log.log("init data");
+
+if (!isDevelopment) {
+    log.log("Production mode detected, checking for updates...");
+    autoUpdater.checkForUpdatesAndNotify();
+
+    autoUpdater.on("checking-for-update", () => {
+        log.log("Checking for update...");
+    });
+
+    autoUpdater.on("update-available", (info) => {
+        log.log(`🔔 Update found: ${info.version}`);
+
+        if (appSettings.hasDonated) {
+            // 🛠 If user has donated, let them decide
+            dialog
+                .showMessageBox({
+                    type: "info",
+                    title: "Update Available",
+                    message: `A new update (${info.version}) is available. Would you like to download it now?`,
+                    buttons: ["Download", "Later"],
+                })
+                .then((result) => {
+                    if (result.response === 0) {
+                        log.log("User confirmed download, starting...");
+                        autoUpdater.downloadUpdate();
+                    } else {
+                        log.log("User postponed update.");
+                    }
+                });
+        } else {
+            // 🛠 If user hasn’t donated, update automatically
+            log.log("User hasn't donated, auto-downloading update...");
+            autoUpdater.downloadUpdate();
+        }
+    });
+
+    autoUpdater.on("update-not-available", () => {
+        log.log("No update available.");
+    });
+
+    autoUpdater.on("error", (err) => {
+        log.error("Update error:", err);
+    });
+    process.on("unhandledRejection", (reason, promise) => {
+        log.error("Unhandled Promise Rejection:", reason);
+    });
+
+    autoUpdater.on("download-progress", (progressObj) => {
+        let logMessage = `Download speed: ${progressObj.bytesPerSecond} - `;
+        logMessage += `Downloaded ${progressObj.percent}% (${progressObj.transferred} / ${progressObj.total})`;
+        log.log(logMessage);
+    });
+
+    autoUpdater.on("update-downloaded", () => {
+        if (appSettings.hasDonated) {
+            // 🛠 Donors can choose when to install
+            dialog
+                .showMessageBox({
+                    type: "info",
+                    title: "Update Ready",
+                    message: "The update has been downloaded. Would you like to restart the app now to install it?",
+                    buttons: ["Restart", "Later"],
+                })
+                .then((result) => {
+                    if (result.response === 0) {
+                        autoUpdater.quitAndInstall();
+                    }
+                });
+        } else {
+            // 🛠 Non-donors get auto-installed updates
+            log.log("User hasn't donated, installing update now...");
+            autoUpdater.quitAndInstall();
+        }
+    });
+} else {
+    log.log("Skipping auto-updates in development mode");
+}

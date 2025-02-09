@@ -1,37 +1,41 @@
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-const { ipcMain } = require("electron"); // ✅ Use ipcMain instead
-const { verboseLog, log, logError, logSuccess } = require("../../hlps/logger");
+const createLogger = require("../../hlps/logger");
+const tickerStore = require("../store"); // ✅ Import store
 
 puppeteer.use(StealthPlugin());
 
-let lastScrapedData = new Map(); // ✅ Stores last seen entries to avoid duplicates
+const log = createLogger(__filename);
+
+// This Set will store processed keys in the format "SYMBOL-TIME"
+let processedKeys = new Set();
 
 async function launchBrowser() {
-    verboseLog("🚀 Launching Puppeteer...");
+    log.log("Launching Puppeteer...");
     try {
         return await puppeteer.launch({
             headless: true,
             args: ["--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox"],
         });
     } catch (error) {
-        logError("Browser launch failed:", error);
+        log.error("Browser launch failed:", error);
     }
 }
 
 async function scrapeData() {
     const browser = await launchBrowser();
-    if (!browser) return logError("ailed to launch browser.");
+    if (!browser) return log.error("Failed to launch browser.");
 
     const page = await browser.newPage();
     await page.setUserAgent("Mozilla/5.0");
 
     try {
-        verboseLog("🌐 Navigating to Momo Screener...");
+        log.log("Navigating to Momo Screener...");
         await page.goto("https://momoscreener.com/scanner", { waitUntil: "networkidle2" });
 
         await page.waitForSelector(".tableFixHead tbody tr", { visible: true, timeout: 60000 });
 
+        // Scrape ticker data
         const newScrape = await page.evaluate(() => {
             return Array.from(document.querySelectorAll(".tableFixHead tbody tr"))
                 .map((row) => {
@@ -47,52 +51,56 @@ async function scrapeData() {
                     const sprPercent = cells[6]?.innerText.trim() || "";
                     const time = cells[7]?.innerText.trim() || "";
 
-                    // Ensure valid symbol pattern
                     const symbolPattern = /^[A-Za-z★]{1,6}(\s*\(HOD\))?$/;
                     if (!symbolPattern.test(symbol)) return null;
 
-                    // Handle "(HOD)" suffix
                     const isHOD = symbol.endsWith("(HOD)");
                     if (isHOD) symbol = symbol.replace(/\s*\(HOD\)$/, "").trim();
 
                     return { Symbol: symbol, Price: price, ChangePercent: changePercent, FiveM: fiveM, Float: float, Volume: volume, SprPercent: sprPercent, Time: time, HighOfDay: isHOD };
                 })
-                .filter(Boolean); // Remove null values
+                .filter(Boolean);
         });
 
         if (newScrape.length > 0) {
-            // ✅ Filter duplicates based on Symbol + Time
-            const uniqueEntries = newScrape.filter((entry) => {
-                const uniqueKey = `${entry.Symbol}-${entry.Time}`;
-                if (lastScrapedData.has(uniqueKey)) return false; // Skip duplicate
-                lastScrapedData.set(uniqueKey, true); // Store as seen
+            log.log(`Scraped ${newScrape.length} entries`);
+
+            // Filter out duplicates based on Symbol and Time combination
+            const uniqueEntries = newScrape.filter((ticker) => {
+                // Normalize the symbol (trim and uppercase)
+                const symbolNormalized = ticker.Symbol.trim().toUpperCase();
+                const key = `${symbolNormalized}-${ticker.Time}`;
+                if (processedKeys.has(key)) {
+                    return false; // Skip if we've already processed this entry
+                }
                 return true;
             });
 
-            // ✅ Limit the stored entries to avoid memory bloat
-            if (lastScrapedData.size > 500) {
-                lastScrapedData = new Map([...lastScrapedData].slice(-300)); // Keep the latest 300 entries
-            }
+            // Update the processedKeys set with the keys of unique entries
+            uniqueEntries.forEach((ticker) => {
+                const symbolNormalized = ticker.Symbol.trim().toUpperCase();
+                const key = `${symbolNormalized}-${ticker.Time}`;
+                processedKeys.add(key);
+            });
 
             if (uniqueEntries.length > 0) {
-                logSuccess(`✅ Scraped ${uniqueEntries.length} new unique entries!`);
-                ipcMain.emit("new-tickers-collected", null, uniqueEntries);  // ✅ Send new data to `main.js`
+                log.log(`Storing ${uniqueEntries.length} new unique entries`);
+                tickerStore.addTickers(uniqueEntries); // ✅ Store only unique entries
             } else {
-                log("⚠️ No new unique tickers found. Skipping update.");
+                log.log("No new unique entries found. Skipping update.");
             }
         }
     } catch (error) {
-        logError(` Scrape error: ${error.message}`);
-        console.error(error); // Print full error stack for debugging
+        log.error(`Scrape error: ${error.message}`);
     } finally {
         await page.close(); // ✅ Prevent memory leaks
         await browser.close();
-        verboseLog(" Browser closed.");
+        log.log("Browser closed");
     }
 }
 
 function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
-    log("Starting scraper loop...");
+    log.log("Starting scraper loop...");
 
     function getRandomInterval(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -101,7 +109,7 @@ function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
     async function run() {
         await scrapeData();
         const interval = getRandomInterval(minIntervalMs, maxIntervalMs);
-        log(`Next scrape in ${interval / 1000} seconds`);
+        log.log(`Next scrape in ${interval / 1000} seconds`);
         setTimeout(run, interval);
     }
 
