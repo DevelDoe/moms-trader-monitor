@@ -1,0 +1,93 @@
+/* Minimal Light Theme */
+body {
+    color: #333;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    background: url(../../../assets/images/splashBg.jpg);
+    background-position: right 0 bottom -12px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: #181a27;
+    margin-left: -425px;
+}
+
+#splash {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+#title {
+    display: flex;
+    align-items: center; /* Align icon & text vertically */
+    justify-content: center; /* Center the entire header */
+    gap: 10px; /* Adjust space between icon and text */
+    text-align: center; /* Ensures text remains centered */
+    margin: 15px;
+}
+
+header img {
+    width: 32px;
+    height: 32px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+#moms {
+    color: #089981;
+}
+#trader {
+    color: #f23645;
+}
+#tools {
+    color: orangered;
+}
+
+.message {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 22px;
+    max-width: 492px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    margin: 7px;
+    margin-top: 20px;
+}
+
+.btn {
+    display: inline-block;
+    background: #333;
+    color: #fff;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 3px;
+    margin-top: 10px;
+}
+
+.btn:hover {
+    background: #444;
+    color: white;
+}
+* {
+    user-select: none; /* Standard */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+}
+a {
+    color: #089981;
+    text-decoration: none;
+}
+a:hover {
+    color: orangered;
+}

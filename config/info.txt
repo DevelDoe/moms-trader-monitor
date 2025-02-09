@@ -1,0 +1,4 @@
+config/
+  ├── app.json       # General app settings (e.g., version, window sizes, user preferences)
+  ├── env.json       # Environment variables (API keys, debug settings)
+  ├── update.json    # Configuration for updates (electron-builder auto-updater, versioning)

@@ -1,0 +1,38 @@
+<!-- ./renderer/splash/splash.html  -->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Moms Trader Tools - Pre-Release</title>
+        <link rel="stylesheet" href="./splash.css" />
+    </head>
+    <body>
+        <div id="splash-container">
+            <header>
+                <div id="title">
+                    <img src="../../../assets/images/logo.png" alt="MTT" />
+                    <div>
+                        <h1><span id="moms">Moms</span> <span id="trader">Trader</span> <span id="tools">Tools</span></h1>
+                    </div>
+                </div>
+            </header>
+            <div class="message">
+                <p>Hi, I’m Morgan, the developer of this app.</p>
+                <p>It’s still a work in progress, so expect some rough edges. Thanks for checking it out, and I hope it makes your trading a little easier!</p>
+            </div>
+
+            <div class="donate-buttons">
+                <a href="https://www.paypal.com/donate/?business=YOUR_PAYPAL_EMAIL" class="btn paypal" target="_blank">Donate via PayPal</a>
+                <a href="https://www.buymeacoffee.com/YOURUSERNAME" class="btn coffee" target="_blank">Buy Me a Coffee</a>
+            </div>
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                    document.addEventListener("click", () => {
+                        window.electronAPI.closeSplash();
+                    });
+                });
+            </script>
+        </div>
+    </body>
+</html>

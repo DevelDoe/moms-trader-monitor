@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OSX-Style Dock</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            font-family: sans-serif;
+        }
+        .dock {
+            display: flex;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        .dock a {
+            margin: 0 5px;
+            transition: transform 0.2s;
+            display: block;
+        }
+        .dock img {
+            width: 36px;
+            height: auto;
+            transition: transform 0.2s;
+        }
+    </style>
+</head>
+<body>
+    <div class="dock draggable" id="dock">
+        <a href="#" id="top-btn" class="no-drag" onclick="window.electronAPI.toggleTop()"><img src="./icons/top.png" alt="Exit" /></a>
+        <a href="#" id="exit-btn" class="no-drag" onclick="window.electronAPI.exitApp()"><img src="./icons/exit.png" alt="Exit" /></a>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const dock = document.getElementById("dock");
+            const icons = dock.querySelectorAll("a");
+            
+            // ✅ Adjust icon scaling based on mouse position relative to each icon
+            dock.addEventListener("mousemove", (e) => {
+                icons.forEach((icon) => {
+                    const rect = icon.getBoundingClientRect();
+                    const iconCenterX = rect.left + rect.width / 2;
+                    const distance = Math.abs(e.clientX - iconCenterX);
+                    const threshold = 150;
+                    const maxScale = 1.2;
+                    const scale = Math.max(1, maxScale - (distance / threshold) * (maxScale - 1));
+                    icon.style.transform = `scale(${scale})`;
+                });
+            });
+
+            // ✅ Reset icons to normal size when the mouse leaves the dock
+            dock.addEventListener("mouseleave", () => {
+                icons.forEach((icon) => {
+                    icon.style.transform = "scale(1)";
+                });
+            });
+        });
+    </script>
+</body>
+</html>

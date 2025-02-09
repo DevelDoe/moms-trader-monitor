@@ -1,0 +1,5 @@
+src/
+  ├── config/
+  │   ├── windows.json  # Default sizes, positions, and behaviors of windows
+  │   ├── logging.json  # Logging levels and paths
+  │   ├── scoring.json  # Ticker scoring parameters

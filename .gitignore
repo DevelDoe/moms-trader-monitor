@@ -1,0 +1,91 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Runtime data
+*.pid
+*.pid.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Compiled files and build artifacts
+dist/
+build/
+
+# Electron build output
+electron-builder.json
+electron-builder.yml
+release/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor-specific files
+.vscode/
+.idea/
+*.swp
+
+# Temporary files
+temp/
+tmp/
+*.temp
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Coverage directories
+coverage/
+
+# Debug and crash reports
+*.stackdump
+*.core
+
+# Electron-specific cache
+.cache/
+electron-packager/
+electron-builder-output/
+
+# Prebuilt binaries or assets
+assets/sounds/*.mp3
+assets/sounds/*.wav
+
+# Optional IDE-related settings
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Testing
+reports/
+*.test.js
+*.spec.js
+*.coverage
+
+# Git-specific
+.git/
+
+# Ensure src folder is tracked
+!src/
+!src/**/*.js
+!src/**/*.html
+!src/**/*.css
+!src/**/*.json
+
+# temp files
+**/dump*
+**/dump.*
+
+dev-app-update.yml

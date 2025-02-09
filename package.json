@@ -1,0 +1,68 @@
+{
+    "name": "Moms-Trader-Monitor",
+    "version": "0.0.0",
+    "description": "Moms Traders Monitor is a tool designed to track high-potential stocks in real-time, using automated web scraping and scoring to identify actionable trade opportunities.",
+    "main": "src/main/main.js",
+    "scripts": {
+        "start": "cross-env NODE_ENV=development DEBUG=true electron .",
+        "package": "cross-env NODE_ENV=production DEBUG=false electron-packager . Moms-Traders-Monitor --platform=win32 --arch=x64 --out=dist --overwrite",
+        "package-all": "cross-env NODE_ENV=production DEBUG=false electron-packager . Moms-Traders-Monitor --all --out=dist --overwrite",
+        "package-mac": "cross-env NODE_ENV=production DEBUG=false electron-packager . Moms-Traders-Monitor --platform=darwin --arch=x64 --out=dist --overwrite",
+        "package-linux": "cross-env NODE_ENV=production DEBUG=false electron-packager . Moms-Traders-Monitor --platform=linux --arch=x64 --out=dist --overwrite",
+        "publish": "cross-env NODE_ENV=production DEBUG=false electron-builder -p always"
+    },
+    "author": "Morgan A Ray",
+    "license": "MIT",
+    "dependencies": {
+        "electron": "^26.1.0",
+        "electron-updater": "^6.3.9",
+        "puppeteer": "^24.2.0",
+        "puppeteer-extra": "^3.3.6",
+        "puppeteer-extra-plugin-stealth": "^2.11.2"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.1",
+        "cross-env": "^7.0.3",
+        "electron-builder": "^24.6.0",
+        "electron-packager": "^17.1.2",
+        "nodemon": "^3.0.0"
+    },
+    "build": {
+        "appId": "com.moms.traders.monitor",
+        "productName": "Moms Traders Monitor",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "src/**/*",
+            "assets/**/*",
+            "node_modules/**/*",
+            "package.json"
+        ],
+        "win": {
+            "target": "nsis",
+            "icon": "assets/icon.ico"
+        },
+        "mac": {
+            "target": "dmg",
+            "icon": "assets/icon.icns"
+        },
+        "linux": {
+            "target": "AppImage",
+            "icon": "assets/icon.png"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "shortcutName": "Moms Traders Monitor"
+        },
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "DevelDoe",
+                "repo": "moms-trader-monitor",
+                "releaseType": "draft"
+            }
+        ]
+    }
+}
