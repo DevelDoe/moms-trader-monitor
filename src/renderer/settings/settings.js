@@ -89,7 +89,7 @@ function initializeTopSection(settings) {
         const newMax = parseFloat(maxPriceInput.value) || 1000;
     
         // ✅ Ensure settings.top exists without overwriting
-        settings.top = { ...settings.top, minPrice: newMin, maxPrice: newMax };
+        settings = { ...settings.top, minPrice: newMin, maxPrice: newMax };
     
         window.settingsAPI.update(settings);
         console.log("Updated price filter:", settings.top);
