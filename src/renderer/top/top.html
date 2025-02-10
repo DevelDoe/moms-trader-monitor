@@ -57,7 +57,6 @@
             </tbody>
         </table>
 
-        
         <script>
             document.addEventListener("DOMContentLoaded", () => {
                 const tables = document.querySelectorAll("#tickers-session, #tickers-daily");
@@ -89,14 +88,14 @@
         </script>
         <script>
             document.addEventListener("DOMContentLoaded", async () => {
-                // Transparency
-                const settings = await window.settingsAPI.get();
+                // Fetch and store settings globally
+                window.settings = await window.settingsAPI.get();
 
-                setTransparency(settings.top.transparent);
-
+                setTransparency(window.settings.top.transparent);
 
                 window.settingsAPI.onUpdate((updatedSettings) => {
                     console.log("Received updated settings:", updatedSettings);
+                    window.settings = updatedSettings; // ✅ Update global settings
                     if (updatedSettings.top.transparent !== undefined) {
                         setTransparency(updatedSettings.top.transparent);
                     }
@@ -106,7 +105,6 @@
                     document.body.style.backgroundColor = isTransparent ? "transparent" : "white";
                     console.log(`🎨 Updated background color: ${isTransparent ? "Transparent" : "white"}`);
                 }
-
             });
         </script>
         <script src="./top.js"></script>
