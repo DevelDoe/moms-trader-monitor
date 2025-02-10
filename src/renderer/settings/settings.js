@@ -102,5 +102,5 @@ function initializeTopSection(settings) {
 function saveSettings(newSettings) {
     console.log("Saving settings:", newSettings);
     window.settingsAPI.update(newSettings);
-    window.topAPI.refresh(); // ✅ Refresh UI
+    window.topAPI.refresh();
 }
