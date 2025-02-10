@@ -107,7 +107,13 @@ function initializeTopSection(settings) {
 
 
 function saveSettings(newSettings) {
+    // ✅ Ensure `top` object structure is correct before saving
+    if (!newSettings.top || typeof newSettings.top !== "object") {
+        newSettings.top = { minPrice: 0, maxPrice: 1000 };
+    }
+
     console.log("Saving settings:", newSettings);
     window.settingsAPI.update(newSettings);
     window.topAPI.refresh();
 }
+
