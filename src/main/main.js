@@ -192,18 +192,22 @@ ipcMain.handle("get-settings", () => {
 ipcMain.on("update-settings", (event, newSettings) => {
     log.log("Received newSettings before merging:", newSettings);
 
+    // ✅ Deep merge for each settings category (top, general, etc.)
     appSettings = {
-        ...appSettings, // Keep other settings intact
-        top: {
-            ...appSettings.top, // Preserve existing top settings
-            ...newSettings.top, // Apply new settings
-        },
+        ...appSettings, // Keep existing top-level properties
+        ...Object.keys(newSettings).reduce((acc, key) => {
+            acc[key] = {
+                ...appSettings[key], // Preserve existing category settings (e.g., top, general)
+                ...newSettings[key], // Only update the provided properties in that category
+            };
+            return acc;
+        }, {}),
     };
-    
 
     log.log("Merged appSettings:", appSettings);
     saveSettings();
 });
+
 
 // Store
 ipcMain.handle("get-tickers", (event, listType = "daily") => {
