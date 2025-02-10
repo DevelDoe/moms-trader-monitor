@@ -196,7 +196,7 @@ ipcMain.on("toggle-top", () => {
     }
 });
 
-ipcMain.on("refresh-top-window", async () => {
+ipcMain.on("refresh-top", async () => {
     log.log("Refreshing top window.");
 
     if (windows.reminder) {
