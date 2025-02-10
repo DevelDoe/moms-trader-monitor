@@ -64,7 +64,7 @@ class Store extends EventEmitter {
             log.log(`[DAILY] ${dailyUpdated} updated, ${dailyNewEntries} new`);
         }
         if (sessionUpdated || sessionNewEntries) {
-            log.log(`[SESSION] ${sessionUpdated} updated, ${sessionNewEntries} new:`,this.sessionData);
+            log.log(`[SESSION] ${sessionUpdated} updated, ${sessionNewEntries} new: `,this.sessionData);
         }
 
         this.emit("update");
@@ -78,7 +78,7 @@ class Store extends EventEmitter {
 
     clearSessionData() {
         this.sessionData.clear();
-        log.log("🧹 Session data cleared, count will restart at 1.");
+        log.log("ession data cleared, count will restart at 1.");
         this.emit("sessionCleared");
     }
 }
