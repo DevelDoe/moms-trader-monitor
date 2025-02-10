@@ -67,14 +67,25 @@ function calculateScore(ticker) {
  */
 async function fetchAndUpdateTickers() {
     try {
-        console.log("📡 Fetching updated tickers...");
+        console.log("Fetching updated tickers...");
+
+        // ✅ Fetch filters
+        const settings = await window.settingsAPI.get();
+        const minPrice = settings.top.minPrice ?? 0;
+        const maxPrice = settings.top.maxPrice ?? 1000;
+
+        console.log("Applying price filter:", { minPrice, maxPrice });
+
+        // ✅ Apply filters
+        const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
+        const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
         // ✅ Fetch both session and daily tickers separately
-        const sessionData = await window.topAPI.getTickers("session"); 
+        const sessionData = await window.topAPI.getTickers("session");
         const dailyData = await window.topAPI.getTickers("daily");
 
-        console.log("📊 Session Data:", sessionData);
-        console.log("📊 Daily Data:", dailyData);
+        console.log("Session Data:", sessionData);
+        console.log("📊Daily Data:", dailyData);
 
         // ✅ Process session tickers
         tickersSessions = sessionData.map((ticker) => ({
@@ -101,7 +112,6 @@ async function fetchAndUpdateTickers() {
         console.error("❌ Error fetching tickers:", error);
     }
 }
-
 
 /**
  * Clears session tickers via IPC event and refreshes the UI.
