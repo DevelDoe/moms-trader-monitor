@@ -58,10 +58,12 @@ function initializeTopSection(settings) {
         settings.top = { transparent: false, minPrice: 0, maxPrice: 1000 };
     }
 
-    // ✅ Directly assign values
-    document.getElementById("min-price").value = settings.top.minPrice ;
-    document.getElementById("max-price").value = settings.top.maxPrice ;
-    document.getElementById("top-transparent-toggle").checked = settings.top.transparent ?? false;
+    document.addEventListener("DOMContentLoaded", () => {
+        // ✅ Directly assign values
+        document.getElementById("min-price").value = settings.top.minPrice;
+        document.getElementById("max-price").value = settings.top.maxPrice;
+        document.getElementById("top-transparent-toggle").checked = settings.top.transparent ?? false;
+    });
 
     function updatePriceFilter() {
         settings.top.minPrice = parseFloat(document.getElementById("min-price").value) || 0;
@@ -89,8 +91,6 @@ function initializeTopSection(settings) {
         window.topAPI.refresh();
     });
 }
-
-
 
 function saveSettings(newSettings) {
     // ✅ Ensure `top` object structure is correct before saving
