@@ -192,26 +192,35 @@ ipcMain.handle("get-settings", () => {
 ipcMain.on("update-settings", (event, newSettings) => {
     log.log("Received newSettings before merging:", newSettings);
 
-    // ✅ Deep merge, only merging objects
-    appSettings = {
-        ...appSettings, // Keep existing top-level properties
-        ...Object.keys(newSettings).reduce((acc, key) => {
-            // ✅ If `newSettings[key]` is an object, merge it. Otherwise, overwrite directly.
-            if (typeof newSettings[key] === "object" && newSettings[key] !== null) {
-                acc[key] = {
-                    ...appSettings[key], // Preserve existing category settings (e.g., top, general)
-                    ...newSettings[key], // Only update the provided properties in that category
-                };
-            } else {
-                acc[key] = newSettings[key]; // ✅ Directly overwrite if it's not an object
-            }
-            return acc;
-        }, {}),
-    };
+    // ✅ Ensure appSettings exists and has a `top` property
+    if (!appSettings || typeof appSettings !== "object") {
+        appSettings = { ...DEFAULT_SETTINGS };
+    }
+    if (!appSettings.top || typeof appSettings.top !== "object") {
+        appSettings.top = { ...DEFAULT_SETTINGS.top };
+    }
 
-    log.log("Merged appSettings:", appSettings);
+    // ✅ Merge new settings ONLY into `top` (or other categories)
+    Object.keys(newSettings).forEach((key) => {
+        if (typeof newSettings[key] === "object" && newSettings[key] !== null) {
+            appSettings[key] = {
+                ...appSettings[key], // Preserve existing settings for this category
+                ...newSettings[key], // Merge only the provided properties
+            };
+        } else {
+            log.warn(`⚠️ Ignoring invalid setting update at root level: ${key}`);
+        }
+    });
+
+    // ✅ Remove any accidentally added root-level keys
+    delete appSettings.transparent;
+    delete appSettings.minPrice;
+    delete appSettings.maxPrice;
+
+    log.log("✅ Merged appSettings (cleaned):", appSettings);
     saveSettings();
 });
+
 
 
 // Store
