@@ -69,40 +69,35 @@ async function fetchAndUpdateTickers() {
     try {
         console.log("Fetching updated tickers...");
 
-        // ✅ Fetch both session and daily tickers separately
+        // ✅ Fetch tickers from API
         const sessionData = await window.topAPI.getTickers("session");
         const dailyData = await window.topAPI.getTickers("daily");
 
         console.log("Session Data:", sessionData);
         console.log("📊 Daily Data:", dailyData);
 
-        // ✅ Get stored filter settings
-        const minPrice = window.settings.top.minPrice ?? 0;
-        const maxPrice = window.settings.top.maxPrice ?? 1000;
+        // ✅ Apply price filter
+        const filteredSession = sessionData.filter((ticker) => ticker.Price >= window.minPrice && ticker.Price <= window.maxPrice);
+        const filteredDaily = dailyData.filter((ticker) => ticker.Price >= window.minPrice && ticker.Price <= window.maxPrice);
 
-        console.log("Applying price filter:", { minPrice, maxPrice });
+        console.log("Filtered Session:", filteredSession);
+        console.log("Filtered Daily:", filteredDaily);
 
-        // ✅ Apply price filtering AFTER fetching
-        const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
-        const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
-
-        // ✅ Process session tickers
+        // ✅ Clear and update lists
         tickersSessions = filteredSession.map((ticker) => ({
             ...ticker,
             score: calculateScore(ticker),
         }));
 
-        // ✅ Process daily tickers
         tickersDaily = filteredDaily.map((ticker) => ({
             ...ticker,
             score: calculateScore(ticker),
         }));
 
-        // ✅ Sort by score
+        // ✅ Sort and update UI
         tickersSessions.sort((a, b) => b.score - a.score);
         tickersDaily.sort((a, b) => b.score - a.score);
 
-        // ✅ Update UI
         updateTickersTable(tickersSessions, "tickers-session");
         updateTickersTable(tickersDaily, "tickers-daily");
 
@@ -111,6 +106,7 @@ async function fetchAndUpdateTickers() {
         console.error("❌ Error fetching tickers:", error);
     }
 }
+
 
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
