@@ -98,9 +98,20 @@
                 window.settingsAPI.onUpdate((updatedSettings) => {
                     console.log("Received updated settings:", updatedSettings);
                     if (updatedSettings.top.transparent !== undefined) {
-                        updateBsetTransparencyckground(updatedSettings.top.transparent);
+                        setTransparency(updatedSettings.top.transparent);
                     }
                 });
+
+                // // ✅ Listen for direct updates from settings UI
+                // window.electronAPI.on("update-reminder-transparency", (isTransparent) => {
+                //     setTransparency(isTransparent);
+                // });
+
+                function setTransparency(isTransparent) {
+                    document.body.style.backgroundColor = isTransparent ? "transparent" : "#1c1d23";
+                    console.log(`🎨 Updated background color: ${isTransparent ? "Transparent" : "#1c1d23"}`);
+                }
+
             });
         </script>
     </body>
