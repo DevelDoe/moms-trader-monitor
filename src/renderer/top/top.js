@@ -7,7 +7,7 @@ let tickersSessions = [];
  */
 function updateTickersTable(tickers, tableId) {
     const tableBody = document.querySelector(`#${tableId} tbody`);
-    tableBody.innerHTML = "";
+    tableBody.innerHTML = ""; // ✅ Clear the table first
     tickers.forEach((ticker) => {
         const row = document.createElement("tr");
 
@@ -100,8 +100,13 @@ async function fetchAndUpdateTickers() {
  */
 function clearSessionList() {
     console.log("🧹 Clear session button clicked!");
-    
-    window.topAPI.clearSession(); // ✅ Ask main process to clear session data
+
+    // ✅ Clear UI immediately
+    tickersSessions = [];
+    updateTickersTable(tickersSessions, "tickers-session");
+
+    // ✅ Ask main process to clear session data
+    window.topAPI.clearSession();
 
     setTimeout(() => {
         fetchAndUpdateTickers(); // ✅ Refresh tickers AFTER clearing session
