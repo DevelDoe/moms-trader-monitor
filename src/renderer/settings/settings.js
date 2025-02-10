@@ -46,12 +46,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-function initializeGeneralSection(settings) {
-    console.log("Initializing General Section:", settings);
+function initializeGeneralSection(topSettings) {
+    console.log("Initializing General Section:", topSettings);
 }
 
-function initializeTopSection(settings) {
-    console.log("🔍 Checking loaded settings:", settings);
+function initializeTopSection(topSettings) {
+    console.log("🔍 Checking loaded settings:", topSettings);
 
     // ✅ Get elements after DOM has loaded
     const minPriceInput = document.getElementById("min-price");
@@ -64,11 +64,11 @@ function initializeTopSection(settings) {
     }
 
     // ✅ Load saved values from `settings` (not `settings.top`)
-    if (settings.minPrice !== undefined) minPriceInput.value = settings.minPrice;
-    if (settings.maxPrice !== undefined) maxPriceInput.value = settings.maxPrice;
-    if (settings.transparent !== undefined) topTransparentToggle.checked = settings.transparent;
+    if (topSettings.minPrice !== undefined) minPriceInput.value = topSettings.minPrice;
+    if (topSettings.maxPrice !== undefined) maxPriceInput.value = topSettings.maxPrice;
+    if (topSettings.transparent !== undefined) topTransparentToggle.checked = topSettings.transparent;
 
-    console.log("✅ Applied settings:", {
+    console.log("✅ Applied topSettings:", {
         minPrice: minPriceInput.value,
         maxPrice: maxPriceInput.value,
         transparent: topTransparentToggle.checked,
@@ -81,7 +81,7 @@ function initializeTopSection(settings) {
         // ✅ Send only the updated top settings, not overwriting full settings object
         const updatedSettings = {
             top: {
-                ...settings, // Preserve existing settings
+                ...topSettings, // Preserve existing settings
                 minPrice: newMin,
                 maxPrice: newMax,
             },
@@ -101,7 +101,7 @@ function initializeTopSection(settings) {
         // ✅ Same fix, ensure only top settings are updated
         const updatedSettings = {
             top: {
-                ...settings,
+                ...topSettings,
                 transparent: topTransparentToggle.checked,
             },
         };
