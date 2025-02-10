@@ -9,13 +9,15 @@ class Store extends EventEmitter {
         this.dailyTickers = new Map();
     }
 
-    addTickers(tickers) {
+    addTickers(tickers, listType) {
         let updated = false;
         let nrUpdates = 0;
-        let newEntries =0;
+        let newEntries = 0;
+
+        const dataStore = listType === "session" ? this.sessionData : this.dailyData;
+
         tickers.forEach((ticker) => {
-            
-            const key = ticker.Symbol;  // Unique key: Symbol only
+            const key = ticker.Symbol; // Unique key: Symbol only
             if (this.data.has(key)) {
                 // Update the existing ticker
                 let existingTicker = this.data.get(key);
@@ -30,13 +32,13 @@ class Store extends EventEmitter {
                 existingTicker.HighOfDay = ticker.HighOfDay;
                 this.data.set(key, existingTicker);
                 updated = true;
-                nrUpdates += 1
+                nrUpdates += 1;
             } else {
                 // Add a new ticker with an initial count of 1
                 ticker.count = 1;
                 this.data.set(key, ticker);
                 updated = true;
-                newEntries += 1
+                newEntries += 1;
             }
         });
 
