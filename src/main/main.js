@@ -66,6 +66,8 @@ function isFirstInstall() {
 const DEFAULT_SETTINGS = {
     top: {
         transparent: false,
+        minPrice: 0,
+        maxPrice: 100
     },
 };
 
