@@ -192,7 +192,14 @@ ipcMain.handle("get-settings", () => {
 ipcMain.on("update-settings", (event, newSettings) => {
     log.log("Received newSettings before merging:", newSettings);
 
-    appSettings = { ...appSettings, ...newSettings };
+    appSettings = {
+        ...appSettings, // Keep other settings intact
+        top: {
+            ...appSettings.top, // Preserve existing top settings
+            ...newSettings.top, // Apply new settings
+        },
+    };
+    
 
     log.log("Merged appSettings:", appSettings);
     saveSettings();
