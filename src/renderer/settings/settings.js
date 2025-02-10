@@ -120,7 +120,7 @@ function initializeTopSection(settings) {
         window.settingsAPI.update(settings);
         console.log("Updated transparency:", settings.top);
         window.topAPI.refresh();
-    });    
+    });
 }
 
 function saveSettings(newSettings) {
