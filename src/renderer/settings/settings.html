@@ -9,6 +9,7 @@
     </head>
     <body>
         <button class="close-btn" onclick="window.settingsAPI.toggle()" aria-label="Close"></button>
+
         <div class="settings-container">
             <h1 class="draggable" style="width: 90%">Settings</h1>
 
@@ -26,9 +27,8 @@
 
             <!-- Audio Settings -->
             <div id="audio" class="tabcontent">
-               <h2>Audio</h2>
+                <h2>Audio</h2>
             </div>
-
 
             <!-- Top Settings -->
             <div id="top" class="tabcontent active">
@@ -38,19 +38,20 @@
                         Enable Transparent Background
                     </label>
                 </div>
-    
-            <!-- ✅ Price Filter Controls -->
-            <div class="controls">
-                <label>
-                    Min Price: <input type="number" id="min-price" placeholder="0" step="0.01" />
-                </label>
-                <label>
-                    Max Price: <input type="number" id="max-price" placeholder="1000" step="0.01" />
-                </label>
-            </div>
-        </div>
 
+                <!-- ✅ Price Filter Controls -->
+                <div class="controls">
+                    <label>
+                        Min Price: <input type="number" id="min-price" placeholder="0" step="0.01" />
+                    </label>
+                    <label>
+                        Max Price: <input type="number" id="max-price" placeholder="1000" step="0.01" />
+                    </label>
+                </div>
+            </div> <!-- ✅ Closing div for #top -->
 
-            <script src="./settings.js"></script>
+        </div> <!-- ✅ Closing div for .settings-container -->
+
+        <script src="./settings.js"></script>
     </body>
 </html>
