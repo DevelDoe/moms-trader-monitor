@@ -58,50 +58,58 @@ function initializeTopSection(settings) {
         settings.top = { transparent: false, minPrice: 0, maxPrice: 1000 };
     }
 
-    // ✅ Wait for the DOM to be fully loaded before assigning values
-    document.addEventListener("DOMContentLoaded", () => {
-        console.log("✅ DOM Loaded. Assigning values...");
+    // ✅ Get elements after DOM has loaded
+    const minPriceInput = document.getElementById("min-price");
+    const maxPriceInput = document.getElementById("max-price");
+    const topTransparentToggle = document.getElementById("top-transparent-toggle");
 
-        // ✅ Get elements
-        const minPriceInput = document.getElementById("min-price");
-        const maxPriceInput = document.getElementById("max-price");
-        const topTransparentToggle = document.getElementById("top-transparent-toggle");
+    if (!minPriceInput || !maxPriceInput || !topTransparentToggle) {
+        console.error("❌ One or more input elements not found!");
+        return;
+    }
 
-        if (minPriceInput && maxPriceInput && topTransparentToggle) {
-            minPriceInput.value = settings.top.minPrice.toString() ?? "0"; // Ensure it's a string
-            maxPriceInput.value = settings.top.maxPrice.toString() ?? "1000";
-            topTransparentToggle.checked = settings.top.transparent ?? false;
-        } else {
-            console.error("❌ Elements not found in DOM!");
-        }
-    });
+    // ✅ Load saved values from settings.top **without overwriting**
+    minPriceInput.value = settings.top.minPrice !== undefined ? settings.top.minPrice : 0;
+    maxPriceInput.value = settings.top.maxPrice !== undefined ? settings.top.maxPrice : 1000;
+    topTransparentToggle.checked = settings.top.transparent ?? false;
 
     function updatePriceFilter() {
-        settings.top.minPrice = parseFloat(document.getElementById("min-price").value) || 0;
-        settings.top.maxPrice = parseFloat(document.getElementById("max-price").value) || 1000;
+        const newMin = parseFloat(minPriceInput.value) || 0;
+        const newMax = parseFloat(maxPriceInput.value) || 1000;
+
+        settings.top = {
+            ...settings.top, // Preserve existing settings
+            minPrice: newMin,
+            maxPrice: newMax
+        };
 
         window.settingsAPI.update(settings);
         console.log("✅ Updated price filter:", settings.top);
 
         if (window.topAPI.applyFilters) {
-            window.topAPI.applyFilters(settings.top.minPrice, settings.top.maxPrice);
+            window.topAPI.applyFilters(newMin, newMax);
         } else {
             console.warn("⚠️ window.topAPI.applyFilters is not defined!");
         }
     }
 
-    document.getElementById("min-price").addEventListener("change", updatePriceFilter);
-    document.getElementById("max-price").addEventListener("change", updatePriceFilter);
-
-    // ✅ Ensure transparency setting is updated
-    document.getElementById("top-transparent-toggle").addEventListener("change", () => {
-        settings.top.transparent = document.getElementById("top-transparent-toggle").checked;
+    function updateTransparency() {
+        settings.top = {
+            ...settings.top, // Preserve existing settings
+            transparent: topTransparentToggle.checked
+        };
 
         window.settingsAPI.update(settings);
         console.log("✅ Updated transparency:", settings.top);
         window.topAPI.refresh();
-    });
+    }
+
+    // ✅ Prevent empty values by using 'input' instead of 'change'
+    minPriceInput.addEventListener("input", updatePriceFilter);
+    maxPriceInput.addEventListener("input", updatePriceFilter);
+    topTransparentToggle.addEventListener("change", updateTransparency);
 }
+
 
 function saveSettings(newSettings) {
     // ✅ Ensure `top` object structure is correct before saving
