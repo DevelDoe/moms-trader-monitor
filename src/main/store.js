@@ -5,8 +5,8 @@ const log = createLogger(__filename);
 class Store extends EventEmitter {
     constructor() {
         super();
-        this.sessionData = new Map();  // Temporary list, resets when triggered
-        this.dailyData = new Map();    // Permanent list, keeps all tickers of the day
+        this.sessionData = new Map();  // Resets on clear
+        this.dailyData = new Map();    // Stores all tickers for the full day
     }
 
     addTickers(tickers) {
@@ -33,15 +33,15 @@ class Store extends EventEmitter {
                 this.dailyData.set(key, existingTicker);
                 dailyUpdated += 1;
             } else {
-                ticker.count = 1;  // Start count at 1
+                ticker.count = 1;  // ✅ Daily count starts at 1 if new
                 this.dailyData.set(key, { ...ticker });
                 dailyNewEntries += 1;
             }
 
-            // ✅ Update or add in `sessionData` (independent count)
+            // ✅ Restart `sessionData` count at `1` after reset
             if (this.sessionData.has(key)) {
                 let existingTicker = this.sessionData.get(key);
-                existingTicker.count = (existingTicker.count || 1) + 1;  // Session count is separate
+                existingTicker.count += 1;  // ✅ Keep session count increasing until reset
                 existingTicker.Price = ticker.Price;
                 existingTicker.ChangePercent = ticker.ChangePercent;
                 existingTicker.FiveM = ticker.FiveM;
@@ -53,13 +53,13 @@ class Store extends EventEmitter {
                 this.sessionData.set(key, existingTicker);
                 sessionUpdated += 1;
             } else {
-                ticker.count = 1;  // Reset count in session
+                ticker.count = 1;  // ✅ Restart count at 1 if session was cleared
                 this.sessionData.set(key, { ...ticker });
                 sessionNewEntries += 1;
             }
         });
 
-        // ✅ Log both session and daily updates separately
+        // ✅ Log changes
         if (dailyUpdated || dailyNewEntries) {
             log.log(`[DAILY] ${dailyUpdated} updated, ${dailyNewEntries} new`);
         }
@@ -78,7 +78,7 @@ class Store extends EventEmitter {
 
     clearSessionData() {
         this.sessionData.clear();
-        log.log("🧹 Session data cleared, count reset");
+        log.log("🧹 Session data cleared, count will restart at 1.");
         this.emit("sessionCleared");
     }
 }
