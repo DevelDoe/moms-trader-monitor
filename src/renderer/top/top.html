@@ -89,9 +89,18 @@
         </script>
         <script>
             document.addEventListener("DOMContentLoaded", async () => {
-                // ✅ Fetch the transparency setting on load
+                // Transparency
                 const settings = await window.settingsAPI.get();
+
                 setTransparency(settings.top.transparent);
+
+
+                window.settingsAPI.onUpdate((updatedSettings) => {
+                    console.log("📩 Received updated settings:", updatedSettings);
+                    if (updatedSettings.reminderTransparent !== undefined) {
+                        updateBackground(updatedSettings.reminderTransparent);
+                    }
+                });
             });
         </script>
     </body>
