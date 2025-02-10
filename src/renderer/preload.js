@@ -16,5 +16,5 @@ contextBridge.exposeInMainWorld("settingsAPI", {
     toggle: () => ipcRenderer.send("toggle-settings"),
     get: () => ipcRenderer.invoke("get-settings"),
     update: (settings) => ipcRenderer.send("update-settings", settings),
-    onSettingsUpdated: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
+    onUpdated: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
 });
