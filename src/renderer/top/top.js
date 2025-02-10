@@ -69,32 +69,31 @@ async function fetchAndUpdateTickers() {
     try {
         console.log("Fetching updated tickers...");
 
-        // ✅ Fetch filters
-        const settings = await window.settingsAPI.get();
-        const minPrice = settings.top.minPrice ?? 0;
-        const maxPrice = settings.top.maxPrice ?? 1000;
-
-        console.log("Applying price filter:", { minPrice, maxPrice });
-
         // ✅ Fetch both session and daily tickers separately
         const sessionData = await window.topAPI.getTickers("session");
         const dailyData = await window.topAPI.getTickers("daily");
 
-        // ✅ Apply filters after fetching
+        console.log("Session Data:", sessionData);
+        console.log("📊 Daily Data:", dailyData);
+
+        // ✅ Get stored filter settings
+        const minPrice = window.settings.top.minPrice ?? 0;
+        const maxPrice = window.settings.top.maxPrice ?? 1000;
+
+        console.log("Applying price filter:", { minPrice, maxPrice });
+
+        // ✅ Apply price filtering AFTER fetching
         const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
         const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
-        console.log("Session Data:", sessionData);
-        console.log("📊Daily Data:", dailyData);
-
         // ✅ Process session tickers
-        tickersSessions = sessionData.map((ticker) => ({
+        tickersSessions = filteredSession.map((ticker) => ({
             ...ticker,
             score: calculateScore(ticker),
         }));
 
         // ✅ Process daily tickers
-        tickersDaily = dailyData.map((ticker) => ({
+        tickersDaily = filteredDaily.map((ticker) => ({
             ...ticker,
             score: calculateScore(ticker),
         }));
@@ -112,6 +111,7 @@ async function fetchAndUpdateTickers() {
         console.error("❌ Error fetching tickers:", error);
     }
 }
+
 
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
