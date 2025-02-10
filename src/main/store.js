@@ -64,7 +64,7 @@ class Store extends EventEmitter {
             log.log(`[DAILY] ${dailyUpdated} updated, ${dailyNewEntries} new`);
         }
         if (sessionUpdated || sessionNewEntries) {
-            log.log(`[SESSION] ${sessionUpdated} updated, ${sessionNewEntries} new:`, sessionData);
+            log.log(`[SESSION] ${sessionUpdated} updated, ${sessionNewEntries} new:`,this.sessionData);
         }
 
         this.emit("update");
