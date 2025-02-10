@@ -89,17 +89,13 @@ function initializeTopSection(settings) {
     minPriceInput.addEventListener("change", updatePriceFilter);
     maxPriceInput.addEventListener("change", updatePriceFilter);
 
+    // ✅ Ensure transparency setting is updated
     topTransparentToggle.addEventListener("change", () => {
-        settings = {
-            ...settings, // Keep other settings
-            top: {
-                ...settings.top, // Preserve existing top settings
-                transparent: topTransparentToggle.checked, // Only update transparency
-            },
-        };
-    
+        // ✅ Update only `settings.top.transparent`
+        settings.top.transparent = topTransparentToggle.checked;
+
         window.settingsAPI.update(settings);
-        console.log("✅ Updated transparency:", settings);
+        console.log("✅ Updated transparency:", settings.top);
         window.topAPI.refresh();
     });
 }
