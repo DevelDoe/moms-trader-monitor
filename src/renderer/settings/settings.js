@@ -85,13 +85,13 @@ function initializeTopSection(settings) {
         settings.maxPrice = newMax;
         window.settingsAPI.update(settings);
 
-        console.log("🔧 Updated price filter:", { min: newMin, max: newMax });
+        console.log("Updated price filter:", { min: newMin, max: newMax });
 
         // ✅ Ensure applyFilters exists before calling it
         if (window.topAPI.applyFilters) {
             window.topAPI.applyFilters(newMin, newMax);
         } else {
-            console.warn("❌ window.topAPI.applyFilters is not defined!");
+            console.warn("window.topAPI.applyFilters is not defined!");
         }
     }
 
