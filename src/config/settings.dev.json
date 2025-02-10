@@ -1,7 +1,10 @@
 {
   "top": {
-    "minPrice": 1,
-    "maxPrice": 999
+    "transparent": true,
+    "top": {
+      "minPrice": 1,
+      "maxPrice": 999
+    }
   },
   "transparent": false
 }
