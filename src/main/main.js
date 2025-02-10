@@ -1,4 +1,4 @@
-// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹
+// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹📡📊
 ////////////////////////////////////////////////////////////////////////////////////
 // INIT
 const createLogger = require("../hlps/logger");
@@ -65,8 +65,8 @@ function isFirstInstall() {
 // Default settings for fresh installs
 const DEFAULT_SETTINGS = {
     top: {
-        transparent: false
-    }
+        transparent: false,
+    },
 };
 
 // 🛠️ **Function to initialize settings**
@@ -115,7 +115,6 @@ function saveSettings() {
     log.log("💾 Saving settings file...", appSettings);
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(appSettings, null, 2));
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // IPC COMM
@@ -177,7 +176,6 @@ ipcMain.on("update-settings", (event, newSettings) => {
     saveSettings();
 });
 
-
 // Store
 ipcMain.handle("get-tickers", (event, listType = "daily") => {
     return tickerStore.getAllTickers(listType); // Fetch based on the requested type
@@ -195,7 +193,6 @@ ipcMain.on("clear-session", () => {
         win.webContents.send("session-cleared"); // ✅ Notify renderer
     });
 });
-
 
 // top
 ipcMain.on("toggle-top", () => {
@@ -216,7 +213,14 @@ ipcMain.on("refresh-top", async () => {
     windows.top = await createTopWindow(isDevelopment);
     windows.top.show();
 });
+ipcMain.on("apply-filters", (event, { min, max }) => {
+    log.log(`📊 Applying filters: Min=${min}, Max=${max}`);
 
+    // ✅ Notify renderer process
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("filter-updated");
+    });
+});
 
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
