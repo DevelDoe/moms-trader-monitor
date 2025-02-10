@@ -165,6 +165,6 @@ async function fetchSettings() {
 
 // ✅ Listen for filter updates from settings
 window.topAPI.onFilterUpdate(() => {
-    console.log("🔄 Filter settings updated, refetching tickers...");
+    console.log("Filter settings updated, refetching tickers...");
     fetchAndUpdateTickers();
 });
