@@ -58,10 +58,23 @@ function initializeTopSection(settings) {
         settings.top = { transparent: false, minPrice: 0, maxPrice: 1000 };
     }
 
-    // ✅ Directly assign values
-    document.getElementById("min-price").value = settings.top.minPrice ?? 0;
-    document.getElementById("max-price").value = settings.top.maxPrice ?? 1000;
-    document.getElementById("top-transparent-toggle").checked = settings.top.transparent ?? false;
+    // ✅ Wait for the DOM to be fully loaded before assigning values
+    document.addEventListener("DOMContentLoaded", () => {
+        console.log("✅ DOM Loaded. Assigning values...");
+
+        // ✅ Get elements
+        const minPriceInput = document.getElementById("min-price");
+        const maxPriceInput = document.getElementById("max-price");
+        const topTransparentToggle = document.getElementById("top-transparent-toggle");
+
+        if (minPriceInput && maxPriceInput && topTransparentToggle) {
+            minPriceInput.value = settings.top.minPrice.toString() ?? "0"; // Ensure it's a string
+            maxPriceInput.value = settings.top.maxPrice.toString() ?? "1000";
+            topTransparentToggle.checked = settings.top.transparent ?? false;
+        } else {
+            console.error("❌ Elements not found in DOM!");
+        }
+    });
 
     function updatePriceFilter() {
         settings.top.minPrice = parseFloat(document.getElementById("min-price").value) || 0;
