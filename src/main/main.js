@@ -171,7 +171,7 @@ ipcMain.handle("get-settings", () => {
 });
 
 ipcMain.on("update-settings", (event, newSettings) => {
-    log.log("Updating Settings")
+    log.log("Updating Settings:", newSettings )
     appSettings = { ...appSettings, ...newSettings };
     saveSettings();
 });
