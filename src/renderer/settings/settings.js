@@ -109,15 +109,20 @@ function initializeTopSection(settings) {
 
     // ✅ Ensure transparency setting is updated
     topTransparentToggle.addEventListener("change", () => {
-        settings.top = {
-            ...settings.top, // ✅ Preserve existing settings
-            transparent: topTransparentToggle.checked,
-        };
+        // ✅ Ensure `settings.top` exists correctly
+        if (!settings.top || typeof settings.top !== "object") {
+            settings.top = { minPrice: 0, maxPrice: 1000, transparent: false };
+        }
     
+        // ✅ Merge new value while keeping the existing structure
+        settings.top.transparent = topTransparentToggle.checked;
+    
+        // ✅ Now update settings correctly
         window.settingsAPI.update(settings);
         console.log("Updated transparency:", settings.top);
         window.topAPI.refresh();
     });
+    
 }
 
 function saveSettings(newSettings) {
