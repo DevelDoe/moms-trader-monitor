@@ -53,11 +53,6 @@ function initializeGeneralSection(settings) {
 function initializeTopSection(settings) {
     console.log("🔍 Checking loaded settings:", settings);
 
-    // ✅ Ensure `settings.top` exists correctly
-    if (!settings.top || typeof settings.top !== "object") {
-        settings.top = { transparent: false, minPrice: 0, maxPrice: 1000 };
-    }
-
     // ✅ Get elements after DOM has loaded
     const minPriceInput = document.getElementById("min-price");
     const maxPriceInput = document.getElementById("max-price");
