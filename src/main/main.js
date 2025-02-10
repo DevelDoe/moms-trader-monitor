@@ -175,7 +175,7 @@ ipcMain.handle("get-settings", () => {
 });
 
 ipcMain.on("update-settings", (event, newSettings) => {
-    log.log("🔍 Received newSettings before merging:", newSettings);
+    log.log("Received newSettings before merging:", newSettings);
 
     appSettings = { ...appSettings, ...newSettings };
 
