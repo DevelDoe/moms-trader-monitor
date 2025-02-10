@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             settings.top.transparent = topTransparentToggle.checked;
 
-            window.settingsAPI.updateSettings(settings);
+            window.settingsAPI.update(settings);
             console.log("Updating settings: ", settings);
 
             window.topAPI.refreshWindow();
@@ -76,6 +76,6 @@ function initializeTopSection() {}
 
 function saveSettings(newSettings) {
     console.log("Saving settings:", newSettings);
-    window.settingsAPI.updateSettings(newSettings);
+    window.settingsAPI.update(newSettings);
     window.topAPI.refreshWindow(); // Ensure window updates after settings change
 }
