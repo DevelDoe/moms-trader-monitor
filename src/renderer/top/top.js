@@ -113,6 +113,13 @@ async function fetchAndUpdateTickers() {
     }
 }
 
+async function applySavedFilters() {
+    const settings = await window.settingsAPI.get();
+    window.minPrice = settings.top.minPrice ?? 0;
+    window.maxPrice = settings.top.maxPrice ?? 1000;
+    console.log("✅ Applied saved filters:", { minPrice: window.minPrice, maxPrice: window.maxPrice });
+}
+
 /**
  * Clears session tickers via IPC event and refreshes the UI.
  */
