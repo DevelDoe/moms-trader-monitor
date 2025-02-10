@@ -91,7 +91,7 @@
             document.addEventListener("DOMContentLoaded", () => {
                 // ✅ Fetch the transparency setting on load
                 const settings = await window.settingsAPI.get();
-                updateBackground(settings.reminderTransparent);
+                setTransparency(settings.reminderTransparent);
             });
         </script>
     </body>
