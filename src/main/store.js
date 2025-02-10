@@ -5,8 +5,8 @@ const log = createLogger(__filename);
 class Store extends EventEmitter {
     constructor() {
         super();
-        // Using ticker.Symbol as the unique key ensures uniqueness per symbol
-        this.data = new Map();
+        this.sessionTickers = new Map();
+        this.dailyTickers = new Map();
     }
 
     addTickers(tickers) {
