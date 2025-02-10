@@ -38,17 +38,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             // TODO: Update UI when settings change
         });
 
-        // ✅ Transparency Toggle
-        const topTransparentToggle = document.getElementById("top-transparent-toggle");
-        topTransparentToggle.checked = settings.top.transparent === "true";
-
-        topTransparentToggle.addEventListener("change", () => {
-            settings.top.transparent = topTransparentToggle.checked;
-            window.settingsAPI.update(settings);
-            console.log("Updating settings: ", settings);
-            window.topAPI.refresh();
-        });
-
         // ✅ Set the default active tab
         const defaultTab = document.querySelector(".tablinks.active");
         if (defaultTab) {
