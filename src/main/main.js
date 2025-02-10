@@ -179,7 +179,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
 
     appSettings = { ...appSettings, ...newSettings };
 
-    log.log("✅ Merged appSettings:", appSettings);
+    log.log("Merged appSettings:", appSettings);
     saveSettings();
 });
 
