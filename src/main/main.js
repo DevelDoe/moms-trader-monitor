@@ -208,7 +208,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
                 ...newSettings[key], // Merge only the provided properties
             };
         } else {
-            log.warn(`⚠️ Ignoring invalid setting update: ${key}`);
+            log.warn(`Ignoring invalid setting update: ${key}`);
         }
     });
 
