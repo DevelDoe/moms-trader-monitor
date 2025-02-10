@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld("topAPI", {
     onTickerUpdate: (callback) => ipcRenderer.on("tickers-updated", callback),
     clearSession: () => ipcRenderer.send("clear-session"),
     onSessionCleared: (callback) => ipcRenderer.on("session-cleared", callback),
+    applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
+    onFilterUpdate: (callback) => ipcRenderer.on("filter-updated", callback),
 });
 
 contextBridge.exposeInMainWorld("settingsAPI", {
