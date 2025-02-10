@@ -7,14 +7,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
 contextBridge.exposeInMainWorld("topAPI", {
     toggle: () => ipcRenderer.send("toggle-top"),
-    refreshWindow: () => ipcRenderer.send("refresh-top"),
+    refresh: () => ipcRenderer.send("refresh-top"),
     getTickers: () => ipcRenderer.invoke("get-tickers"), 
     onTickerUpdate: (callback) => ipcRenderer.on("tickers-updated", callback),
 });
 
 contextBridge.exposeInMainWorld("settingsAPI", {
     toggle: () => ipcRenderer.send("toggle-settings"),
-    getSettings: () => ipcRenderer.invoke("get-settings"),
-    updateSettings: (settings) => ipcRenderer.send("update-settings", settings),
+    get: () => ipcRenderer.invoke("get-settings"),
+    update: (settings) => ipcRenderer.send("update-settings", settings),
     onSettingsUpdated: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
 });
