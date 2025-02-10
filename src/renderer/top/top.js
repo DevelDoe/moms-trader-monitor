@@ -113,6 +113,8 @@ async function fetchAndUpdateTickers() {
 
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
+    window.settings = settings; // ✅ Ensure settings are globally updated
+
     window.minPrice = settings.top.minPrice ?? 0;
     window.maxPrice = settings.top.maxPrice ?? 1000;
 
@@ -122,6 +124,7 @@ async function applySavedFilters() {
     tickersSessions = [];
     tickersDaily = [];
 }
+
 
 /**
  * Clears session tickers via IPC event and refreshes the UI.
