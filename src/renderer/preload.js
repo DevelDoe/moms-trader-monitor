@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("topAPI", {
     refresh: () => ipcRenderer.send("refresh-top"),
     getTickers: () => ipcRenderer.invoke("get-tickers"), 
     onTickerUpdate: (callback) => ipcRenderer.on("tickers-updated", callback),
+    clearSession: () => ipcRenderer.send("clear-session"),
 });
 
 contextBridge.exposeInMainWorld("settingsAPI", {
