@@ -171,8 +171,23 @@ ipcMain.handle("get-settings", () => {
 });
 
 ipcMain.on("update-settings", (event, newSettings) => {
-    log.log("Updating Settings:", newSettings )
+    log.log("🔍 Received newSettings before merging:", newSettings);
+
+    if (!newSettings || typeof newSettings !== "object") {
+        log.log("❌ Invalid settings received:", newSettings);
+        return;
+    }
+
+    if (newSettings.top && !Array.isArray(newSettings.top) && typeof newSettings.top === "object") {
+        log.log("✅ Valid top object received:", newSettings.top);
+    } else {
+        log.log("❌ top is not an object! Fixing it...");
+        newSettings.top = {}; // Reset to a valid object
+    }
+
     appSettings = { ...appSettings, ...newSettings };
+
+    log.log("✅ Merged appSettings:", appSettings);
     saveSettings();
 });
 
