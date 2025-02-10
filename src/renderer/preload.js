@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 contextBridge.exposeInMainWorld("topAPI", {
     toggle: () => ipcRenderer.send("toggle-top"),
     refresh: () => ipcRenderer.send("refresh-top"),
-    getTickers: () => ipcRenderer.invoke("get-tickers"), 
+    getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType), 
     onTickerUpdate: (callback) => ipcRenderer.on("tickers-updated", callback),
     clearSession: () => ipcRenderer.send("clear-session"),
 });
