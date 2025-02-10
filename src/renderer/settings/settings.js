@@ -63,10 +63,10 @@ function initializeTopSection(settings) {
         return;
     }
 
-    // ✅ Load saved values from settings.top **without overwriting**
-    if (settings.top.minPrice !== undefined) minPriceInput.value = settings.top.minPrice;
-    if (settings.top.maxPrice !== undefined) maxPriceInput.value = settings.top.maxPrice;
-    if (settings.top.transparent !== undefined) topTransparentToggle.checked = settings.top.transparent;
+    // ✅ Load saved values from `settings` (not `settings.top`)
+    if (settings.minPrice !== undefined) minPriceInput.value = settings.minPrice;
+    if (settings.maxPrice !== undefined) maxPriceInput.value = settings.maxPrice;
+    if (settings.transparent !== undefined) topTransparentToggle.checked = settings.transparent;
 
     console.log("✅ Applied settings:", {
         minPrice: minPriceInput.value,
@@ -78,15 +78,17 @@ function initializeTopSection(settings) {
         const newMin = parseFloat(minPriceInput.value) || 0;
         const newMax = parseFloat(maxPriceInput.value) || 1000;
 
-        // ✅ Update only `settings.top`
-        settings.top = {
-            ...settings.top, // Preserve existing settings
-            minPrice: newMin,
-            maxPrice: newMax
+        // ✅ Send only the updated top settings, not overwriting full settings object
+        const updatedSettings = {
+            top: {
+                ...settings, // Preserve existing settings
+                minPrice: newMin,
+                maxPrice: newMax,
+            },
         };
 
-        window.settingsAPI.update(settings);
-        console.log("✅ Updated price filter:", settings.top);
+        window.settingsAPI.update(updatedSettings);
+        console.log("✅ Updated price filter:", updatedSettings.top);
 
         if (window.topAPI.applyFilters) {
             window.topAPI.applyFilters(newMin, newMax);
@@ -96,13 +98,16 @@ function initializeTopSection(settings) {
     }
 
     function updateTransparency() {
-        settings.top = {
-            ...settings.top, // Preserve existing settings
-            transparent: topTransparentToggle.checked
+        // ✅ Same fix, ensure only top settings are updated
+        const updatedSettings = {
+            top: {
+                ...settings,
+                transparent: topTransparentToggle.checked,
+            },
         };
 
-        window.settingsAPI.update(settings);
-        console.log("✅ Updated transparency:", settings.top);
+        window.settingsAPI.update(updatedSettings);
+        console.log("✅ Updated transparency:", updatedSettings.top);
         window.topAPI.refresh();
     }
 
@@ -111,6 +116,7 @@ function initializeTopSection(settings) {
     maxPriceInput.addEventListener("input", updatePriceFilter);
     topTransparentToggle.addEventListener("change", updateTransparency);
 }
+
 
 
 function saveSettings(newSettings) {
