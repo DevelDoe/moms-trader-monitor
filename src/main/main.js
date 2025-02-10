@@ -1,10 +1,12 @@
-// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️
+// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄
+////////////////////////////////////////////////////////////////////////////////////
+// INIT
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
 
 ////////////////////////////////////////////////////////////////////////////////////
-// INIT
+// PACKAGES
 log.log("Init app");
 
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
@@ -32,6 +34,7 @@ log.log("init windows");
 
 const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
+const { createSettingsWindow } = require("./windows/settings");
 const { createTopWindow } = require("./windows/top");
 
 let windows = {};
@@ -41,7 +44,8 @@ function createWindow(name, createFn) {
     return windows[name];
 }
 
-// Collectors
+////////////////////////////////////////////////////////////////////////////////////
+// COLLECTORS
 const { collectTickers } = require("./collectors/tickers.js");
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -49,7 +53,7 @@ const { collectTickers } = require("./collectors/tickers.js");
 log.log("init data");
 
 // Use system settings file for production, separate file for development
-const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
+const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../config/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
 
 const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock"); // used to determine if this is a fresh new install
 
@@ -60,7 +64,9 @@ function isFirstInstall() {
 
 // Default settings for fresh installs
 const DEFAULT_SETTINGS = {
-    top: [],
+    top: {
+        transparent: false
+    }
 };
 
 // 🛠️ **Function to initialize settings**
@@ -113,10 +119,8 @@ function saveSettings() {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(appSettings, null, 2));
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////
-// IPC
+// IPC COMM
 log.log("init ipc");
 
 // General
@@ -152,6 +156,27 @@ ipcMain.on("close-splash", () => {
     }
 });
 
+// Settings
+
+ipcMain.on("toggle-settings", () => {
+    if (windows.settings) {
+        log.log("Toggle Settings Window");
+        windows.settings.isVisible() ? windows.settings.hide() : windows.settings.show();
+    }
+});
+
+ipcMain.handle("get-settings", () => {
+    log.log("Returning settings");
+    return appSettings;
+});
+
+ipcMain.on("update-settings", (event, newSettings) => {
+    log.log("Updating Settings")
+    appSettings = { ...appSettings, ...newSettings };
+    saveSettings();
+});
+
+
 // Store
 ipcMain.handle("get-tickers", () => {
     return tickerStore.getAllTickers();
@@ -171,7 +196,6 @@ ipcMain.on("toggle-top", () => {
     }
 });
 
-
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
 log.log("init application");
@@ -189,12 +213,7 @@ app.on("ready", () => {
         log.log("Splash screen closed. Loading main app...");
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
-
-        if (!windows.docker) {
-            log.error("docker window could not be created.");
-            return;
-        }
-
+        windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
         windows.top = createWindow("top", () => createTopWindow(isDevelopment));
 
         Object.values(windows).forEach((window) => window?.hide());

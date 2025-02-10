@@ -1,5 +1,5 @@
 body {
-    -webkit-app-region: drag;
+    
 }
 body::-webkit-scrollbar {
     display: none;
@@ -17,4 +17,19 @@ th,
 td {
     padding: 8px;
     text-align: left;
+}
+h1 {
+    -webkit-app-region: drag;
+}
+/* Apply pointer cursor to Symbol column */
+#tickers-session td:first-child,
+#tickers-daily td:first-child {
+    cursor: pointer;
+}
+
+/* Style when symbol is clicked (feedback effect) */
+#tickers-session td.copied,
+#tickers-daily td.copied {
+    background-color: #90EE90; /* Light green */
+    transition: background-color 0.3s ease-in-out;
 }

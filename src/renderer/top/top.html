@@ -5,9 +5,9 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'" />
         <title>Top Tickers</title>
-        <!-- <link rel="stylesheet" href="../../styles/styles.css" /> -->
+        <link rel="stylesheet" href="../styles.css" />
         <link rel="stylesheet" href="./top.css" />
     </head>
     <body>
@@ -17,18 +17,19 @@
         <table id="tickers-session">
             <thead>
                 <tr>
-                  <th>Symbol</th>
-                  <th>Price</th>
-                  <th>ChangePercent</th>
-                  <th>FiveM</th>
-                  <th>Float</th>
-                  <th>Volume</th>
-                  <th>SprPercent</th>
-                  <th>Time</th>
-                  <th>HOD</th>
-                  <th>Score</th>
+                    <th>Symbol</th>
+                    <th>Price</th>
+                    <th>ChangePercent</th>
+                    <th>FiveM</th>
+                    <th>Float</th>
+                    <th>Volume</th>
+                    <th>SprPercent</th>
+                    <th>Time</th>
+                    <th>HOD</th>
+                    <th>Count</th>
+                    <th>Score</th>
                 </tr>
-              </thead>
+            </thead>
             <tbody>
                 <!-- All data will be appended here -->
             </tbody>
@@ -38,24 +39,53 @@
         <table id="tickers-daily">
             <thead>
                 <tr>
-                  <th>Symbol</th>
-                  <th>Price</th>
-                  <th>ChangePercent</th>
-                  <th>FiveM</th>
-                  <th>Float</th>
-                  <th>Volume</th>
-                  <th>SprPercent</th>
-                  <th>Time</th>
-                  <th>HOD</th>
-                  <th>Count</th>
-                  <th>Score</th>
+                    <th>Symbol</th>
+                    <th>Price</th>
+                    <th>ChangePercent</th>
+                    <th>FiveM</th>
+                    <th>Float</th>
+                    <th>Volume</th>
+                    <th>SprPercent</th>
+                    <th>Time</th>
+                    <th>HOD</th>
+                    <th>Count</th>
+                    <th>Score</th>
                 </tr>
-              </thead>
+            </thead>
             <tbody>
                 <!-- All data will be appended here -->
             </tbody>
         </table>
 
         <script src="./top.js"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const tables = document.querySelectorAll("#tickers-session, #tickers-daily");
+
+                tables.forEach((table) => {
+                    table.addEventListener("click", (event) => {
+                        const target = event.target;
+
+                        // Check if the clicked element is inside the first column of a row
+                        if (target.tagName === "TD" && target.cellIndex === 0) {
+                            const symbol = target.textContent.trim();
+                            copyToClipboard(symbol, target);
+                        }
+                    });
+                });
+
+                function copyToClipboard(text, element) {
+                    navigator.clipboard
+                        .writeText(text)
+                        .then(() => {
+                            element.classList.add("copied"); // Add class for green effect
+                            setTimeout(() => {
+                                element.classList.remove("copied"); // Remove class after delay
+                            }, 500);
+                        })
+                        .catch((err) => console.error("Failed to copy: ", err));
+                }
+            });
+        </script>
     </body>
 </html>

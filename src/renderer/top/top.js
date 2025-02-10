@@ -91,7 +91,7 @@ function processTickerData(data) {
  */
 async function fetchAndUpdateTickers() {
     try {
-        const data = await window.electronAPI.getTickers();
+        const data = await window.topAPI.getTickers();
         processTickerData(data);
         sortTickersByScore();
         updateTickersTable(tickersSessions, "tickers-session");
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Listen for update notifications and refresh the UI
-window.electronAPI.onTickerUpdate(() => {
+window.topAPI.onTickerUpdate(() => {
     console.log("🔔 Ticker update received, fetching latest data...");
     fetchAndUpdateTickers();
 });

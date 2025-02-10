@@ -22,6 +22,7 @@
             background: rgba(0, 0, 0, 0.8);
             border-radius: 8px;
             backdrop-filter: blur(10px);
+            gap: 10px;
         }
         .dock a {
             margin: 0 5px;
@@ -37,8 +38,9 @@
 </head>
 <body>
     <div class="dock draggable" id="dock">
-        <a href="#" id="top-btn" class="no-drag" onclick="window.electronAPI.toggleTop()"><img src="./icons/top.png" alt="Exit" /></a>
-        <a href="#" id="exit-btn" class="no-drag" onclick="window.electronAPI.exitApp()"><img src="./icons/exit.png" alt="Exit" /></a>
+        <a href="#" id="top-btn" class="no-drag" onclick="window.topAPI.toggle()"><img src="./icons/monitor.png" alt="Exit" /></a>
+        <a href="#" id="settings-btn" class="no-drag" onclick="window.settingsAPI.toggle()"><img src="./icons/gear.png" alt="Exit" /></a>
+        <a href="#" id="exit-btn" class="no-drag" onclick="window.electronAPI.exitApp()"><img src="./icons/logout.png" alt="Exit" /></a>
     </div>
 
     <script>

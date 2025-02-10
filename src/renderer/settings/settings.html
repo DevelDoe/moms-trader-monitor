@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Settings</title>
+        <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="./settings.css" />
+    </head>
+    <body>
+        <button class="close-btn" onclick="window.electronAPI.toggleSettings()" aria-label="Close"></button>
+        <div class="settings-container">
+            <h1 class="dragable" style="width: 90%">Settings</h1>
+
+            <!-- Tab navigation -->
+            <div class="tab">
+                <button class="tablinks active" onclick="openTab(event, 'general')">General</button>
+                <button class="tablinks" onclick="openTab(event, 'reminder-settings')">Top</button>
+            </div>
+
+            <!-- General Settings -->
+            <div id="general" class="tabcontent">
+                <section id="Audio">
+                    <h2>Audio</h2>
+                    
+                </section>
+            </div>
+
+            <!-- Top Settings -->
+            <div id="top-settings" class="tabcontent active">
+                <div class="controls">
+                    <label>
+                        <input type="checkbox" id="top-transparent-toggle" />
+                        Enable Transparent Background
+                    </label>
+                </div>
+            </div>
+            <script src="./settings.js"></script>
+    </body>
+</html>

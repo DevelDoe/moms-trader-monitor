@@ -1,0 +1,211 @@
+body {
+    background-color: rgba(28, 29, 35, 1);
+}
+body::-webkit-scrollbar {
+    display: none;
+}
+
+.settings-container {
+    max-width: 600px;
+    margin: 0 auto;
+    color: #fff;
+    position: relative;
+}
+.settings-container li {
+    font-size: 16px;
+}
+.tab {
+    overflow: hidden;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    justify-content: space-around;
+}
+.tab button {
+    background-color: inherit;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    color: #fff;
+    font-size: 16px;
+}
+.tab button:hover {
+    background-color: #575757;
+}
+.tab button.active {
+    background-color: #333;
+    font-weight: bold;
+}
+.tabcontent {
+    display: none;
+    padding: 20px 0;
+    border-top: none;
+}
+.tabcontent.active {
+    display: block;
+}
+.remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 5px;
+}
+.trash-icon {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0.5);
+}
+.remove-btn:hover .trash-icon {
+    filter: brightness(1);
+}
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    z-index: 99;
+}
+
+.close-btn::before,
+.close-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 2px;
+    background-color: #fff;
+}
+
+.close-btn::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.close-btn::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.close-btn:hover::before,
+.close-btn:hover::after {
+    background-color: #ff0000; /* Change color on hover */
+}
+
+.scrollable-list {
+    height: 200px;
+    overflow-y: scroll; /* Enables vertical scrolling */
+    scrollbar-width: none; /* Hides scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hides scrollbar in Internet Explorer and Edge */
+}
+
+/* Hides scrollbar in WebKit-based browsers (Chrome, Safari, Opera) */
+.scrollable-list::-webkit-scrollbar {
+    display: none;
+}
+.tabcontent {
+    position: relative;
+    padding-bottom: 16px !important;
+}
+
+.controls {
+    width: 100%;
+}
+#clock-bell-volume {
+    margin: 10px 0px;
+}
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1rem;
+    background-color: #1c1d23;
+    border-radius: 8px;
+    color: #fff;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.form-label {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.form-input,
+.form-select {
+    padding: 0.5rem;
+    border: 1px solid #575757;
+    border-radius: 4px;
+    background-color: #2a2b32;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.form-input:focus,
+.form-select:focus {
+    border-color: #ff9800;
+    outline: none;
+}
+
+.duration-selects {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.form-button {
+    padding: 0.6rem 1rem;
+    background-color: #ff9800;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.form-button:hover {
+    background-color: #e68900;
+}
+
+.form-message {
+    font-size: 0.875rem;
+    color: #ffeb3b;
+}
+.controls button {
+    padding: 0.6rem 1rem;
+    background-color: #f23645;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.extra-margin-top {
+    margin-top: 20px;
+}

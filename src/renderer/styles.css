@@ -25,3 +25,12 @@ body {
 .no-drag {
     -webkit-app-region: no-drag; /* Prevent drag on interactive elements */
 }
+
+/* Remove outline from all elements when clicked */
+*:focus,
+*:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+

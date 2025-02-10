@@ -21,9 +21,8 @@ function createTopWindow(isDevelopment) {
 
     window.loadFile(path.join(__dirname, "../../renderer/top/top.html"));
 
-    if (isDevelopment) {
-        window.webContents.openDevTools({ mode: "detach" });
-    }
+    if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
+
     return window; // ✅ Return the window instance
 }
 
