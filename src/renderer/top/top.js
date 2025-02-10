@@ -67,9 +67,14 @@ function calculateScore(ticker) {
  */
 async function fetchAndUpdateTickers() {
     try {
+        console.log("📡 Fetching updated tickers...");
+
         // ✅ Fetch both session and daily tickers separately
-        const sessionData = await window.topAPI.getTickers("session");
+        const sessionData = await window.topAPI.getTickers("session"); 
         const dailyData = await window.topAPI.getTickers("daily");
+
+        console.log("📊 Session Data:", sessionData);
+        console.log("📊 Daily Data:", dailyData);
 
         // ✅ Process session tickers
         tickersSessions = sessionData.map((ticker) => ({
@@ -90,10 +95,13 @@ async function fetchAndUpdateTickers() {
         // ✅ Update UI
         updateTickersTable(tickersSessions, "tickers-session");
         updateTickersTable(tickersDaily, "tickers-daily");
+
+        console.log("✅ UI Updated Successfully!");
     } catch (error) {
         console.error("❌ Error fetching tickers:", error);
     }
 }
+
 
 /**
  * Clears session tickers via IPC event and refreshes the UI.
