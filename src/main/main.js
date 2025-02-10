@@ -1,4 +1,4 @@
-// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩
+// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹 
 ////////////////////////////////////////////////////////////////////////////////////
 // INIT
 const createLogger = require("../hlps/logger");
@@ -191,7 +191,7 @@ tickerStore.on("update", () => {
 
 // ✅ Handle session clearing
 ipcMain.on("clear-session", () => {
-    log.log("🧹 Clearing session data...");
+    log.log("Clearing session data...");
 
     tickerStore.clearSessionData(); // ✅ Clears session data in store
 
