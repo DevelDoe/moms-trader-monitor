@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             window.settingsAPI.update(settings);
             console.log("Updating settings: ", settings);
 
-            window.topAPI.refreshWindow();
+            window.topAPI.refresh();
         });
 
         // Set the default active tab
