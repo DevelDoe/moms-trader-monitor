@@ -196,6 +196,19 @@ ipcMain.on("toggle-top", () => {
     }
 });
 
+ipcMain.on("refresh-top-window", async () => {
+    log.log("Refreshing top window.");
+
+    if (windows.reminder) {
+        windows.reminder.close(); // Close the old window
+    }
+
+    // ✅ Recreate the window with updated settings
+    windows.reminder = await createReminderWindow(windows.taskbar);
+    windows.reminder.show();
+});
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
 log.log("init application");
