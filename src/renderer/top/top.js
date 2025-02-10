@@ -146,3 +146,10 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchAndUpdateTickers();
     });
 });
+
+async function fetchSettings() {
+    const settings = await window.settingsAPI.get();
+    console.log("Fetched settings in top.js:", settings);
+}
+
+fetchSettings();
