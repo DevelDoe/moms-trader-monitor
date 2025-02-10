@@ -101,13 +101,27 @@ function loadSettings() {
             return { ...DEFAULT_SETTINGS };
         }
 
-        const data = fs.readFileSync(SETTINGS_FILE, "utf-8");
-        return JSON.parse(data);
+        const data = fs.readFileSync(SETTINGS_FILE, "utf-8").trim();
+
+        if (!data) {
+            log.warn("Settings file is empty! Using default settings.");
+            return { ...DEFAULT_SETTINGS };
+        }
+
+        const parsedSettings = JSON.parse(data);
+
+        // ✅ Ensure missing settings are filled with defaults
+        return { 
+            ...DEFAULT_SETTINGS, 
+            ...parsedSettings 
+        };
+
     } catch (err) {
-        log.error("Error loading settings, resetting to defaults.", err);
+        log.error("❌ Error loading settings, resetting to defaults.", err);
         return { ...DEFAULT_SETTINGS }; // Prevents crashes
     }
 }
+
 
 let appSettings = loadSettings(); // Load app settings from file
 
