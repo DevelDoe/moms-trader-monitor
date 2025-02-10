@@ -8,7 +8,7 @@ function createSettingsWindow(isDevelopment) {
         width: 640,
         height: 500,
         frame: false,
-        alwaysOnTop: false,
+        alwaysOnTop: true,
         transparent: false,
         resizable: false,
         webPreferences: {
