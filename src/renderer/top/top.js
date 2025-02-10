@@ -76,13 +76,13 @@ async function fetchAndUpdateTickers() {
 
         console.log("Applying price filter:", { minPrice, maxPrice });
 
-        // ✅ Apply filters
-        const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
-        const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
-
         // ✅ Fetch both session and daily tickers separately
         const sessionData = await window.topAPI.getTickers("session");
         const dailyData = await window.topAPI.getTickers("daily");
+
+        // ✅ Apply filters after fetching
+        const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
+        const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
         console.log("Session Data:", sessionData);
         console.log("📊Daily Data:", dailyData);
@@ -150,7 +150,7 @@ function addClearSessionButton() {
  */
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
-    
+
     await applySavedFilters(); // ✅ Apply saved settings before fetching tickers
     await fetchAndUpdateTickers(); // ✅ Fetch tickers after applying filters
 
