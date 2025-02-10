@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Event listeners
 
         // Listen for global settings updates
-        window.settingsAPI.onSettingsUpdated((updatedSettings) => {
+        window.settingsAPI.onUpdated((updatedSettings) => {
             console.log("Settings Syncing", updatedSettings);
             // todo: update settings...
         });
