@@ -88,11 +88,15 @@ function initializeTopSection(settings) {
         const newMin = parseFloat(minPriceInput.value) || 0;
         const newMax = parseFloat(maxPriceInput.value) || 1000;
 
-        settings.top.minPrice = newMin;
-        settings.top.maxPrice = newMax;
+        // ✅ Merge new values into existing settings
+        settings.top = {
+            ...settings.top, // Keep existing values
+            minPrice: newMin,
+            maxPrice: newMax,
+        };
 
         window.settingsAPI.update(settings);
-        console.log("Updated price filter:", { min: newMin, max: newMax });
+        console.log("Updated price filter:", settings.top);
 
         if (window.topAPI.applyFilters) {
             window.topAPI.applyFilters(newMin, newMax);
@@ -106,14 +110,16 @@ function initializeTopSection(settings) {
 
     // ✅ Ensure transparency setting is updated
     topTransparentToggle.addEventListener("change", () => {
-        settings.top.transparent = topTransparentToggle.checked;
+        settings.top = {
+            ...settings.top, // Keep existing values
+            transparent: topTransparentToggle.checked,
+        };
+
         window.settingsAPI.update(settings);
-        console.log("Updated transparency:", settings.top.transparent);
+        console.log("Updated transparency:", settings.top);
         window.topAPI.refresh();
     });
 }
-
-
 
 function saveSettings(newSettings) {
     // ✅ Ensure `top` object structure is correct before saving
@@ -125,4 +131,3 @@ function saveSettings(newSettings) {
     window.settingsAPI.update(newSettings);
     window.topAPI.refresh();
 }
-
