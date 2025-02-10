@@ -82,6 +82,7 @@ function initializeTopSection(settings) {
     minPriceInput.value = settings.top.minPrice ?? 0;
     maxPriceInput.value = settings.top.maxPrice ?? 1000;
 
+    // ✅ Listen for user changes
     function updatePriceFilter() {
         const newMin = parseFloat(minPriceInput.value) || 0;
         const newMax = parseFloat(maxPriceInput.value) || 1000;
@@ -101,9 +102,10 @@ function initializeTopSection(settings) {
         }
     }
 
-    minPriceInput.addEventListener("input", updatePriceFilter);
-    maxPriceInput.addEventListener("input", updatePriceFilter);
+    minPriceInput.addEventListener("change", updatePriceFilter);
+    maxPriceInput.addEventListener("change", updatePriceFilter);
 }
+
 
 
 function saveSettings(newSettings) {
