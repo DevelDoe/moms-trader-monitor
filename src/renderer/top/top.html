@@ -98,7 +98,7 @@
                 window.settingsAPI.onUpdate((updatedSettings) => {
                     console.log("Received updated settings:", updatedSettings);
                     if (updatedSettings.top.transparent !== undefined) {
-                        updateBackground(updatedSettings.reminderTransparent);
+                        updateBsetTransparencyckground(updatedSettings.top.transparent);
                     }
                 });
             });
