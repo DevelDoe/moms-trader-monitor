@@ -212,7 +212,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
         }
     });
 
-    log.log("✅ Merged appSettings (cleaned):", appSettings);
+    log.log("Merged appSettings", appSettings);
     saveSettings();
 });
 
