@@ -145,26 +145,24 @@ function addClearSessionButton() {
     sessionTable.parentNode.insertBefore(btn, sessionTable);
 }
 
-// ✅ Run once the page loads
-document.addEventListener("DOMContentLoaded", () => {
-    addClearSessionButton(); // ✅ Add Clear Session button
-    fetchAndUpdateTickers(); // ✅ Fetch tickers
-    fetchSettings();
+/**
+ * Run on window load
+ */
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("⚡ Loading Top Window...");
+    
+    await applySavedFilters(); // ✅ Apply saved settings before fetching tickers
+    await fetchAndUpdateTickers(); // ✅ Fetch tickers after applying filters
 
     // ✅ Listen for updates
     window.topAPI.onTickerUpdate(() => {
         console.log("🔔 Ticker update received, fetching latest data...");
         fetchAndUpdateTickers();
     });
-});
 
-async function fetchSettings() {
-    const settings = await window.settingsAPI.get();
-    console.log("Fetched settings in top.js:", settings);
-}
-
-// ✅ Listen for filter updates from settings
-window.topAPI.onFilterUpdate(() => {
-    console.log("Filter settings updated, refetching tickers...");
-    fetchAndUpdateTickers();
+    // ✅ Listen for filter updates from settings
+    window.topAPI.onFilterUpdate(() => {
+        console.log("🎯 Filter settings updated, refetching tickers...");
+        fetchAndUpdateTickers();
+    });
 });
