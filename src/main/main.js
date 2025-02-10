@@ -112,12 +112,16 @@ let appSettings = loadSettings(); // Load app settings from file
 function saveSettings() {
     if (!appSettings) appSettings = { ...DEFAULT_SETTINGS };
 
-    // ✅ Ensure `top` is always an array
-    appSettings.top = Array.isArray(appSettings.top) ? appSettings.top : [];
+    // ✅ Ensure `top` is always an OBJECT (not an array)
+    if (!appSettings.top || typeof appSettings.top !== "object" || Array.isArray(appSettings.top)) {
+        log.log("❌ `top` is invalid! Fixing...");
+        appSettings.top = { ...DEFAULT_SETTINGS.top }; // Reset to default structure
+    }
 
-    log.log("Saving settings file...", appSettings);
+    log.log("💾 Saving settings file...", appSettings);
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(appSettings, null, 2));
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // IPC COMM
@@ -171,23 +175,8 @@ ipcMain.handle("get-settings", () => {
 });
 
 ipcMain.on("update-settings", (event, newSettings) => {
-    log.log("🔍 Received newSettings before merging:", newSettings);
-
-    if (!newSettings || typeof newSettings !== "object") {
-        log.log("❌ Invalid settings received:", newSettings);
-        return;
-    }
-
-    if (newSettings.top && !Array.isArray(newSettings.top) && typeof newSettings.top === "object") {
-        log.log("✅ Valid top object received:", newSettings.top);
-    } else {
-        log.log("❌ top is not an object! Fixing it...");
-        newSettings.top = {}; // Reset to a valid object
-    }
-
+    log.log("Updating Settings:", newSettings )
     appSettings = { ...appSettings, ...newSettings };
-
-    log.log("✅ Merged appSettings:", appSettings);
     saveSettings();
 });
 
