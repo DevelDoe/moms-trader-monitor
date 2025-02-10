@@ -6,7 +6,7 @@
       "minPrice": 0,
       "maxPrice": 1000
     },
-    "transparent": false
+    "transparent": true
   },
   "transparent": false,
   "minPrice": 0.07,
