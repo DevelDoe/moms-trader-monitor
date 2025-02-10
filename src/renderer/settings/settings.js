@@ -27,11 +27,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         initializeGeneralSection(settings.general || {});
         initializeTopSection(settings.top || {}); // ✅ Pass settings.top
 
-        // Ensure settings.top exists
-        if (!settings.top || typeof settings.top !== "object") {
-            settings.top = {}; // Initialize if missing
-        }
-
         // Listen for global settings updates
         window.settingsAPI.onUpdate((updatedSettings) => {
             console.log("Settings Syncing", updatedSettings);
