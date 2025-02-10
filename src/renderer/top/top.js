@@ -96,23 +96,40 @@ async function fetchAndUpdateTickers() {
 }
 
 /**
- * Clears session tickers via IPC event (instead of local reset).
+ * Clears session tickers via IPC event and refreshes the UI.
  */
 function clearSessionList() {
-    if ([0, 30].includes(new Date().getMinutes())) {
-        window.topAPI.clearSession(); // ✅ Ask main process to clear session data
-        console.log("🧹 Session data clear request sent at:", new Date());
-    }
+    console.log("🧹 Clear session button clicked!");
+    
+    window.topAPI.clearSession(); // ✅ Ask main process to clear session data
+
+    setTimeout(() => {
+        fetchAndUpdateTickers(); // ✅ Refresh tickers AFTER clearing session
+    }, 1000);
 }
 
-// ✅ Check every minute
-setInterval(clearSessionList, 60000);
+/**
+ * Adds "Clear Session" button dynamically.
+ */
+function addClearSessionButton() {
+    const btn = document.createElement("button");
+    btn.id = "clear-session-btn";
+    btn.textContent = "🧹 Clear Session";
+    btn.addEventListener("click", clearSessionList);
 
-// ✅ Fetch tickers on page load
-document.addEventListener("DOMContentLoaded", fetchAndUpdateTickers);
+    // ✅ Insert the button before session tickers table
+    const sessionTable = document.getElementById("tickers-session");
+    sessionTable.parentNode.insertBefore(btn, sessionTable);
+}
 
-// ✅ Listen for updates
-window.topAPI.onTickerUpdate(() => {
-    console.log("🔔 Ticker update received, fetching latest data...");
-    fetchAndUpdateTickers();
+// ✅ Run once the page loads
+document.addEventListener("DOMContentLoaded", () => {
+    addClearSessionButton(); // ✅ Add Clear Session button
+    fetchAndUpdateTickers(); // ✅ Fetch tickers
+
+    // ✅ Listen for updates
+    window.topAPI.onTickerUpdate(() => {
+        console.log("🔔 Ticker update received, fetching latest data...");
+        fetchAndUpdateTickers();
+    });
 });
