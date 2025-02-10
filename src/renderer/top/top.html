@@ -1,3 +1,5 @@
+<!-- ./renderer/docker/top.html  -->
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -10,9 +12,6 @@
     </head>
     <body>
         <h1>Scraped Data</h1>
-
-        <!-- ✅ Clear Session Button -->
-        <button id="clear-session-btn">🧹 Clear Session</button>
 
         <h2>30 Min Session Tickers</h2>
         <table id="tickers-session">
@@ -59,7 +58,6 @@
         </table>
 
         <script src="./top.js"></script>
-
         <script>
             document.addEventListener("DOMContentLoaded", () => {
                 const tables = document.querySelectorAll("#tickers-session, #tickers-daily");
@@ -87,21 +85,15 @@
                         })
                         .catch((err) => console.error("Failed to copy: ", err));
                 }
-
-                // ✅ Attach Clear Session Button Event
-                document.getElementById("clear-session-btn").addEventListener("click", () => {
-                    console.log("🧹 Clear session button clicked!");
-                    window.topAPI.clearSession(); // ✅ Call to clear session data
-                });
             });
         </script>
-
         <script>
             document.addEventListener("DOMContentLoaded", async () => {
                 // Transparency
                 const settings = await window.settingsAPI.get();
 
                 setTransparency(settings.top.transparent);
+
 
                 window.settingsAPI.onUpdate((updatedSettings) => {
                     console.log("Received updated settings:", updatedSettings);
@@ -114,6 +106,7 @@
                     document.body.style.backgroundColor = isTransparent ? "transparent" : "white";
                     console.log(`🎨 Updated background color: ${isTransparent ? "Transparent" : "white"}`);
                 }
+
             });
         </script>
     </body>
