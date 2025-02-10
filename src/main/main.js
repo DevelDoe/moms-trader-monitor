@@ -115,7 +115,7 @@ function saveSettings() {
     // ✅ Ensure `top` is always an array
     appSettings.top = Array.isArray(appSettings.top) ? appSettings.top : [];
 
-    log.log("Saving settings file...");
+    log.log("Saving settings file...", appSettings);
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(appSettings, null, 2));
 }
 
