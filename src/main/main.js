@@ -189,8 +189,16 @@ tickerStore.on("update", () => {
     });
 });
 
+// ✅ Handle session clearing
 ipcMain.on("clear-session", () => {
-    tickerStore.clearSessionData();
+    log.log("🧹 Clearing session data...");
+
+    tickerStore.clearSessionData(); // ✅ Clears session data in store
+
+    // ✅ Notify renderer that session data has been cleared
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("tickers-updated"); // ✅ Trigger refresh
+    });
 });
 
 // top
