@@ -199,13 +199,13 @@ ipcMain.on("toggle-top", () => {
 ipcMain.on("refresh-top", async () => {
     log.log("Refreshing top window.");
 
-    if (windows.reminder) {
-        windows.reminder.close(); // Close the old window
+    if (windows.top) {
+        windows.top.close(); // Close the old window
     }
 
     // ✅ Recreate the window with updated settings
-    windows.reminder = await createTopWindow(isDevelopment);
-    windows.reminder.show();
+    windows.top = await createTopWindow(isDevelopment);
+    windows.top.show();
 });
 
 
