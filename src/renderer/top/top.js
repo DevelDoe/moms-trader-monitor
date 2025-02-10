@@ -139,6 +139,7 @@ function addClearSessionButton() {
 document.addEventListener("DOMContentLoaded", () => {
     addClearSessionButton(); // ✅ Add Clear Session button
     fetchAndUpdateTickers(); // ✅ Fetch tickers
+    fetchSettings();
 
     // ✅ Listen for updates
     window.topAPI.onTickerUpdate(() => {
@@ -152,4 +153,3 @@ async function fetchSettings() {
     console.log("Fetched settings in top.js:", settings);
 }
 
-fetchSettings();
