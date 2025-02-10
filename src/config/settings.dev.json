@@ -1,7 +1,7 @@
 {
   "top": {
     "minPrice": 1,
-    "maxPrice": 999.99
+    "maxPrice": 9
   },
   "minPrice": 1,
   "maxPrice": 5
