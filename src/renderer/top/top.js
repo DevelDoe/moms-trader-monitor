@@ -116,7 +116,7 @@ async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
     window.minPrice = settings.top.minPrice ?? 0;
     window.maxPrice = settings.top.maxPrice ?? 1000;
-    
+
     console.log("✅ Applied saved filters:", { minPrice: window.minPrice, maxPrice: window.maxPrice });
 
     // ✅ Clear existing data before applying new filters
@@ -174,8 +174,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     // ✅ Listen for filter updates from settings
-    window.topAPI.onFilterUpdate(() => {
-        console.log("🎯 Filter settings updated, refetching tickers...");
-        fetchAndUpdateTickers();
+    window.topAPI.onFilterUpdate(async () => {
+        console.log("🎯 Filter settings updated, applying new filters...");
+        await applySavedFilters(); // ✅ Clear lists and apply new settings
+        fetchAndUpdateTickers(); // ✅ Refresh tickers with new filters
     });
 });
