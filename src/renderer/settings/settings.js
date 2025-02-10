@@ -87,17 +87,16 @@ function initializeTopSection(settings) {
     function updatePriceFilter() {
         const newMin = parseFloat(minPriceInput.value) || 0;
         const newMax = parseFloat(maxPriceInput.value) || 1000;
-
-        // ✅ Merge new values into existing settings
+    
         settings.top = {
-            ...settings.top, // Keep existing values
+            ...settings.top, // ✅ Preserve all settings
             minPrice: newMin,
             maxPrice: newMax,
         };
-
+    
         window.settingsAPI.update(settings);
         console.log("Updated price filter:", settings.top);
-
+    
         if (window.topAPI.applyFilters) {
             window.topAPI.applyFilters(newMin, newMax);
         } else {
