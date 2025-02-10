@@ -192,34 +192,30 @@ ipcMain.handle("get-settings", () => {
 ipcMain.on("update-settings", (event, newSettings) => {
     log.log("Received newSettings before merging:", newSettings);
 
-    // ✅ Ensure appSettings exists and has a `top` property
+    // ✅ Ensure `appSettings` exists
     if (!appSettings || typeof appSettings !== "object") {
         appSettings = { ...DEFAULT_SETTINGS };
     }
-    if (!appSettings.top || typeof appSettings.top !== "object") {
-        appSettings.top = { ...DEFAULT_SETTINGS.top };
-    }
 
-    // ✅ Merge new settings ONLY into `top` (or other categories)
+    // ✅ List of allowed top-level setting categories
+    const allowedCategories = ["top", "general", "audio"];
+
+    // ✅ Merge new settings ONLY into valid categories
     Object.keys(newSettings).forEach((key) => {
-        if (typeof newSettings[key] === "object" && newSettings[key] !== null) {
+        if (allowedCategories.includes(key) && typeof newSettings[key] === "object") {
             appSettings[key] = {
                 ...appSettings[key], // Preserve existing settings for this category
                 ...newSettings[key], // Merge only the provided properties
             };
         } else {
-            log.warn(`⚠️ Ignoring invalid setting update at root level: ${key}`);
+            log.warn(`⚠️ Ignoring invalid setting update: ${key}`);
         }
     });
-
-    // ✅ Remove any accidentally added root-level keys
-    delete appSettings.transparent;
-    delete appSettings.minPrice;
-    delete appSettings.maxPrice;
 
     log.log("✅ Merged appSettings (cleaned):", appSettings);
     saveSettings();
 });
+
 
 
 
