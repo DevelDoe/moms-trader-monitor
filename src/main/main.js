@@ -114,7 +114,7 @@ function saveSettings() {
 
     // ✅ Ensure `top` is always an OBJECT (not an array)
     if (!appSettings.top || typeof appSettings.top !== "object" || Array.isArray(appSettings.top)) {
-        log.log("❌ `top` is invalid! Fixing...");
+        log.log("`top` is invalid! Fixing...");
         appSettings.top = { ...DEFAULT_SETTINGS.top }; // Reset to default structure
     }
 
