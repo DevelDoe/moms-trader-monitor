@@ -162,3 +162,9 @@ async function fetchSettings() {
     const settings = await window.settingsAPI.get();
     console.log("Fetched settings in top.js:", settings);
 }
+
+// ✅ Listen for filter updates from settings
+window.topAPI.onFilterUpdate(() => {
+    console.log("🔄 Filter settings updated, refetching tickers...");
+    fetchAndUpdateTickers();
+});
