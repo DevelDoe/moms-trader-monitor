@@ -71,6 +71,12 @@ const DEFAULT_SETTINGS = {
     },
 };
 
+// 🛠️ Ensure `settings.dev.json` exists in development mode
+if (isDevelopment && !fs.existsSync(SETTINGS_FILE)) {
+    log.log("🚀 No `settings.dev.json` found, creating default dev settings...");
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+}
+
 // 🛠️ **Function to initialize settings**
 if (isFirstInstall()) {
     log.log("Fresh install detected! Creating default settings...");
