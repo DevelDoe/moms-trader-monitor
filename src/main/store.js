@@ -10,9 +10,10 @@ class Store extends EventEmitter {
     }
 
     addTickers(tickers) {
-        let updated = false;
-        let nrUpdates = 0;
-        let newEntries = 0;
+        let dailyUpdated = 0;
+        let dailyNewEntries = 0;
+        let sessionUpdated = 0;
+        let sessionNewEntries = 0;
 
         tickers.forEach((ticker) => {
             const key = ticker.Symbol;
@@ -30,19 +31,17 @@ class Store extends EventEmitter {
                 existingTicker.Time = ticker.Time;
                 existingTicker.HighOfDay = ticker.HighOfDay;
                 this.dailyData.set(key, existingTicker);
-                updated = true;
-                nrUpdates += 1;
+                dailyUpdated += 1;
             } else {
-                ticker.count = 1;
-                this.dailyData.set(key, ticker);
-                newEntries += 1;
-                updated = true;
+                ticker.count = 1;  // Start count at 1
+                this.dailyData.set(key, { ...ticker });
+                dailyNewEntries += 1;
             }
 
-
-             if (this.sessionData.has(key)) {
+            // ✅ Update or add in `sessionData` (independent count)
+            if (this.sessionData.has(key)) {
                 let existingTicker = this.sessionData.get(key);
-                existingTicker.count = (existingTicker.count || 1) + 1;
+                existingTicker.count = (existingTicker.count || 1) + 1;  // Session count is separate
                 existingTicker.Price = ticker.Price;
                 existingTicker.ChangePercent = ticker.ChangePercent;
                 existingTicker.FiveM = ticker.FiveM;
@@ -52,21 +51,23 @@ class Store extends EventEmitter {
                 existingTicker.Time = ticker.Time;
                 existingTicker.HighOfDay = ticker.HighOfDay;
                 this.sessionData.set(key, existingTicker);
-                updated = true;
-                nrUpdates += 1;
+                sessionUpdated += 1;
             } else {
-                ticker.count = 1;
-                this.sessionData.set(key, ticker);
-                newEntries += 1;
-                updated = true;
+                ticker.count = 1;  // Reset count in session
+                this.sessionData.set(key, { ...ticker });
+                sessionNewEntries += 1;
             }
-
         });
 
-        if (updated) {
-            log.log(`[DAILY] ${nrUpdates} updated entries, ${newEntries} new entries`);
-            this.emit("update");
+        // ✅ Log both session and daily updates separately
+        if (dailyUpdated || dailyNewEntries) {
+            log.log(`[DAILY] ${dailyUpdated} updated, ${dailyNewEntries} new`);
         }
+        if (sessionUpdated || sessionNewEntries) {
+            log.log(`[SESSION] ${sessionUpdated} updated, ${sessionNewEntries} new`);
+        }
+
+        this.emit("update");
     }
 
     getAllTickers(listType) {
@@ -77,7 +78,7 @@ class Store extends EventEmitter {
 
     clearSessionData() {
         this.sessionData.clear();
-        log.log("🧹 Session data cleared");
+        log.log("🧹 Session data cleared, count reset");
         this.emit("sessionCleared");
     }
 }
