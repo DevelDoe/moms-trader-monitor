@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         console.log("Fetching settings...");
-        const settings = await window.settingsAPI.getSettings();
+        const settings = await window.settingsAPI.get();
         console.log("Retrieved settings:", settings);
 
         initializeGeneralSection(settings.general || []);
