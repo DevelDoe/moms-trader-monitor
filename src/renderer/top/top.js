@@ -161,6 +161,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await applySavedFilters(); // ✅ Apply saved settings before fetching tickers
     await fetchAndUpdateTickers(); // ✅ Fetch tickers after applying filters
 
+    addClearSessionButton(); // ✅ Ensure the button is added!
+
     // ✅ Listen for updates
     window.topAPI.onTickerUpdate(() => {
         console.log("🔔 Ticker update received, fetching latest data...");
