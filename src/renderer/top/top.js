@@ -76,12 +76,15 @@ async function fetchAndUpdateTickers() {
         console.log("Session Data:", sessionData);
         console.log("📊 Daily Data:", dailyData);
 
-        // ✅ Apply price filter
-        const filteredSession = sessionData.filter((ticker) => ticker.Price >= window.minPrice && ticker.Price <= window.maxPrice);
-        const filteredDaily = dailyData.filter((ticker) => ticker.Price >= window.minPrice && ticker.Price <= window.maxPrice);
+        // ✅ Ensure filters are applied correctly
+        const minPrice = window.settings.top?.minPrice ?? 0;
+        const maxPrice = window.settings.top?.maxPrice ?? 1000;
 
-        console.log("Filtered Session:", filteredSession);
-        console.log("Filtered Daily:", filteredDaily);
+        console.log("Applying price filter:", { minPrice, maxPrice });
+
+        // ✅ Apply price filtering AFTER fetching
+        const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
+        const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
         // ✅ Clear and update lists
         tickersSessions = filteredSession.map((ticker) => ({
