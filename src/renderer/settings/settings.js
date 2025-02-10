@@ -77,5 +77,5 @@ function initializeTopSection() {}
 function saveSettings(newSettings) {
     console.log("Saving settings:", newSettings);
     window.settingsAPI.update(newSettings);
-    window.topAPI.refreshWindow(); // Ensure window updates after settings change
+    window.topAPI.refresh(); // Ensure window updates after settings change
 }
