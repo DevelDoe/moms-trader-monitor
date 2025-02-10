@@ -204,7 +204,7 @@ ipcMain.on("refresh-top", async () => {
     }
 
     // ✅ Recreate the window with updated settings
-    windows.reminder = await createReminderWindow(windows.taskbar);
+    windows.reminder = await createTopWindow(isDevelopment);
     windows.reminder.show();
 });
 
