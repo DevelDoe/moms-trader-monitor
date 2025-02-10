@@ -3,6 +3,6 @@
     "transparent": false
   },
   "transparent": false,
-  "minPrice": 1,
+  "minPrice": 0,
   "maxPrice": 100
 }
