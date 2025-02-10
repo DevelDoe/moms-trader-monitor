@@ -111,10 +111,10 @@ function initializeTopSection(settings) {
     // ✅ Ensure transparency setting is updated
     topTransparentToggle.addEventListener("change", () => {
         settings.top = {
-            ...settings.top, // Keep existing values
+            ...settings.top, // ✅ Preserve existing settings
             transparent: topTransparentToggle.checked,
         };
-
+    
         window.settingsAPI.update(settings);
         console.log("Updated transparency:", settings.top);
         window.topAPI.refresh();
