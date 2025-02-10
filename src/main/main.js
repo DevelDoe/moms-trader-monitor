@@ -183,14 +183,12 @@ ipcMain.handle("get-tickers", (event, listType = "daily") => {
     return tickerStore.getAllTickers(listType); // Fetch based on the requested type
 });
 
-// Ensure UI updates when tickers change
 tickerStore.on("update", () => {
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("tickers-updated");
     });
 });
 
-// Handle session clearing and notify renderer process
 ipcMain.on("clear-session", () => {
     tickerStore.clearSessionData(); // ✅ Clears session data in the store
     BrowserWindow.getAllWindows().forEach((win) => {
