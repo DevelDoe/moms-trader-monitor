@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("topAPI", {
     getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType), 
     onTickerUpdate: (callback) => ipcRenderer.on("tickers-updated", callback),
     clearSession: () => ipcRenderer.send("clear-session"),
+    onSessionCleared: (callback) => ipcRenderer.on("session-cleared", callback),
 });
 
 contextBridge.exposeInMainWorld("settingsAPI", {
