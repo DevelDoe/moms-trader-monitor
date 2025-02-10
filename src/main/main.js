@@ -192,14 +192,19 @@ ipcMain.handle("get-settings", () => {
 ipcMain.on("update-settings", (event, newSettings) => {
     log.log("Received newSettings before merging:", newSettings);
 
-    // ✅ Deep merge for each settings category (top, general, etc.)
+    // ✅ Deep merge, only merging objects
     appSettings = {
         ...appSettings, // Keep existing top-level properties
         ...Object.keys(newSettings).reduce((acc, key) => {
-            acc[key] = {
-                ...appSettings[key], // Preserve existing category settings (e.g., top, general)
-                ...newSettings[key], // Only update the provided properties in that category
-            };
+            // ✅ If `newSettings[key]` is an object, merge it. Otherwise, overwrite directly.
+            if (typeof newSettings[key] === "object" && newSettings[key] !== null) {
+                acc[key] = {
+                    ...appSettings[key], // Preserve existing category settings (e.g., top, general)
+                    ...newSettings[key], // Only update the provided properties in that category
+                };
+            } else {
+                acc[key] = newSettings[key]; // ✅ Directly overwrite if it's not an object
+            }
             return acc;
         }, {}),
     };
