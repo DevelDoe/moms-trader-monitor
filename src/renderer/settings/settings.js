@@ -88,14 +88,8 @@ function initializeTopSection(settings) {
         const newMin = parseFloat(minPriceInput.value) || 0;
         const newMax = parseFloat(maxPriceInput.value) || 1000;
     
-        // ✅ Ensure settings.top exists and prevent overwriting
-        if (!settings.top || typeof settings.top !== "object") {
-            settings.top = { transparent: false, minPrice: 0, maxPrice: 1000 };
-        }
-    
-        // ✅ Merge instead of replacing `top`
-        settings.top.minPrice = newMin;
-        settings.top.maxPrice = newMax;
+        // ✅ Ensure settings.top exists without overwriting
+        settings.top = { ...settings.top, minPrice: newMin, maxPrice: newMax };
     
         window.settingsAPI.update(settings);
         console.log("Updated price filter:", settings.top);
@@ -106,6 +100,7 @@ function initializeTopSection(settings) {
             console.warn("window.topAPI.applyFilters is not defined!");
         }
     }
+    
     
 
     minPriceInput.addEventListener("change", updatePriceFilter);
