@@ -189,6 +189,10 @@ tickerStore.on("update", () => {
     });
 });
 
+ipcMain.on("clear-session", () => {
+    tickerStore.clearSessionData();
+});
+
 // top
 ipcMain.on("toggle-top", () => {
     if (windows.top) {
