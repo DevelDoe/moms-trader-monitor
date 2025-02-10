@@ -51,7 +51,7 @@ function initializeGeneralSection(settings) {
 }
 
 function initializeTopSection(settings) {
-    console.log("Initializing Top Section:", settings);
+    console.log("🔍 Checking loaded settings:", settings);
 
     // ✅ Ensure `settings.top` exists correctly
     if (!settings.top || typeof settings.top !== "object") {
@@ -69,14 +69,21 @@ function initializeTopSection(settings) {
     }
 
     // ✅ Load saved values from settings.top **without overwriting**
-    minPriceInput.value = settings.top.minPrice !== undefined ? settings.top.minPrice : 0;
-    maxPriceInput.value = settings.top.maxPrice !== undefined ? settings.top.maxPrice : 1000;
-    topTransparentToggle.checked = settings.top.transparent ?? false;
+    if (settings.top.minPrice !== undefined) minPriceInput.value = settings.top.minPrice;
+    if (settings.top.maxPrice !== undefined) maxPriceInput.value = settings.top.maxPrice;
+    if (settings.top.transparent !== undefined) topTransparentToggle.checked = settings.top.transparent;
+
+    console.log("✅ Applied settings:", {
+        minPrice: minPriceInput.value,
+        maxPrice: maxPriceInput.value,
+        transparent: topTransparentToggle.checked,
+    });
 
     function updatePriceFilter() {
         const newMin = parseFloat(minPriceInput.value) || 0;
         const newMax = parseFloat(maxPriceInput.value) || 1000;
 
+        // ✅ Update only `settings.top`
         settings.top = {
             ...settings.top, // Preserve existing settings
             minPrice: newMin,
