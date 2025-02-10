@@ -178,7 +178,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ✅ Listen for filter updates from settings
     window.topAPI.onFilterUpdate(async () => {
         console.log("🎯 Filter settings updated, applying new filters...");
-        await applySavedFilters(); // ✅ Clear lists and apply new settings
-        fetchAndUpdateTickers(); // ✅ Refresh tickers with new filters
+    
+        await applySavedFilters(); // ✅ Update settings and clear lists
+        await fetchAndUpdateTickers(); // ✅ Immediately re-fetch tickers with new filters
     });
+    
 });
