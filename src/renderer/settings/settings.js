@@ -71,36 +71,35 @@ function initializeTopSection(settings) {
     function updatePriceFilter() {
         const newMin = parseFloat(minPriceInput.value) || 0;
         const newMax = parseFloat(maxPriceInput.value) || 1000;
-    
-        // ✅ Ensure settings.top exists without overwriting
-        settings = { ...settings.top, minPrice: newMin, maxPrice: newMax };
-    
+
+        // ✅ Update only `settings.top`
+        settings.top.minPrice = newMin;
+        settings.top.maxPrice = newMax;
+
         window.settingsAPI.update(settings);
-        console.log("Updated price filter:", settings.top);
-    
+        console.log("✅ Updated price filter:", settings.top);
+
         if (window.topAPI.applyFilters) {
             window.topAPI.applyFilters(newMin, newMax);
         } else {
-            console.warn("window.topAPI.applyFilters is not defined!");
+            console.warn("⚠️ window.topAPI.applyFilters is not defined!");
         }
     }
-    
-    
 
     minPriceInput.addEventListener("change", updatePriceFilter);
     maxPriceInput.addEventListener("change", updatePriceFilter);
 
     // ✅ Ensure transparency setting is updated
     topTransparentToggle.addEventListener("change", () => {
-        // ✅ Ensure `settings.top` exists properly
-        settings = { ...settings.top, transparent: topTransparentToggle.checked };
-    
-        // ✅ Now update settings correctly
+        // ✅ Update only `settings.top.transparent`
+        settings.top.transparent = topTransparentToggle.checked;
+
         window.settingsAPI.update(settings);
-        console.log("Updated transparency:", settings.top);
+        console.log("✅ Updated transparency:", settings.top);
         window.topAPI.refresh();
     });
 }
+
 
 function saveSettings(newSettings) {
     // ✅ Ensure `top` object structure is correct before saving
