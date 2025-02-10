@@ -58,47 +58,38 @@ function initializeTopSection(settings) {
         settings.top = { transparent: false, minPrice: 0, maxPrice: 1000 };
     }
 
-    // ✅ Get elements
-    const minPriceInput = document.getElementById("min-price");
-    const maxPriceInput = document.getElementById("max-price");
-    const topTransparentToggle = document.getElementById("top-transparent-toggle");
-
-    // ✅ Load saved values from settings.top
-    minPriceInput.value = settings.top.minPrice ?? 0;
-    maxPriceInput.value = settings.top.maxPrice ?? 1000;
-    topTransparentToggle.checked = settings.top.transparent ?? false;
+    // ✅ Directly assign values
+    document.getElementById("min-price").value = settings.top.minPrice ?? 0;
+    document.getElementById("max-price").value = settings.top.maxPrice ?? 1000;
+    document.getElementById("top-transparent-toggle").checked = settings.top.transparent ?? false;
 
     function updatePriceFilter() {
-        const newMin = parseFloat(minPriceInput.value) || 0;
-        const newMax = parseFloat(maxPriceInput.value) || 1000;
-
-        // ✅ Update only `settings.top`
-        settings.top.minPrice = newMin;
-        settings.top.maxPrice = newMax;
+        settings.top.minPrice = parseFloat(document.getElementById("min-price").value) || 0;
+        settings.top.maxPrice = parseFloat(document.getElementById("max-price").value) || 1000;
 
         window.settingsAPI.update(settings);
         console.log("✅ Updated price filter:", settings.top);
 
         if (window.topAPI.applyFilters) {
-            window.topAPI.applyFilters(newMin, newMax);
+            window.topAPI.applyFilters(settings.top.minPrice, settings.top.maxPrice);
         } else {
             console.warn("⚠️ window.topAPI.applyFilters is not defined!");
         }
     }
 
-    minPriceInput.addEventListener("change", updatePriceFilter);
-    maxPriceInput.addEventListener("change", updatePriceFilter);
+    document.getElementById("min-price").addEventListener("change", updatePriceFilter);
+    document.getElementById("max-price").addEventListener("change", updatePriceFilter);
 
     // ✅ Ensure transparency setting is updated
-    topTransparentToggle.addEventListener("change", () => {
-        // ✅ Update only `settings.top.transparent`
-        settings.top.transparent = topTransparentToggle.checked;
+    document.getElementById("top-transparent-toggle").addEventListener("change", () => {
+        settings.top.transparent = document.getElementById("top-transparent-toggle").checked;
 
         window.settingsAPI.update(settings);
         console.log("✅ Updated transparency:", settings.top);
         window.topAPI.refresh();
     });
 }
+
 
 
 function saveSettings(newSettings) {
