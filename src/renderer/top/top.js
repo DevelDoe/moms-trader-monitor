@@ -1,4 +1,4 @@
-// Local arrays for view processing (if needed)
+// Local arrays for UI processing
 let tickersDaily = [];
 let tickersSessions = [];
 
@@ -8,28 +8,31 @@ let tickersSessions = [];
 function updateTickersTable(tickers, tableId) {
     const tableBody = document.querySelector(`#${tableId} tbody`);
     tableBody.innerHTML = "";
-    tickers.forEach((item) => {
+    tickers.forEach((ticker) => {
         const row = document.createElement("tr");
-        Object.values(item).forEach((value) => {
+
+        Object.entries(ticker).forEach(([key, value]) => {
             const cell = document.createElement("td");
-            cell.textContent = value;
+
+            // ✅ Make Symbol Clickable (Copy to Clipboard)
+            if (key === "Symbol") {
+                cell.textContent = value;
+                cell.style.cursor = "pointer";
+                cell.style.textDecoration = "underline";
+                cell.addEventListener("click", () => {
+                    navigator.clipboard.writeText(value);
+                    console.log(`📋 Copied ${value} to clipboard!`);
+                });
+            } else {
+                cell.textContent = value;
+            }
+
             row.appendChild(cell);
         });
+
         tableBody.appendChild(row);
     });
 }
-
-/**
- * Clears session tickers at the start of each whole and half-hour.
- */
-function clearSessionList() {
-    if ([0, 30].includes(new Date().getMinutes())) {
-        tickersSessions = [];
-        updateTickersTable(tickersSessions, "tickers-session");
-        console.log("✅ Ticker session cleared at:", new Date());
-    }
-}
-setInterval(clearSessionList, 60000);
 
 /**
  * Parses a float string (e.g., '4.5M', '1B') and converts to a numeric value.
@@ -45,7 +48,6 @@ function parseFloatValue(floatStr) {
 
 /**
  * Calculates ticker score based on count, float, and HOD status.
- * (Handled in the view so that the view can decide which tickers are "top".)
  */
 function calculateScore(ticker) {
     let score = ticker.count;
@@ -61,52 +63,55 @@ function calculateScore(ticker) {
 }
 
 /**
- * Sorts tickers in descending order based on score.
- */
-function sortTickersByScore() {
-    tickersDaily.sort((a, b) => b.score - a.score);
-    tickersSessions.sort((a, b) => b.score - a.score);
-}
-
-/**
- * Processes ticker data fetched from the store.
- * Here, we simply copy the data into our local arrays.
- */
-function processTickerData(data) {
-    // For simplicity, we assign the same data to both arrays.
-    tickersDaily = data.slice();
-    tickersSessions = data.slice();
-
-    // Update score for each ticker using our local calculation.
-    tickersDaily.forEach((ticker) => {
-        ticker.score = calculateScore(ticker);
-    });
-    tickersSessions.forEach((ticker) => {
-        ticker.score = calculateScore(ticker);
-    });
-}
-
-/**
- * Fetches tickers from the centralized store and updates the UI.
+ * Fetches tickers separately for session and daily.
  */
 async function fetchAndUpdateTickers() {
     try {
-        const data = await window.topAPI.getTickers();
-        processTickerData(data);
-        sortTickersByScore();
+        // ✅ Fetch both session and daily tickers separately
+        const sessionData = await window.topAPI.getTickers("session");
+        const dailyData = await window.topAPI.getTickers("daily");
+
+        // ✅ Process session tickers
+        tickersSessions = sessionData.map((ticker) => ({
+            ...ticker,
+            score: calculateScore(ticker),
+        }));
+
+        // ✅ Process daily tickers
+        tickersDaily = dailyData.map((ticker) => ({
+            ...ticker,
+            score: calculateScore(ticker),
+        }));
+
+        // ✅ Sort by score
+        tickersSessions.sort((a, b) => b.score - a.score);
+        tickersDaily.sort((a, b) => b.score - a.score);
+
+        // ✅ Update UI
         updateTickersTable(tickersSessions, "tickers-session");
         updateTickersTable(tickersDaily, "tickers-daily");
     } catch (error) {
-        console.error("Error fetching tickers:", error);
+        console.error("❌ Error fetching tickers:", error);
     }
 }
 
-// Fetch tickers when the document loads
-document.addEventListener("DOMContentLoaded", () => {
-    fetchAndUpdateTickers();
-});
+/**
+ * Clears session tickers via IPC event (instead of local reset).
+ */
+function clearSessionList() {
+    if ([0, 30].includes(new Date().getMinutes())) {
+        window.topAPI.clearSession(); // ✅ Ask main process to clear session data
+        console.log("🧹 Session data clear request sent at:", new Date());
+    }
+}
 
-// Listen for update notifications and refresh the UI
+// ✅ Check every minute
+setInterval(clearSessionList, 60000);
+
+// ✅ Fetch tickers on page load
+document.addEventListener("DOMContentLoaded", fetchAndUpdateTickers);
+
+// ✅ Listen for updates
 window.topAPI.onTickerUpdate(() => {
     console.log("🔔 Ticker update received, fetching latest data...");
     fetchAndUpdateTickers();
