@@ -102,11 +102,6 @@
                     }
                 });
 
-                // // ✅ Listen for direct updates from settings UI
-                // window.electronAPI.on("update-reminder-transparency", (isTransparent) => {
-                //     setTransparency(isTransparent);
-                // });
-
                 function setTransparency(isTransparent) {
                     document.body.style.backgroundColor = isTransparent ? "transparent" : "white";
                     console.log(`🎨 Updated background color: ${isTransparent ? "Transparent" : "white"}`);
