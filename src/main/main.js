@@ -209,7 +209,7 @@ ipcMain.handle("get-settings", () => {
 });
 
 ipcMain.on("update-settings", (event, newSettings) => {
-    log.log("Received newSettings before merging:", newSettings);
+    log.log("Updating Settings...");
 
     // ✅ Ensure `appSettings` exists
     if (!appSettings || typeof appSettings !== "object") {
@@ -231,7 +231,6 @@ ipcMain.on("update-settings", (event, newSettings) => {
         }
     });
 
-    log.log("Merged appSettings", appSettings);
     saveSettings();
 });
 

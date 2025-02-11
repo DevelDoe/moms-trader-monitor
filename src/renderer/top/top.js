@@ -103,7 +103,7 @@ function updateTickersTable(tickers, tableId) {
 
     // ✅ Determine which columns should be displayed
     const listType = tableId.includes("session") ? "session" : "daily";
-    const enabledColumns = window.settings.top.cells?.[listType] || {};
+    const enabledColumns = window.settings.top.lists?.[listType] || {};
 
     console.log(`🟢 Enabled Columns for ${listType}:`, enabledColumns);
 

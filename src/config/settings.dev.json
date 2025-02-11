@@ -15,15 +15,14 @@
         "HighOfDay": true
       },
       "daily": {
-        "Price": true,
+        "Price": false,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": true,
-        "Volume": true,
+        "Float": false,
+        "Volume": false,
         "SprPercent": false,
         "Time": false,
-        "HighOfDay": false,
-        "length": 4
+        "HighOfDay": false
       }
     }
   }
