@@ -2,69 +2,30 @@
 let tickersDaily = [];
 let tickersSessions = [];
 
-/**
- * Updates the tickers table dynamically.
- */
-function updateTickersTable(tickers, tableId) {
-    const tableBody = document.querySelector(`#${tableId} tbody`);
-    tableBody.innerHTML = ""; // ✅ Clear the table first
-    tickers.forEach((ticker) => {
-        const row = document.createElement("tr");
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("⚡ Loading Top Window...");
 
-        Object.entries(ticker).forEach(([key, value]) => {
-            const cell = document.createElement("td");
+    await applySavedFilters(); // ✅ Apply saved settings before fetching tickers
+    await fetchAndUpdateTickers(); // ✅ Fetch tickers after applying filters
 
-            // ✅ Make Symbol Clickable (Copy to Clipboard)
-            if (key === "Symbol") {
-                cell.textContent = value;
-                cell.style.cursor = "pointer";
-                cell.style.textDecoration = "underline";
-                cell.addEventListener("click", () => {
-                    navigator.clipboard.writeText(value);
-                    console.log(`📋 Copied ${value} to clipboard!`);
-                });
-            } else {
-                cell.textContent = value;
-            }
+    addClearSessionButton(); 
 
-            row.appendChild(cell);
-        });
-
-        tableBody.appendChild(row);
+    // ✅ Listen for updates
+    window.topAPI.onTickerUpdate(() => {
+        console.log("🔔 Ticker update received, fetching latest data...");
+        fetchAndUpdateTickers();
     });
-}
 
-/**
- * Parses a float string (e.g., '4.5M', '1B') and converts to a numeric value.
- */
-function parseFloatValue(floatStr) {
-    if (!floatStr) return 0;
-    let sanitized = floatStr.replace(/[^0-9.]/g, "");
-    let value = parseFloat(sanitized) || 0;
-    if (floatStr.includes("B")) value *= 1000;
-    if (floatStr.includes("K")) value /= 1000;
-    return value;
-}
+    // ✅ Listen for filter updates from settings
+    window.topAPI.onFilterUpdate(async () => {
+        console.log("🎯 Filter settings updated, applying new filters...");
+    
+        await applySavedFilters(); // ✅ Update settings and clear lists
+        await fetchAndUpdateTickers(); // ✅ Immediately re-fetch tickers with new filters
+    });
+    
+});
 
-/**
- * Calculates ticker score based on count, float, and HOD status.
- */
-function calculateScore(ticker) {
-    let score = ticker.count;
-    if (ticker.HighOfDay) score += 20;
-    let floatValue = parseFloatValue(ticker.Float);
-    if (floatValue < 1) score += 20;
-    else if (floatValue < 10) score += 10;
-    else if (floatValue < 50) score += 5;
-    else if (floatValue < 100) score += 0;
-    else if (floatValue > 100) score -= 10;
-    else if (floatValue > 500) score -= 20;
-    return score;
-}
-
-/**
- * Fetches tickers separately for session and daily.
- */
 async function fetchAndUpdateTickers() {
     try {
         console.log("Fetching updated tickers...");
@@ -110,7 +71,6 @@ async function fetchAndUpdateTickers() {
     }
 }
 
-
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
     window.settings = settings; // ✅ Ensure settings are globally updated
@@ -125,10 +85,66 @@ async function applySavedFilters() {
     tickersDaily = [];
 }
 
+function updateTickersTable(tickers, tableId) {
+    const table = document.getElementById(tableId);
+    const tableHead = table.querySelector("thead");
+    const tableBody = table.querySelector("tbody");
 
-/**
- * Clears session tickers via IPC event and refreshes the UI.
- */
+    tableBody.innerHTML = ""; // ✅ Clear the table first
+
+    // ✅ Determine which columns should be displayed
+    const listType = tableId.includes("session") ? "session" : "daily";
+    const enabledColumns = window.settings.top.cells?.[listType] || {};
+
+    console.log(`🟢 Enabled Columns for ${listType}:`, enabledColumns);
+
+    if (tickers.length === 0) {
+        console.warn(`No data available for ${listType}!`);
+        return;
+    }
+
+    // ✅ Get the keys from the first ticker, ensuring "Symbol", "Count", and "Score" are **always included**
+    const allColumns = Object.keys(tickers[0]).filter(
+        (key) => enabledColumns[key] || key === "Symbol" || key === "count" || key === "score"
+    );
+
+    console.log(`📌 Final Columns for ${tableId}:`, allColumns);
+
+    // ✅ Generate the header dynamically
+    tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
+
+    // ✅ Populate table rows
+    tickers.forEach((ticker) => {
+        const row = document.createElement("tr");
+
+        allColumns.forEach((key) => {
+            const cell = document.createElement("td");
+
+            // ✅ Make "Symbol" Clickable (Copy to Clipboard)
+            if (key === "Symbol") {
+                cell.textContent = ticker[key];
+                cell.style.cursor = "pointer";
+                cell.style.textDecoration = "underline";
+                cell.addEventListener("click", () => {
+                    navigator.clipboard.writeText(ticker[key]);
+                    console.log(`📋 Copied ${ticker[key]} to clipboard!`);
+                });
+            } else {
+                cell.textContent = ticker[key];
+            }
+
+            row.appendChild(cell);
+        });
+
+        tableBody.appendChild(row);
+    });
+
+    console.log(`✅ Finished updating table: ${tableId}`);
+}
+
+
+
+// Clear session
 function clearSessionList() {
     console.log("🧹 Clear session button clicked!");
 
@@ -143,10 +159,6 @@ function clearSessionList() {
         fetchAndUpdateTickers(); // ✅ Refresh tickers AFTER clearing session
     }, 1000);
 }
-
-/**
- * Adds "Clear Session" button dynamically.
- */
 function addClearSessionButton() {
     const btn = document.createElement("button");
     btn.id = "clear-session-btn";
@@ -158,29 +170,25 @@ function addClearSessionButton() {
     sessionTable.parentNode.insertBefore(btn, sessionTable);
 }
 
-/**
- * Run on window load
- */
-document.addEventListener("DOMContentLoaded", async () => {
-    console.log("⚡ Loading Top Window...");
-
-    await applySavedFilters(); // ✅ Apply saved settings before fetching tickers
-    await fetchAndUpdateTickers(); // ✅ Fetch tickers after applying filters
-
-    addClearSessionButton(); // ✅ Ensure the button is added!
-
-    // ✅ Listen for updates
-    window.topAPI.onTickerUpdate(() => {
-        console.log("🔔 Ticker update received, fetching latest data...");
-        fetchAndUpdateTickers();
-    });
-
-    // ✅ Listen for filter updates from settings
-    window.topAPI.onFilterUpdate(async () => {
-        console.log("🎯 Filter settings updated, applying new filters...");
-    
-        await applySavedFilters(); // ✅ Update settings and clear lists
-        await fetchAndUpdateTickers(); // ✅ Immediately re-fetch tickers with new filters
-    });
-    
-});
+// Scoring System
+function parseFloatValue(floatStr) {
+    if (!floatStr) return 0;
+    let sanitized = floatStr.replace(/[^0-9.]/g, "");
+    let value = parseFloat(sanitized) || 0;
+    if (floatStr.includes("B")) value *= 1000;
+    if (floatStr.includes("K")) value /= 1000;
+    return value;
+}
+function calculateScore(ticker) {
+    let score = ticker.count;
+    if (ticker.HighOfDay) score += 20;
+    let floatValue = parseFloatValue(ticker.Float);
+    if (floatValue < 1) score += 20;
+    else if (floatValue < 5) score += 15;
+    else if (floatValue < 10) score += 10;
+    else if (floatValue < 50) score += 5;
+    else if (floatValue < 100) score += 0;
+    else if (floatValue > 100) score -= 10;
+    else if (floatValue > 500) score -= 20;
+    return score;
+}

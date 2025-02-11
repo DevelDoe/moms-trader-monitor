@@ -30,7 +30,6 @@ autoUpdater.setFeedURL({
 
 ////////////////////////////////////////////////////////////////////////////////////
 // WINDOWS
-log.log("init windows");
 
 const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
@@ -50,7 +49,6 @@ const { collectTickers } = require("./collectors/tickers.js");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
-log.log("init data");
 
 // Use system settings file for production, separate file for development
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../config/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
@@ -140,7 +138,6 @@ function saveSettings() {
 
 ////////////////////////////////////////////////////////////////////////////////////
 // IPC COMM
-log.log("init ipc");
 
 // General
 
@@ -216,9 +213,6 @@ ipcMain.on("update-settings", (event, newSettings) => {
     saveSettings();
 });
 
-
-
-
 // Store
 ipcMain.handle("get-tickers", (event, listType = "daily") => {
     return tickerStore.getAllTickers(listType); // Fetch based on the requested type
@@ -235,6 +229,11 @@ ipcMain.on("clear-session", () => {
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("session-cleared"); // ✅ Notify renderer
     });
+});
+
+ipcMain.handle("get-attributes", async (_event, listType) => {
+    log.log("Get Attributes:", listType)
+    return tickerStore.getAvailableAttributes(listType);
 });
 
 // top
@@ -256,18 +255,17 @@ ipcMain.on("refresh-top", async () => {
     windows.top = await createTopWindow(isDevelopment);
     windows.top.show();
 });
-ipcMain.on("apply-filters", (event, { min, max }) => {
-    log.log(`📊 Applying filters: Min=${min}, Max=${max}`);
 
-    // ✅ Notify renderer process
+ipcMain.on("apply-filters", (event, updatedSettings) => {
+    log.log(`✅ Applying filters:`, updatedSettings);
+
+    // ✅ Notify top window to update with new filters
     BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("filter-updated");
+        win.webContents.send("filter-updated", updatedSettings);
     });
 });
-
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
-log.log("init application");
 
 app.on("ready", () => {
     log.log("App ready, bootstrapping...");
@@ -309,7 +307,6 @@ process.on("exit", () => {
 
 ////////////////////////////////////////////////////////////////////////////////////
 // UPDATES
-log.log("init data");
 
 if (!isDevelopment) {
     log.log("Production mode detected, checking for updates...");

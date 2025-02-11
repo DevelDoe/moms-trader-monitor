@@ -13,24 +13,20 @@
         <div class="settings-container">
             <h1 class="draggable" style="width: 90%">Settings</h1>
 
-            <!-- Tab navigation -->
             <div class="tab">
-                <button class="tablinks active" onclick="openTab(event, 'general')">General</button>
-                <button class="tablinks active" onclick="openTab(event, 'audio')">Audio</button>
-                <button class="tablinks" onclick="openTab(event, 'top')">Top</button>
+                <button class="tablinks" onclick="openTab(event, 'general')">General</button>
+                <button class="tablinks" onclick="openTab(event, 'audio')">Audio</button>
+                <button class="tablinks active" onclick="openTab(event, 'top')">Top</button>
             </div>
 
-            <!-- General Settings -->
             <div id="general" class="tabcontent">
                 <h2>General</h2>
             </div>
 
-            <!-- Audio Settings -->
             <div id="audio" class="tabcontent">
                 <h2>Audio</h2>
             </div>
 
-            <!-- Top Settings -->
             <div id="top" class="tabcontent active">
                 <div>
                     <label>
@@ -39,14 +35,27 @@
                     </label>
                 </div>
 
-                <!-- ✅ Price Filter Controls -->
                 <div>
-                    <label> Min Price: <input type="number" id="min-price"  step="0.05" /> </label>
-                    <label> Max Price: <input type="number" id="max-price"  step="1" /> </label>
+                    <label> Min Price: <input type="number" id="min-price" step="0.05" /> </label>
+                    <label> Max Price: <input type="number" id="max-price" step="1" /> </label>
                 </div>
+
+                <div class="filter-section">
+                    <h3>Session Attribute Filters</h3>
+                    <button id="session-toggle-all">Select All</button>
+                    <button id="session-toggle-none">Deselect All</button>
+                    <div id="session-filters" class="filter-container"></div>
+                </div>
+                
+                <div class="filter-section">
+                    <h3>Daily Attribute Filters</h3>
+                    <button id="daily-toggle-all">Select All</button>
+                    <button id="daily-toggle-none">Deselect All</button>
+                    <div id="daily-filters" class="filter-container"></div>
+                </div>
+                
             </div>
         </div>
-
         <script src="./settings.js"></script>
     </body>
 </html>

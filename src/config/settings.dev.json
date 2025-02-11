@@ -1,7 +1,29 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1,
-    "maxPrice": 20
+    "minPrice": 0,
+    "maxPrice": 100,
+    "cells": {
+      "session": {
+        "Price": true,
+        "ChangePercent": true,
+        "FiveM": true,
+        "Float": true,
+        "Volume": true,
+        "SprPercent": true,
+        "Time": true,
+        "HighOfDay": true
+      },
+      "daily": {
+        "Price": true,
+        "ChangePercent": false,
+        "FiveM": false,
+        "Float": true,
+        "Volume": true,
+        "SprPercent": false,
+        "Time": false,
+        "HighOfDay": false
+      }
+    }
   }
 }

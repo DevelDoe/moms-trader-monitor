@@ -20,5 +20,11 @@ contextBridge.exposeInMainWorld("settingsAPI", {
     toggle: () => ipcRenderer.send("toggle-settings"),
     get: () => ipcRenderer.invoke("get-settings"),
     update: (settings) => ipcRenderer.send("update-settings", settings),
+    getAttributes: (listType) => ipcRenderer.invoke("get-attributes", listType),
+    onAttributesUpdate: (callback) => ipcRenderer.on("tickers-updated", () => {
+        console.log("🔄 Attributes updated, refreshing settings...");
+        callback();
+    }),
     onUpdate: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
 });
+
