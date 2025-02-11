@@ -3,7 +3,7 @@
     "transparent": false,
     "minPrice": 0,
     "maxPrice": 100,
-    "cells": {
+    "lists": {
       "session": {
         "Price": true,
         "ChangePercent": true,
@@ -22,7 +22,8 @@
         "Volume": true,
         "SprPercent": false,
         "Time": false,
-        "HighOfDay": false
+        "HighOfDay": false,
+        "length": 4
       }
     }
   }

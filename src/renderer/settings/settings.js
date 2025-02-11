@@ -69,14 +69,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-
 function initializeGeneralSection(topSettings) {
     console.log("Initializing General Section:", topSettings);
 }
 
 function initializeTopSection(settings) {
     if (!settings || !settings.top) {
-        console.error("❌ `settings.top` is missing! Skipping initialization.");
+        console.error("`settings.top` is missing! Skipping initialization.");
         return;
     }
 
@@ -85,9 +84,11 @@ function initializeTopSection(settings) {
     const minPriceInput = document.getElementById("min-price");
     const maxPriceInput = document.getElementById("max-price");
     const topTransparentToggle = document.getElementById("top-transparent-toggle");
+    const sessionLengthInput = document.getElementById("session-length");
+    const dailyLengthInput = document.getElementById("daily-length");
 
-    if (!minPriceInput || !maxPriceInput || !topTransparentToggle) {
-        console.error("❌ One or more input elements not found!");
+    if (!minPriceInput || !maxPriceInput || !topTransparentToggle || !sessionLengthInput || !dailyLengthInput) {
+        console.error("One or more input elements not found!");
         return;
     }
 
@@ -96,10 +97,16 @@ function initializeTopSection(settings) {
     if (settings.top.maxPrice !== undefined) maxPriceInput.value = settings.top.maxPrice;
     if (settings.top.transparent !== undefined) topTransparentToggle.checked = settings.top.transparent;
 
+    // ✅ Load saved length settings
+    sessionLengthInput.value = settings.top.lists?.session?.length ?? 10;
+    dailyLengthInput.value = settings.top.lists?.daily?.length ?? 10;
+
     console.log("✅ Applied topSettings:", {
         minPrice: minPriceInput.value,
         maxPrice: maxPriceInput.value,
         transparent: topTransparentToggle.checked,
+        sessionLength: sessionLengthInput.value,
+        dailyLength: dailyLengthInput.value,
     });
 
     function updatePriceFilter() {
@@ -112,7 +119,7 @@ function initializeTopSection(settings) {
             maxPrice: newMax,
         };
 
-        console.log("✅ Updated price filter:", updatedSettings);
+        console.log("Updated price filter:", updatedSettings);
         applyAllFilters(updatedSettings);
     }
 
@@ -122,18 +129,41 @@ function initializeTopSection(settings) {
             transparent: topTransparentToggle.checked,
         };
 
-        console.log("✅ Updated transparency setting:", updatedSettings);
+        console.log("Updated transparency setting:", updatedSettings);
         window.settingsAPI.update({ top: updatedSettings });
-
         window.topAPI.refresh(); // ✅ Refresh top window UI
     }
 
-    // ✅ Prevent empty values by using 'input' instead of 'change'
+    function updateListLength(type, input) {
+        const newLength = parseInt(input.value, 10) || 10;
+
+        // Ensure the lists object exists
+        if (!settings.top.lists) settings.top.lists = {};
+        if (!settings.top.lists[type]) settings.top.lists[type] = {};
+
+        // ✅ Create an updated settings object preserving other settings
+        const updatedSettings = {
+            ...settings.top,
+            lists: {
+                ...settings.top.lists,
+                [type]: {
+                    ...settings.top.lists[type],
+                    length: newLength,
+                },
+            },
+        };
+
+        console.log(`✅ Updated ${type} list length:`, newLength);
+
+        applyAllFilters(updatedSettings); // ✅ Apply filters (and let it handle saving)
+    }
+
     minPriceInput.addEventListener("input", updatePriceFilter);
     maxPriceInput.addEventListener("input", updatePriceFilter);
     topTransparentToggle.addEventListener("change", updateTransparency);
+    sessionLengthInput.addEventListener("input", () => updateListLength("session", sessionLengthInput));
+    dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
 }
-
 
 async function loadAttributeFilters(listType, containerId, settings) {
     try {
@@ -160,7 +190,7 @@ async function loadAttributeFilters(listType, containerId, settings) {
             return;
         }
 
-        const selectedFilters = settings.top.cells?.[listType] || {}; // ✅ Use structured storage
+        const selectedFilters = settings.top.lists?.[listType] || {}; // ✅ Use structured storage
 
         attributes.forEach((attr) => {
             const label = document.createElement("label");
@@ -185,7 +215,6 @@ async function loadAttributeFilters(listType, containerId, settings) {
     }
 }
 
-
 function updateFilters(settings) {
     if (!settings || !settings.top) {
         console.error("❌ `settings.top` is missing! Skipping update.");
@@ -196,7 +225,7 @@ function updateFilters(settings) {
         ...settings, // ✅ Preserve everything else
         top: {
             ...settings.top, // ✅ Preserve other top settings
-            cells: {
+            lists: {
                 session: {},
                 daily: {},
             },
@@ -204,24 +233,23 @@ function updateFilters(settings) {
     };
 
     document.querySelectorAll("input[name='session']").forEach((checkbox) => {
-        updatedSettings.top.cells.session[checkbox.value] = checkbox.checked;
+        updatedSettings.top.lists.session[checkbox.value] = checkbox.checked;
     });
 
     document.querySelectorAll("input[name='daily']").forEach((checkbox) => {
-        updatedSettings.top.cells.daily[checkbox.value] = checkbox.checked;
+        updatedSettings.top.lists.daily[checkbox.value] = checkbox.checked;
     });
 
     console.log("💾 Saving updated filters:", updatedSettings);
-    
+
     // ✅ Ensure settings file gets updated
     window.settingsAPI.update(updatedSettings);
 
     applyAllFilters(updatedSettings.top);
 }
 
-
 function applyAllFilters(updatedTopSettings) {
-    console.log("📢 Applying filters:", updatedTopSettings);
+    console.log("Applying filters:", updatedTopSettings);
     window.settingsAPI.update({ top: updatedTopSettings });
 
     if (window.topAPI.applyFilters) {
@@ -254,4 +282,3 @@ function toggleAll(listType, state, settings) {
 
     updateFilters(settings); // ✅ Pass the updated settings object
 }
-

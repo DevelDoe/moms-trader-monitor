@@ -1,4 +1,4 @@
-// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹📡📊🔧
+// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹📡📊🔧📢
 ////////////////////////////////////////////////////////////////////////////////////
 // INIT
 const createLogger = require("../hlps/logger");
@@ -65,7 +65,31 @@ const DEFAULT_SETTINGS = {
     top: {
         transparent: false,
         minPrice: 0,
-        maxPrice: 100
+        maxPrice: 100,
+        lists: {
+            session: {
+                Price: true,
+                ChangePercent: true,
+                FiveM: true,
+                Float: true,
+                Volume: true,
+                SprPercent: true,
+                Time: true,
+                HighOfDay: true,
+                length: 10,
+            },
+            daily: {
+                Price: true,
+                ChangePercent: false,
+                FiveM: false,
+                Float: true,
+                Volume: true,
+                SprPercent: false,
+                Time: false,
+                HighOfDay: false,
+                length: 10,
+            },
+        },
     },
 };
 
@@ -115,17 +139,15 @@ function loadSettings() {
         const parsedSettings = JSON.parse(data);
 
         // ✅ Ensure missing settings are filled with defaults
-        return { 
-            ...DEFAULT_SETTINGS, 
-            ...parsedSettings 
+        return {
+            ...DEFAULT_SETTINGS,
+            ...parsedSettings,
         };
-
     } catch (err) {
         log.error("❌ Error loading settings, resetting to defaults.", err);
         return { ...DEFAULT_SETTINGS }; // Prevents crashes
     }
 }
-
 
 let appSettings = loadSettings(); // Load app settings from file
 
@@ -232,7 +254,7 @@ ipcMain.on("clear-session", () => {
 });
 
 ipcMain.handle("get-attributes", async (_event, listType) => {
-    log.log("Get Attributes:", listType)
+    log.log("Get Attributes:", listType);
     return tickerStore.getAvailableAttributes(listType);
 });
 

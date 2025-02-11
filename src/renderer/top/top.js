@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await applySavedFilters(); // ✅ Apply saved settings before fetching tickers
     await fetchAndUpdateTickers(); // ✅ Fetch tickers after applying filters
 
-    addClearSessionButton(); 
+    addClearSessionButton();
 
     // ✅ Listen for updates
     window.topAPI.onTickerUpdate(() => {
@@ -19,11 +19,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ✅ Listen for filter updates from settings
     window.topAPI.onFilterUpdate(async () => {
         console.log("🎯 Filter settings updated, applying new filters...");
-    
+
         await applySavedFilters(); // ✅ Update settings and clear lists
         await fetchAndUpdateTickers(); // ✅ Immediately re-fetch tickers with new filters
     });
-    
 });
 
 async function fetchAndUpdateTickers() {
@@ -40,27 +39,37 @@ async function fetchAndUpdateTickers() {
         // ✅ Ensure filters are applied correctly
         const minPrice = window.settings.top?.minPrice ?? 0;
         const maxPrice = window.settings.top?.maxPrice ?? 1000;
+        const maxSessionLength = window.settings.top?.lists?.session?.length ?? 10;
+        const maxDailyLength = window.settings.top?.lists?.daily?.length ?? 10;
 
         console.log("Applying price filter:", { minPrice, maxPrice });
+        console.log("Applying list limits:", { session: maxSessionLength, daily: maxDailyLength });
 
-        // ✅ Apply price filtering AFTER fetching
+        // ✅ Apply price filtering
         const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
         const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
-        // ✅ Clear and update lists
-        tickersSessions = filteredSession.map((ticker) => ({
-            ...ticker,
-            score: calculateScore(ticker),
-        }));
+        // ✅ Calculate scores and sort tickers
+        tickersSessions = filteredSession
+            .map((ticker) => ({
+                ...ticker,
+                score: calculateScore(ticker),
+            }))
+            .sort((a, b) => b.score - a.score); // Sort descending by score
 
-        tickersDaily = filteredDaily.map((ticker) => ({
-            ...ticker,
-            score: calculateScore(ticker),
-        }));
+        tickersDaily = filteredDaily
+            .map((ticker) => ({
+                ...ticker,
+                score: calculateScore(ticker),
+            }))
+            .sort((a, b) => b.score - a.score);
 
-        // ✅ Sort and update UI
-        tickersSessions.sort((a, b) => b.score - a.score);
-        tickersDaily.sort((a, b) => b.score - a.score);
+        // ✅ Limit number of displayed entries
+        tickersSessions = tickersSessions.slice(0, maxSessionLength);
+        tickersDaily = tickersDaily.slice(0, maxDailyLength);
+
+        console.log("✅ Final Session List:", tickersSessions);
+        console.log("✅ Final Daily List:", tickersDaily);
 
         updateTickersTable(tickersSessions, "tickers-session");
         updateTickersTable(tickersDaily, "tickers-daily");
@@ -104,9 +113,7 @@ function updateTickersTable(tickers, tableId) {
     }
 
     // ✅ Get the keys from the first ticker, ensuring "Symbol", "Count", and "Score" are **always included**
-    const allColumns = Object.keys(tickers[0]).filter(
-        (key) => enabledColumns[key] || key === "Symbol" || key === "count" || key === "score"
-    );
+    const allColumns = Object.keys(tickers[0]).filter((key) => enabledColumns[key] || key === "Symbol" || key === "count" || key === "score");
 
     console.log(`📌 Final Columns for ${tableId}:`, allColumns);
 
@@ -141,8 +148,6 @@ function updateTickersTable(tickers, tableId) {
 
     console.log(`✅ Finished updating table: ${tableId}`);
 }
-
-
 
 // Clear session
 function clearSessionList() {
