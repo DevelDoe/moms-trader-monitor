@@ -240,6 +240,12 @@ ipcMain.handle("get-tickers", (event, listType = "daily") => {
     return tickerStore.getAllTickers(listType); // Fetch based on the requested type
 });
 
+tickerStore.on("newsUpdated", ({ ticker, newsItems }) => {
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("news-updated", { ticker, newsItems });
+    });
+});
+
 tickerStore.on("update", () => {
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("tickers-updated");
