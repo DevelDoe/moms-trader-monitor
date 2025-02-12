@@ -1,3 +1,4 @@
+const { createTopWindow } = require("../../main/windows/top");
 
 function openTab(evt, tabId) {
     // Hide all tab contents
