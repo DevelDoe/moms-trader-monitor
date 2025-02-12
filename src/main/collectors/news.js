@@ -1,5 +1,14 @@
+// ./src/main/collector/news.js 📡
+////////////////////////////////////////////////////////////////////////////////////
+// INIT
+const createLogger = require("../../hlps/logger");
+const log = createLogger(__filename);
+const isDevelopment = process.env.NODE_ENV === "development";
+const DEBUG = process.env.DEBUG === "true";
+
 const tickerStore = require("../store");
 const dotenv = require("dotenv");
+
 
 const path = require("path");
 
