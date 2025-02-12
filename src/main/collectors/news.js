@@ -5,7 +5,7 @@ const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
 const DEBUG = process.env.DEBUG === "true"; // Enables all debug logs
-const VERBOSE = process.env.VERBOSE === "true"; // Enables frequent logging
+const VERBOSE = "true"; // Enables frequent logging
 
 const tickerStore = require("../store");
 const dotenv = require("dotenv");
