@@ -1,86 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>News Viewer</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                padding: 10px;
-                background-color: #f4f4f4;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                background: white;
-            }
-            th,
-            td {
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: left;
-            }
-            th {
-                background: #333;
-                color: white;
-            }
-            tr:nth-child(even) {
-                background: #f9f9f9;
-            }
-            img {
-                max-width: 50px;
-                height: auto;
-            }
-            h1 {
-                -webkit-app-region: drag;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>News Headlines</h1>
-        <table id="news-table">
-            <thead>
-                <tr>
-                    <th>Ticker</th>
-                    <th>Headline</th>
-                    <th>Source</th>
-                    <th>Time</th>
-                    <th>Image</th>
-                    <th>Link</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="6">Loading news...</td>
-                </tr>
-            </tbody>
-        </table>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>News Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            background-color: #f4f4f4;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #333;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        img {
+            max-width: 50px;
+            height: auto;
+        }
+        h1 {
+            -webkit-app-region: drag;
+        }
+        .filter-container {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>News Headlines</h1>
 
-        <script>
-            async function fetchNews() {
-                try {
-                    const newsData = await window.newsAPI.get(); // Fetch news from Electron API
-                    updateNewsTable(newsData);
-                } catch (error) {
-                    document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
-                }
+    <div class="filter-container">
+        <input type="checkbox" id="filter-checkbox" />
+        <label for="filter-checkbox">Show only tracked tickers</label>
+    </div>
+
+    <table id="news-table">
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Headline</th>
+                <th>Source</th>
+                <th>Time</th>
+                <th>Image</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="6">Loading news...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        let allNews = [];
+        let trackedTickers = new Set();
+
+        async function fetchTrackedTickers() {
+            try {
+                const tickers = await window.topAPI.getTickers("daily");
+                trackedTickers = new Set(tickers.map(t => t.Symbol));
+                console.log("✅ Tracked Tickers:", trackedTickers);
+            } catch (error) {
+                console.error("⚠️ Error fetching tracked tickers:", error);
             }
-        
-            function updateNewsTable(newsData) {
-                const tableBody = document.querySelector("#news-table tbody");
-                tableBody.innerHTML = ""; // Clear previous content
-        
-                if (newsData.length === 0) {
-                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-                    return;
-                }
-        
-                newsData.forEach(({ ticker, news }) => {
-                    news.forEach((article) => {
-                        const row = document.createElement("tr");
-        
-                        row.innerHTML = `
+        }
+
+        async function fetchNews() {
+            try {
+                const newsData = await window.newsAPI.get(); // Fetch news from Electron API
+                allNews = newsData;
+                updateNewsTable();
+            } catch (error) {
+                document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
+            }
+        }
+
+        function updateNewsTable() {
+            const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
+            const tableBody = document.querySelector("#news-table tbody");
+            tableBody.innerHTML = "";
+
+            let filteredNews = allNews;
+            if (showOnlyTracked) {
+                filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
+            }
+
+            if (filteredNews.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+                return;
+            }
+
+            filteredNews.forEach(({ ticker, news }) => {
+                news.forEach((article) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
                         <td>${ticker}</td>
                         <td>${article.headline}</td>
                         <td>${article.source}</td>
@@ -88,21 +115,18 @@
                         <td><img src="${article.images?.[0]?.url || ""}" alt="No image"></td>
                         <td><a href="${article.url}" target="_blank">Read</a></td>
                     `;
-        
-                        tableBody.appendChild(row);
-                    });
+                    tableBody.appendChild(row);
                 });
-            }
-        
-            // Fetch initial news on page load
-            fetchNews();
-        
-            // ✅ Listen for real-time updates
-            window.newsAPI.onNewsUpdated((event, { ticker, newsItems }) => {
-                console.log(`🔔 New news received for ${ticker}:`, newsItems);
-                fetchNews(); // Refresh table on update
             });
-        </script>
-        
-    </body>
+        }
+
+        document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
+
+        fetchTrackedTickers().then(fetchNews);
+
+        window.newsAPI.onUpdate(() => {
+            fetchNews();
+        });
+    </script>
+</body>
 </html>
