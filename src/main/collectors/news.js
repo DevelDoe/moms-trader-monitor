@@ -35,6 +35,8 @@ const connectAlpacaNews = () => {
     alpacaSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
+        log.log("news data:", data)
+
         if (Array.isArray(data) && data.length > 0) {
             // ✅ Ensure we only track news for tickers in our collection
             const trackedTickers = new Set(tickerStore.getAllTickers("daily").map((t) => t.Symbol));
