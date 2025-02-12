@@ -1,93 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>News Viewer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 10px;
-            background-color: #f4f4f4;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background: #333;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background: #f9f9f9;
-        }
-        img {
-            max-width: 50px;
-            height: auto;
-        }
-        h1 {
-    -webkit-app-region: drag;
-}
-    </style>
-</head>
-<body>
-    <h1>News Headlines</h1>
-    <table id="news-table">
-        <thead>
-            <tr>
-                <th>Ticker</th>
-                <th>Headline</th>
-                <th>Source</th>
-                <th>Time</th>
-                <th>Image</th>
-                <th>Link</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td colspan="6">Loading news...</td></tr>
-        </tbody>
-    </table>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>News Viewer</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 10px;
+                background-color: #f4f4f4;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                background: white;
+            }
+            th,
+            td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background: #333;
+                color: white;
+            }
+            tr:nth-child(even) {
+                background: #f9f9f9;
+            }
+            img {
+                max-width: 50px;
+                height: auto;
+            }
+            h1 {
+                -webkit-app-region: drag;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>News Headlines</h1>
+        <table id="news-table">
+            <thead>
+                <tr>
+                    <th>Ticker</th>
+                    <th>Headline</th>
+                    <th>Source</th>
+                    <th>Time</th>
+                    <th>Image</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="6">Loading news...</td>
+                </tr>
+            </tbody>
+        </table>
 
-    <script>
-        async function fetchNews() {
-            try {
-                const newsData = await window.newsAPI.get(); // Fetch news from Electron API
-                const tableBody = document.querySelector("#news-table tbody");
-                tableBody.innerHTML = ""; // Clear previous content
+        <script>
+            async function fetchNews() {
+                try {
+                    const newsData = await window.newsAPI.get(); // Fetch news from Electron API
+                    const tableBody = document.querySelector("#news-table tbody");
+                    tableBody.innerHTML = ""; // Clear previous content
 
-                if (newsData.length === 0) {
-                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-                    return;
-                }
+                    if (newsData.length === 0) {
+                        tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+                        return;
+                    }
 
-                newsData.forEach(({ ticker, news }) => {
-                    news.forEach(article => {
-                        const row = document.createElement("tr");
+                    newsData.forEach(({ ticker, news }) => {
+                        news.forEach((article) => {
+                            const row = document.createElement("tr");
 
-                        row.innerHTML = `
+                            row.innerHTML = `
                             <td>${ticker}</td>
                             <td>${article.headline}</td>
                             <td>${article.source}</td>
                             <td>${new Date(article.created_at).toLocaleString()}</td>
-                            <td><img src="${article.images?.[0]?.url || ''}" alt="No image"></td>
+                            <td><img src="${article.images?.[0]?.url || ""}" alt="No image"></td>
                             <td><a href="${article.url}" target="_blank">Read</a></td>
                         `;
 
-                        tableBody.appendChild(row);
+                            tableBody.appendChild(row);
+                        });
                     });
-                });
-            } catch (error) {
-                document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
+                } catch (error) {
+                    document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
+                }
             }
-        }
 
-        fetchNews();
-    </script>
-</body>
+            fetchNews();
+        </script>
+    </body>
 </html>
