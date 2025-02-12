@@ -37,14 +37,14 @@ const fetchNewsForTickers = async (tickers) => {
         })
             .then((response) => {
                 if (!response.ok) {
-                    console.error(`Failed to fetch news: ${response.status}`);
+                    if(DEBUG) log.error(`Failed to fetch news: ${response.status}`);
                     return [];
                 }
                 return response.json();
             })
             .then((data) => data.news || [])
             .catch((error) => {
-                console.error(`Error fetching news: ${error.message}`);
+                if(DEBUG) log.error(`Error fetching news: ${error.message}`);
                 return [];
             })
     );
@@ -70,7 +70,7 @@ const fetchNews = async () => {
 
 // Function to start news collection
 const collectNews = () => {
-    console.log("✅ News collection started...");
+    if(DEBUG) log.log("✅ News collection started...");
     fetchNews(); // Initial run
     setInterval(fetchNews, 60000); // Repeat every minute
 };
