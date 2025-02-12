@@ -108,6 +108,23 @@ class Store extends EventEmitter {
         log.log("Session data cleared");
         this.emit("sessionCleared");
     }
+
+    cleanupOldNews() {
+        const TWENTY_MINUTES = 20 * 60 * 1000;
+        const now = Date.now();
+
+        this.newsData.forEach((newsArray, ticker) => {
+            const filteredNews = newsArray.filter((news) => now - news.storedAt <= TWENTY_MINUTES);
+
+            if (filteredNews.length > 0) {
+                this.newsData.set(ticker, filteredNews);
+            } else {
+                this.newsData.delete(ticker); // Remove empty tickers
+            }
+        });
+
+        log.log("🧹 Old news cleaned up");
+    }
 }
 
 // Singleton instance
