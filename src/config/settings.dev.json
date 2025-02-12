@@ -18,13 +18,14 @@
       "daily": {
         "length": 4,
         "Price": false,
-        "ChangePercent": true,
+        "ChangePercent": false,
         "FiveM": false,
         "Float": false,
         "Volume": false,
         "SprPercent": false,
         "Time": false,
-        "HighOfDay": true
+        "HighOfDay": false,
+        "news": false
       }
     }
   }
