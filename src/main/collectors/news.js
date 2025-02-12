@@ -25,7 +25,6 @@ const fetchNewsForTickers = async (tickers) => {
 
     if (DEBUG) log.log(`📡 Fetching news for tickers: ${tickers.join(", ")}`);
 
-    // ✅ Dynamically import `node-fetch` instead of using `require`
     return import("node-fetch").then(({ default: fetch }) =>
         fetch(url, {
             method: "GET",
@@ -37,7 +36,7 @@ const fetchNewsForTickers = async (tickers) => {
         })
             .then((response) => {
                 if (!response.ok) {
-                    log.error(`Failed to fetch news (Status: ${response.status})`);
+                    log.error(`❌ Failed to fetch news (Status: ${response.status})`);
                     return [];
                 }
                 return response.json();
@@ -45,46 +44,64 @@ const fetchNewsForTickers = async (tickers) => {
             .then((data) => {
                 if (DEBUG) {
                     if (data.news?.length) {
-                        log.log(`News fetched for ${tickers.length} tickers. Sample:`);
+                        log.log(`✅ News fetched for ${tickers.length} tickers. Sample:`);
                         data.news.slice(0, 3).forEach((n, i) =>
                             log.log(`  ${i + 1}. [${n.symbols.join(", ")}] ${n.headline}`)
                         );
                     } else {
-                        log.warn(`No news found for tickers: ${tickers.join(", ")}`);
+                        log.warn(`⚠️ No news found for tickers: ${tickers.join(", ")}`);
                     }
                 }
                 return data.news || [];
             })
             .catch((error) => {
-                log.error(`Error fetching news: ${error.message}`);
+                log.error(`❌ Error fetching news: ${error.message}`);
                 return [];
             })
     );
+};
+
+// **Optimized function to update news and prevent duplicates**
+const updateNewsInStore = (ticker, newsItems) => {
+    if (!newsItems.length) return;
+
+    // Convert existing news into a Set for O(1) lookup
+    const existingNewsSet = new Set(tickerStore.getNews(ticker).map((n) => n.id));
+
+    // Filter only new news items
+    const uniqueNews = newsItems.filter((newsItem) => !existingNewsSet.has(newsItem.id));
+
+    if (uniqueNews.length) {
+        tickerStore.updateNews(ticker, uniqueNews);
+        if (DEBUG) log.log(`📝 Added ${uniqueNews.length} new articles for ${ticker}.`);
+    } else {
+        if (DEBUG) log.warn(`⚠️ No new unique news for ${ticker}.`);
+    }
 };
 
 // Function to fetch news for all tickers in store
 const fetchNews = async () => {
     const tickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
     if (!tickers.length) {
-        if (DEBUG) log.warn("No tickers found in store. Skipping news fetch.");
+        if (DEBUG) log.warn("⚠️ No tickers found in store. Skipping news fetch.");
         return;
     }
 
     const batchSize = 10;
     for (let i = 0; i < tickers.length; i += batchSize) {
         const batch = tickers.slice(i, i + batchSize);
-        if (DEBUG) log.log(`Processing batch: ${batch.join(", ")}`);
+        if (DEBUG) log.log(`📡 Processing batch: ${batch.join(", ")}`);
 
         const news = await fetchNewsForTickers(batch);
         if (news.length) {
-            batch.forEach((ticker, index) => {
-                tickerStore.updateNews(ticker, [news[index]] || []);
+            batch.forEach((ticker) => {
+                const tickerNews = news.filter((item) => item.symbols.includes(ticker));
+                updateNewsInStore(ticker, tickerNews);
             });
-            if (DEBUG) log.log(`Stored ${news.length} news items in store.`);
         } else {
-            if (DEBUG) log.warn(`No relevant news found for batch.`);
+            if (DEBUG) log.warn(`⚠️ No relevant news found for batch.`);
         }
-        
+
         await new Promise((resolve) => setTimeout(resolve, 500)); // Prevent API spam
     }
 };
@@ -93,7 +110,7 @@ const fetchNews = async () => {
 const collectNews = () => {
     if (DEBUG) log.log("📡 News collection started...");
     fetchNews(); // Initial run
-    setInterval(fetchNews, 200); // Repeat every minute
+    setInterval(fetchNews, 60000); // Repeat every minute
 };
 
 // ✅ Listen for new tickers and fetch news automatically
