@@ -1,7 +1,6 @@
-const tickerStore = require("../store"); // ✅ Works in CommonJS
-const dotenv = require("dotenv");
-const fetch = require("node-fetch");
-
+import tickerStore from "../store"; // ✅ Use ES module import
+import dotenv from "dotenv";
+import fetch from "node-fetch"; // ✅ `import` is required for ES modules
 
 dotenv.config({ path: "../../../config/.env.alpaca" });
 
@@ -47,16 +46,15 @@ const fetchNews = async () => {
     const batchSize = 10;
     for (let i = 0; i < tickers.length; i += batchSize) {
         const batch = tickers.slice(i, i + batchSize);
-        const news = await fetchNewsForTickers(batch); // ✅ Batch fetch
+        const news = await fetchNewsForTickers(batch);
         if (news.length) {
             batch.forEach((ticker, index) => {
-                tickerStore.updateNews(ticker, [news[index]] || []); // ✅ Store news per ticker
+                tickerStore.updateNews(ticker, [news[index]] || []);
             });
         }
-        await new Promise((resolve) => setTimeout(resolve, 500)); // ✅ Prevent API spam
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Prevent API spam
     }
 };
-
 
 // Function to start news collection
 const collectNews = () => {
@@ -68,5 +66,4 @@ const collectNews = () => {
 // ✅ Listen for new tickers and fetch news automatically
 tickerStore.on("update", fetchNews);
 
-module.exports = { collectNews };
-
+export { collectNews }; // ✅ Use ES module export
