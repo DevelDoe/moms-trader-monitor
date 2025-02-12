@@ -304,7 +304,7 @@ ipcMain.on("refresh-top", async () => {
 });
 
 ipcMain.on("apply-filters", (event, updatedSettings) => {
-    log.log("BroadcastingApplying filters");
+    log.log("Broadcasting Applying filters");
 
     // ✅ Notify top window to update with new filters
     BrowserWindow.getAllWindows().forEach((win) => {
