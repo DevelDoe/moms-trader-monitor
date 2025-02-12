@@ -70,17 +70,26 @@ class Store extends EventEmitter {
     }
 
     // ✅ Retrieve news for a specific ticker
-    getNews(ticker) {
+    getTickerNews(ticker) {
         return this.newsData.get(ticker) || [];
     }
 
-    // ✅ Retrieve all tickers along with their news (optional)
+    getAllNews() {
+        return Array.from(this.newsData.entries())
+            .filter(([_, news]) => news.length > 0)
+            .map(([ticker, news]) => ({ ticker, news }));
+    }
+
+    // ✅ Retrieve all tickers and indicate if they have news (but don't include the news itself)
     getAllTickers(listType) {
         return listType === "session"
-            ? Array.from(this.sessionData.values())
+            ? Array.from(this.sessionData.values()).map((ticker) => ({
+                  ...ticker,
+                  hasNews: this.getTickerNews(ticker.Symbol).length > 0, // ✅ Boolean flag instead of actual news
+              }))
             : Array.from(this.dailyData.values()).map((ticker) => ({
                   ...ticker,
-                  news: this.getNews(ticker.Symbol), // Include news
+                  hasNews: this.getTickerNews(ticker.Symbol).length > 0, // ✅ Boolean flag instead of actual news
               }));
     }
 

@@ -17,15 +17,15 @@
       },
       "daily": {
         "length": 4,
-        "Price": false,
-        "ChangePercent": false,
-        "FiveM": false,
-        "Float": false,
-        "Volume": false,
-        "SprPercent": false,
-        "Time": false,
-        "HighOfDay": false,
-        "news": false
+        "Price": true,
+        "ChangePercent": true,
+        "FiveM": true,
+        "Float": true,
+        "Volume": true,
+        "SprPercent": true,
+        "Time": true,
+        "HighOfDay": true,
+        "news": true
       }
     }
   }
