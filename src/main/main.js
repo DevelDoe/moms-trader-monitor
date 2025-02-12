@@ -48,7 +48,7 @@ function createWindow(name, createFn) {
 ////////////////////////////////////////////////////////////////////////////////////
 // COLLECTORS
 const { collectTickers } = require("./collectors/tickers.js");
-const { collectNews } = require("./collectors/news.js"); // ✅ Import news collector
+const { connectAlpacaNews } = require("./collectors/news.js"); // ✅ Import news collector
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
