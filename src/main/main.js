@@ -327,7 +327,7 @@ app.on("ready", () => {
         log.log("Splash screen closed. Loading main app...");
 
         log.log("Starting ticker collection...");
-        // collectTickers(); // ✅ Start ticker collection
+        collectTickers(); // ✅ Start ticker collection
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
