@@ -295,8 +295,11 @@ app.on("ready", () => {
     // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
 
-    log.log("Calling ticker collector");
-    collectTickers(); // ✅ Start scraper here (before splash closes)
+    log.log("Starting ticker collection...");
+    collectTickers(); // ✅ Start ticker collection
+
+    log.log("Starting news collection...");
+    collectNews(); // ✅ Start news collection immediately after tickers
 
     windows.splash.once("closed", () => {
         log.log("Splash screen closed. Loading main app...");
