@@ -10,7 +10,7 @@ class Store extends EventEmitter {
         this.newsData = new Map(); // ✅ New: Stores news per ticker
         setInterval(() => {
             this.cleanupOldNews();
-        }, 10 * 1000); // Runs every 60 seconds
+        }, 60 * 1000); // Runs every 60 seconds
     }
 
     addTickers(tickers) {
@@ -113,7 +113,7 @@ class Store extends EventEmitter {
     }
 
     cleanupOldNews() {
-        const TWENTY_MINUTES = 10 * 1000;
+        const TWENTY_MINUTES = 20 * 60 * 1000;
         const now = Date.now();
 
         this.newsData.forEach((newsArray, ticker) => {
