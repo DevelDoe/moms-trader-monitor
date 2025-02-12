@@ -106,7 +106,7 @@ const fetchNews = async () => {
             });
         }
 
-        if (VERBOSE) log.log(`⏳ Waiting ${throttleDelay}ms before next request...`);
+        if (VERBOSE) log.log(`Waiting ${throttleDelay}ms before next request...`);
         await new Promise((resolve) => setTimeout(resolve, throttleDelay));
     }
 };
