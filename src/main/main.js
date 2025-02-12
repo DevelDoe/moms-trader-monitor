@@ -329,9 +329,6 @@ app.on("ready", () => {
         log.log("Starting ticker collection...");
         // collectTickers(); // ✅ Start ticker collection
 
-        log.log("Starting news collection...");
-        connectAlpacaNews(); // ✅ Start news collection immediately after tickers
-
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
         windows.top = createWindow("top", () => createTopWindow(isDevelopment));
