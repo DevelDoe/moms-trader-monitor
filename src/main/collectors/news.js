@@ -70,7 +70,7 @@ const fetchNews = async () => {
 
 // Function to start news collection
 const collectNews = () => {
-    if(DEBUG) log.log("✅ News collection started...");
+    if(DEBUG) log.log("News collection started...");
     fetchNews(); // Initial run
     setInterval(fetchNews, 60000); // Repeat every minute
 };
