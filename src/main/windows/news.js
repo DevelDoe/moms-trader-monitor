@@ -3,7 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 
-function createTopWindow(isDevelopment) {
+function createNewsWindow(isDevelopment) {
     const window = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -26,4 +26,4 @@ function createTopWindow(isDevelopment) {
     return window; // ✅ Return the window instance
 }
 
-module.exports = { createTopWindow };
+module.exports = { createNewsWindow };
