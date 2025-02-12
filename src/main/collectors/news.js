@@ -110,7 +110,7 @@ const fetchNews = async () => {
 const collectNews = () => {
     if (DEBUG) log.log("📡 News collection started...");
     fetchNews(); // Initial run
-    setInterval(fetchNews, 2000); // Repeat every minute
+    setInterval(fetchNews, 1000); // Repeat every minute
 };
 
 // ✅ Listen for new tickers and fetch news automatically
