@@ -99,7 +99,7 @@ const fetchNews = async () => {
 
                 if (newArticles.length) {
                     tickerStore.updateNews(ticker, newArticles);
-                    if (VERBOSE) log.log(`📊 ${ticker} now has ${tickerStore.getTickerNews(ticker).length} stored news articles.`);
+                    if (VERBOSE) log.log(`${ticker} now has ${tickerStore.getTickerNews(ticker).length} stored news articles.`);
                 } else if (VERBOSE) {
                     log.log(`No new unique news for ${ticker}.`);
                 }
