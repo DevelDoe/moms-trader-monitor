@@ -78,14 +78,15 @@ const connectAlpacaNews = () => {
     };
 };
 
-// TODO: use
 
 // ✅ Process and store relevant news
 const handleNewsData = (newsItem) => {
     if (!newsItem.symbols || newsItem.symbols.length === 0) return;
 
-    tickerStore.updateNews("ALL_NEWS", [newsItem]); // Store all news under a special key
-    log.log(`📰 Storing ALL news: ${newsItem.headline}`);
+    newsItem.symbols.forEach((symbol) => {
+        tickerStore.updateNews(symbol, [newsItem]); // Store under its ticker
+        log.log(`📰 New article for ${symbol}: ${newsItem.headline}`);
+    });
 };
 
 
