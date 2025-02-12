@@ -36,6 +36,7 @@ const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
 const { createTopWindow } = require("./windows/top");
+const { createNewsWindow } = require("./windows/news");
 
 let windows = {};
 
