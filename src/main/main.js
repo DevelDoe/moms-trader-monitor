@@ -241,6 +241,7 @@ ipcMain.handle("get-tickers", (event, listType = "daily") => {
 });
 
 tickerStore.on("newsUpdated", ({ ticker, newsItems }) => {
+    if (!newsItems.length) return; // ✅ Prevent unnecessary events
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("news-updated", { ticker, newsItems });
     });
