@@ -39,19 +39,16 @@ const fetchNewsForTickers = async (tickers) => {
     }
 };
 
-// Fetch news for all tickers from the store
+// Fetch and update store
 const fetchNews = async () => {
     const tickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
     if (!tickers.length) return;
 
-    const batchSize = 10;
-    for (let i = 0; i < tickers.length; i += batchSize) {
-        const batch = tickers.slice(i, i + batchSize);
-        const news = await fetchNewsForTickers(batch);
+    for (let ticker of tickers) {
+        const news = await fetchNewsForTickers([ticker]); // Fetch news for a single ticker
         if (news.length) {
-            console.log(`Fetched ${news.length} news articles.`);
+            tickerStore.updateNews(ticker, news); // ✅ Store news in tickerStore
         }
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Avoid API spam
     }
 };
 
