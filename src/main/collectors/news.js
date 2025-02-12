@@ -62,6 +62,8 @@ const connectAlpacaNews = () => {
     };
 };
 
+// TODO: use hash
+
 // ✅ Process and store relevant news
 // const handleNewsData = (newsItem) => {
 //     if (!newsItem.symbols || newsItem.symbols.length === 0) return;
