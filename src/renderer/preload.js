@@ -28,7 +28,7 @@ contextBridge.exposeInMainWorld("settingsAPI", {
     onUpdate: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
 });
 
-contextBridge.exposeInMainWorld("newAPI", {
+contextBridge.exposeInMainWorld("newsAPI", {
     get: (listType) => ipcRenderer.invoke("get-all-news"),
 });
 
