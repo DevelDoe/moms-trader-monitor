@@ -61,36 +61,48 @@
             async function fetchNews() {
                 try {
                     const newsData = await window.newsAPI.get(); // Fetch news from Electron API
-                    const tableBody = document.querySelector("#news-table tbody");
-                    tableBody.innerHTML = ""; // Clear previous content
-
-                    if (newsData.length === 0) {
-                        tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-                        return;
-                    }
-
-                    newsData.forEach(({ ticker, news }) => {
-                        news.forEach((article) => {
-                            const row = document.createElement("tr");
-
-                            row.innerHTML = `
-                            <td>${ticker}</td>
-                            <td>${article.headline}</td>
-                            <td>${article.source}</td>
-                            <td>${new Date(article.created_at).toLocaleString()}</td>
-                            <td><img src="${article.images?.[0]?.url || ""}" alt="No image"></td>
-                            <td><a href="${article.url}" target="_blank">Read</a></td>
-                        `;
-
-                            tableBody.appendChild(row);
-                        });
-                    });
+                    updateNewsTable(newsData);
                 } catch (error) {
                     document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
                 }
             }
-
+        
+            function updateNewsTable(newsData) {
+                const tableBody = document.querySelector("#news-table tbody");
+                tableBody.innerHTML = ""; // Clear previous content
+        
+                if (newsData.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+                    return;
+                }
+        
+                newsData.forEach(({ ticker, news }) => {
+                    news.forEach((article) => {
+                        const row = document.createElement("tr");
+        
+                        row.innerHTML = `
+                        <td>${ticker}</td>
+                        <td>${article.headline}</td>
+                        <td>${article.source}</td>
+                        <td>${new Date(article.created_at).toLocaleString()}</td>
+                        <td><img src="${article.images?.[0]?.url || ""}" alt="No image"></td>
+                        <td><a href="${article.url}" target="_blank">Read</a></td>
+                    `;
+        
+                        tableBody.appendChild(row);
+                    });
+                });
+            }
+        
+            // Fetch initial news on page load
             fetchNews();
+        
+            // ✅ Listen for real-time updates
+            window.electronAPI.onNewsUpdated((event, { ticker, newsItems }) => {
+                console.log(`🔔 New news received for ${ticker}:`, newsItems);
+                fetchNews(); // Refresh table on update
+            });
         </script>
+        
     </body>
 </html>
