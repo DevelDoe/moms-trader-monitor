@@ -26,7 +26,7 @@ const SUCCESS_THRESHOLD = 5;
 const MIN_DELAY_INCREMENT = 10;
 const MAX_MIN_DELAY = 2000;
 
-let throttleDelay = 100;
+let throttleDelay = 500;
 let consecutiveSuccesses = 0;
 
 // Function to fetch news for a batch of tickers with throttling
