@@ -7,11 +7,6 @@ const path = require("path");
 
 dotenv.config({ path: path.join(__dirname, "../../../config/.env.alpaca") });
 
-const API_KEY = process.env.APCA_API_KEY_ID;
-const API_SECRET = process.env.APCA_API_SECRET_KEY;
-const NEWS_WS_URL = "wss://stream.data.alpaca.markets/v1beta1/news";
-
-let ws; // Store WebSocket instance
 
 let alpacaSocket = null; // Track WebSocket instance
 
