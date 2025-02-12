@@ -7,7 +7,6 @@ const path = require("path");
 
 dotenv.config({ path: path.join(__dirname, "../../../config/.env.alpaca") });
 
-
 let alpacaSocket = null; // Track WebSocket instance
 
 const connectAlpacaNews = () => {
