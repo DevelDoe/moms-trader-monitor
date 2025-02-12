@@ -118,7 +118,6 @@
             <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
             <td>${article.source}</td>
             <td>${new Date(article.created_at).toLocaleString()}</td>
-            <td><img src="${article.images?.[0]?.url || ""}" alt="No image"></td>
         `;
                         tableBody.appendChild(row);
                     });
