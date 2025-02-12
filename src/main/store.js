@@ -113,7 +113,7 @@ class Store extends EventEmitter {
     }
 
     cleanupOldNews() {
-        const TWENTY_MINUTES = 20 * 60 * 1000;
+        const TWENTY_MINUTES = 1 * 60 * 1000;
         const now = Date.now();
 
         this.newsData.forEach((newsArray, ticker) => {
