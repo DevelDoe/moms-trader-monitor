@@ -27,7 +27,7 @@ const connectAlpacaNews = () => {
     });
 
     alpacaSocket.onopen = () => {
-        log.log("✅ Connected to Alpaca News WebSocket.");
+        log.log("Connected to Alpaca News WebSocket.");
         alpacaSocket.send(JSON.stringify({ action: "subscribe", news: ["*"] }));
         log.log("Subscribed to all Alpaca news.");
     };
@@ -36,37 +36,21 @@ const connectAlpacaNews = () => {
         try {
             const data = JSON.parse(event.data);
     
-            log.log("news data:", JSON.stringify(data, null, 2));
-    
-            if (Array.isArray(data) && data.length > 0) {
-                // ✅ Ensure we only track news for tickers in our collection
-                const trackedTickers = new Set(tickerStore.getAllTickers("daily").map((t) => t.Symbol));
-    
-                log.log(`✅ Tracking ${trackedTickers.size} tickers:`, [...trackedTickers]);
-    
-                // const filteredNews = data.filter((news) =>
-                //     news.T === "n" && news.symbols.some((symbol) => trackedTickers.has(symbol))
-                // );
-
-                const filteredNews = data.filter((news) => news.T === "n");
-
-    
-                if (filteredNews.length > 0) {
-                    log.log(`📨 Received ${filteredNews.length} relevant news updates.`);
-                    
-                    // ✅ Ensure processing does not block execution
-                    setImmediate(() => {
-                        filteredNews.forEach(handleNewsData);
-                    });
-                } else {
-                    log.warn("⚠️ No matching news found for tracked tickers.");
-                }
+            if (!Array.isArray(data) || data.length === 0) {
+                log.warn("Received empty or invalid news data.");
+                return;
             }
+    
+            // ✅ Directly process all news items
+            setImmediate(() => {
+                data.forEach(handleNewsData);
+            });
+    
+            log.log(`Processed ${data.length} news updates.`);
         } catch (error) {
-            log.error("🚨 Error processing WebSocket message:", error.message);
+            log.error("Error processing WebSocket message:", error.message);
         }
     };
-    
 
     alpacaSocket.onclose = () => {
         log.warn("WebSocket closed. Reconnecting in 5s...");
