@@ -29,6 +29,6 @@ contextBridge.exposeInMainWorld("settingsAPI", {
 });
 
 contextBridge.exposeInMainWorld("nwsAPI", {
-    get: (listType) => ipcRenderer.invoke("get-all-news", listType),
+    get: (listType) => ipcRenderer.invoke("get-all-news"),
 });
 
