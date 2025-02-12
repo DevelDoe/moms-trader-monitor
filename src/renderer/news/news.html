@@ -8,37 +8,60 @@
             body {
                 font-family: Arial, sans-serif;
                 padding: 10px;
-                background-color: #f4f4f4;
+                background-color: #1c1d23; /* Dark mode background */
+                color: #e0e0e0; /* Light text for contrast */
             }
+            
             table {
                 width: 100%;
                 border-collapse: collapse;
-                background: white;
+                background: #2a2b32; /* Darker background for table */
+                color: #e0e0e0; /* Light text for readability */
             }
-            th,
-            td {
-                border: 1px solid #ddd;
+            
+            th, td {
+                border: 1px solid #3a3b41; /* Subtle border for separation */
                 padding: 8px;
                 text-align: left;
             }
+        
             th {
-                background: #333;
-                color: white;
+                background: #3a3b41; /* Slightly lighter dark header */
+                color: #ffffff; /* White text for contrast */
             }
+        
             tr:nth-child(even) {
-                background: #f9f9f9;
+                background: #24252b; /* Alternating row color */
             }
+        
+            a {
+                color: #66b3ff; /* Soft blue for links */
+                text-decoration: none;
+            }
+        
+            a:hover {
+                text-decoration: underline;
+            }
+        
             img {
                 max-width: 50px;
                 height: auto;
             }
+        
             h1 {
                 -webkit-app-region: drag;
+                color: #ffffff; /* White title */
             }
+        
             .filter-container {
                 margin-bottom: 10px;
             }
+        
+            input[type="checkbox"] {
+                accent-color: #66b3ff; /* Matching checkbox color */
+            }
         </style>
+        
     </head>
     <body>
         <h1>News Headlines</h1>
