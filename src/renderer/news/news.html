@@ -124,11 +124,9 @@
 
         fetchTrackedTickers().then(fetchNews);
 
-        // ✅ Listen for real-time updates
-        window.newsAPI.onNewsUpdated((event, { ticker, newsItems }) => {
-                console.log(`🔔 New news received for ${ticker}:`, newsItems);
-                fetchNews(); // Refresh table on update
-            });
+        window.newsAPI.onUpdate(() => {
+            fetchNews();
+        });
     </script>
 </body>
 </html>
