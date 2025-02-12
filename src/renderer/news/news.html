@@ -112,38 +112,38 @@
             }
 
             function updateNewsTable() {
-                const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
-                const tableBody = document.querySelector("#news-table tbody");
-                tableBody.innerHTML = "";
+    const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
+    const tableBody = document.querySelector("#news-table tbody");
+    tableBody.innerHTML = "";
 
-                let filteredNews = allNews;
-                if (showOnlyTracked) {
-                    filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
-                }
+    let filteredNews = allNews;
+    if (showOnlyTracked) {
+        filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
+    }
 
-                if (filteredNews.length === 0) {
-                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-                    return;
-                }
+    if (filteredNews.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+        return;
+    }
 
-                // ✅ Sort news by created_at in descending order (newest first)
-                filteredNews.forEach((newsItem) => {
-                    newsItem.news.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                });
+    // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
+    let sortedNews = filteredNews
+        .flatMap(({ ticker, news }) => news.map(article => ({ ...article, ticker }))) // Flatten news
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
 
-                filteredNews.forEach(({ ticker, news }) => {
-                    news.forEach((article) => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-            <td>${ticker}</td>
+    // ✅ Append sorted news to the table
+    sortedNews.forEach((article) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${article.ticker}</td>
             <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
             <td>${article.source}</td>
             <td>${new Date(article.created_at).toLocaleString()}</td>
         `;
-                        tableBody.appendChild(row);
-                    });
-                });
-            }
+        tableBody.appendChild(row);
+    });
+}
+
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
