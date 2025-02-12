@@ -11,57 +11,57 @@
                 background-color: #1c1d23; /* Dark mode background */
                 color: #e0e0e0; /* Light text for contrast */
             }
-            
+
             table {
                 width: 100%;
                 border-collapse: collapse;
                 background: #2a2b32; /* Darker background for table */
                 color: #e0e0e0; /* Light text for readability */
             }
-            
-            th, td {
+
+            th,
+            td {
                 border: 1px solid #3a3b41; /* Subtle border for separation */
                 padding: 8px;
                 text-align: left;
             }
-        
+
             th {
                 background: #3a3b41; /* Slightly lighter dark header */
                 color: #ffffff; /* White text for contrast */
             }
-        
+
             tr:nth-child(even) {
                 background: #24252b; /* Alternating row color */
             }
-        
+
             a {
                 color: #66b3ff; /* Soft blue for links */
                 text-decoration: none;
             }
-        
+
             a:hover {
                 text-decoration: underline;
             }
-        
+
             img {
                 max-width: 50px;
                 height: auto;
             }
-        
+
             h1 {
                 -webkit-app-region: drag;
                 color: #ffffff; /* White title */
             }
-        
+
             .filter-container {
                 margin-bottom: 10px;
             }
-        
+
             input[type="checkbox"] {
                 accent-color: #66b3ff; /* Matching checkbox color */
             }
         </style>
-        
     </head>
     <body>
         <h1>News Headlines</h1>
@@ -112,38 +112,37 @@
             }
 
             function updateNewsTable() {
-    const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
-    const tableBody = document.querySelector("#news-table tbody");
-    tableBody.innerHTML = "";
+                const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
+                const tableBody = document.querySelector("#news-table tbody");
+                tableBody.innerHTML = "";
 
-    let filteredNews = allNews;
-    if (showOnlyTracked) {
-        filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
-    }
+                let filteredNews = allNews;
+                if (showOnlyTracked) {
+                    filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
+                }
 
-    if (filteredNews.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-        return;
-    }
+                if (filteredNews.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+                    return;
+                }
 
-    // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
-    let sortedNews = filteredNews
-        .flatMap(({ ticker, news }) => news.map(article => ({ ...article, ticker }))) // Flatten news
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
+                // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
+                let sortedNews = filteredNews
+                    .flatMap(({ ticker, news }) => news.map((article) => ({ ...article, ticker }))) // Flatten news
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
 
-    // ✅ Append sorted news to the table
-    sortedNews.forEach((article) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
+                // ✅ Append sorted news to the table
+                sortedNews.forEach((article) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
             <td>${article.ticker}</td>
             <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
             <td>${article.source}</td>
             <td>${new Date(article.created_at).toLocaleString()}</td>
         `;
-        tableBody.appendChild(row);
-    });
-}
-
+                    tableBody.appendChild(row);
+                });
+            }
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
