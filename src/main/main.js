@@ -321,16 +321,16 @@ app.on("ready", () => {
     // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
 
-    log.log("Starting ticker collection...");
-    collectTickers(); // ✅ Start ticker collection
-
-    
+   
 
     windows.splash.once("closed", () => {
         log.log("Splash screen closed. Loading main app...");
 
+        log.log("Starting ticker collection...");
+        collectTickers(); // ✅ Start ticker collection
+
         log.log("Starting news collection...");
-    connectAlpacaNews(); // ✅ Start news collection immediately after tickers
+        connectAlpacaNews(); // ✅ Start news collection immediately after tickers
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
