@@ -324,7 +324,7 @@ app.on("ready", () => {
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
         windows.top = createWindow("top", () => createTopWindow(isDevelopment));
-        windows.top = createWindow("news", () => createNewsWindow(isDevelopment));
+        windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
 
         Object.values(windows).forEach((window) => window?.hide());
         windows.docker.show();
