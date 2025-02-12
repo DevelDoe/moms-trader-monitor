@@ -6,8 +6,8 @@ class Store extends EventEmitter {
     constructor() {
         super();
         this.sessionData = new Map(); // Resets on clear
-        this.dailyData = new Map();   // Stores all tickers for the full day
-        this.newsData = new Map();    // ✅ New: Stores news per ticker
+        this.dailyData = new Map(); // Stores all tickers for the full day
+        this.newsData = new Map(); // ✅ New: Stores news per ticker
     }
 
     addTickers(tickers) {
@@ -82,6 +82,13 @@ class Store extends EventEmitter {
                   ...ticker,
                   news: this.getNews(ticker.Symbol), // Include news
               }));
+    }
+
+    getAvailableAttributes(listType) {
+        const tickers = this.getAllTickers(listType);
+        if (tickers.length === 0) return [];
+
+        return Object.keys(tickers[0]).filter((attr) => attr !== "Symbol" && attr !== "count");
     }
 
     clearSessionData() {
