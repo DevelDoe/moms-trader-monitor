@@ -37,7 +37,7 @@ const fetchNewsForTickers = async (tickers) => {
         })
             .then((response) => {
                 if (!response.ok) {
-                    log.error(`❌ Failed to fetch news (Status: ${response.status})`);
+                    log.error(`Failed to fetch news (Status: ${response.status})`);
                     return [];
                 }
                 return response.json();
@@ -45,18 +45,18 @@ const fetchNewsForTickers = async (tickers) => {
             .then((data) => {
                 if (DEBUG) {
                     if (data.news?.length) {
-                        log.log(`✅ News fetched for ${tickers.length} tickers. Sample:`);
+                        log.log(`News fetched for ${tickers.length} tickers. Sample:`);
                         data.news.slice(0, 3).forEach((n, i) =>
                             log.log(`  ${i + 1}. [${n.symbols.join(", ")}] ${n.headline}`)
                         );
                     } else {
-                        log.warn(`⚠️ No news found for tickers: ${tickers.join(", ")}`);
+                        log.warn(`No news found for tickers: ${tickers.join(", ")}`);
                     }
                 }
                 return data.news || [];
             })
             .catch((error) => {
-                log.error(`❌ Error fetching news: ${error.message}`);
+                log.error(`Error fetching news: ${error.message}`);
                 return [];
             })
     );
@@ -66,23 +66,23 @@ const fetchNewsForTickers = async (tickers) => {
 const fetchNews = async () => {
     const tickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
     if (!tickers.length) {
-        if (DEBUG) log.warn("⚠️ No tickers found in store. Skipping news fetch.");
+        if (DEBUG) log.warn("No tickers found in store. Skipping news fetch.");
         return;
     }
 
     const batchSize = 10;
     for (let i = 0; i < tickers.length; i += batchSize) {
         const batch = tickers.slice(i, i + batchSize);
-        if (DEBUG) log.log(`📡 Processing batch: ${batch.join(", ")}`);
+        if (DEBUG) log.log(`Processing batch: ${batch.join(", ")}`);
 
         const news = await fetchNewsForTickers(batch);
         if (news.length) {
             batch.forEach((ticker, index) => {
                 tickerStore.updateNews(ticker, [news[index]] || []);
             });
-            if (DEBUG) log.log(`📝 Stored ${news.length} news items in store.`);
+            if (DEBUG) log.log(`Stored ${news.length} news items in store.`);
         } else {
-            if (DEBUG) log.warn(`⚠️ No relevant news found for batch.`);
+            if (DEBUG) log.warn(`No relevant news found for batch.`);
         }
         
         await new Promise((resolve) => setTimeout(resolve, 500)); // Prevent API spam
