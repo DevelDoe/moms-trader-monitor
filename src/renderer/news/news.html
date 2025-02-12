@@ -10,27 +10,77 @@
             padding: 10px;
             background-color: #f4f4f4;
         }
-        pre {
-            background: #fff;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #333;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        img {
+            max-width: 50px;
+            height: auto;
         }
     </style>
 </head>
 <body>
-    <h1>Raw News Data</h1>
-    <pre id="news-container">Loading...</pre>
+    <h1>News Headlines</h1>
+    <table id="news-table">
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Headline</th>
+                <th>Source</th>
+                <th>Time</th>
+                <th>Image</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="6">Loading news...</td></tr>
+        </tbody>
+    </table>
 
     <script>
         async function fetchNews() {
             try {
-                const response = await window.newsAPI.get(); 
-                document.getElementById("news-container").textContent = JSON.stringify(response, null, 2);
+                const newsData = await window.newsAPI.get(); // Fetch news from Electron API
+                const tableBody = document.querySelector("#news-table tbody");
+                tableBody.innerHTML = ""; // Clear previous content
+
+                if (newsData.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+                    return;
+                }
+
+                newsData.forEach(({ ticker, news }) => {
+                    news.forEach(article => {
+                        const row = document.createElement("tr");
+
+                        row.innerHTML = `
+                            <td>${ticker}</td>
+                            <td>${article.headline}</td>
+                            <td>${article.source}</td>
+                            <td>${new Date(article.created_at).toLocaleString()}</td>
+                            <td><img src="${article.images?.[0]?.url || ''}" alt="No image"></td>
+                            <td><a href="${article.url}" target="_blank">Read</a></td>
+                        `;
+
+                        tableBody.appendChild(row);
+                    });
+                });
             } catch (error) {
-                document.getElementById("news-container").textContent = "Error fetching news: " + error.message;
+                document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
             }
         }
 
