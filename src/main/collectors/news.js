@@ -36,7 +36,7 @@ const fetchNewsForTickers = async (tickers) => {
         })
             .then((response) => {
                 if (!response.ok) {
-                    log.error(`❌ Failed to fetch news (Status: ${response.status})`);
+                    log.error(`Failed to fetch news (Status: ${response.status})`);
                     return [];
                 }
                 return response.json();
@@ -44,18 +44,18 @@ const fetchNewsForTickers = async (tickers) => {
             .then((data) => {
                 if (DEBUG) {
                     if (data.news?.length) {
-                        log.log(`✅ News fetched for ${tickers.length} tickers. Sample:`);
+                        log.log(`News fetched for ${tickers.length} tickers. Sample:`);
                         data.news.slice(0, 3).forEach((n, i) =>
                             log.log(`  ${i + 1}. [${n.symbols.join(", ")}] ${n.headline}`)
                         );
                     } else {
-                        log.warn(`⚠️ No news found for tickers: ${tickers.join(", ")}`);
+                        log.warn(`No news found for tickers: ${tickers.join(", ")}`);
                     }
                 }
                 return data.news || [];
             })
             .catch((error) => {
-                log.error(`❌ Error fetching news: ${error.message}`);
+                log.error(`Error fetching news: ${error.message}`);
                 return [];
             })
     );
@@ -73,9 +73,9 @@ const updateNewsInStore = (ticker, newsItems) => {
 
     if (uniqueNews.length) {
         tickerStore.updateNews(ticker, uniqueNews);
-        if (DEBUG) log.log(`📝 Added ${uniqueNews.length} new articles for ${ticker}.`);
+        if (DEBUG) log.log(`Added ${uniqueNews.length} new articles for ${ticker}.`);
     } else {
-        if (DEBUG) log.warn(`⚠️ No new unique news for ${ticker}.`);
+        if (DEBUG) log.warn(`No new unique news for ${ticker}.`);
     }
 };
 
@@ -100,9 +100,9 @@ const fetchNews = async () => {
 
                 if (newArticles.length) {
                     tickerStore.updateNews(ticker, newArticles);
-                    log.log(`📊 ${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
+                    log.log(`${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
                 } else {
-                    log.log(`🟡 No new unique news for ${ticker}.`);
+                    log.log(`No new unique news for ${ticker}.`);
                 }
             });
         }
