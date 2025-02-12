@@ -39,7 +39,7 @@ const connectAlpacaNews = () => {
 
     alpacaSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        log.log("Received news update:", data);
+        log.log(`Received ${data.length} news updates.`);
         // Process news data here
     };
 
