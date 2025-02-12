@@ -1,4 +1,4 @@
-import tickerStore from "../../store"; // ✅ Import store
+import tickerStore from "../store"; // ✅ Import store
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
