@@ -306,9 +306,9 @@ ipcMain.on("apply-filters", (event, updatedSettings) => {
 
 // news
 ipcMain.on("toggle-news", () => {
-    if (windows.top) {
-        log.log("Toggle Top Window");
-        windows.top.isVisible() ? windows.top.hide() : windows.top.show();
+    if (windows.news) {
+        log.log("Toggle News Window");
+        windows.news.isVisible() ? windows.news.hide() : windows.news.show();
     }
 });
 
