@@ -48,7 +48,7 @@ const fetchNewsForTickers = async (tickers) => {
                 const responseStatus = response.status;
 
                 if (!response.ok) {
-                    log.error(`❌ API request failed: ${responseStatus} - ${await response.text()}`);
+                    log.error(`API request failed: ${responseStatus} - ${await response.text()}`);
 
                     if (responseStatus === 429) {
                         throttleDelay = Math.min(throttleDelay * BACKOFF_MULTIPLIER, MAX_DELAY);
@@ -72,7 +72,7 @@ const fetchNewsForTickers = async (tickers) => {
                 return data.news || [];
             })
             .catch((error) => {
-                log.error(`❌ Error fetching news: ${error.message}`);
+                log.error(`Error fetching news: ${error.message}`);
                 return [];
             })
     );
@@ -86,7 +86,7 @@ const fetchNews = async () => {
     const batchSize = 10;
     for (let i = 0; i < tickers.length; i += batchSize) {
         const batch = tickers.slice(i, i + batchSize);
-        if (VERBOSE) log.log(`📡 Fetching news for batch: ${batch.join(", ")}`);
+        if (VERBOSE) log.log(`Fetching news for batch: ${batch.join(", ")}`);
 
         const news = await fetchNewsForTickers(batch);
 
@@ -101,7 +101,7 @@ const fetchNews = async () => {
                     tickerStore.updateNews(ticker, newArticles);
                     if (VERBOSE) log.log(`📊 ${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
                 } else if (VERBOSE) {
-                    log.log(`🟡 No new unique news for ${ticker}.`);
+                    log.log(`No new unique news for ${ticker}.`);
                 }
             });
         }
@@ -113,12 +113,12 @@ const fetchNews = async () => {
 
 // Function to start news collection with dynamic throttling
 const collectNews = async () => {
-    log.log("🚀 News collection started...");
+    log.log("News collection started...");
     
     while (true) {
         await fetchNews(); // Fetch news once
 
-        if (VERBOSE) log.log(`⏳ Next news collection in ${throttleDelay}ms...`);
+        if (VERBOSE) log.log(`Next news collection in ${throttleDelay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, throttleDelay)); // Respect throttle
     }
 };
