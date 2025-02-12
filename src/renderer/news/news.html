@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            background-color: #f4f4f4;
+        }
+        pre {
+            background: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h1>Raw News Data</h1>
+    <pre id="news-container">Loading...</pre>
+
+    <script>
+        async function fetchNews() {
+            try {
+                const response = await window.electron.invoke("get-all-news"); // Call the Electron backend
+                document.getElementById("news-container").textContent = JSON.stringify(response, null, 2);
+            } catch (error) {
+                document.getElementById("news-container").textContent = "Error fetching news: " + error.message;
+            }
+        }
+
+        fetchNews();
+    </script>
+</body>
+</html>
