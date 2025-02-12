@@ -325,7 +325,7 @@ app.on("ready", () => {
     collectTickers(); // ✅ Start ticker collection
 
     log.log("Starting news collection...");
-    collectNews(); // ✅ Start news collection immediately after tickers
+    connectAlpacaNews(); // ✅ Start news collection immediately after tickers
 
     windows.splash.once("closed", () => {
         log.log("Splash screen closed. Loading main app...");
