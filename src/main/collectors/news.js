@@ -29,7 +29,7 @@ const connectAlpacaNews = () => {
     alpacaSocket.onopen = () => {
         log.log("✅ Connected to Alpaca News WebSocket.");
         alpacaSocket.send(JSON.stringify({ action: "subscribe", news: ["*"] }));
-        log.log("📡 Subscribed to all Alpaca news.");
+        log.log("Subscribed to all Alpaca news.");
     };
 
     alpacaSocket.onmessage = (event) => {
