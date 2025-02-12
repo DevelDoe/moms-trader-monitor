@@ -84,10 +84,13 @@ const connectAlpacaNews = () => {
 const handleNewsData = (newsItem) => {
     if (!newsItem.symbols || newsItem.symbols.length === 0) return;
 
-    const trackedTickers = new Set(tickerStore.getAllTickers("daily").map((t) => t.Symbol));
+    const trackedTickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
+    const hasTrackedTickers = trackedTickers.length > 0;
+    const trackedTickersSet = new Set(trackedTickers);
 
     newsItem.symbols.forEach((symbol) => {
-        if (!trackedTickers.has(symbol)) return; // Ignore if not in our collection
+        // ✅ Store all news if no tracked tickers exist, otherwise filter
+        if (hasTrackedTickers && !trackedTickersSet.has(symbol)) return;
 
         const existingNews = tickerStore.getTickerNews(symbol);
         if (existingNews.some((article) => article.id === newsItem.id)) return; // Prevent duplicate storage
@@ -96,6 +99,7 @@ const handleNewsData = (newsItem) => {
         log.log(`📰 New article for ${symbol}: ${newsItem.headline}`);
     });
 };
+
 
 
 // ✅ Start WebSocket connection
