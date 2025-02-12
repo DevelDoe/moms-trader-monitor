@@ -1,11 +1,10 @@
 const tickerStore = require("../store");
 const dotenv = require("dotenv");
 
-const path = require("path"); // ✅ Import path module
 const dotenv = require("dotenv");
+const path = require("path");
 
 dotenv.config({ path: path.join(__dirname, "../../../config/.env.alpaca") });
-
 
 const API_KEY = process.env.APCA_API_KEY_ID;
 const API_SECRET = process.env.APCA_API_SECRET_KEY;
