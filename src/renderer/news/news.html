@@ -27,7 +27,7 @@
     <script>
         async function fetchNews() {
             try {
-                const response = await window.newsAPI.get(); // Call the Electron backend
+                const response = await window.newsAPI.get(); 
                 document.getElementById("news-container").textContent = JSON.stringify(response, null, 2);
             } catch (error) {
                 document.getElementById("news-container").textContent = "Error fetching news: " + error.message;
