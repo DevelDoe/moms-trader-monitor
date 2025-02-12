@@ -4,6 +4,7 @@
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
+const DEBUG = process.env.DEBUG === "true";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // PACKAGES
