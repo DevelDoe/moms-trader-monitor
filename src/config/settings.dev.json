@@ -16,7 +16,7 @@
         "HighOfDay": true
       },
       "daily": {
-        "length": 9,
+        "length": 8,
         "Price": false,
         "ChangePercent": true,
         "FiveM": false,
