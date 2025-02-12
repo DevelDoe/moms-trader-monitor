@@ -35,6 +35,8 @@ const connectAlpacaNews = () => {
     alpacaSocket.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
+
+            log.log(`Recieved ${data.length} new news entires.`);
     
             if (!Array.isArray(data) || data.length === 0) {
                 log.warn("Received empty or invalid news data.");
@@ -46,7 +48,7 @@ const connectAlpacaNews = () => {
                 data.forEach(handleNewsData);
             });
     
-            log.log(`Processed ${data.length} news entires.`);
+            
         } catch (error) {
             log.error("Error processing WebSocket message:", error.message);
         }
