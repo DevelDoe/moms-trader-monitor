@@ -17,7 +17,7 @@ let alpacaSocket = null; // Track WebSocket instance
 
 const connectAlpacaNews = () => {
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
-        log.log("🟡 WebSocket already connected, skipping duplicate connection.");
+        log.log("WebSocket already connected, skipping duplicate connection.");
         return;
     }
 
@@ -34,22 +34,22 @@ const connectAlpacaNews = () => {
     alpacaSocket.onopen = () => {
         log.log("✅ Connected to Alpaca News WebSocket.");
         alpacaSocket.send(JSON.stringify({ action: "subscribe", news: ["*"] }));
-        log.log("📡 Subscribed to Alpaca news stream.");
+        log.log("Subscribed to Alpaca news stream.");
     };
 
     alpacaSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        log.log("📰 Received news update:", data);
+        log.log("Received news update:", data);
         // Process news data here
     };
 
     alpacaSocket.onclose = (event) => {
-        log.warn("⚠️ WebSocket closed. Reconnecting in 5s...");
+        log.warn("WebSocket closed. Reconnecting in 5s...");
         setTimeout(connectAlpacaNews, 5000); // Attempt reconnect
     };
 
     alpacaSocket.onerror = (error) => {
-        log.error("❌ WebSocket error:", error.message);
+        log.error("WebSocket error:", error.message);
     };
 };
 
@@ -66,7 +66,7 @@ const handleNewsData = (newsItem) => {
 
         // Store new article
         tickerStore.updateNews(symbol, [newsItem]);
-        log.log(`📰 New article for ${symbol}: ${newsItem.headline}`);
+        log.log(`New article for ${symbol}: ${newsItem.headline}`);
     });
 };
 
