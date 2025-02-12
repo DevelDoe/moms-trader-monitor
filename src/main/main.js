@@ -265,7 +265,7 @@ tickerStore.on("newsUpdated", ({ ticker, newsItems }) => {
 });
 
 tickerStore.on("update", () => {
-    log.log("Broadcasting ticker update");
+    log.log("Broadcasting update");
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("tickers-updated");
     });
