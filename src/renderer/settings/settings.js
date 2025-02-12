@@ -134,28 +134,38 @@ function initializeTopSection(settings) {
         window.topAPI.refresh(); // ✅ Refresh top window UI
     }
 
-    function updateListLength(type, input) {
+    async function updateListLength(type, input) {
         const newLength = parseInt(input.value, 10) || 10;
 
-        // Ensure the lists object exists
-        if (!settings.top.lists) settings.top.lists = {};
-        if (!settings.top.lists[type]) settings.top.lists[type] = {};
+        try {
+            // 🔄 Get latest settings before making changes
+            const latestSettings = await window.settingsAPI.get();
 
-        // ✅ Create an updated settings object preserving other settings
-        const updatedSettings = {
-            ...settings.top,
-            lists: {
-                ...settings.top.lists,
-                [type]: {
-                    ...settings.top.lists[type],
-                    length: newLength,
+            if (!latestSettings || !latestSettings.top) {
+                console.error("❌ Latest settings not found! Skipping update.");
+                return;
+            }
+
+            // ✅ Preserve all previous attributes while updating length
+            const updatedSettings = {
+                ...latestSettings.top,
+                lists: {
+                    ...latestSettings.top.lists,
+                    [type]: {
+                        ...latestSettings.top.lists?.[type], // Preserve existing checkboxes
+                        length: newLength, // Only update length
+                    },
                 },
-            },
-        };
+            };
 
-        console.log(`✅ Updated ${type} list length:`, newLength);
+            console.log(`✅ Updated ${type} list length:`, newLength);
 
-        applyAllFilters(updatedSettings); // ✅ Apply filters (and let it handle saving)
+            // ✅ Save updated settings & apply filters
+            await window.settingsAPI.update({ top: updatedSettings });
+            applyAllFilters(updatedSettings);
+        } catch (error) {
+            console.error("❌ Error updating list length:", error);
+        }
     }
 
     minPriceInput.addEventListener("input", updatePriceFilter);
@@ -215,47 +225,61 @@ async function loadAttributeFilters(listType, containerId, settings) {
     }
 }
 
-function updateFilters(settings) {
+async function updateFilters(settings) {
     if (!settings || !settings.top) {
         console.error("❌ `settings.top` is missing! Skipping update.");
         return;
     }
 
-    const updatedSettings = {
-        ...settings, // ✅ Preserve everything else
-        top: {
-            ...settings.top, // ✅ Preserve other top settings
+    try {
+        // 🔄 Fetch latest settings to ensure we don’t overwrite anything
+        const latestSettings = await window.settingsAPI.get();
+        if (!latestSettings || !latestSettings.top) {
+            console.error("❌ Latest settings not found! Skipping update.");
+            return;
+        }
+
+        // ✅ Preserve the latest session & daily lengths
+        const sessionLength = latestSettings.top.lists?.session?.length ?? 10;
+        const dailyLength = latestSettings.top.lists?.daily?.length ?? 10;
+
+        // ✅ Preserve all filters + length
+        const updatedSettings = {
+            ...latestSettings.top, // Keep all settings
             lists: {
-                session: {},
-                daily: {},
+                session: { ...latestSettings.top.lists?.session, length: sessionLength },
+                daily: { ...latestSettings.top.lists?.daily, length: dailyLength },
             },
-        },
-    };
+        };
 
-    document.querySelectorAll("input[name='session']").forEach((checkbox) => {
-        updatedSettings.top.lists.session[checkbox.value] = checkbox.checked;
-    });
+        // ✅ Capture new attribute selections without wiping lengths
+        document.querySelectorAll("input[name='session']").forEach((checkbox) => {
+            updatedSettings.lists.session[checkbox.value] = checkbox.checked;
+        });
 
-    document.querySelectorAll("input[name='daily']").forEach((checkbox) => {
-        updatedSettings.top.lists.daily[checkbox.value] = checkbox.checked;
-    });
+        document.querySelectorAll("input[name='daily']").forEach((checkbox) => {
+            updatedSettings.lists.daily[checkbox.value] = checkbox.checked;
+        });
 
-    console.log("💾 Saving updated filters:", updatedSettings);
+        console.log("💾 Saving updated filters (attributes + length preserved):", updatedSettings);
 
-    // ✅ Ensure settings file gets updated
-    window.settingsAPI.update(updatedSettings);
-
-    applyAllFilters(updatedSettings.top);
+        // ✅ Save settings and apply changes
+        await window.settingsAPI.update({ top: updatedSettings });
+        applyAllFilters(updatedSettings.top);
+    } catch (error) {
+        console.error("Error updating filters:", error);
+    }
 }
 
+
 function applyAllFilters(updatedTopSettings) {
-    console.log("Applying filters:", updatedTopSettings);
+    console.log("Applying filters");
     window.settingsAPI.update({ top: updatedTopSettings });
 
     if (window.topAPI.applyFilters) {
         window.topAPI.applyFilters(updatedTopSettings); // ✅ Send everything
     } else {
-        console.warn("⚠️ window.topAPI.applyFilters is not defined!");
+        console.warn("window.topAPI.applyFilters is not defined!");
     }
 }
 

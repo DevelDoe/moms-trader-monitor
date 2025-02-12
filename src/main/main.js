@@ -154,7 +154,7 @@ let appSettings = loadSettings(); // Load app settings from file
 function saveSettings() {
     if (!appSettings) appSettings = { ...DEFAULT_SETTINGS };
 
-    log.log("💾 Saving settings file...", appSettings);
+    log.log("Saving settings file...");
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(appSettings, null, 2));
 }
 
