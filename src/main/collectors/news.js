@@ -112,14 +112,20 @@ const fetchNews = async () => {
     }
 };
 
-// Function to start news collection
-const collectNews = () => {
+// Function to start news collection with dynamic throttling
+const collectNews = async () => {
     if (DEBUG) log.log("🚀 News collection started...");
-    fetchNews(); // Initial run
-    setInterval(fetchNews, 100); // Repeat every minute
+    
+    while (true) { // Infinite loop for continuous processing
+        await fetchNews(); // Fetch news once
+        
+        log.log(`⏳ Next news collection in ${throttleDelay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, throttleDelay)); // Respect throttle
+    }
 };
 
 // ✅ Listen for new tickers and fetch news automatically
 tickerStore.on("update", fetchNews);
 
 module.exports = { collectNews };
+
