@@ -80,18 +80,15 @@ class Store extends EventEmitter {
             .map(([ticker, news]) => ({ ticker, news }));
     }
 
-    // ✅ Retrieve all tickers and indicate if they have news (but don't include the news itself)
     getAllTickers(listType) {
-        return listType === "session"
-            ? Array.from(this.sessionData.values()).map((ticker) => ({
-                  ...ticker,
-                  hasNews: this.getTickerNews(ticker.Symbol).length > 0, // ✅ Boolean flag instead of actual news
-              }))
-            : Array.from(this.dailyData.values()).map((ticker) => ({
-                  ...ticker,
-                  hasNews: this.getTickerNews(ticker.Symbol).length > 0, // ✅ Boolean flag instead of actual news
-              }));
+        const data = listType === "session" ? this.sessionData : this.dailyData;
+    
+        return Array.from(data.values()).map((ticker) => {
+            ticker.hasNews = this.getTickerNews(ticker.Symbol).length > 0; // ✅ Boolean flag added to ticker object
+            return ticker;
+        });
     }
+    
 
     getAvailableAttributes(listType) {
         const tickers = this.getAllTickers(listType);
