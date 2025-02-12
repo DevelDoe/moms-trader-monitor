@@ -241,6 +241,14 @@ ipcMain.handle("get-tickers", (event, listType = "daily") => {
     return tickerStore.getAllTickers(listType); // Fetch based on the requested type
 });
 
+ipcMain.handle("get-news", (event, ticker) => {
+    return tickerStore.getTickerNews(ticker); // Fetch news for a specific ticker
+});
+
+ipcMain.handle("get-all-news", () => {
+    return tickerStore.getAllNews(); // Fetch all news for tickers that have news
+});
+
 tickerStore.on("newsUpdated", ({ ticker, newsItems }) => {
     if (!newsItems.length) return; // ✅ Prevent unnecessary events
     BrowserWindow.getAllWindows().forEach((win) => {
