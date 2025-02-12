@@ -36,7 +36,7 @@ const connectAlpacaNews = () => {
         try {
             const data = JSON.parse(event.data);
 
-            log.log(`Recieved ${data.length} new news entires.`);
+            log.log(`Received ${data.length} new news entires.`);
     
             if (!Array.isArray(data) || data.length === 0) {
                 log.warn("Received empty or invalid news data.");
