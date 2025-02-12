@@ -303,6 +303,15 @@ ipcMain.on("apply-filters", (event, updatedSettings) => {
         win.webContents.send("filter-updated", updatedSettings);
     });
 });
+
+// news
+ipcMain.on("toggle-news", () => {
+    if (windows.top) {
+        log.log("Toggle Top Window");
+        windows.top.isVisible() ? windows.top.hide() : windows.top.show();
+    }
+});
+
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
 
