@@ -13,7 +13,8 @@
         "Volume": true,
         "SprPercent": true,
         "Time": true,
-        "HighOfDay": true
+        "HighOfDay": true,
+        "hasNews": false
       },
       "daily": {
         "length": 4,
@@ -25,7 +26,8 @@
         "SprPercent": true,
         "Time": true,
         "HighOfDay": true,
-        "news": true
+        "news": true,
+        "hasNews": true
       }
     }
   }
