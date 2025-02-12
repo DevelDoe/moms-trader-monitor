@@ -64,9 +64,16 @@ class Store extends EventEmitter {
         }
 
         const existingNews = this.newsData.get(ticker);
-        this.newsData.set(ticker, [...existingNews, ...newsItems]);
 
-        this.emit("newsUpdated", { ticker, newsItems });
+        // ✅ Add timestamp to each news item
+        const timestampedNews = newsItems.map((news) => ({
+            ...news,
+            storedAt: Date.now(), // ✅ Store the time the news was added
+        }));
+
+        this.newsData.set(ticker, [...existingNews, ...timestampedNews]);
+
+        this.emit("newsUpdated", { ticker, newsItems: timestampedNews });
     }
 
     // ✅ Retrieve news for a specific ticker
@@ -82,13 +89,12 @@ class Store extends EventEmitter {
 
     getAllTickers(listType) {
         const data = listType === "session" ? this.sessionData : this.dailyData;
-    
+
         return Array.from(data.values()).map((ticker) => {
             ticker.hasNews = this.getTickerNews(ticker.Symbol).length > 0; // ✅ Boolean flag added to ticker object
             return ticker;
         });
     }
-    
 
     getAvailableAttributes(listType) {
         const tickers = this.getAllTickers(listType);
