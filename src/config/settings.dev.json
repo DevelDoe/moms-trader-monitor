@@ -2,7 +2,7 @@
   "top": {
     "transparent": false,
     "minPrice": 0,
-    "maxPrice": 100,
+    "maxPrice": 10,
     "lists": {
       "session": {
         "length": 19,
