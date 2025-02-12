@@ -46,7 +46,7 @@ const connectAlpacaNews = () => {
                 data.forEach(handleNewsData);
             });
     
-            log.log(`Processed ${data.length} news updates.`);
+            log.log(`Processed ${data.length} news entires.`);
         } catch (error) {
             log.error("Error processing WebSocket message:", error.message);
         }
