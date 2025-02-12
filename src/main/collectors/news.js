@@ -92,14 +92,14 @@ const fetchNews = async () => {
 
         if (news.length) {
             batch.forEach((ticker) => {
-                const existingNews = tickerStore.getNews(ticker);
+                const existingNews = tickerStore.getTickerNews(ticker);
                 const newArticles = news.filter(
                     (article) => !existingNews.some((stored) => stored.id === article.id)
                 );
 
                 if (newArticles.length) {
                     tickerStore.updateNews(ticker, newArticles);
-                    if (VERBOSE) log.log(`📊 ${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
+                    if (VERBOSE) log.log(`📊 ${ticker} now has ${tickerStore.getTickerNews(ticker).length} stored news articles.`);
                 } else if (VERBOSE) {
                     log.log(`No new unique news for ${ticker}.`);
                 }
