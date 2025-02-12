@@ -126,7 +126,7 @@ class Store extends EventEmitter {
             }
         });
 
-        log.log("🧹 Old news cleaned up");
+        log.log("Old news cleaned up");
     }
 }
 
