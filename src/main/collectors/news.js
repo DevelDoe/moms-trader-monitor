@@ -71,7 +71,7 @@ const handleNewsData = (newsItem) => {
 
     newsItem.symbols.forEach((symbol) => {
         tickerStore.updateNews(symbol, [newsItem]); // Store under its ticker
-        log.log(`📰 New article for ${symbol}: ${newsItem.headline}`);
+        log.log(`Processing new article for ${symbol}: ${newsItem.headline}`);
     });
 };
 
