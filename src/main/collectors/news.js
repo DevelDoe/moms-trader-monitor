@@ -4,7 +4,7 @@
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
-const DEBUG = process.env.DEBUG === "true";
+const DEBUG = "false";
 
 const tickerStore = require("../store");
 const dotenv = require("dotenv");
