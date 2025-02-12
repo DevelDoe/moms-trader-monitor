@@ -273,6 +273,7 @@ tickerStore.on("update", () => {
 
 ipcMain.on("clear-session", () => {
     tickerStore.clearSessionData(); // ✅ Clears session data in the store
+    log.log("Broadcasting clear session");
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("session-cleared"); // ✅ Notify renderer
     });
