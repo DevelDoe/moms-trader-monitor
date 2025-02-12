@@ -9,58 +9,38 @@ dotenv.config({ path: path.join(__dirname, "../../../config/.env.alpaca") });
 
 let alpacaSocket = null; // WebSocket instance
 
-const connectAlpacaNews = () => {
-    if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
-        log.log("WebSocket already connected, skipping duplicate connection.");
-        return;
-    }
-
-    const ALPACA_NEWS_URL = `${process.env.APCA_API_STREAM_URL}/v1beta1/news`;
-
-    log.log("Connecting to Alpaca News WebSocket...");
-
-    alpacaSocket = new WebSocket(ALPACA_NEWS_URL, {
-        headers: {
-            "APCA-API-KEY-ID": process.env.APCA_API_KEY_ID,
-            "APCA-API-SECRET-KEY": process.env.APCA_API_SECRET_KEY,
-        },
-    });
-
-    alpacaSocket.onopen = () => {
-        log.log("✅ Connected to Alpaca News WebSocket.");
-        alpacaSocket.send(JSON.stringify({ action: "subscribe", news: ["*"] }));
-        log.log("Subscribed to all Alpaca news.");
-    };
-
-    alpacaSocket.onmessage = (event) => {
+alpacaSocket.onmessage = (event) => {
+    try {
         const data = JSON.parse(event.data);
 
-        log.log("news data:", data)
+        log.log("news data:", JSON.stringify(data, null, 2));
 
         if (Array.isArray(data) && data.length > 0) {
             // ✅ Ensure we only track news for tickers in our collection
             const trackedTickers = new Set(tickerStore.getAllTickers("daily").map((t) => t.Symbol));
 
-            const filteredNews = data.filter((news) => news.T === "n" && news.symbols.some((symbol) => trackedTickers.has(symbol)));
+            log.log(`✅ Tracking ${trackedTickers.size} tickers:`, [...trackedTickers]);
 
-            trackedTickers.forEach(handleNewsData);
+            const filteredNews = data.filter((news) =>
+                news.T === "n" && news.symbols.some((symbol) => trackedTickers.has(symbol))
+            );
 
-            // if (filteredNews.length > 0) {
-            //     log.log(`Received ${filteredNews.length} relevant news updates`);
-            //     filteredNews.forEach(handleNewsData);
-            // }
+            if (filteredNews.length > 0) {
+                log.log(`📨 Received ${filteredNews.length} relevant news updates.`);
+                
+                // ✅ Ensure processing does not block execution
+                setImmediate(() => {
+                    filteredNews.forEach(handleNewsData);
+                });
+            } else {
+                log.warn("⚠️ No matching news found for tracked tickers.");
+            }
         }
-    };
-
-    alpacaSocket.onclose = () => {
-        log.warn("WebSocket closed. Reconnecting in 5s...");
-        setTimeout(connectAlpacaNews, 5000);
-    };
-
-    alpacaSocket.onerror = (error) => {
-        log.error("WebSocket error:", error.message);
-    };
+    } catch (error) {
+        log.error("🚨 Error processing WebSocket message:", error.message);
+    }
 };
+
 
 // TODO: use
 
