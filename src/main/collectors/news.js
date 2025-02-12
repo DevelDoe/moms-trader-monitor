@@ -36,9 +36,10 @@ const connectAlpacaNews = () => {
         const data = JSON.parse(event.data);
 
         if (Array.isArray(data) && data.length > 0) {
-            const filteredNews = data.filter(news =>
-                news.T === "n" && news.symbols.some(symbol => tickerStore.getTickerNews(symbol))
-            );
+            // ✅ Ensure we only track news for tickers in our collection
+            const trackedTickers = new Set(tickerStore.getAllTickers("daily").map((t) => t.Symbol));
+
+            const filteredNews = data.filter((news) => news.T === "n" && news.symbols.some((symbol) => trackedTickers.has(symbol)));
 
             if (filteredNews.length > 0) {
                 log.log(`📨 Received ${filteredNews.length} relevant news updates.`);
@@ -61,7 +62,7 @@ const connectAlpacaNews = () => {
 const handleNewsData = (newsItem) => {
     if (!newsItem.symbols || newsItem.symbols.length === 0) return;
 
-    const trackedTickers = new Set(tickerStore.getAllTickers("daily").map(t => t.Symbol));
+    const trackedTickers = new Set(tickerStore.getAllTickers("daily").map((t) => t.Symbol));
 
     newsItem.symbols.forEach((symbol) => {
         if (!trackedTickers.has(symbol)) return; // Ignore if not in our collection
