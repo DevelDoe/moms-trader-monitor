@@ -43,10 +43,12 @@ const connectAlpacaNews = () => {
 
             const filteredNews = data.filter((news) => news.T === "n" && news.symbols.some((symbol) => trackedTickers.has(symbol)));
 
-            if (filteredNews.length > 0) {
-                log.log(`Received ${filteredNews.length} relevant news updates`);
-                filteredNews.forEach(handleNewsData);
-            }
+            filteredNews.forEach(handleNewsData);
+
+            // if (filteredNews.length > 0) {
+            //     log.log(`Received ${filteredNews.length} relevant news updates`);
+            //     filteredNews.forEach(handleNewsData);
+            // }
         }
     };
 
