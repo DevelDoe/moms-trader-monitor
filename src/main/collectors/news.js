@@ -1,8 +1,8 @@
-import tickerStore from "../store"; // ✅ Import store
+import tickerStore from "../../store"; // ✅ Import store
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
-dotenv.config({ path: "../.././config/.env.alpaca" });
+dotenv.config({ path: "../../../config/.env.alpaca" });
 
 const API_KEY = process.env.APCA_API_KEY_ID;
 const API_SECRET = process.env.APCA_API_SECRET_KEY;
