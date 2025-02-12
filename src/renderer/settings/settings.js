@@ -1,3 +1,5 @@
+const { createTopWindow } = require("../../main/windows/top");
+
 function openTab(evt, tabId) {
     // Hide all tab contents
     document.querySelectorAll(".tabcontent").forEach((tab) => {
@@ -78,6 +80,8 @@ function initializeTopSection(settings) {
         console.error("`settings.top` is missing! Skipping initialization.");
         return;
     }
+
+    //TODO: filter out negative score toggle
 
     console.log("🔍 Checking loaded settings:", settings.top);
 
