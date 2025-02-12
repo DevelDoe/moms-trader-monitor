@@ -258,7 +258,7 @@ ipcMain.handle("get-all-news", () => {
 // });
 
 tickerStore.on("newsUpdated", ({ ticker, newsItems }) => {
-    log.log("Broadcasting news update"); // Debug Log
+    log.log("Broadcasting news update");
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("news-updated", { ticker, newsItems });
     });
