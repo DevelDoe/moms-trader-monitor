@@ -17,7 +17,7 @@ const connectAlpacaNews = () => {
     ws = new WebSocket(NEWS_WS_URL);
 
     ws.on("open", () => {
-        log.log("📡 Connected to Alpaca News WebSocket.");
+        log.log("Connected to Alpaca News WebSocket.");
 
         // Authenticate WebSocket connection
         ws.send(JSON.stringify({
