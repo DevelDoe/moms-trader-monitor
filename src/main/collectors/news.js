@@ -1,15 +1,14 @@
+import tickerStore from "../store"; // ✅ Import store
 import dotenv from "dotenv";
 import fetch from "node-fetch";
-import tickerStore from "./store";
-import path from "path";
 
-dotenv.config({ path: path.resolve(__dirname, "./config/.env.alpaca") });
+dotenv.config({ path: "./config/.env.alpaca" });
 
 const API_KEY = process.env.APCA_API_KEY_ID;
 const API_SECRET = process.env.APCA_API_SECRET_KEY;
 const API_URL = "https://data.alpaca.markets/v1beta1/news";
 
-// Fetch news for a batch of tickers
+// Function to fetch news for a batch of tickers
 const fetchNewsForTickers = async (tickers) => {
     if (!tickers.length) return [];
 
@@ -39,19 +38,27 @@ const fetchNewsForTickers = async (tickers) => {
     }
 };
 
-// Fetch and update store
+// Function to fetch news for all tickers in store
 const fetchNews = async () => {
     const tickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
     if (!tickers.length) return;
 
     for (let ticker of tickers) {
-        const news = await fetchNewsForTickers([ticker]); // Fetch news for a single ticker
+        const news = await fetchNewsForTickers([ticker]); // Fetch news for single ticker
         if (news.length) {
             tickerStore.updateNews(ticker, news); // ✅ Store news in tickerStore
         }
     }
 };
 
-// Run news collection every minute
-setInterval(fetchNews, 60000);
-fetchNews(); // Initial fetch
+// Function to start news collection
+const collectNews = () => {
+    console.log("✅ News collection started...");
+    fetchNews(); // Initial run
+    setInterval(fetchNews, 60000); // Repeat every minute
+};
+
+// ✅ Listen for new tickers and fetch news automatically
+tickerStore.on("update", fetchNews);
+
+export { collectNews };
