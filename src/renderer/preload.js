@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("topAPI", {
 
 contextBridge.exposeInMainWorld("newsAPI", {
     get: () => ipcRenderer.invoke("get-all-news"),
+    toggle: () => ipcRenderer.send("toggle-news"),
 });
 
 contextBridge.exposeInMainWorld("settingsAPI", {
