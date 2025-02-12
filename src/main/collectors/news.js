@@ -4,7 +4,8 @@
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
-const DEBUG = process.env.DEBUG === "true";
+const DEBUG = process.env.DEBUG === "true"; // Enables all debug logs
+const VERBOSE = process.env.VERBOSE === "true"; // Enables frequent logging
 
 const tickerStore = require("../store");
 const dotenv = require("dotenv");
@@ -17,16 +18,16 @@ const API_SECRET = process.env.APCA_API_SECRET_KEY;
 const API_URL = "https://data.alpaca.markets/v1beta1/news";
 
 // Throttle settings
-let MIN_DELAY = 1000; // Minimum delay (in ms)
-const MAX_DELAY = 10000; // Maximum delay (in ms)
-const BACKOFF_MULTIPLIER = 2; // Aggressive backoff on rate limit
-const RECOVERY_STEP = 50; // Reduce delay after successful responses
-const SUCCESS_THRESHOLD = 5; // Reduce delay after N successful calls
-const MIN_DELAY_INCREMENT = 10; // Increment to prevent runaway growth
-const MAX_MIN_DELAY = 10000; // Max threshold for MIN_DELAY
+let MIN_DELAY = 1000;
+const MAX_DELAY = 10000;
+const BACKOFF_MULTIPLIER = 2;
+const RECOVERY_STEP = 50;
+const SUCCESS_THRESHOLD = 5;
+const MIN_DELAY_INCREMENT = 10;
+const MAX_MIN_DELAY = 2000;
 
-let throttleDelay = 100; // Initial delay
-let consecutiveSuccesses = 0; // Track successful requests
+let throttleDelay = 100;
+let consecutiveSuccesses = 0;
 
 // Function to fetch news for a batch of tickers with throttling
 const fetchNewsForTickers = async (tickers) => {
@@ -48,15 +49,14 @@ const fetchNewsForTickers = async (tickers) => {
                 const responseStatus = response.status;
 
                 if (!response.ok) {
-                    if (DEBUG) log.error(`❌ API request failed: ${responseStatus} - ${await response.text()}`);
-                    
+                    log.error(`❌ API request failed: ${responseStatus} - ${await response.text()}`);
+
                     if (responseStatus === 429) {
-                        // Too many requests - backoff and increase throttle
                         throttleDelay = Math.min(throttleDelay * BACKOFF_MULTIPLIER, MAX_DELAY);
                         MIN_DELAY = Math.min(MIN_DELAY + MIN_DELAY_INCREMENT, MAX_MIN_DELAY);
                         log.warn(`⏳ Increased throttle delay to ${throttleDelay}ms due to rate limit.`);
                     }
-                    
+
                     consecutiveSuccesses = 0;
                     return [];
                 }
@@ -67,7 +67,7 @@ const fetchNewsForTickers = async (tickers) => {
                 if (consecutiveSuccesses >= SUCCESS_THRESHOLD) {
                     throttleDelay = Math.max(throttleDelay - RECOVERY_STEP, MIN_DELAY);
                     consecutiveSuccesses = 0;
-                    log.log(`✅ Throttle delay decreased to ${throttleDelay}ms.`);
+                    if (VERBOSE) log.log(`✅ Throttle delay decreased to ${throttleDelay}ms.`);
                 }
 
                 return data.news || [];
@@ -87,7 +87,7 @@ const fetchNews = async () => {
     const batchSize = 10;
     for (let i = 0; i < tickers.length; i += batchSize) {
         const batch = tickers.slice(i, i + batchSize);
-        log.log(`📡 Fetching news for batch: ${batch.join(", ")}`);
+        if (VERBOSE) log.log(`📡 Fetching news for batch: ${batch.join(", ")}`);
 
         const news = await fetchNewsForTickers(batch);
 
@@ -100,26 +100,26 @@ const fetchNews = async () => {
 
                 if (newArticles.length) {
                     tickerStore.updateNews(ticker, newArticles);
-                    log.log(`📊 ${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
-                } else {
+                    if (VERBOSE) log.log(`📊 ${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
+                } else if (VERBOSE) {
                     log.log(`🟡 No new unique news for ${ticker}.`);
                 }
             });
         }
 
-        log.log(`⏳ Waiting ${throttleDelay}ms before next request...`);
+        if (VERBOSE) log.log(`⏳ Waiting ${throttleDelay}ms before next request...`);
         await new Promise((resolve) => setTimeout(resolve, throttleDelay));
     }
 };
 
 // Function to start news collection with dynamic throttling
 const collectNews = async () => {
-    if (DEBUG) log.log("🚀 News collection started...");
+    log.log("🚀 News collection started...");
     
-    while (true) { // Infinite loop for continuous processing
+    while (true) {
         await fetchNews(); // Fetch news once
-        
-        log.log(`⏳ Next news collection in ${throttleDelay}ms...`);
+
+        if (VERBOSE) log.log(`⏳ Next news collection in ${throttleDelay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, throttleDelay)); // Respect throttle
     }
 };
@@ -128,4 +128,3 @@ const collectNews = async () => {
 tickerStore.on("update", fetchNews);
 
 module.exports = { collectNews };
-
