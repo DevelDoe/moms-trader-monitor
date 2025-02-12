@@ -68,4 +68,5 @@ const collectNews = () => {
 // ✅ Listen for new tickers and fetch news automatically
 tickerStore.on("update", fetchNews);
 
-export { collectNews };
+module.exports = { collectNews };
+
