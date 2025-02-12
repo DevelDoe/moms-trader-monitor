@@ -4,7 +4,7 @@
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
-const DEBUG = "true";
+const DEBUG = process.env.DEBUG === "true";
 
 const tickerStore = require("../store");
 const dotenv = require("dotenv");
@@ -16,14 +16,24 @@ const API_KEY = process.env.APCA_API_KEY_ID;
 const API_SECRET = process.env.APCA_API_SECRET_KEY;
 const API_URL = "https://data.alpaca.markets/v1beta1/news";
 
-// Function to fetch news for a batch of tickers
+// Throttle settings
+let MIN_DELAY = 1000; // Minimum delay (in ms)
+const MAX_DELAY = 10000; // Maximum delay (in ms)
+const BACKOFF_MULTIPLIER = 2; // Aggressive backoff on rate limit
+const RECOVERY_STEP = 50; // Reduce delay after successful responses
+const SUCCESS_THRESHOLD = 5; // Reduce delay after N successful calls
+const MIN_DELAY_INCREMENT = 10; // Increment to prevent runaway growth
+const MAX_MIN_DELAY = 2000; // Max threshold for MIN_DELAY
+
+let throttleDelay = 100; // Initial delay
+let consecutiveSuccesses = 0; // Track successful requests
+
+// Function to fetch news for a batch of tickers with throttling
 const fetchNewsForTickers = async (tickers) => {
     if (!tickers.length) return [];
 
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const url = `${API_URL}?symbols=${tickers.join(",")}&start=${last24Hours}&limit=50&sort=desc`;
-
-    if (DEBUG) log.log(`📡 Fetching news for tickers: ${tickers.join(", ")}`);
 
     return import("node-fetch").then(({ default: fetch }) =>
         fetch(url, {
@@ -34,53 +44,42 @@ const fetchNewsForTickers = async (tickers) => {
                 "APCA-API-SECRET-KEY": API_SECRET,
             },
         })
-            .then((response) => {
+            .then(async (response) => {
+                const responseStatus = response.status;
+
                 if (!response.ok) {
-                    log.error(`Failed to fetch news (Status: ${response.status})`);
+                    if (DEBUG) log.error(`❌ API request failed: ${responseStatus} - ${await response.text()}`);
+                    
+                    if (responseStatus === 429) {
+                        // Too many requests - backoff and increase throttle
+                        throttleDelay = Math.min(throttleDelay * BACKOFF_MULTIPLIER, MAX_DELAY);
+                        MIN_DELAY = Math.min(MIN_DELAY + MIN_DELAY_INCREMENT, MAX_MIN_DELAY);
+                        log.warn(`⏳ Increased throttle delay to ${throttleDelay}ms due to rate limit.`);
+                    }
+                    
+                    consecutiveSuccesses = 0;
                     return [];
                 }
-                return response.json();
-            })
-            .then((data) => {
-                if (DEBUG) {
-                    if (data.news?.length) {
-                        log.log(`News fetched for ${tickers.length} tickers. Sample:`);
-                        data.news.slice(0, 3).forEach((n, i) =>
-                            log.log(`  ${i + 1}. [${n.symbols.join(", ")}] ${n.headline}`)
-                        );
-                    } else {
-                        log.warn(`No news found for tickers: ${tickers.join(", ")}`);
-                    }
+
+                const data = await response.json();
+                consecutiveSuccesses++;
+
+                if (consecutiveSuccesses >= SUCCESS_THRESHOLD) {
+                    throttleDelay = Math.max(throttleDelay - RECOVERY_STEP, MIN_DELAY);
+                    consecutiveSuccesses = 0;
+                    log.log(`✅ Throttle delay decreased to ${throttleDelay}ms.`);
                 }
+
                 return data.news || [];
             })
             .catch((error) => {
-                log.error(`Error fetching news: ${error.message}`);
+                log.error(`❌ Error fetching news: ${error.message}`);
                 return [];
             })
     );
 };
 
-// **Optimized function to update news and prevent duplicates**
-const updateNewsInStore = (ticker, newsItems) => {
-    if (!newsItems.length) return;
-
-    // Convert existing news into a Set for O(1) lookup
-    const existingNewsSet = new Set(tickerStore.getNews(ticker).map((n) => n.id));
-
-    // Filter only new news items
-    const uniqueNews = newsItems.filter((newsItem) => !existingNewsSet.has(newsItem.id));
-
-    if (uniqueNews.length) {
-        tickerStore.updateNews(ticker, uniqueNews);
-        if (DEBUG) log.log(`Added ${uniqueNews.length} new articles for ${ticker}.`);
-    } else {
-        if (DEBUG) log.warn(`No new unique news for ${ticker}.`);
-    }
-};
-
-// Function to fetch news for all tickers in store
-// Function to fetch news for all tickers in store
+// Function to fetch news for all tickers in store with batching & throttling
 const fetchNews = async () => {
     const tickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
     if (!tickers.length) return;
@@ -88,11 +87,12 @@ const fetchNews = async () => {
     const batchSize = 10;
     for (let i = 0; i < tickers.length; i += batchSize) {
         const batch = tickers.slice(i, i + batchSize);
-        log.log(`≡ Processing batch: ${batch.join(", ")}`);
+        log.log(`📡 Fetching news for batch: ${batch.join(", ")}`);
 
         const news = await fetchNewsForTickers(batch);
+
         if (news.length) {
-            batch.forEach((ticker, index) => {
+            batch.forEach((ticker) => {
                 const existingNews = tickerStore.getNews(ticker);
                 const newArticles = news.filter(
                     (article) => !existingNews.some((stored) => stored.id === article.id)
@@ -100,25 +100,26 @@ const fetchNews = async () => {
 
                 if (newArticles.length) {
                     tickerStore.updateNews(ticker, newArticles);
-                    log.log(`${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
+                    log.log(`📊 ${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
                 } else {
-                    log.log(`No new unique news for ${ticker}.`);
+                    log.log(`🟡 No new unique news for ${ticker}.`);
                 }
             });
         }
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Prevent API spam
+
+        log.log(`⏳ Waiting ${throttleDelay}ms before next request...`);
+        await new Promise((resolve) => setTimeout(resolve, throttleDelay));
     }
 };
 
-
 // Function to start news collection
 const collectNews = () => {
-    if (DEBUG) log.log("📡 News collection started...");
+    if (DEBUG) log.log("🚀 News collection started...");
     fetchNews(); // Initial run
-    setInterval(fetchNews, 1000); // Repeat every minute
+    setInterval(fetchNews, 60000); // Repeat every minute
 };
 
 // ✅ Listen for new tickers and fetch news automatically
 tickerStore.on("update", fetchNews);
 
-module.exports = { collectNews }; // ✅ Keep CommonJS export
+module.exports = { collectNews };
