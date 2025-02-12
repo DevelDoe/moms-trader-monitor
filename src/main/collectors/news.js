@@ -23,7 +23,7 @@ const BACKOFF_MULTIPLIER = 2; // Aggressive backoff on rate limit
 const RECOVERY_STEP = 50; // Reduce delay after successful responses
 const SUCCESS_THRESHOLD = 5; // Reduce delay after N successful calls
 const MIN_DELAY_INCREMENT = 10; // Increment to prevent runaway growth
-const MAX_MIN_DELAY = 2000; // Max threshold for MIN_DELAY
+const MAX_MIN_DELAY = 10000; // Max threshold for MIN_DELAY
 
 let throttleDelay = 100; // Initial delay
 let consecutiveSuccesses = 0; // Track successful requests
