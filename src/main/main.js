@@ -327,7 +327,7 @@ app.on("ready", () => {
         log.log("Splash screen closed. Loading main app...");
 
         log.log("Starting ticker collection...");
-        collectTickers(); // ✅ Start ticker collection
+        // collectTickers(); // ✅ Start ticker collection
 
         log.log("Starting news collection...");
         connectAlpacaNews(); // ✅ Start news collection immediately after tickers
