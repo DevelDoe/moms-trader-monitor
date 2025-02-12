@@ -43,13 +43,19 @@ const fetchNews = async () => {
     const tickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
     if (!tickers.length) return;
 
-    for (let ticker of tickers) {
-        const news = await fetchNewsForTickers([ticker]); // Fetch news for single ticker
+    const batchSize = 10;
+    for (let i = 0; i < tickers.length; i += batchSize) {
+        const batch = tickers.slice(i, i + batchSize);
+        const news = await fetchNewsForTickers(batch); // ✅ Batch fetch
         if (news.length) {
-            tickerStore.updateNews(ticker, news); // ✅ Store news in tickerStore
+            batch.forEach((ticker, index) => {
+                tickerStore.updateNews(ticker, [news[index]] || []); // ✅ Store news per ticker
+            });
         }
+        await new Promise((resolve) => setTimeout(resolve, 500)); // ✅ Prevent API spam
     }
 };
+
 
 // Function to start news collection
 const collectNews = () => {
