@@ -8,8 +8,6 @@ const DEBUG = process.env.DEBUG === "true";
 
 const tickerStore = require("../store");
 const dotenv = require("dotenv");
-
-
 const path = require("path");
 
 dotenv.config({ path: path.join(__dirname, "../../../config/.env.alpaca") });
@@ -25,6 +23,8 @@ const fetchNewsForTickers = async (tickers) => {
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const url = `${API_URL}?symbols=${tickers.join(",")}&start=${last24Hours}&limit=50&sort=desc`;
 
+    if (DEBUG) log.log(`📡 Fetching news for tickers: ${tickers.join(", ")}`);
+
     // ✅ Dynamically import `node-fetch` instead of using `require`
     return import("node-fetch").then(({ default: fetch }) =>
         fetch(url, {
@@ -37,14 +37,26 @@ const fetchNewsForTickers = async (tickers) => {
         })
             .then((response) => {
                 if (!response.ok) {
-                    if(DEBUG) log.error(`Failed to fetch news: ${response.status}`);
+                    log.error(`❌ Failed to fetch news (Status: ${response.status})`);
                     return [];
                 }
                 return response.json();
             })
-            .then((data) => data.news || [])
+            .then((data) => {
+                if (DEBUG) {
+                    if (data.news?.length) {
+                        log.log(`✅ News fetched for ${tickers.length} tickers. Sample:`);
+                        data.news.slice(0, 3).forEach((n, i) =>
+                            log.log(`  ${i + 1}. [${n.symbols.join(", ")}] ${n.headline}`)
+                        );
+                    } else {
+                        log.warn(`⚠️ No news found for tickers: ${tickers.join(", ")}`);
+                    }
+                }
+                return data.news || [];
+            })
             .catch((error) => {
-                if(DEBUG) log.error(`Error fetching news: ${error.message}`);
+                log.error(`❌ Error fetching news: ${error.message}`);
                 return [];
             })
     );
@@ -53,26 +65,35 @@ const fetchNewsForTickers = async (tickers) => {
 // Function to fetch news for all tickers in store
 const fetchNews = async () => {
     const tickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
-    if (!tickers.length) return;
+    if (!tickers.length) {
+        if (DEBUG) log.warn("⚠️ No tickers found in store. Skipping news fetch.");
+        return;
+    }
 
     const batchSize = 10;
     for (let i = 0; i < tickers.length; i += batchSize) {
         const batch = tickers.slice(i, i + batchSize);
+        if (DEBUG) log.log(`📡 Processing batch: ${batch.join(", ")}`);
+
         const news = await fetchNewsForTickers(batch);
         if (news.length) {
             batch.forEach((ticker, index) => {
                 tickerStore.updateNews(ticker, [news[index]] || []);
             });
+            if (DEBUG) log.log(`📝 Stored ${news.length} news items in store.`);
+        } else {
+            if (DEBUG) log.warn(`⚠️ No relevant news found for batch.`);
         }
+        
         await new Promise((resolve) => setTimeout(resolve, 500)); // Prevent API spam
     }
 };
 
 // Function to start news collection
 const collectNews = () => {
-    if(DEBUG) log.log("News collection started...");
+    if (DEBUG) log.log("📡 News collection started...");
     fetchNews(); // Initial run
-    setInterval(fetchNews, 200); // Repeat every minute
+    setInterval(fetchNews, 60000); // Repeat every minute
 };
 
 // ✅ Listen for new tickers and fetch news automatically
