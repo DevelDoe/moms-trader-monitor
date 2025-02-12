@@ -61,7 +61,7 @@
                 "provider": "github",
                 "owner": "DevelDoe",
                 "repo": "moms-trader-monitor",
-                "releaseType": "draft"
+                "releaseType": "prerelease"
             }
         ]
     }
