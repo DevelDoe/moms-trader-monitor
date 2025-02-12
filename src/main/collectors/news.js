@@ -61,21 +61,34 @@ const connectAlpacaNews = () => {
 };
 
 // ✅ Process and store relevant news
+// const handleNewsData = (newsItem) => {
+//     if (!newsItem.symbols || newsItem.symbols.length === 0) return;
+
+//     const trackedTickers = new Set(tickerStore.getAllTickers("daily").map((t) => t.Symbol));
+
+//     newsItem.symbols.forEach((symbol) => {
+//         if (!trackedTickers.has(symbol)) return; // Ignore if not in our collection
+
+//         const existingNews = tickerStore.getTickerNews(symbol);
+//         if (existingNews.some((article) => article.id === newsItem.id)) return; // Prevent duplicate storage
+
+//         tickerStore.updateNews(symbol, [newsItem]);
+//         log.log(`📰 New article for ${symbol}: ${newsItem.headline}`);
+//     });
+// };
+
 const handleNewsData = (newsItem) => {
     if (!newsItem.symbols || newsItem.symbols.length === 0) return;
 
-    const trackedTickers = new Set(tickerStore.getAllTickers("daily").map((t) => t.Symbol));
-
     newsItem.symbols.forEach((symbol) => {
-        if (!trackedTickers.has(symbol)) return; // Ignore if not in our collection
-
         const existingNews = tickerStore.getTickerNews(symbol);
-        if (existingNews.some((article) => article.id === newsItem.id)) return; // Prevent duplicate storage
 
+        // ✅ Temporarily disable filtering - Store all news!
         tickerStore.updateNews(symbol, [newsItem]);
-        log.log(`📰 New article for ${symbol}: ${newsItem.headline}`);
+        log.log(`📰 Storing ALL news for ${symbol}: ${newsItem.headline}`);
     });
 };
+
 
 // ✅ Start WebSocket connection
 connectAlpacaNews();
