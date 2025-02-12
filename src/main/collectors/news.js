@@ -80,31 +80,36 @@ const updateNewsInStore = (ticker, newsItems) => {
 };
 
 // Function to fetch news for all tickers in store
+// Function to fetch news for all tickers in store
 const fetchNews = async () => {
     const tickers = tickerStore.getAllTickers("daily").map((t) => t.Symbol);
-    if (!tickers.length) {
-        if (DEBUG) log.warn("⚠️ No tickers found in store. Skipping news fetch.");
-        return;
-    }
+    if (!tickers.length) return;
 
     const batchSize = 10;
     for (let i = 0; i < tickers.length; i += batchSize) {
         const batch = tickers.slice(i, i + batchSize);
-        if (DEBUG) log.log(`📡 Processing batch: ${batch.join(", ")}`);
+        log.log(`≡ Processing batch: ${batch.join(", ")}`);
 
         const news = await fetchNewsForTickers(batch);
         if (news.length) {
-            batch.forEach((ticker) => {
-                const tickerNews = news.filter((item) => item.symbols.includes(ticker));
-                updateNewsInStore(ticker, tickerNews);
-            });
-        } else {
-            if (DEBUG) log.warn(`⚠️ No relevant news found for batch.`);
-        }
+            batch.forEach((ticker, index) => {
+                const existingNews = tickerStore.getNews(ticker);
+                const newArticles = news.filter(
+                    (article) => !existingNews.some((stored) => stored.id === article.id)
+                );
 
+                if (newArticles.length) {
+                    tickerStore.updateNews(ticker, newArticles);
+                    log.log(`📊 ${ticker} now has ${tickerStore.getNews(ticker).length} stored news articles.`);
+                } else {
+                    log.log(`🟡 No new unique news for ${ticker}.`);
+                }
+            });
+        }
         await new Promise((resolve) => setTimeout(resolve, 500)); // Prevent API spam
     }
 };
+
 
 // Function to start news collection
 const collectNews = () => {
