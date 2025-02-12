@@ -1,6 +1,5 @@
-import tickerStore from "../store"; // ✅ Use ES module import
-import dotenv from "dotenv";
-import fetch from "node-fetch"; // ✅ `import` is required for ES modules
+const tickerStore = require("../store");
+const dotenv = require("dotenv");
 
 dotenv.config({ path: "../../../config/.env.alpaca" });
 
@@ -15,27 +14,29 @@ const fetchNewsForTickers = async (tickers) => {
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const url = `${API_URL}?symbols=${tickers.join(",")}&start=${last24Hours}&limit=50&sort=desc`;
 
-    try {
-        const response = await fetch(url, {
+    // ✅ Dynamically import `node-fetch` instead of using `require`
+    return import("node-fetch").then(({ default: fetch }) =>
+        fetch(url, {
             method: "GET",
             headers: {
                 accept: "application/json",
                 "APCA-API-KEY-ID": API_KEY,
                 "APCA-API-SECRET-KEY": API_SECRET,
             },
-        });
-
-        if (!response.ok) {
-            console.error(`Failed to fetch news: ${response.status}`);
-            return [];
-        }
-
-        const data = await response.json();
-        return data.news || [];
-    } catch (error) {
-        console.error(`Error fetching news: ${error.message}`);
-        return [];
-    }
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    console.error(`Failed to fetch news: ${response.status}`);
+                    return [];
+                }
+                return response.json();
+            })
+            .then((data) => data.news || [])
+            .catch((error) => {
+                console.error(`Error fetching news: ${error.message}`);
+                return [];
+            })
+    );
 };
 
 // Function to fetch news for all tickers in store
@@ -66,4 +67,4 @@ const collectNews = () => {
 // ✅ Listen for new tickers and fetch news automatically
 tickerStore.on("update", fetchNews);
 
-export { collectNews }; // ✅ Use ES module export
+module.exports = { collectNews }; // ✅ Keep CommonJS export
