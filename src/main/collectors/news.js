@@ -1,6 +1,7 @@
-import tickerStore from "../store"; // ✅ Import store
-import dotenv from "dotenv";
-import fetch from "node-fetch";
+const tickerStore = require("../store"); // ✅ Works in CommonJS
+const dotenv = require("dotenv");
+const fetch = require("node-fetch");
+
 
 dotenv.config({ path: "../../../config/.env.alpaca" });
 
