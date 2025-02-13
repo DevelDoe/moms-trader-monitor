@@ -76,14 +76,27 @@ class Store extends EventEmitter {
 
         log.log(`📥 Stored ${newsItems.length} new articles.`);
 
+        // ✅ Update `hasNews` for tickers that have relevant news
+        newsItems.forEach((news) => {
+            if (!Array.isArray(news.symbols)) return;
+
+            news.symbols.forEach((symbol) => {
+                if (this.dailyData.has(symbol)) {
+                    this.dailyData.get(symbol).hasNews = true;
+                }
+                if (this.sessionData.has(symbol)) {
+                    this.sessionData.get(symbol).hasNews = true;
+                }
+            });
+        });
+
         // ✅ Emit a single batch update instead of per ticker
         this.emit("newsUpdated", { newsItems: timestampedNews });
     }
 
+    // ✅ Retrieve all stored news
     getAllNews() {
-        return Array.from(this.newsData.entries())
-            .filter(([_, news]) => news.length > 0)
-            .map(([ticker, news]) => ({ ticker, news }));
+        return this.newsList;
     }
 
     getAllTickers(listType) {
