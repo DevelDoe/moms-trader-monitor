@@ -16,35 +16,38 @@ function openTab(evt, tabId) {
     if (evt) evt.currentTarget.classList.add("active"); // Ensure evt exists
 }
 
+
+        
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
     try {
         console.log("Fetching settings...");
-        const settings = await window.settingsAPI.get();
-        console.log("Retrieved settings:", settings);
+        window.settings = await window.settingsAPI.get(); // ✅ Store settings globally
+        console.log("Retrieved settings:", window.settings);
 
-        initializeGeneralSection(settings.general || {});
-        initializeTopSection(settings || {});
+        initializeGeneralSection();
+        initializeTopSection();
 
-        await loadAttributeFilters("session", "session-filters", settings);
-        await loadAttributeFilters("daily", "daily-filters", settings);
+        await loadAttributeFilters("session", "session-filters");
+        await loadAttributeFilters("daily", "daily-filters");
 
         // ✅ Update toggle buttons to pass settings
         document.querySelector("#session-toggle-all").addEventListener("click", () => {
-            toggleAll("session", true, settings);
+            toggleAll("session", true);
         });
 
         document.querySelector("#session-toggle-none").addEventListener("click", () => {
-            toggleAll("session", false, settings);
+            toggleAll("session", false);
         });
 
         document.querySelector("#daily-toggle-all").addEventListener("click", () => {
-            toggleAll("daily", true, settings);
+            toggleAll("daily", true);
         });
 
         document.querySelector("#daily-toggle-none").addEventListener("click", () => {
-            toggleAll("daily", false, settings);
+            toggleAll("daily", false);
         });
 
         window.settingsAPI.onUpdate((updatedSettings) => {
@@ -53,8 +56,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         window.settingsAPI.onAttributesUpdate(async () => {
             console.log("🔔 New attributes detected! Refreshing settings...");
-            await loadAttributeFilters("session", "session-filters", settings);
-            await loadAttributeFilters("daily", "daily-filters", settings);
+            await loadAttributeFilters("session", "session-filters");
+            await loadAttributeFilters("daily", "daily-filters");
         });
 
         const defaultTab = document.querySelector(".tablinks.active");
@@ -69,17 +72,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-function initializeGeneralSection(topSettings) {
-    console.log("Initializing General Section:", topSettings);
+function initializeGeneralSection() {
+    console.log("Initializing General Section");
 }
 
-function initializeTopSection(settings) {
-    if (!settings || !settings.top) {
+function initializeTopSection() {
+    if (!window.settings || !window.settings.top) {
         console.error("`settings.top` is missing! Skipping initialization.");
         return;
     }
 
-    console.log("🔍 Checking loaded settings:", settings.top);
+    console.log("🔍 Checking loaded settings:", window.settings.top);
 
     const minPriceInput = document.getElementById("min-price");
     const maxPriceInput = document.getElementById("max-price");
@@ -93,13 +96,13 @@ function initializeTopSection(settings) {
     }
 
     // ✅ Load saved values from `settings.top`
-    if (settings.top.minPrice !== undefined) minPriceInput.value = settings.top.minPrice;
-    if (settings.top.maxPrice !== undefined) maxPriceInput.value = settings.top.maxPrice;
-    if (settings.top.transparent !== undefined) topTransparentToggle.checked = settings.top.transparent;
+    if (window.settings.top.minPrice !== undefined) minPriceInput.value = window.settings.top.minPrice;
+    if (window.settings.top.maxPrice !== undefined) maxPriceInput.value = window.settings.top.maxPrice;
+    if (window.settings.top.transparent !== undefined) topTransparentToggle.checked = window.settings.top.transparent;
 
     // ✅ Load saved length settings
-    sessionLengthInput.value = settings.top.lists?.session?.length ?? 10;
-    dailyLengthInput.value = settings.top.lists?.daily?.length ?? 10;
+    sessionLengthInput.value = window.settings.top.lists?.session?.length ?? 10;
+    dailyLengthInput.value = window.settings.top.lists?.daily?.length ?? 10;
 
     console.log("✅ Applied topSettings:", {
         minPrice: minPriceInput.value,
@@ -114,7 +117,7 @@ function initializeTopSection(settings) {
         const newMax = parseFloat(maxPriceInput.value) || 1000;
 
         const updatedSettings = {
-            ...settings.top, // Preserve other settings
+            ...window.settings.top, // Preserve other settings
             minPrice: newMin,
             maxPrice: newMax,
         };
@@ -125,7 +128,7 @@ function initializeTopSection(settings) {
 
     function updateTransparency() {
         const updatedSettings = {
-            ...settings.top,
+            ...window.settings.top,
             transparent: topTransparentToggle.checked,
         };
 
@@ -175,7 +178,7 @@ function initializeTopSection(settings) {
     dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
 }
 
-async function loadAttributeFilters(listType, containerId, settings) {
+async function loadAttributeFilters(listType, containerId) {
     try {
         console.log(`📥 Fetching attributes for ${listType}...`);
         let attributes = await window.settingsAPI.getAttributes(listType);
@@ -195,12 +198,12 @@ async function loadAttributeFilters(listType, containerId, settings) {
         container.innerHTML = ""; // ✅ Clear previous checkboxes
 
         // ✅ Ensure `settings.top` exists
-        if (!settings || !settings.top) {
+        if (!window.settings || !window.settings.top) {
             console.error("❌ `settings.top` is missing while loading attributes!");
             return;
         }
 
-        const selectedFilters = settings.top.lists?.[listType] || {}; // ✅ Use structured storage
+        const selectedFilters = window.settings.top.lists?.[listType] || {}; // ✅ Use structured storage
 
         attributes.forEach((attr) => {
             const label = document.createElement("label");
@@ -211,7 +214,7 @@ async function loadAttributeFilters(listType, containerId, settings) {
             checkbox.checked = selectedFilters[attr] ?? true; // ✅ Preserve saved state
 
             checkbox.addEventListener("change", () => {
-                updateFilters(settings); // ✅ Pass settings to updateFilters()
+                updateFilters(window.settings); // ✅ Pass settings to updateFilters()
             });
 
             label.appendChild(checkbox);
@@ -225,8 +228,8 @@ async function loadAttributeFilters(listType, containerId, settings) {
     }
 }
 
-async function updateFilters(settings) {
-    if (!settings || !settings.top) {
+async function updateFilters() {
+    if (!window.settings || !window.settings.top) {
         console.error("❌ `settings.top` is missing! Skipping update.");
         return;
     }
@@ -294,8 +297,8 @@ function saveSettings(newSettings) {
     window.topAPI.refresh();
 }
 
-function toggleAll(listType, state, settings) {
-    if (!settings || !settings.top) {
+function toggleAll(listType, state) {
+    if (!window.settings || !window.settings.top) {
         console.error("❌ `settings.top` is missing! Skipping toggle.");
         return;
     }
@@ -304,5 +307,5 @@ function toggleAll(listType, state, settings) {
         checkbox.checked = state;
     });
 
-    updateFilters(settings); // ✅ Pass the updated settings object
+    updateFilters(window.settings); // ✅ Pass the updated settings object
 }
