@@ -6,8 +6,8 @@
     "lists": {
       "session": {
         "length": 100,
-        "Price": false,
-        "ChangePercent": true,
+        "Price": true,
+        "ChangePercent": false,
         "FiveM": true,
         "Float": true,
         "Volume": true,
