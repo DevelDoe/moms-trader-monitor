@@ -250,19 +250,20 @@ ipcMain.handle("get-all-news", () => {
     return tickerStore.getAllNews(); // Fetch all news for tickers that have news
 });
 
-// tickerStore.on("newsUpdated", ({ ticker, newsItems }) => {
-//     if (!newsItems.length) return; // ✅ Prevent unnecessary events
-//     BrowserWindow.getAllWindows().forEach((win) => {
-//         win.webContents.send("news-updated", { ticker, newsItems });
-//     });
-// });
-
 tickerStore.on("newsUpdated", ({ ticker, newsItems }) => {
-    log.log("Broadcasting news update");
+    if (!Array.isArray(newsItems) || newsItems.length === 0) {
+        log.warn(`❌ No news to broadcast for ticker: ${ticker}`);
+        return; // Prevents unnecessary events
+    }
+
+    log.log(`📢 Broadcasting news update for ${ticker} with ${newsItems.length} articles`);
+
+    // Send news updates to all renderer windows
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("news-updated", { ticker, newsItems });
     });
 });
+
 
 tickerStore.on("update", () => {
     log.log("Broadcasting update");
