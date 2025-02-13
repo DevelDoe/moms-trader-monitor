@@ -9,25 +9,29 @@ let prevTickersDaily = {};
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
 
-    await applySavedFilters(); // ✅ Apply saved settings before fetching tickers
-    await fetchAndUpdateTickers(); // ✅ Fetch tickers after applying filters
+    await applySavedFilters();
+    await fetchAndUpdateTickers();
 
     addClearSessionButton();
 
-    // ✅ Listen for updates
+    // ✅ Listen for ticker updates
     window.topAPI.onTickerUpdate(() => {
         console.log("🔔 Ticker update received, fetching latest data...");
         fetchAndUpdateTickers();
     });
 
-    // ✅ Listen for filter updates from settings
-    window.settingsAPI.onUpdate(async () => {
-        console.log("🎯 Filter settings updated, applying new filters...");
+    // ✅ Listen for settings updates (INCLUDING FILTERS)
+    window.settingsAPI.onUpdate(async (updatedSettings) => {
+        console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
 
-        await applySavedFilters(); // ✅ Update settings and clear lists
-        await fetchAndUpdateTickers(); // ✅ Immediately re-fetch tickers with new filters
+        // ✅ Update `window.settings`
+        window.settings = updatedSettings;
+
+        await applySavedFilters();
+        await fetchAndUpdateTickers();
     });
 });
+
 
 async function fetchAndUpdateTickers() {
     try {
