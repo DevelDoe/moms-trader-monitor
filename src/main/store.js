@@ -80,11 +80,6 @@ class Store extends EventEmitter {
         this.emit("newsUpdated", { newsItems: timestampedNews });
     }
 
-    // ✅ Retrieve news for a specific ticker
-    getTickerNews(ticker) {
-        return this.newsData.get(ticker) || [];
-    }
-
     getAllNews() {
         return Array.from(this.newsData.entries())
             .filter(([_, news]) => news.length > 0)
