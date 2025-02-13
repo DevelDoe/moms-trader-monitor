@@ -125,7 +125,7 @@
 
                 let filteredNews = allNews;
                 if (showOnlyTracked) {
-                    filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
+                    filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker?.toUpperCase())); // Match case
                 }
 
                 if (filteredNews.length === 0) {
@@ -133,12 +133,10 @@
                     return;
                 }
 
-                // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
                 let sortedNews = filteredNews
-                    .flatMap(({ ticker, news }) => news.map((article) => ({ ...article, ticker }))) // Flatten news
+                    .flatMap(({ ticker, news }) => news.map((article) => ({ ...article, ticker: ticker?.toUpperCase() }))) // Normalize ticker
                     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
 
-                // ✅ Append sorted news to the table
                 sortedNews.forEach((article) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
