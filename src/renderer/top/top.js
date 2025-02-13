@@ -176,17 +176,11 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
         tableBody.appendChild(row);
 
-        // 🔥 **Remove highlight after a few seconds with fade effect**
-        if (isNew || isUpdated) {
-            setTimeout(() => {
-                row.style.transition = "background-color 1.5s ease-in-out";
-                row.style.backgroundColor = "transparent"; // Let it fade instead of disappearing instantly
-
-                // Ensure class is removed after transition completes
-                setTimeout(() => {
-                    row.classList.remove("highlight-new", "highlight-updated");
-                }, 1500);
-            }, 2000); // Keep the highlight visible for 2 seconds before fading
+        // 🔥 Apply highlight class for new or updated tickers
+        if (isNew) {
+            row.classList.add("highlight-new");
+        } else if (isUpdated) {
+            row.classList.add("highlight-updated");
         }
     });
 
