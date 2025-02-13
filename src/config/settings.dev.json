@@ -2,10 +2,10 @@
   "top": {
     "transparent": false,
     "minPrice": 0,
-    "maxPrice": 100,
+    "maxPrice": 20,
     "lists": {
       "session": {
-        "length": 20,
+        "length": 100,
         "Price": true,
         "ChangePercent": true,
         "FiveM": true,
@@ -19,17 +19,17 @@
       },
       "daily": {
         "length": 4,
-        "Price": false,
-        "ChangePercent": false,
-        "FiveM": false,
-        "Float": false,
-        "Volume": false,
-        "SprPercent": false,
-        "Time": false,
-        "HighOfDay": false,
+        "Price": true,
+        "ChangePercent": true,
+        "FiveM": true,
+        "Float": true,
+        "Volume": true,
+        "SprPercent": true,
+        "Time": true,
+        "HighOfDay": true,
         "news": true,
-        "hasNews": false,
-        "count": false
+        "hasNews": true,
+        "count": true
       }
     }
   },
