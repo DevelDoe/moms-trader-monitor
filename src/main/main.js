@@ -237,9 +237,9 @@ ipcMain.on("update-settings", (event, newSettings) => {
     saveSettings(); // ✅ Save settings after updates
 
     // ✅ Broadcast updated settings to all windows
-    log.log("🔄 Broadcasting 'filter-updated' event...");
+    log.log("Broadcasting 'filter-updated' event...");
     BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("filter-updated", appSettings);
+        win.webContents.send("Settings Updated", appSettings);
     });
 });
 
