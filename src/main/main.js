@@ -222,23 +222,21 @@ ipcMain.on("update-settings", (event, newSettings) => {
         appSettings = { ...DEFAULT_SETTINGS };
     }
 
-    // ✅ List of allowed top-level setting categories
-    const allowedCategories = ["top", "general", "audio"];
-
-    // ✅ Merge new settings ONLY into valid categories
+    // ✅ Merge all new settings dynamically without filtering categories
     Object.keys(newSettings).forEach((key) => {
-        if (allowedCategories.includes(key) && typeof newSettings[key] === "object") {
+        if (typeof newSettings[key] === "object") {
             appSettings[key] = {
                 ...appSettings[key], // Preserve existing settings for this category
-                ...newSettings[key], // Merge only the provided properties
+                ...newSettings[key], // Merge new properties
             };
         } else {
-            log.warn(`Ignoring invalid setting update: ${key}`);
+            log.warn(`Ignoring invalid setting update for key: ${key} (Expected an object)`);
         }
     });
 
-    saveSettings();
+    saveSettings(); // ✅ Save settings after updates
 });
+
 
 // Store
 ipcMain.handle("get-tickers", (event, listType = "daily") => {
