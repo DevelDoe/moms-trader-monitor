@@ -239,7 +239,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
     // ✅ Broadcast updated settings to all windows
     log.log("🔄 Broadcasting 'filter-updated' event...");
     BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("filter-updated", appSettings);
+        win.webContents.send("settings-updated", appSettings);
     });
 });
 
