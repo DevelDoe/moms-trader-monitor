@@ -92,21 +92,40 @@
             let trackedTickers = new Set();
 
             async function fetchTrackedTickers() {
-                try {
-                    const tickers = await window.topAPI.getTickers("daily");
+    try {
+        const tickers = await window.topAPI.getTickers("daily");
+        
+        if (!Array.isArray(tickers)) {
+            console.error("⚠️ Expected an array from getTickers but got:", tickers);
+            return;
+        }
 
-                    if (!Array.isArray(tickers)) {
-                        console.error("⚠️ Expected an array from getTickers but got:", tickers);
-                        return;
-                    }
+        // Normalize keys to match news data
+        trackedTickers = new Set(tickers.map((t) => t.Symbol?.toUpperCase())); // Ensure uppercase consistency
+        console.log("✅ Tracked Tickers Updated:", trackedTickers);
 
-                    // Normalize keys to match news data
-                    trackedTickers = new Set(tickers.map((t) => t.Symbol?.toUpperCase())); // Ensure uppercase consistency
-                    console.log("✅ Tracked Tickers:", trackedTickers);
-                } catch (error) {
-                    console.error("⚠️ Error fetching tracked tickers:", error);
-                }
-            }
+        // Refresh the news table to reflect changes in tracked tickers
+        updateNewsTable();
+    } catch (error) {
+        console.error("⚠️ Error fetching tracked tickers:", error);
+    }
+}
+
+// ✅ Listen for ticker updates and refresh the tracked tickers list
+window.topAPI.onTickerUpdate(() => {
+    console.log("🔄 Received tickers-updated event. Refreshing tracked tickers...");
+    fetchTrackedTickers();
+});
+
+// ✅ Ensure news updates dynamically when new data arrives
+window.newsAPI.onUpdate(() => {
+    console.log("🔄 Received news update. Refreshing news...");
+    fetchNews();
+});
+
+// ✅ Initial load
+fetchTrackedTickers().then(fetchNews);
+
 
             async function fetchNews() {
                 try {
