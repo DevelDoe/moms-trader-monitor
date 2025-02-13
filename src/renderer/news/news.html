@@ -47,6 +47,21 @@
                 -webkit-app-region: drag;
                 color: #ffffff; /* White title */
             }
+
+            /* 🎭 Fade out for news rows over 15 minutes (900s) */
+            @keyframes fadeOut {
+                0% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                }
+            }
+
+            /* This class will be added dynamically */
+            .fade-out {
+                animation: fadeOut 900s ease-in-out forwards;
+            }
         </style>
     </head>
     <body>
@@ -133,9 +148,7 @@
 
                 let filteredNews = allNews;
                 if (showOnlyTracked) {
-                    filteredNews = allNews.filter((newsItem) =>
-                        newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()))
-                    );
+                    filteredNews = allNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase())));
                 }
 
                 console.log("📊 Filtered News:", filteredNews);
@@ -151,15 +164,27 @@
 
                 console.log("📊 Sorted News Ready for Table:", sortedNews);
 
+                const now = new Date();
+
                 // ✅ Append sorted news to the table
                 sortedNews.forEach((article) => {
                     const row = document.createElement("tr");
+
                     row.innerHTML = `
-                        <td>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
-                        <td><a href="${article.url}" target="_blank">${article.headline || "No headline"}</a></td>
-                        <td>${article.source || "N/A"}</td>
-                        <td>${article.created_at ? new Date(article.created_at).toLocaleString() : "N/A"}</td>
-                    `;
+            <td>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
+            <td><a href="${article.url}" target="_blank">${article.headline || "No headline"}</a></td>
+            <td>${article.source || "N/A"}</td>
+            <td>${article.created_at ? new Date(article.created_at).toLocaleString() : "N/A"}</td>
+        `;
+
+                    // ✅ Calculate time difference in seconds
+                    const newsAge = (now - new Date(article.created_at)) / 1000;
+
+                    // ✅ If the news is older than 5 minutes, start fading out
+                    if (newsAge >= 300) {
+                        row.classList.add("fade-out");
+                    }
+
                     tableBody.appendChild(row);
                 });
 

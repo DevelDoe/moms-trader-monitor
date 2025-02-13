@@ -69,8 +69,6 @@ h2 {
     transition: background-color 1s ease-in-out;
 }
 
-
-
 /* 🎭 Fade out effect after 3 seconds */
 @keyframes fadeOut {
     0% { background-color: #28a745; } /* Start from green */
