@@ -35,6 +35,3 @@ h2 {
     background-color: #90ee90; /* Light green */
     transition: background-color 0.3s ease-in-out;
 }
-a {
-    text-decoration: none !important;
-}
