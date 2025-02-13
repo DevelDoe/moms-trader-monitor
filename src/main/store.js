@@ -110,7 +110,7 @@ class Store extends EventEmitter {
         const tickers = this.getAllTickers(listType);
         if (tickers.length === 0) return [];
 
-        return Object.keys(tickers[0]).filter((attr) => attr !== "Symbol" && attr !== "count");
+        return Object.keys(tickers[0]).filter((attr) => attr !== "Symbol");
     }
 
     clearSessionData() {
