@@ -131,7 +131,6 @@ function updateTickersTable(tickers, tableId) {
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
-                cell.style.textDecoration = "underline";
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
