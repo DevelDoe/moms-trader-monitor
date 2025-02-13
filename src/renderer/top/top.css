@@ -11,7 +11,7 @@ table {
     border-collapse: collapse;
 }
 table,
-th {
+thead {
     border-bottom: 1px solid rgb(97 146 151);
 }
 th,
