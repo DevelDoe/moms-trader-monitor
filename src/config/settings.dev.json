@@ -19,17 +19,17 @@
       },
       "daily": {
         "length": 4,
-        "Price": true,
-        "ChangePercent": true,
-        "FiveM": true,
-        "Float": true,
-        "Volume": true,
-        "SprPercent": true,
-        "Time": true,
-        "HighOfDay": true,
+        "Price": false,
+        "ChangePercent": false,
+        "FiveM": false,
+        "Float": false,
+        "Volume": false,
+        "SprPercent": false,
+        "Time": false,
+        "HighOfDay": false,
         "news": true,
-        "hasNews": true,
-        "count": true
+        "hasNews": false,
+        "count": false
       }
     }
   }
