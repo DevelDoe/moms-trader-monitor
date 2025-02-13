@@ -2,6 +2,10 @@
 let tickersDaily = [];
 let tickersSessions = [];
 
+// Store previous tickers for comparison
+let prevTickersSessions = {};
+let prevTickersDaily = {};
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
 
@@ -35,6 +39,10 @@ async function fetchAndUpdateTickers() {
 
         console.log("Session Data:", sessionData);
         console.log("📊 Daily Data:", dailyData);
+
+        // ✅ Store previous state for comparison
+        let oldTickersSessions = { ...prevTickersSessions };
+        let oldTickersDaily = { ...prevTickersDaily };
 
         // ✅ Ensure filters are applied correctly
         const minPrice = window.settings.top?.minPrice ?? 0;
@@ -71,14 +79,20 @@ async function fetchAndUpdateTickers() {
         console.log("✅ Final Session List:", tickersSessions);
         console.log("✅ Final Daily List:", tickersDaily);
 
-        updateTickersTable(tickersSessions, "tickers-session");
-        updateTickersTable(tickersDaily, "tickers-daily");
+        // ✅ Update previous ticker states
+        prevTickersSessions = Object.fromEntries(tickersSessions.map(t => [t.Symbol, t]));
+        prevTickersDaily = Object.fromEntries(tickersDaily.map(t => [t.Symbol, t]));
+
+        // ✅ Update UI
+        updateTickersTable(tickersSessions, "tickers-session", oldTickersSessions);
+        updateTickersTable(tickersDaily, "tickers-daily", oldTickersDaily);
 
         console.log("✅ UI Updated Successfully!");
     } catch (error) {
         console.error("❌ Error fetching tickers:", error);
     }
 }
+
 
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
