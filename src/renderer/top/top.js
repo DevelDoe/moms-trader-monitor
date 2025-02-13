@@ -204,3 +204,41 @@ function calculateScore(ticker) {
     else if (floatValue > 500) score -= 30;
     return score;
 }
+
+function getScoreBreakdown(ticker) {
+    let breakdown = [];
+    let score = ticker.count;
+    
+    breakdown.push(`Base Score (Count): ${ticker.count}`);
+    
+    if (ticker.HighOfDay) {
+        score += 20;
+        breakdown.push(`+20 (High of Day)`);
+    }
+
+    let floatValue = parseFloatValue(ticker.Float);
+    if (floatValue < 1) {
+        score += 30;
+        breakdown.push(`+30 (Float < 1M)`);
+    } else if (floatValue > 1 && floatValue < 5) {
+        score += 20;
+        breakdown.push(`+20 (Float 1M - 5M)`);
+    } else if (floatValue > 5 && floatValue < 10) {
+        score += 10;
+        breakdown.push(`+10 (Float 5M - 10M)`);
+    } else if (floatValue > 10 && floatValue < 50) {
+        breakdown.push(`+0 (Float 10M - 50M)`);
+    } else if (floatValue > 50 && floatValue < 100) {
+        score -= 10;
+        breakdown.push(`-10 (Float 50M - 100M)`);
+    } else if (floatValue > 100 && floatValue < 500) {
+        score -= 20;
+        breakdown.push(`-20 (Float 100M - 500M)`);
+    } else if (floatValue > 500) {
+        score -= 30;
+        breakdown.push(`-30 (Float > 500M)`);
+    }
+
+    breakdown.push(`Final Score: ${score}`);
+    return breakdown.join("\n"); // ✅ Creates a tooltip with newlines for readability
+}
