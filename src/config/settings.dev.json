@@ -6,16 +6,16 @@
     "lists": {
       "session": {
         "length": 100,
-        "Price": true,
+        "Price": false,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": true,
-        "Volume": true,
-        "SprPercent": true,
+        "Float": false,
+        "Volume": false,
+        "SprPercent": false,
         "Time": false,
-        "HighOfDay": true,
-        "hasNews": true,
-        "count": true
+        "HighOfDay": false,
+        "hasNews": false,
+        "count": false
       },
       "daily": {
         "length": 4,
