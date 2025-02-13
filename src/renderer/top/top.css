@@ -56,3 +56,7 @@ h2 {
 .symbol:hover {
     color: #90ee90;
 }
+.score-tooltip {
+    cursor: help;
+    text-decoration: underline dotted;
+}
