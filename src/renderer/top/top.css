@@ -74,14 +74,12 @@ h2 {
 /* 🎭 Fade out effect after 3 seconds */
 @keyframes fadeOut {
     0% { background-color: #28a745; } /* Start from green */
-    50% { background-color: rgba(40, 167, 69, 0.5); } /* Midpoint fade */
     100% { background-color: rgba(255, 255, 255, 0.0); } /* Return to default */
 }
 
 /* 🎭 Fade out for updated tickers */
 @keyframes fadeOutUpdated {
     0% { background-color: #ffc107; } /* Start from yellow */
-    50% { background-color: rgba(255, 193, 7, 0.5); } /* Midpoint fade */
     100% { background-color: rgba(255, 255, 255, 0.0); } /* Return to default */
 }
 
