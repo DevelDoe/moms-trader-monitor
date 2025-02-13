@@ -141,7 +141,10 @@ function updateTickersTable(tickers, tableId, prevTickers) {
         const prevTicker = prevTickers[ticker.Symbol];
 
         let isNew = !prevTicker; // Not found in previous state
-        let isUpdated = prevTicker && (prevTicker.Price !== ticker.Price || prevTicker.Count !== ticker.Count || prevTicker.score !== ticker.score);
+        let isUpdated = prevTicker &&
+            (prevTicker.Price !== ticker.Price ||
+             prevTicker.Count !== ticker.Count ||
+             prevTicker.score !== ticker.score);
 
         if (isNew) {
             row.classList.add("highlight-new"); // 🟢 Apply new ticker highlight
@@ -156,7 +159,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
-                cell.className = "symbol";
+                cell.className = "symbol"
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
@@ -176,11 +179,9 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
         tableBody.appendChild(row);
 
-        // 🔥 Apply highlight class for new or updated tickers
-        if (isNew) {
-            row.classList.add("highlight-new");
-        } else if (isUpdated) {
-            row.classList.add("highlight-updated");
+        // 🔥 **Remove highlight after a few seconds**
+        if (isNew || isUpdated) {
+            setTimeout(() => row.classList.remove("highlight-new", "highlight-updated"), 3000);
         }
     });
 
