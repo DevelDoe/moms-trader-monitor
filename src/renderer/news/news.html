@@ -5,7 +5,62 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>News Viewer</title>
         <style>
-            /* Your existing CSS styles */
+            body {
+                font-family: Arial, sans-serif;
+                padding: 10px;
+                background-color: #1c1d23; /* Dark mode background */
+                color: #e0e0e0; /* Light text for contrast */
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                background: #2a2b32; /* Darker background for table */
+                color: #e0e0e0; /* Light text for readability */
+            }
+
+            th,
+            td {
+                border: 1px solid #3a3b41; /* Subtle border for separation */
+                padding: 8px;
+                text-align: left;
+            }
+
+            th {
+                background: #3a3b41; /* Slightly lighter dark header */
+                color: #ffffff; /* White text for contrast */
+            }
+
+            tr:nth-child(even) {
+                background: #24252b; /* Alternating row color */
+            }
+
+            a {
+                color: #66b3ff; /* Soft blue for links */
+                text-decoration: none;
+            }
+
+            a:hover {
+                text-decoration: underline;
+            }
+
+            img {
+                max-width: 50px;
+                height: auto;
+            }
+
+            h1 {
+                -webkit-app-region: drag;
+                color: #ffffff; /* White title */
+            }
+
+            .filter-container {
+                margin-bottom: 10px;
+            }
+
+            input[type="checkbox"] {
+                accent-color: #66b3ff; /* Matching checkbox color */
+            }
         </style>
     </head>
     <body>
@@ -48,7 +103,7 @@
                         return;
                     }
 
-                    // Normalize tickers for comparison
+                    // ✅ Normalize tickers for comparison
                     trackedTickers = new Set(tickers.map((t) => t.Symbol?.toUpperCase()));
                     console.log("✅ Tracked Tickers Updated:", trackedTickers);
 
@@ -88,10 +143,7 @@
 
                 let filteredNews = allNews;
                 if (showOnlyTracked) {
-                    filteredNews = allNews.filter((newsItem) => {
-                        // Assuming newsItem has a 'symbols' array that contains the tickers
-                        return newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()));
-                    });
+                    filteredNews = allNews.filter(({ symbols }) => !Array.isArray(symbols) || symbols.every((symbol) => !trackedTickers.has(symbol.toUpperCase())));
                 }
 
                 console.log("📊 Filtered News:", filteredNews);
@@ -102,18 +154,26 @@
                     return;
                 }
 
-                // Sort news by time (assuming there's a 'created_at' field)
-                let sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
+                let sortedNews = filteredNews
+                    .flatMap(({ ticker, news }) => {
+                        if (!Array.isArray(news)) {
+                            console.error(`⚠️ News for ticker ${ticker} is not an array:`, news);
+                            return [];
+                        }
+                        return news.map((article) => ({ ...article, ticker: ticker?.toUpperCase() }));
+                    }) // Normalize ticker
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
 
                 console.log("📊 Sorted News Ready for Table:", sortedNews);
 
-                // Append sorted news to the table
+                // ✅ Append sorted news to the table
                 sortedNews.forEach((article) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td>${article.symbols ? article.symbols.join(', ') : 'N/A'}</td>
+                        <td>${article.ticker}</td>
                         <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
-                        <td>${article.source || 'N/A'}</td>
+                        <td>${article.source}</td>
                         <td>${new Date(article.created_at).toLocaleString()}</td>
                     `;
                     tableBody.appendChild(row);
@@ -124,7 +184,7 @@
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
-            // Corrected Listener Syntax
+            // ✅ Corrected Listener Syntax
             window.topAPI.onTickerUpdate(() => {
                 console.log("🔄 Received tickers-updated event. Refreshing tickers...");
                 getTickers();
@@ -135,7 +195,7 @@
                 fetchNews();
             });
 
-            // Initial fetch for tickers and news
+            // ✅ Initial fetch for tickers and news
             getTickers();
             fetchNews();
         </script>
