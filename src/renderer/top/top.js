@@ -107,7 +107,7 @@ async function applySavedFilters() {
     tickersDaily = [];
 }
 
-function updateTickersTable(tickers, tableId) {
+function updateTickersTable(tickers, tableId, prevTickers) {
     const table = document.getElementById(tableId);
     const tableHead = table.querySelector("thead");
     const tableBody = table.querySelector("tbody");
@@ -125,7 +125,7 @@ function updateTickersTable(tickers, tableId) {
         return;
     }
 
-    // ✅ Get the keys from the first ticker, ensuring "Symbol", "Count", and "Score" are **always included**
+    // ✅ Get the keys from the first ticker, ensuring "Symbol", "Count", and "Score" are always included
     const allColumns = Object.keys(tickers[0]).filter((key) => enabledColumns[key] || key === "Symbol" || key === "score");
 
     console.log(`📌 Final Columns for ${tableId}:`, allColumns);
@@ -137,6 +137,21 @@ function updateTickersTable(tickers, tableId) {
     tickers.forEach((ticker) => {
         const row = document.createElement("tr");
 
+        // 🔍 **Detect new or updated tickers**
+        const prevTicker = prevTickers[ticker.Symbol];
+
+        let isNew = !prevTicker; // Not found in previous state
+        let isUpdated = prevTicker &&
+            (prevTicker.Price !== ticker.Price ||
+             prevTicker.Count !== ticker.Count ||
+             prevTicker.score !== ticker.score);
+
+        if (isNew) {
+            row.classList.add("highlight-new"); // 🟢 Apply new ticker highlight
+        } else if (isUpdated) {
+            row.classList.add("highlight-updated"); // 🟠 Apply update highlight
+        }
+
         allColumns.forEach((key) => {
             const cell = document.createElement("td");
 
@@ -144,7 +159,7 @@ function updateTickersTable(tickers, tableId) {
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
-                cell.className = "symbol";
+                cell.className = "symbol"
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
@@ -163,6 +178,11 @@ function updateTickersTable(tickers, tableId) {
         });
 
         tableBody.appendChild(row);
+
+        // 🔥 **Remove highlight after a few seconds**
+        if (isNew || isUpdated) {
+            setTimeout(() => row.classList.remove("highlight-new", "highlight-updated"), 3000);
+        }
     });
 
     console.log(`✅ Finished updating table: ${tableId}`);
