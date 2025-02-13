@@ -267,8 +267,6 @@ tickerStore.on("newsUpdated", (update) => {
     });
 });
 
-
-
 tickerStore.on("update", () => {
     log.log("Broadcasting update");
     BrowserWindow.getAllWindows().forEach((win) => {
