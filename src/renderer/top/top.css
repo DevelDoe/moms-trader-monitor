@@ -65,7 +65,7 @@ h2 {
 /* ✅ Default background for table rows */
 #tickers-session tbody tr,
 #tickers-daily tbody tr {
-    background-color: rgba(255, 255, 255, 0.1); /* Subtle gray tone */
+    background-color: rgba(255, 255, 255, 0); /* Subtle gray tone */
     transition: background-color 1s ease-in-out;
 }
 
@@ -75,14 +75,14 @@ h2 {
 @keyframes fadeOut {
     0% { background-color: #28a745; } /* Start from green */
     50% { background-color: rgba(40, 167, 69, 0.5); } /* Midpoint fade */
-    100% { background-color: rgba(255, 255, 255, 0.1); } /* Return to default */
+    100% { background-color: rgba(255, 255, 255, 0.0); } /* Return to default */
 }
 
 /* 🎭 Fade out for updated tickers */
 @keyframes fadeOutUpdated {
     0% { background-color: #ffc107; } /* Start from yellow */
     50% { background-color: rgba(255, 193, 7, 0.5); } /* Midpoint fade */
-    100% { background-color: rgba(255, 255, 255, 0.1); } /* Return to default */
+    100% { background-color: rgba(255, 255, 255, 0.0); } /* Return to default */
 }
 
 /* Apply animations */
