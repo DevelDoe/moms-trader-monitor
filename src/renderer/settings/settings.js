@@ -16,9 +16,6 @@ function openTab(evt, tabId) {
     if (evt) evt.currentTarget.classList.add("active"); // Ensure evt exists
 }
 
-
-        
-
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
@@ -176,6 +173,32 @@ function initializeTopSection() {
     topTransparentToggle.addEventListener("change", updateTransparency);
     sessionLengthInput.addEventListener("input", () => updateListLength("session", sessionLengthInput));
     dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
+}
+
+function initializeNewsSection() {
+    if (!window.settings.news) {
+        window.settings.news = {}; // ✅ Ensure the "news" key exists
+    }
+
+    console.log("🔍 Checking loaded news settings:", window.settings.news);
+
+    const showTrackedTickersToggle = document.getElementById("show-tracked-tickers");
+
+    if (!showTrackedTickersToggle) {
+        console.error("❌ 'Show Only Tracked Tickers' toggle not found!");
+        return;
+    }
+
+    // ✅ Load saved setting
+    showTrackedTickersToggle.checked = window.settings.news.showTrackedTickers ?? false;
+
+    // ✅ Save setting on toggle
+    showTrackedTickersToggle.addEventListener("change", async () => {
+        window.settings.news.showTrackedTickers = showTrackedTickersToggle.checked;
+
+        await window.settingsAPI.update(window.settings);
+        console.log("✅ Updated 'Show Only Tracked Tickers' setting:", showTrackedTickersToggle.checked);
+    });
 }
 
 async function loadAttributeFilters(listType, containerId) {
