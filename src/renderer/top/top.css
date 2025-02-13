@@ -45,3 +45,6 @@ h2 {
     top: 10px;
     right: 10px;
 }
+.symbol:hover {
+    color: #90ee90;
+}
