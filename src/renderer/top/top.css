@@ -22,6 +22,9 @@ tr:nth-child(even) {
 }
 h2 {
     -webkit-app-region: drag;
+    font-size: 10px;
+    text-align: center;
+    color: aliceblue;
 }
 
 /* Apply pointer cursor to Symbol column */
