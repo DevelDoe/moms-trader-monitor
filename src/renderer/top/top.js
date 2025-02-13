@@ -181,7 +181,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
         // 🔥 **Remove highlight after a few seconds**
         if (isNew || isUpdated) {
-            setTimeout(() => row.classList.remove("highlight-new", "highlight-updated"), 3000);
+            setTimeout(() => row.classList.remove("highlight-new", "highlight-updated"), 6000);
         }
     });
 
