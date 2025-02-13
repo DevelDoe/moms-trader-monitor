@@ -6,13 +6,13 @@
     "lists": {
       "session": {
         "length": 100,
-        "Price": true,
+        "Price": false,
         "ChangePercent": true,
         "FiveM": true,
         "Float": true,
         "Volume": true,
         "SprPercent": true,
-        "Time": true,
+        "Time": false,
         "HighOfDay": true,
         "hasNews": true,
         "count": true
