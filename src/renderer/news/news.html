@@ -149,6 +149,7 @@
             fetchTrackedTickers().then(fetchNews);
 
             window.newsAPI.onUpdate(() => {
+                console.log("news update")
                 fetchNews();
             });
         </script>
