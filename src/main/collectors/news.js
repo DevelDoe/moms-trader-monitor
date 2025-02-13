@@ -65,10 +65,10 @@ const connectAlpacaNews = () => {
 };
 
 
-// ✅ Store news as a list instead of per ticker
+
 const handleNewsData = (newsItem) => {
     if (!Array.isArray(newsItem.symbols) || newsItem.symbols.length === 0) {
-        log.warn(`❌ Skipping news with no symbols: ${newsItem.headline}`);
+        log.warn(`Skipping news with no symbols: ${newsItem.headline}`);
         return;
     }
 
