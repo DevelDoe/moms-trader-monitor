@@ -135,49 +135,45 @@
             }
 
             function updateNewsTable() {
-    console.log("📢 Updating news table...");
+                console.log("📢 Updating news table...");
 
-    const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
-    const tableBody = document.querySelector("#news-table tbody");
-    tableBody.innerHTML = "";
+                const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
+                const tableBody = document.querySelector("#news-table tbody");
+                tableBody.innerHTML = "";
 
-    let filteredNews = allNews;
-    
-    if (showOnlyTracked) {
-        filteredNews = allNews.filter(({ symbols }) => 
-            Array.isArray(symbols) && symbols.some(symbol => trackedTickers.has(symbol.toUpperCase()))
-        ); // ✅ Match any symbol inside `symbols` array
-    }
+                let filteredNews = allNews;
 
-    console.log("📊 Filtered News:", filteredNews);
+                if (showOnlyTracked) {
+                    filteredNews = allNews.filter(({ symbols }) => Array.isArray(symbols) && symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()))); // ✅ Match any symbol inside `symbols` array
+                }
 
-    if (filteredNews.length === 0) {
-        console.warn("⚠️ No news available after filtering.");
-        tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-        return;
-    }
+                console.log("📊 Filtered News:", filteredNews);
 
-    // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
-    let sortedNews = filteredNews
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
+                if (filteredNews.length === 0) {
+                    console.warn("⚠️ No news available after filtering.");
+                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+                    return;
+                }
 
-    console.log("📊 Sorted News Ready for Table:", sortedNews);
+                // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
+                let sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
 
-    // ✅ Append sorted news to the table
-    sortedNews.forEach((article) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
+                console.log("📊 Sorted News Ready for Table:", sortedNews);
+
+                // ✅ Append sorted news to the table
+                sortedNews.forEach((article) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
             <td>${article.symbols?.join(", ") || "N/A"}</td> <!-- ✅ Show all associated tickers -->
             <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
             <td>${article.source}</td>
             <td>${new Date(article.created_at).toLocaleString()}</td>
         `;
-        tableBody.appendChild(row);
-    });
+                    tableBody.appendChild(row);
+                });
 
-    console.log("✅ News table updated!");
-}
-
+                console.log("✅ News table updated!");
+            }
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
