@@ -113,7 +113,7 @@ function updateTickersTable(tickers, tableId) {
     }
 
     // ✅ Get the keys from the first ticker, ensuring "Symbol", "Count", and "Score" are **always included**
-    const allColumns = Object.keys(tickers[0]).filter((key) => enabledColumns[key] || key === "Symbol" || key === "count" || key === "score");
+    const allColumns = Object.keys(tickers[0]).filter((key) => enabledColumns[key] || key === "Symbol" || key === "score");
 
     console.log(`📌 Final Columns for ${tableId}:`, allColumns);
 
