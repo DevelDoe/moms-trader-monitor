@@ -248,7 +248,7 @@ function getScoreBreakdown(ticker) {
     }
 
     let floatValue = parseFloatValue(ticker.Float);
-    if (floatValue == 0) {
+    if (floatValue === 0) {
         score += 0;
         breakdown.push(`+30 (Float < 1M)`);
     } else if (floatValue < 1) {
