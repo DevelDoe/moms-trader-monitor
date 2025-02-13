@@ -9,9 +9,7 @@ body::-webkit-scrollbar {
 table {
     border-collapse: collapse;
 }
-thead {
-    border-bottom: 1px solid rgb(97 146 151);
-}
+
 th,
 td {
     padding: 8px;
