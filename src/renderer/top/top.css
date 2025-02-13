@@ -23,6 +23,7 @@ td {
 h2 {
     -webkit-app-region: drag;
 }
+
 /* Apply pointer cursor to Symbol column */
 #tickers-session td:first-child,
 #tickers-daily td:first-child {
