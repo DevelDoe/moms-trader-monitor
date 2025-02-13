@@ -32,5 +32,8 @@
         "count": true
       }
     }
+  },
+  "news": {
+      "showTrackedTickers": false
   }
 }
