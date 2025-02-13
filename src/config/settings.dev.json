@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 0,
+    "minPrice": 0.05,
     "maxPrice": 10,
     "lists": {
       "session": {
@@ -12,7 +12,7 @@
         "Float": true,
         "Volume": true,
         "SprPercent": true,
-        "Time": false,
+        "Time": true,
         "HighOfDay": true,
         "hasNews": true,
         "count": true
