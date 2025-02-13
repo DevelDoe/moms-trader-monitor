@@ -104,6 +104,7 @@
             async function fetchNews() {
                 try {
                     const newsData = await window.newsAPI.get(); // Fetch news from Electron API
+                    console.log("newsData: " newsData)
                     allNews = newsData;
                     updateNewsTable();
                 } catch (error) {
@@ -117,6 +118,7 @@
                 tableBody.innerHTML = "";
 
                 let filteredNews = allNews;
+
                 if (showOnlyTracked) {
                     filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
                 }
