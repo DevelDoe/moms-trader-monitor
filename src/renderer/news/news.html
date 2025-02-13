@@ -163,24 +163,20 @@
         return;
     }
 
-    // ✅ Flatten the array and ensure each article has ticker info
+    // ✅ Assign `ticker` directly from `symbols`
     let sortedNews = filteredNews
-        .flatMap(({ symbols, news }) => {
-            if (!Array.isArray(news)) {
-                console.error(`⚠️ News for ticker ${symbols} is not an array:`, news);
-                return [];
-            }
-            return news.map(article => ({
-                ...article,
-                ticker: symbols ? symbols.join(", ") : "N/A" // ✅ Attach the ticker properly
-            }));
-        })
+        .map(article => ({
+            ...article,
+            ticker: Array.isArray(article.symbols) && article.symbols.length > 0 
+                ? article.symbols.join(", ")  // ✅ Use symbols array
+                : "N/A"
+        }))
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
     console.log("📊 Sorted News Ready for Table:", sortedNews);
 
     sortedNews.forEach((article) => {
-        const ticker = article.ticker || "N/A";
+        const ticker = article.ticker;
         const headline = article.headline || "No headline";
         const source = article.source || "N/A";
         const time = article.created_at ? new Date(article.created_at).toLocaleString() : "Invalid Date";
@@ -199,6 +195,7 @@
 
     console.log("✅ News table updated!");
 }
+
 
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
