@@ -65,21 +65,18 @@ h2 {
 /* 🟢 Highlight for new tickers */
 .highlight-new {
     background-color: #28a745 !important; /* Green */
-    transition: background-color 1.5s ease-in-out;
+    animation: fadeOutHighlight 2.5s ease-in-out forwards;
 }
 
 /* 🟠 Highlight for updated tickers */
 .highlight-updated {
     background-color: #ffc107 !important; /* Yellow */
-    transition: background-color 1.5s ease-in-out;
+    animation: fadeOutHighlight 2.5s ease-in-out forwards;
 }
 
-/* 🎭 Fade out effect after 3 seconds */
-.highlight-new, .highlight-updated {
-    animation: fadeOut 3s ease-in-out forwards;
-}
-
-@keyframes fadeOut {
-    0% { background-color: inherit; }
-    100% { background-color: transparent; }
+/* 🔥 Keyframe animation that gradually fades out */
+@keyframes fadeOutHighlight {
+    0% { background-color: inherit; }  /* Keep initial color */
+    50% { background-color: rgba(40, 167, 69, 0.5); }  /* Midpoint fade */
+    100% { background-color: transparent; }  /* Fully transparent */
 }
