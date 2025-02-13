@@ -55,9 +55,9 @@ class Store extends EventEmitter {
 
     
     addNews(newsItems) {
-        log.log("[store.js] 📰 Incoming newsItems:", newsItems);
+        log.log("Incoming newsItems:", newsItems);
         if (!Array.isArray(newsItems) || newsItems.length === 0) {
-            log.warn("❌ No valid news items to store.");
+            log.warn("No valid news items to store.");
             return;
         }
 
@@ -118,7 +118,7 @@ class Store extends EventEmitter {
         this.newsList = this.newsList.filter((news) => now - news.storedAt <= TWENTY_MINUTES);
         const afterCleanup = this.newsList.length;
 
-        log.log(`🧹 Cleaned up old news. Before: ${beforeCleanup}, After: ${afterCleanup}`);
+        log.log(`Cleaned up old news. Before: ${beforeCleanup}, After: ${afterCleanup}`);
     }
 }
 
