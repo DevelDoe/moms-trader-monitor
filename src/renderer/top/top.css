@@ -8,6 +8,7 @@ body::-webkit-scrollbar {
 }
 table {
     border-collapse: collapse;
+    margin-bottom: 20px;
 }
 thead {
     color: darkgoldenrod;
@@ -23,7 +24,6 @@ tr:nth-child(even) {
 h2 {
     -webkit-app-region: drag;
     font-size: 10px;
-    /* text-align: center; */
     color: #595959;
     margin-left: 10px;
     width: 59%;
