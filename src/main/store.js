@@ -53,7 +53,9 @@ class Store extends EventEmitter {
         this.emit("update");
     }
 
+    
     addNews(newsItems) {
+        log.log("[store.js] 📰 Incoming newsItems:", newsItems);
         if (!Array.isArray(newsItems) || newsItems.length === 0) {
             log.warn("❌ No valid news items to store.");
             return;
