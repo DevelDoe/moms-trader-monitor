@@ -15,7 +15,7 @@
         "Time": true,
         "HighOfDay": true,
         "hasNews": true,
-        "count": true
+        "count": false
       },
       "daily": {
         "length": 4,
