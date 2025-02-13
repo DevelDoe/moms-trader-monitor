@@ -65,16 +65,22 @@ const connectAlpacaNews = () => {
 };
 
 
-// ✅ Process and store relevant news
+// ✅ Store news as a list instead of per ticker
 const handleNewsData = (newsItem) => {
-    if (!newsItem.symbols || newsItem.symbols.length === 0) return;
+    if (!Array.isArray(newsItem.symbols) || newsItem.symbols.length === 0) {
+        log.warn(`❌ Skipping news with no symbols: ${newsItem.headline}`);
+        return;
+    }
 
-    newsItem.symbols.forEach((symbol) => {
-        tickerStore.updateNews(symbol, [newsItem]); // Store under its ticker
-        log.log(`Processing new article for ${symbol}: ${newsItem.headline}`);
+    // Add the news to a central storage list (without duplicating per ticker)
+    tickerStore.addNews(newsItem);
+    log.log(`📥 Storing news: ${newsItem.headline} (Tickers: ${newsItem.symbols.join(", ")})`);
+    
+    // ✅ Broadcast entire batch at once instead of per ticker
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("news-updated", { newsItems: [newsItem] });
     });
 };
-
 
 
 // ✅ Start WebSocket connection
