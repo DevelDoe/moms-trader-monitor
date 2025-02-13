@@ -34,3 +34,9 @@ h2 {
     background-color: #90ee90; /* Light green */
     transition: background-color 0.3s ease-in-out;
 }
+
+#clear-session-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
