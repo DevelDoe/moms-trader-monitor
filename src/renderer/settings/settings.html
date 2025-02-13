@@ -17,6 +17,7 @@
                 <button class="tablinks" onclick="openTab(event, 'general')">General</button>
                 <button class="tablinks" onclick="openTab(event, 'audio')">Audio</button>
                 <button class="tablinks active" onclick="openTab(event, 'top')">Top</button>
+                <button class="tablinks active" onclick="openTab(event, 'news')">News</button>
             </div>
 
             <div id="general" class="tabcontent">
@@ -55,6 +56,11 @@
                     <div id="daily-filters" class="filter-container"></div>
                     <label> Max Entries: <input type="number" id="daily-length" min="1" step="1" /> </label>
                 </div>
+            </div>
+
+            
+            <div id="news" class="tabcontent">
+                <h2>News</h2>
             </div>
         </div>
         <script src="./settings.js"></script>
