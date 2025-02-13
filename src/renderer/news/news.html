@@ -135,68 +135,56 @@
             }
 
             function updateNewsTable() {
-    console.log("📢 Updating news table...");
+                console.log("📢 Updating news table...");
 
-    const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
-    const tableBody = document.querySelector("#news-table tbody");
-    tableBody.innerHTML = "";
+                const tableBody = document.querySelector("#news-table tbody");
+                tableBody.innerHTML = "";
 
-    let filteredNews = allNews;
+                if (!Array.isArray(allNews) || allNews.length === 0) {
+                    console.warn("⚠️ No news available.");
+                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+                    return;
+                }
 
-    if (showOnlyTracked) {
-        console.log("📊 Filtering news based on tracked tickers...");
+                // ✅ Process each news item, creating multiple entries if it has multiple symbols
+                let processedNews = allNews.flatMap((newsItem) => {
+                    if (!Array.isArray(newsItem.symbols) || newsItem.symbols.length === 0) {
+                        console.warn("⚠️ News item has no symbols:", newsItem);
+                        return [{ ...newsItem, ticker: "N/A" }]; // Fallback for missing tickers
+                    }
 
-        filteredNews = allNews.filter((newsItem) => {
-            if (!Array.isArray(newsItem.symbols)) {
-                console.warn("⚠️ No symbols array found in news item:", newsItem);
-                return false;
-            }
-            return newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()));
-        });
-    }
+                    return newsItem.symbols.map((symbol) => ({
+                        ...newsItem,
+                        ticker: symbol.toUpperCase(), // ✅ Ensure ticker is correctly attached
+                    }));
+                });
 
-    console.log("📊 Filtered News:", filteredNews);
+                // ✅ Sort by created_at (newest first)
+                let sortedNews = processedNews.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
-    if (filteredNews.length === 0) {
-        console.warn("⚠️ No news available after filtering.");
-        tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-        return;
-    }
+                console.log("📊 Processed News Ready for Table:", sortedNews);
 
-    // ✅ Assign `ticker` directly from `symbols`
-    let sortedNews = filteredNews
-        .map(article => ({
-            ...article,
-            ticker: Array.isArray(article.symbols) && article.symbols.length > 0 
-                ? article.symbols.join(", ")  // ✅ Use symbols array
-                : "N/A"
-        }))
-        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+                // ✅ Append processed news to the table
+                sortedNews.forEach((article) => {
+                    const ticker = article.ticker || "N/A";
+                    const headline = article.headline || "No headline";
+                    const source = article.source || "N/A";
+                    const time = article.created_at ? new Date(article.created_at).toLocaleString() : "Invalid Date";
 
-    console.log("📊 Sorted News Ready for Table:", sortedNews);
+                    console.log(`📌 Adding Row - Ticker: ${ticker}, Headline: ${headline}, Source: ${source}, Time: ${time}`);
 
-    sortedNews.forEach((article) => {
-        const ticker = article.ticker;
-        const headline = article.headline || "No headline";
-        const source = article.source || "N/A";
-        const time = article.created_at ? new Date(article.created_at).toLocaleString() : "Invalid Date";
-
-        console.log(`📌 Adding Row - Ticker: ${ticker}, Headline: ${headline}, Source: ${source}, Time: ${time}`);
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
             <td>${ticker}</td>
             <td><a href="${article.url || "#"}" target="_blank">${headline}</a></td>
             <td>${source}</td>
             <td>${time}</td>
         `;
-        tableBody.appendChild(row);
-    });
+                    tableBody.appendChild(row);
+                });
 
-    console.log("✅ News table updated!");
-}
-
-
+                console.log("✅ News table updated!");
+            }
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
