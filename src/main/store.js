@@ -125,17 +125,11 @@ class Store extends EventEmitter {
         const TWENTY_MINUTES = 20 * 60 * 1000;
         const now = Date.now();
 
-        this.newsData.forEach((newsArray, ticker) => {
-            const filteredNews = newsArray.filter((news) => now - news.storedAt <= TWENTY_MINUTES);
+        const beforeCleanup = this.newsList.length;
+        this.newsList = this.newsList.filter((news) => now - news.storedAt <= TWENTY_MINUTES);
+        const afterCleanup = this.newsList.length;
 
-            if (filteredNews.length > 0) {
-                this.newsData.set(ticker, filteredNews);
-            } else {
-                this.newsData.delete(ticker); // Remove empty tickers
-            }
-        });
-
-        log.log("Old news cleaned up");
+        log.log(`Cleaned up old news. Before: ${beforeCleanup}, After: ${afterCleanup}`);
     }
 }
 
