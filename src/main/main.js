@@ -312,15 +312,6 @@ ipcMain.on("refresh-top", async () => {
     windows.top.show();
 });
 
-ipcMain.on("apply-filters", (event, updatedSettings) => {
-    log.log("Broadcasting Applying filters");
-
-    // ✅ Notify top window to update with new filters
-    BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("filter-updated", updatedSettings);
-    });
-});
-
 // news
 ipcMain.on("toggle-news", () => {
     if (windows.news) {
