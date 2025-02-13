@@ -69,15 +69,7 @@ h2 {
     transition: background-color 1s ease-in-out;
 }
 
-/* 🟢 Highlight for new tickers */
-.highlight-new {
-    background-color: #28a745 !important; /* Green */
-}
 
-/* 🟠 Highlight for updated tickers */
-.highlight-updated {
-    background-color: #ffc107 !important; /* Yellow */
-}
 
 /* 🎭 Fade out effect after 3 seconds */
 @keyframes fadeOut {
