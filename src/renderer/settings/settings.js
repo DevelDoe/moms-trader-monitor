@@ -178,7 +178,7 @@ function initializeTopSection() {
 
 function initializeNewsSection() {
     if (!window.settings.news) {
-        window.settings.news = {}; // ✅ Ensure the "news" key exists
+        window.settings.news = {}; // ✅ Ensure "news" key exists
     }
 
     console.log("🔍 Checking loaded news settings:", window.settings.news);
@@ -195,12 +195,20 @@ function initializeNewsSection() {
 
     // ✅ Save setting on toggle
     showTrackedTickersToggle.addEventListener("change", async () => {
+        // ✅ Ensure news settings exist before saving
+        if (!window.settings.news) {
+            window.settings.news = {};
+        }
+
         window.settings.news.showTrackedTickers = showTrackedTickersToggle.checked;
+
+        console.log("💾 Updating settings with news key:", window.settings);
 
         await window.settingsAPI.update(window.settings);
         console.log("✅ Updated 'Show Only Tracked Tickers' setting:", showTrackedTickersToggle.checked);
     });
 }
+
 
 async function loadAttributeFilters(listType, containerId) {
     try {
