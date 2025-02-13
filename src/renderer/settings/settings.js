@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         initializeGeneralSection();
         initializeTopSection();
+        initializeNewsSection();
 
         await loadAttributeFilters("session", "session-filters");
         await loadAttributeFilters("daily", "daily-filters");
