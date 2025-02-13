@@ -1,8 +1,8 @@
 {
   "top": {
-    "transparent": false,
+    "transparent": true,
     "minPrice": 0,
-    "maxPrice": 4,
+    "maxPrice": 100,
     "lists": {
       "session": {
         "length": 100,
