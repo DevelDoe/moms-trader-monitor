@@ -22,7 +22,7 @@
         "Price": true,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": false,
+        "Float": true,
         "Volume": false,
         "SprPercent": false,
         "Time": false,
