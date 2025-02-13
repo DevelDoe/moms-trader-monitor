@@ -89,12 +89,12 @@
 
         <script>
             let allNews = [];
-            let trackedTickers = new Set();
+let trackedTickers = new Set();
 
-            async function fetchTrackedTickers() {
+async function fetchTrackedTickers() {
     try {
         const tickers = await window.topAPI.getTickers("daily");
-        
+
         if (!Array.isArray(tickers)) {
             console.error("⚠️ Expected an array from getTickers but got:", tickers);
             return;
@@ -104,7 +104,7 @@
         trackedTickers = new Set(tickers.map((t) => t.Symbol?.toUpperCase())); // Ensure uppercase consistency
         console.log("✅ Tracked Tickers Updated:", trackedTickers);
 
-        // Refresh the news table to reflect changes in tracked tickers
+        // Refresh the news table after tickers update
         updateNewsTable();
     } catch (error) {
         console.error("⚠️ Error fetching tracked tickers:", error);
@@ -112,69 +112,67 @@
 }
 
 // ✅ Listen for ticker updates and refresh the tracked tickers list
-window.topAPI.onTickerUpdate(() => {
+window.topAPI.onTickerUpdate(async () => {
     console.log("🔄 Received tickers-updated event. Refreshing tracked tickers...");
-    fetchTrackedTickers();
+    await fetchTrackedTickers();
 });
 
-// ✅ Ensure news updates dynamically when new data arrives
-window.newsAPI.onUpdate(() => {
-    console.log("🔄 Received news update. Refreshing news...");
-    fetchNews();
+// ✅ Listen for **socket-based news updates** and update dynamically
+window.newsAPI.onUpdate((newsData) => {
+    console.log("📰 News update received from socket:", newsData); // Debugging log
+
+    if (!Array.isArray(newsData)) {
+        console.error("⚠️ Expected an array from newsAPI socket but got:", newsData);
+        return;
+    }
+
+    allNews = newsData;
+    updateNewsTable();
 });
 
-// ✅ Initial load
-fetchTrackedTickers().then(fetchNews);
+function updateNewsTable() {
+    const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
+    const tableBody = document.querySelector("#news-table tbody");
+    tableBody.innerHTML = "";
 
+    let filteredNews = allNews;
+    if (showOnlyTracked) {
+        filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker?.toUpperCase())); // Match case
+    }
 
-            async function fetchNews() {
-                try {
-                    const newsData = await window.newsAPI.get(); // Fetch news from Electron API
-                    allNews = newsData;
-                    updateNewsTable();
-                } catch (error) {
-                    document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
-                }
+    if (filteredNews.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+        return;
+    }
+
+    let sortedNews = filteredNews
+        .flatMap(({ ticker, news }) => {
+            if (!Array.isArray(news)) {
+                console.error(`⚠️ News for ticker ${ticker} is not an array:`, news);
+                return [];
             }
+            return news.map((article) => ({ ...article, ticker: ticker?.toUpperCase() }));
+        }) // Normalize ticker
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
 
-            function updateNewsTable() {
-                const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
-                const tableBody = document.querySelector("#news-table tbody");
-                tableBody.innerHTML = "";
-
-                let filteredNews = allNews;
-                if (showOnlyTracked) {
-                    filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker?.toUpperCase())); // Match case
-                }
-
-                if (filteredNews.length === 0) {
-                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-                    return;
-                }
-
-                let sortedNews = filteredNews
-                    .flatMap(({ ticker, news }) => news.map((article) => ({ ...article, ticker: ticker?.toUpperCase() }))) // Normalize ticker
-                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
-
-                sortedNews.forEach((article) => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
+    sortedNews.forEach((article) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
             <td>${article.ticker}</td>
             <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
             <td>${article.source}</td>
             <td>${new Date(article.created_at).toLocaleString()}</td>
         `;
-                    tableBody.appendChild(row);
-                });
-            }
+        tableBody.appendChild(row);
+    });
+}
 
-            document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
+// ✅ Update table when checkbox is toggled
+document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
-            fetchTrackedTickers().then(fetchNews);
+// ✅ Initial fetch for tickers (news will come from socket)
+fetchTrackedTickers();
 
-            window.newsAPI.onUpdate(() => {
-                fetchNews();
-            });
         </script>
     </body>
 </html>
