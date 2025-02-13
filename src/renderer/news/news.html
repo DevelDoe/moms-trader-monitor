@@ -94,18 +94,8 @@
             async function fetchTrackedTickers() {
                 try {
                     const tickers = await window.topAPI.getTickers("daily");
-
-                    if (!Array.isArray(tickers)) {
-                        console.error("⚠️ Expected an array from getTickers but got:", tickers);
-                        return;
-                    }
-
-                    // ✅ Normalize ticker symbols
-                    trackedTickers = new Set(tickers.map((t) => t.Symbol?.toUpperCase()));
-                    console.log("✅ Tracked Tickers Updated:", trackedTickers);
-
-                    // Refresh the table after tickers update
-                    updateNewsTable();
+                    trackedTickers = new Set(tickers.map((t) => t.Symbol));
+                    console.log("✅ Tracked Tickers:", trackedTickers);
                 } catch (error) {
                     console.error("⚠️ Error fetching tracked tickers:", error);
                 }
@@ -115,7 +105,6 @@
                 try {
                     const newsData = await window.newsAPI.get(); // Fetch news from Electron API
                     allNews = newsData;
-                    console.log("Fetched news:", allNews)
                     updateNewsTable();
                 } catch (error) {
                     document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
@@ -129,7 +118,7 @@
 
                 let filteredNews = allNews;
                 if (showOnlyTracked) {
-                    filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker?.toUpperCase())); // Match case
+                    filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
                 }
 
                 if (filteredNews.length === 0) {
@@ -139,36 +128,27 @@
 
                 // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
                 let sortedNews = filteredNews
-                    .flatMap(({ ticker, news }) => news.map((article) => ({ ...article, ticker: ticker?.toUpperCase() }))) // Normalize ticker
+                    .flatMap(({ ticker, news }) => news.map((article) => ({ ...article, ticker }))) // Flatten news
                     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
 
                 // ✅ Append sorted news to the table
                 sortedNews.forEach((article) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td>${article.ticker}</td>
-                        <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
-                        <td>${article.source}</td>
-                        <td>${new Date(article.created_at).toLocaleString()}</td>
-                    `;
+            <td>${article.ticker}</td>
+            <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
+            <td>${article.source}</td>
+            <td>${new Date(article.created_at).toLocaleString()}</td>
+        `;
                     tableBody.appendChild(row);
                 });
             }
 
-            // ✅ Update tracked tickers when "tickers-updated" is received
-            window.topAPI.onTickerUpdate(() => {
-                console.log("🔄 Received tickers-updated event. Refreshing tracked tickers...");
-                fetchTrackedTickers();
-            });
-
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
-            // ✅ Initial fetch for tickers and news
             fetchTrackedTickers().then(fetchNews);
 
-            // ✅ Keep fetching news on updates
             window.newsAPI.onUpdate(() => {
-                console.log("News Update calling fetch");
                 fetchNews();
             });
         </script>
