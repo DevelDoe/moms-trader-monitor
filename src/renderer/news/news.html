@@ -135,63 +135,71 @@
             }
 
             function updateNewsTable() {
-                console.log("📢 Updating news table...");
+    console.log("📢 Updating news table...");
 
-                const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
-                console.log("🔎 Filter Checkbox State:", showOnlyTracked);
+    const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
+    const tableBody = document.querySelector("#news-table tbody");
+    tableBody.innerHTML = "";
 
-                const tableBody = document.querySelector("#news-table tbody");
-                tableBody.innerHTML = "";
+    let filteredNews = allNews;
 
-                let filteredNews = allNews;
+    if (showOnlyTracked) {
+        console.log("📊 Filtering news based on tracked tickers...");
 
-                if (showOnlyTracked) {
-                    console.log("📊 Filtering news based on tracked tickers...");
-
-                    filteredNews = allNews.filter((newsItem) => {
-                        console.log("🔍 Checking news item:", newsItem);
-                        if (!Array.isArray(newsItem.symbols)) {
-                            console.warn("⚠️ No symbols array found in news item:", newsItem);
-                            return false; // Skip news with no symbols
-                        }
-
-                        const hasTrackedSymbol = newsItem.symbols.some((symbol) => {
-                            console.log(`🔎 Checking symbol '${symbol}' against tracked tickers...`);
-                            return trackedTickers.has(symbol.toUpperCase());
-                        });
-
-                        console.log(`✅ News item ${newsItem.headline} is ${hasTrackedSymbol ? "TRACKED" : "NOT TRACKED"}`);
-                        return hasTrackedSymbol;
-                    });
-                }
-
-                console.log("📊 Filtered News:", filteredNews);
-
-                if (filteredNews.length === 0) {
-                    console.warn("⚠️ No news available after filtering.");
-                    tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
-                    return;
-                }
-
-                // Sort news by time (assuming there's a 'created_at' field)
-                let sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-                console.log("📊 Sorted News Ready for Table:", sortedNews);
-
-                // Append sorted news to the table
-                sortedNews.forEach((article) => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
-            <td>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
-            <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
-            <td>${article.source || "N/A"}</td>
-            <td>${new Date(article.created_at).toLocaleString()}</td>
-        `;
-                    tableBody.appendChild(row);
-                });
-
-                console.log("✅ News table updated!");
+        filteredNews = allNews.filter((newsItem) => {
+            if (!Array.isArray(newsItem.symbols)) {
+                console.warn("⚠️ No symbols array found in news item:", newsItem);
+                return false;
             }
+            return newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()));
+        });
+    }
+
+    console.log("📊 Filtered News:", filteredNews);
+
+    if (filteredNews.length === 0) {
+        console.warn("⚠️ No news available after filtering.");
+        tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
+        return;
+    }
+
+    // ✅ Flatten the array and ensure each article has ticker info
+    let sortedNews = filteredNews
+        .flatMap(({ symbols, news }) => {
+            if (!Array.isArray(news)) {
+                console.error(`⚠️ News for ticker ${symbols} is not an array:`, news);
+                return [];
+            }
+            return news.map(article => ({
+                ...article,
+                ticker: symbols ? symbols.join(", ") : "N/A" // ✅ Attach the ticker properly
+            }));
+        })
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+    console.log("📊 Sorted News Ready for Table:", sortedNews);
+
+    sortedNews.forEach((article) => {
+        const ticker = article.ticker || "N/A";
+        const headline = article.headline || "No headline";
+        const source = article.source || "N/A";
+        const time = article.created_at ? new Date(article.created_at).toLocaleString() : "Invalid Date";
+
+        console.log(`📌 Adding Row - Ticker: ${ticker}, Headline: ${headline}, Source: ${source}, Time: ${time}`);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${ticker}</td>
+            <td><a href="${article.url || "#"}" target="_blank">${headline}</a></td>
+            <td>${source}</td>
+            <td>${time}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    console.log("✅ News table updated!");
+}
+
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
