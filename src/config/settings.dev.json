@@ -28,8 +28,8 @@
         "Time": false,
         "HighOfDay": true,
         "news": true,
-        "hasNews": false,
-        "count": false
+        "hasNews": true,
+        "count": true
       }
     }
   }
