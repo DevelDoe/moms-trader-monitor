@@ -9,7 +9,9 @@ body::-webkit-scrollbar {
 table {
     border-collapse: collapse;
 }
-
+thead {
+    color: #90ee90;
+}
 th,
 td {
     padding: 8px;
