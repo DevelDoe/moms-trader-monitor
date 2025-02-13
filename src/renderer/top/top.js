@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     // ✅ Listen for filter updates from settings
-    window.topAPI.onFilterUpdate(async () => {
+    window.settingsAPI.onUpdate(async () => {
         console.log("🎯 Filter settings updated, applying new filters...");
 
         await applySavedFilters(); // ✅ Update settings and clear lists
