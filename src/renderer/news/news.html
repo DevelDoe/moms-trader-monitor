@@ -91,7 +91,7 @@
             let allNews = [];
             let trackedTickers = new Set();
 
-            async function fetchTrackedTickers() {
+            async function getTickers() {
                 try {
                     const tickers = await window.topAPI.getTickers("daily");
                     trackedTickers = new Set(tickers.map((t) => t.Symbol));
@@ -146,7 +146,9 @@
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
-            fetchTrackedTickers().then(fetchNews);
+            fwindow.topAPI.onTickerUpdate(() => {
+                getTickers();
+            });
 
             window.newsAPI.onUpdate(() => {
                 fetchNews();
