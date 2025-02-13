@@ -55,37 +55,46 @@ class Store extends EventEmitter {
 
     
     addNews(newsItems) {
-        log.log("Incoming newsItems:", newsItems);
-        if (!Array.isArray(newsItems) || newsItems.length === 0) {
-            log.warn("No valid news items to store.");
+        if (!newsItems) {
+            log.warn("[store.js] ❌ No news items provided.");
             return;
         }
-
+    
+        // ✅ Ensure `newsItems` is always an array
+        if (!Array.isArray(newsItems)) {
+            log.warn("[store.js] ⚠️ newsItems is not an array. Wrapping it.");
+            newsItems = [newsItems]; // 🔥 Wrap in array
+        }
+    
+        if (newsItems.length === 0) {
+            log.warn("[store.js] ❌ No valid news items to store.");
+            return;
+        }
+    
         const timestampedNews = newsItems.map((news) => ({
             ...news,
-            storedAt: Date.now(), // ✅ Store timestamp
+            storedAt: Date.now(),
+            symbols: Array.isArray(news.symbols) ? news.symbols : [], // ✅ Ensure symbols is always an array
         }));
-
+    
         this.newsList.push(...timestampedNews);
-        log.log(`📥 Stored ${newsItems.length} new articles.`);
-
+        log.log(`[store.js] 📥 Stored ${newsItems.length} new articles.`);
+    
         // ✅ Update `hasNews` for tickers that have relevant news
-        newsItems.forEach((news) => {
-            if (!Array.isArray(news.symbols)) return;
-
+        timestampedNews.forEach((news) => {
             news.symbols.forEach((symbol) => {
                 if (this.dailyData.has(symbol)) {
-                    this.dailyData.get(symbol).hasNews = true; // ✅ Mark ticker as having news
+                    this.dailyData.get(symbol).hasNews = true;
                 }
                 if (this.sessionData.has(symbol)) {
                     this.sessionData.get(symbol).hasNews = true;
                 }
             });
         });
-
-        // ✅ Emit a single batch update instead of per ticker
+    
         this.emit("newsUpdated", { newsItems: timestampedNews });
     }
+    
 
     // ✅ Retrieve all stored news
     getAllNews() {
