@@ -12,7 +12,7 @@ table {
 }
 table,
 th {
-    border-bottom: 1px solid white;
+    border-bottom: 1px solid rgb(136, 136, 136);
 }
 th,
 td {
