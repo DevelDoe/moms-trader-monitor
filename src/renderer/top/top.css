@@ -20,7 +20,7 @@ td {
     padding: 8px;
     text-align: left;
 }
-h1 {
+h2 {
     -webkit-app-region: drag;
 }
 /* Apply pointer cursor to Symbol column */
