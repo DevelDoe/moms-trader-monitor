@@ -382,7 +382,14 @@ if (!isDevelopment) {
 
     autoUpdater.on("update-available", (info) => {
         log.log(`🔔 Update found: ${info.version}`);
-
+    
+        // ✅ Close splash screen if it's still open
+        if (windows.splash && !windows.splash.isDestroyed()) {
+            log.log("Closing splash screen before starting update...");
+            windows.splash.close();
+            delete windows.splash; // ✅ Ensure reference is removed
+        }
+    
         if (appSettings.hasDonated) {
             // 🛠 If user has donated, let them decide
             dialog
@@ -406,6 +413,7 @@ if (!isDevelopment) {
             autoUpdater.downloadUpdate();
         }
     });
+    
 
     autoUpdater.on("update-not-available", () => {
         log.log("No update available.");
