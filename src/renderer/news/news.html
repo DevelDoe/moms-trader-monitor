@@ -44,11 +44,6 @@
                 text-decoration: underline;
             }
 
-            img {
-                max-width: 50px;
-                height: auto;
-            }
-
             h1 {
                 -webkit-app-region: drag;
                 color: #ffffff; /* White title */
@@ -93,9 +88,14 @@
 
             async function fetchTrackedTickers() {
                 try {
+                    console.log("📢 Fetching tracked tickers...");
+
                     const tickers = await window.topAPI.getTickers("daily");
-                    trackedTickers = new Set(tickers.map((t) => t.Symbol));
+                    trackedTickers = new Set(tickers.map((t) => t.Symbol?.toUpperCase()));
+
                     console.log("✅ Tracked Tickers:", trackedTickers);
+
+                    updateNewsTable(); // Refresh table after updating tickers
                 } catch (error) {
                     console.error("⚠️ Error fetching tracked tickers:", error);
                 }
@@ -103,54 +103,81 @@
 
             async function fetchNews() {
                 try {
-                    const newsData = await window.newsAPI.get(); // Fetch news from Electron API
+                    console.log("📢 Fetching news...");
+
+                    const newsData = await window.newsAPI.get();
+                    console.log("📰 Received news:", newsData);
+
+                    if (!Array.isArray(newsData)) {
+                        console.error("⚠️ Expected an array but got:", newsData);
+                        return;
+                    }
+
                     allNews = newsData;
                     updateNewsTable();
                 } catch (error) {
+                    console.error("⚠️ Error fetching news:", error);
                     document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
                 }
             }
 
             function updateNewsTable() {
+                console.log("📢 Updating news table...");
+
                 const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
                 const tableBody = document.querySelector("#news-table tbody");
                 tableBody.innerHTML = "";
 
                 let filteredNews = allNews;
                 if (showOnlyTracked) {
-                    filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker));
+                    filteredNews = allNews.filter((newsItem) =>
+                        newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()))
+                    );
                 }
 
+                console.log("📊 Filtered News:", filteredNews);
+
                 if (filteredNews.length === 0) {
+                    console.warn("⚠️ No news available after filtering.");
                     tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
                     return;
                 }
 
-                // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
-                let sortedNews = filteredNews
-                    .flatMap(({ ticker, news }) => news.map((article) => ({ ...article, ticker }))) // Flatten news
-                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
+                // ✅ Sort news by time (newest first)
+                let sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                console.log("📊 Sorted News Ready for Table:", sortedNews);
 
                 // ✅ Append sorted news to the table
                 sortedNews.forEach((article) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-            <td>${article.ticker}</td>
-            <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
-            <td>${article.source}</td>
-            <td>${new Date(article.created_at).toLocaleString()}</td>
-        `;
+                        <td>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
+                        <td><a href="${article.url}" target="_blank">${article.headline || "No headline"}</a></td>
+                        <td>${article.source || "N/A"}</td>
+                        <td>${article.created_at ? new Date(article.created_at).toLocaleString() : "N/A"}</td>
+                    `;
                     tableBody.appendChild(row);
                 });
+
+                console.log("✅ News table updated!");
             }
 
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
-            fetchTrackedTickers().then(fetchNews);
+            // ✅ Listen for updates
+            window.topAPI.onTickerUpdate(() => {
+                console.log("🔄 Received tickers-updated event. Refreshing tickers...");
+                fetchTrackedTickers();
+            });
 
             window.newsAPI.onUpdate(() => {
+                console.log("🔄 Received news update. Fetching fresh news...");
                 fetchNews();
             });
+
+            // ✅ Initial fetch
+            fetchTrackedTickers().then(fetchNews);
         </script>
     </body>
 </html>
