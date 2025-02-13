@@ -23,10 +23,10 @@
         "ChangePercent": false,
         "FiveM": false,
         "Float": true,
-        "Volume": false,
-        "SprPercent": false,
+        "Volume": true,
+        "SprPercent": true,
         "Time": false,
-        "HighOfDay": false,
+        "HighOfDay": true,
         "news": true,
         "hasNews": false,
         "count": false
