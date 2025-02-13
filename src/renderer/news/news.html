@@ -90,43 +90,43 @@
         <script>
             let allNews = [];
             let trackedTickers = new Set();
-        
+
             async function fetchTrackedTickers() {
                 console.log("📢 fetchTrackedTickers() called");
-        
+
                 try {
                     const tickers = await window.topAPI.getTickers("daily");
                     console.log("✅ Received tickers from API:", tickers);
-        
+
                     if (!Array.isArray(tickers)) {
                         console.error("⚠️ Expected an array from getTickers but got:", tickers);
                         return;
                     }
-        
+
                     // ✅ Normalize ticker symbols
                     trackedTickers = new Set(tickers.map((t) => t.Symbol?.toUpperCase()));
                     console.log("✅ Tracked Tickers Updated:", trackedTickers);
-        
+
                     // Refresh the table after tickers update
                     updateNewsTable();
                 } catch (error) {
                     console.error("⚠️ Error fetching tracked tickers:", error);
                 }
             }
-        
+
             async function fetchNews() {
                 console.log("📢 fetchNews() called");
-        
+
                 try {
                     const newsData = await window.newsAPI.get();
                     console.log("📰 Received news from API:", newsData);
-        
+
                     if (!Array.isArray(newsData) || newsData.length === 0) {
                         console.warn("⚠️ No news received or invalid format:", newsData);
                     } else {
                         console.log("✅ News data structure looks good!");
                     }
-        
+
                     allNews = newsData;
                     updateNewsTable();
                 } catch (error) {
@@ -134,27 +134,27 @@
                     document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
                 }
             }
-        
+
             function updateNewsTable() {
                 console.log("📢 updateNewsTable() called with allNews:", allNews);
-                
+
                 const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
                 const tableBody = document.querySelector("#news-table tbody");
                 tableBody.innerHTML = "";
-        
+
                 let filteredNews = allNews;
                 if (showOnlyTracked) {
                     filteredNews = allNews.filter(({ ticker }) => trackedTickers.has(ticker?.toUpperCase())); // Match case
                 }
-        
+
                 console.log("📊 Filtered News:", filteredNews);
-        
+
                 if (filteredNews.length === 0) {
                     console.warn("⚠️ No news available after filtering.");
                     tableBody.innerHTML = "<tr><td colspan='6'>No news available.</td></tr>";
                     return;
                 }
-        
+
                 // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
                 let sortedNews = filteredNews
                     .flatMap(({ ticker, news }) => {
@@ -165,9 +165,9 @@
                         return news.map((article) => ({ ...article, ticker: ticker?.toUpperCase() }));
                     }) // Normalize ticker
                     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
-        
+
                 console.log("📊 Sorted News Ready for Table:", sortedNews);
-        
+
                 // ✅ Append sorted news to the table
                 sortedNews.forEach((article) => {
                     const row = document.createElement("tr");
@@ -179,36 +179,43 @@
                     `;
                     tableBody.appendChild(row);
                 });
-        
+
                 console.log("✅ News table updated successfully!");
             }
-        
+
             // ✅ Update tracked tickers when "tickers-updated" is received
             window.topAPI.onTickerUpdate(() => {
                 console.log("🔄 Received tickers-updated event. Refreshing tracked tickers...");
                 fetchTrackedTickers();
             });
-        
-            // ✅ Listen for **real-time socket-based news updates**
+
             window.newsAPI.onUpdate((newsData) => {
                 console.log("🔄 Received news update from socket:", newsData);
-        
-                if (!Array.isArray(newsData) || newsData.length === 0) {
-                    console.warn("⚠️ No news received from socket update or format is incorrect:", newsData);
+
+                if (!newsData || typeof newsData !== "object" || !newsData.ticker || !newsData.newsItems) {
+                    console.warn("⚠️ Invalid news update received:", newsData);
                     return;
                 }
-        
-                console.log("✅ Updating allNews with new socket data...");
-                allNews = newsData;
+
+                console.log(`✅ News received for ${newsData.ticker}:`, newsData.newsItems);
+
+                // Ensure it's an array before updating
+                if (!Array.isArray(newsData.newsItems) || newsData.newsItems.length === 0) {
+                    console.warn(`⚠️ No news articles found for ticker: ${newsData.ticker}`);
+                    return;
+                }
+
+                // Append new news items to allNews array
+                allNews.push({ ticker: newsData.ticker, news: newsData.newsItems });
+
                 updateNewsTable();
             });
-        
+
             document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
-        
+
             // ✅ Initial fetch for tickers and news
             fetchTrackedTickers();
             fetchNews();
         </script>
-        
     </body>
 </html>
