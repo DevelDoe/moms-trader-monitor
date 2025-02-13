@@ -14,7 +14,8 @@
         "SprPercent": true,
         "Time": true,
         "HighOfDay": true,
-        "hasNews": true
+        "hasNews": true,
+        "count": false
       },
       "daily": {
         "length": 4,
@@ -27,7 +28,8 @@
         "Time": true,
         "HighOfDay": true,
         "news": true,
-        "hasNews": true
+        "hasNews": true,
+        "count": true
       }
     }
   }
