@@ -136,6 +136,12 @@ function updateTickersTable(tickers, tableId) {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
                 });
+            } else if (key === "score") {
+                // ✅ Add tooltip with score breakdown
+                const scoreBreakdown = getScoreBreakdown(ticker);
+                cell.textContent = ticker[key];
+                cell.className = "score-tooltip";
+                cell.setAttribute("title", scoreBreakdown);
             } else {
                 cell.textContent = ticker[key];
             }
@@ -148,6 +154,7 @@ function updateTickersTable(tickers, tableId) {
 
     console.log(`✅ Finished updating table: ${tableId}`);
 }
+
 
 // Clear session
 function clearSessionList() {
