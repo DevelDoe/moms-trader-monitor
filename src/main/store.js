@@ -7,7 +7,7 @@ class Store extends EventEmitter {
         super();
         this.sessionData = new Map(); // Resets on clear
         this.dailyData = new Map(); // Stores all tickers for the full day
-        this.newsList = []; // ✅ Store all news 
+        this.newsList = []; // ✅ Store all news in a single list
 
         setInterval(() => {
             this.cleanupOldNews();
@@ -18,10 +18,9 @@ class Store extends EventEmitter {
         tickers.forEach((ticker) => {
             const key = ticker.Symbol;
 
-            // ✅ Handle Daily Data
+            // ✅ Ensure `hasNews` always exists (default: false)
             if (!this.dailyData.has(key)) {
-                ticker.count = 1;
-                this.dailyData.set(key, { ...ticker });
+                this.dailyData.set(key, { ...ticker, count: 1, hasNews: false });
             } else {
                 let existingTicker = this.dailyData.get(key);
                 existingTicker.count++;
@@ -35,10 +34,8 @@ class Store extends EventEmitter {
                 this.dailyData.set(key, existingTicker);
             }
 
-            // ✅ Handle Session Data
             if (!this.sessionData.has(key)) {
-                ticker.count = 1;
-                this.sessionData.set(key, { ...ticker });
+                this.sessionData.set(key, { ...ticker, count: 1, hasNews: false });
             } else {
                 let existingTicker = this.sessionData.get(key);
                 existingTicker.count++;
@@ -50,11 +47,6 @@ class Store extends EventEmitter {
                 });
 
                 this.sessionData.set(key, existingTicker);
-            }
-
-            // ✅ Initialize news storage for the ticker if not present
-            if (!this.newsData.has(key)) {
-                this.newsData.set(key, []);
             }
         });
 
@@ -73,7 +65,6 @@ class Store extends EventEmitter {
         }));
 
         this.newsList.push(...timestampedNews);
-
         log.log(`📥 Stored ${newsItems.length} new articles.`);
 
         // ✅ Update `hasNews` for tickers that have relevant news
@@ -82,7 +73,7 @@ class Store extends EventEmitter {
 
             news.symbols.forEach((symbol) => {
                 if (this.dailyData.has(symbol)) {
-                    this.dailyData.get(symbol).hasNews = true;
+                    this.dailyData.get(symbol).hasNews = true; // ✅ Mark ticker as having news
                 }
                 if (this.sessionData.has(symbol)) {
                     this.sessionData.get(symbol).hasNews = true;
@@ -101,11 +92,7 @@ class Store extends EventEmitter {
 
     getAllTickers(listType) {
         const data = listType === "session" ? this.sessionData : this.dailyData;
-
-        return Array.from(data.values()).map((ticker) => {
-            ticker.hasNews = this.getTickerNews(ticker.Symbol).length > 0; // ✅ Boolean flag added to ticker object
-            return ticker;
-        });
+        return Array.from(data.values());
     }
 
     getAvailableAttributes(listType) {
@@ -129,7 +116,7 @@ class Store extends EventEmitter {
         this.newsList = this.newsList.filter((news) => now - news.storedAt <= TWENTY_MINUTES);
         const afterCleanup = this.newsList.length;
 
-        log.log(`Cleaned up old news. Before: ${beforeCleanup}, After: ${afterCleanup}`);
+        log.log(`🧹 Cleaned up old news. Before: ${beforeCleanup}, After: ${afterCleanup}`);
     }
 }
 
