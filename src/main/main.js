@@ -94,6 +94,9 @@ const DEFAULT_SETTINGS = {
             },
         },
     },
+    news: {
+        showTrackedTickers: false
+    }
 };
 
 // 🛠️ Ensure `settings.dev.json` exists in development mode
