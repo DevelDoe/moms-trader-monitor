@@ -141,10 +141,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
         const prevTicker = prevTickers[ticker.Symbol];
 
         let isNew = !prevTicker; // Not found in previous state
-        let isUpdated = prevTicker &&
-            (prevTicker.Price !== ticker.Price ||
-             prevTicker.Count !== ticker.Count ||
-             prevTicker.score !== ticker.score);
+        let isUpdated = prevTicker && (prevTicker.Price !== ticker.Price || prevTicker.Count !== ticker.Count || prevTicker.score !== ticker.score);
 
         if (isNew) {
             row.classList.add("highlight-new"); // 🟢 Apply new ticker highlight
@@ -159,7 +156,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
-                cell.className = "symbol"
+                cell.className = "symbol";
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
@@ -179,9 +176,17 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
         tableBody.appendChild(row);
 
-        // 🔥 **Remove highlight after a few seconds**
+        // 🔥 **Remove highlight after a few seconds with fade effect**
         if (isNew || isUpdated) {
-            setTimeout(() => row.classList.remove("highlight-new", "highlight-updated"), 3000);
+            setTimeout(() => {
+                row.style.transition = "background-color 1.5s ease-in-out";
+                row.style.backgroundColor = "transparent"; // Let it fade instead of disappearing instantly
+
+                // Ensure class is removed after transition completes
+                setTimeout(() => {
+                    row.classList.remove("highlight-new", "highlight-updated");
+                }, 1500);
+            }, 2000); // Keep the highlight visible for 2 seconds before fading
         }
     });
 
