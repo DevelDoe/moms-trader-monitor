@@ -80,8 +80,8 @@ async function fetchAndUpdateTickers() {
         console.log("✅ Final Daily List:", tickersDaily);
 
         // ✅ Update previous ticker states
-        prevTickersSessions = Object.fromEntries(tickersSessions.map(t => [t.Symbol, t]));
-        prevTickersDaily = Object.fromEntries(tickersDaily.map(t => [t.Symbol, t]));
+        prevTickersSessions = Object.fromEntries(tickersSessions.map((t) => [t.Symbol, t]));
+        prevTickersDaily = Object.fromEntries(tickersDaily.map((t) => [t.Symbol, t]));
 
         // ✅ Update UI
         updateTickersTable(tickersSessions, "tickers-session", oldTickersSessions);
@@ -92,7 +92,6 @@ async function fetchAndUpdateTickers() {
         console.error("❌ Error fetching tickers:", error);
     }
 }
-
 
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
@@ -145,7 +144,7 @@ function updateTickersTable(tickers, tableId) {
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
-                cell.className = "symbol"
+                cell.className = "symbol";
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
@@ -168,7 +167,6 @@ function updateTickersTable(tickers, tableId) {
 
     console.log(`✅ Finished updating table: ${tableId}`);
 }
-
 
 // Clear session
 function clearSessionList() {
@@ -222,9 +220,9 @@ function calculateScore(ticker) {
 function getScoreBreakdown(ticker) {
     let breakdown = [];
     let score = ticker.count;
-    
+
     breakdown.push(`Base Score (Count): ${ticker.count}`);
-    
+
     if (ticker.HighOfDay) {
         score += 20;
         breakdown.push(`+20 (High of Day)`);
