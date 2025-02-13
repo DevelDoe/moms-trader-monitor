@@ -115,6 +115,7 @@
                 try {
                     const newsData = await window.newsAPI.get(); // Fetch news from Electron API
                     allNews = newsData;
+                    console.log("Fetched news:", allNews)
                     updateNewsTable();
                 } catch (error) {
                     document.querySelector("#news-table tbody").innerHTML = `<tr><td colspan="6">Error fetching news: ${error.message}</td></tr>`;
@@ -167,6 +168,7 @@
 
             // ✅ Keep fetching news on updates
             window.newsAPI.onUpdate(() => {
+                console.log("News Update calling fetch");
                 fetchNews();
             });
         </script>
