@@ -123,13 +123,15 @@
             function updateNewsTable() {
                 console.log("📢 Updating news table...");
 
-                const showOnlyTracked = window.settings.news?.showTrackedTickers ?? false; // ✅ Use settings
+                const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
                 const tableBody = document.querySelector("#news-table tbody");
                 tableBody.innerHTML = "";
 
                 let filteredNews = allNews;
                 if (showOnlyTracked) {
-                    filteredNews = allNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase())));
+                    filteredNews = allNews.filter((newsItem) =>
+                        newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()))
+                    );
                 }
 
                 console.log("📊 Filtered News:", filteredNews);
@@ -149,32 +151,25 @@
                 sortedNews.forEach((article) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-            <td>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
-            <td><a href="${article.url}" target="_blank">${article.headline || "No headline"}</a></td>
-            <td>${article.source || "N/A"}</td>
-            <td>${article.created_at ? new Date(article.created_at).toLocaleString() : "N/A"}</td>
-        `;
+                        <td>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
+                        <td><a href="${article.url}" target="_blank">${article.headline || "No headline"}</a></td>
+                        <td>${article.source || "N/A"}</td>
+                        <td>${article.created_at ? new Date(article.created_at).toLocaleString() : "N/A"}</td>
+                    `;
                     tableBody.appendChild(row);
                 });
 
                 console.log("✅ News table updated!");
             }
 
-            // ✅ Listen for global settings updates and apply changes dynamically
-            window.settingsAPI.onUpdate((updatedSettings) => {
-                console.log("🔄 Received 'settings-updated' event. Applying updated settings...", updatedSettings);
+            document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
 
-                window.settings = updatedSettings; // ✅ Update global settings
-                updateNewsTable(); // ✅ Refresh news list using the latest settings
-            });
-
-            // ✅ Listen for ticker updates to refresh tracked tickers
+            // ✅ Listen for updates
             window.topAPI.onTickerUpdate(() => {
                 console.log("🔄 Received tickers-updated event. Refreshing tickers...");
                 fetchTrackedTickers();
             });
 
-            // ✅ Listen for news updates to fetch fresh data
             window.newsAPI.onUpdate(() => {
                 console.log("🔄 Received news update. Fetching fresh news...");
                 fetchNews();
