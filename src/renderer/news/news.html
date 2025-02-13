@@ -138,12 +138,31 @@
                 console.log("📢 Updating news table...");
 
                 const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
+                console.log("🔎 Filter Checkbox State:", showOnlyTracked);
+
                 const tableBody = document.querySelector("#news-table tbody");
                 tableBody.innerHTML = "";
 
                 let filteredNews = allNews;
+
                 if (showOnlyTracked) {
-                    filteredNews = allNews.filter(({ symbols }) => !Array.isArray(symbols) || symbols.every((symbol) => !trackedTickers.has(symbol.toUpperCase())));
+                    console.log("📊 Filtering news based on tracked tickers...");
+
+                    filteredNews = allNews.filter((newsItem) => {
+                        console.log("🔍 Checking news item:", newsItem);
+                        if (!Array.isArray(newsItem.symbols)) {
+                            console.warn("⚠️ No symbols array found in news item:", newsItem);
+                            return false; // Skip news with no symbols
+                        }
+
+                        const hasTrackedSymbol = newsItem.symbols.some((symbol) => {
+                            console.log(`🔎 Checking symbol '${symbol}' against tracked tickers...`);
+                            return trackedTickers.has(symbol.toUpperCase());
+                        });
+
+                        console.log(`✅ News item ${newsItem.headline} is ${hasTrackedSymbol ? "TRACKED" : "NOT TRACKED"}`);
+                        return hasTrackedSymbol;
+                    });
                 }
 
                 console.log("📊 Filtered News:", filteredNews);
@@ -154,28 +173,20 @@
                     return;
                 }
 
-                // ✅ Flatten the array and sort all news by created_at in descending order (newest first)
-                let sortedNews = filteredNews
-                    .flatMap(({ ticker, news }) => {
-                        if (!Array.isArray(news)) {
-                            console.error(`⚠️ News for ticker ${ticker} is not an array:`, news);
-                            return [];
-                        }
-                        return news.map((article) => ({ ...article, ticker: ticker?.toUpperCase() }));
-                    }) // Normalize ticker
-                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
+                // Sort news by time (assuming there's a 'created_at' field)
+                let sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
                 console.log("📊 Sorted News Ready for Table:", sortedNews);
 
-                // ✅ Append sorted news to the table
+                // Append sorted news to the table
                 sortedNews.forEach((article) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td>${article.ticker}</td>
-                        <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
-                        <td>${article.source}</td>
-                        <td>${new Date(article.created_at).toLocaleString()}</td>
-                    `;
+            <td>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
+            <td><a href="${article.url}" target="_blank">${article.headline}</a></td>
+            <td>${article.source || "N/A"}</td>
+            <td>${new Date(article.created_at).toLocaleString()}</td>
+        `;
                     tableBody.appendChild(row);
                 });
 
