@@ -250,19 +250,22 @@ ipcMain.handle("get-all-news", () => {
     return tickerStore.getAllNews(); // Fetch all news for tickers that have news
 });
 
-tickerStore.on("newsUpdated", ({ ticker, newsItems }) => {
+tickerStore.on("newsUpdated", (update) => {
+    const { ticker, newsItems } = update;
+
     if (!Array.isArray(newsItems) || newsItems.length === 0) {
         log.warn(`❌ No news to broadcast for ticker: ${ticker}`);
         return; // Prevents unnecessary events
     }
 
-    log.log(`📢 Broadcasting news update for ${ticker} with ${newsItems.length} articles`);
+    log.log(`📢 Broadcasting ${newsItems.length} new articles`);
 
-    // Send news updates to all renderer windows
+    // ✅ Send all news items at once instead of per ticker
     BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("news-updated", { ticker, newsItems });
+        win.webContents.send("news-updated", { newsItems });
     });
 });
+
 
 
 tickerStore.on("update", () => {
