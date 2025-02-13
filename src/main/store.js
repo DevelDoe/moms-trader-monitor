@@ -7,7 +7,8 @@ class Store extends EventEmitter {
         super();
         this.sessionData = new Map(); // Resets on clear
         this.dailyData = new Map(); // Stores all tickers for the full day
-        this.newsData = new Map(); // ✅ New: Stores news per ticker
+        this.newsList = []; // ✅ Store all news 
+
         setInterval(() => {
             this.cleanupOldNews();
         }, 60 * 1000); // Runs every 60 seconds
@@ -60,23 +61,23 @@ class Store extends EventEmitter {
         this.emit("update");
     }
 
-    // ✅ Update news for a specific ticker
-    updateNews(ticker, newsItems) {
-        if (!this.newsData.has(ticker)) {
-            this.newsData.set(ticker, []);
+    addNews(newsItems) {
+        if (!Array.isArray(newsItems) || newsItems.length === 0) {
+            log.warn("❌ No valid news items to store.");
+            return;
         }
 
-        const existingNews = this.newsData.get(ticker);
-
-        // ✅ Add timestamp to each news item
         const timestampedNews = newsItems.map((news) => ({
             ...news,
-            storedAt: Date.now(), // ✅ Store the time the news was added
+            storedAt: Date.now(), // ✅ Store timestamp
         }));
 
-        this.newsData.set(ticker, [...existingNews, ...timestampedNews]);
+        this.newsList.push(...timestampedNews);
 
-        this.emit("newsUpdated", { ticker, newsItems: timestampedNews });
+        log.log(`📥 Stored ${newsItems.length} new articles.`);
+
+        // ✅ Emit a single batch update instead of per ticker
+        this.emit("newsUpdated", { newsItems: timestampedNews });
     }
 
     // ✅ Retrieve news for a specific ticker
