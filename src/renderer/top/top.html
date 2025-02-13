@@ -8,46 +8,7 @@
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'" />
         <title>Top Tickers</title>
         <link rel="stylesheet" href="../styles.css" />
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                padding: 10px;
-                background-color: #1c1d23; /* Dark mode background */
-                color: #e0e0e0; /* Light text for contrast */
-            }
-            body::-webkit-scrollbar {
-                display: none;
-            }
-            table {
-                border-collapse: collapse;
-            }
-            table,
-            th,
-            td {
-                border: none;
-            }
-            th,
-            td {
-                padding: 8px;
-                text-align: left;
-            }
-            h2 {
-                -webkit-app-region: drag;
-            }
-
-            /* Apply pointer cursor to Symbol column */
-            #tickers-session td:first-child,
-            #tickers-daily td:first-child {
-                cursor: pointer;
-            }
-
-            /* Style when symbol is clicked (feedback effect) */
-            #tickers-session td.copied,
-            #tickers-daily td.copied {
-                background-color: #90ee90; /* Light green */
-                transition: background-color 0.3s ease-in-out;
-            }
-        </style>
+        <link rel="stylesheet" href="./top.css" />
     </head>
     <body>
         <h2>Session Top</h2>
