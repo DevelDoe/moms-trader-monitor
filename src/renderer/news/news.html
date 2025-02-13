@@ -161,8 +161,8 @@
             }
 
             // ✅ Listen for global settings updates and apply changes dynamically
-            window.settingsAPI.on("filter-updated", (updatedSettings) => {
-                console.log("🔄 Received 'filter-updated' event. Applying updated settings...", updatedSettings);
+            window.settingsAPI.onUpdate((updatedSettings) => {
+                console.log("🔄 Received 'settings-updated' event. Applying updated settings...", updatedSettings);
 
                 window.settings = updatedSettings; // ✅ Update global settings
                 updateNewsTable(); // ✅ Refresh news list using the latest settings
