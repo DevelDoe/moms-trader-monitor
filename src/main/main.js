@@ -1,4 +1,4 @@
-// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹📡📊🔧📢🚨
+// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹📡📊🔧📢🚨 
 ////////////////////////////////////////////////////////////////////////////////////
 // INIT
 const createLogger = require("../hlps/logger");
@@ -266,6 +266,8 @@ tickerStore.on("newsUpdated", (update) => {
     });
 });
 
+
+
 tickerStore.on("update", () => {
     log.log("Broadcasting update");
     BrowserWindow.getAllWindows().forEach((win) => {
@@ -332,6 +334,8 @@ app.on("ready", () => {
     // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
 
+   
+
     windows.splash.once("closed", () => {
         log.log("Splash screen closed. Loading main app...");
 
@@ -378,12 +382,6 @@ if (!isDevelopment) {
 
     autoUpdater.on("update-available", (info) => {
         log.log(`🔔 Update found: ${info.version}`);
-
-        // ✅ Close splash screen if it's still open
-        if (windows.splash && !windows.splash.isDestroyed()) {
-            log.log("Closing splash screen before starting update...");
-            windows.splash.close();
-        }
 
         if (appSettings.hasDonated) {
             // 🛠 If user has donated, let them decide
