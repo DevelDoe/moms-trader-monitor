@@ -222,11 +222,11 @@ ipcMain.on("update-settings", (event, newSettings) => {
         appSettings = { ...DEFAULT_SETTINGS };
     }
 
-    // ✅ Merge all new settings dynamically without filtering categories
+    // ✅ Merge all new settings dynamically
     Object.keys(newSettings).forEach((key) => {
         if (typeof newSettings[key] === "object") {
             appSettings[key] = {
-                ...appSettings[key], // Preserve existing settings for this category
+                ...appSettings[key], // Preserve existing settings
                 ...newSettings[key], // Merge new properties
             };
         } else {
@@ -235,8 +235,13 @@ ipcMain.on("update-settings", (event, newSettings) => {
     });
 
     saveSettings(); // ✅ Save settings after updates
-});
 
+    // ✅ Broadcast updated settings to all windows
+    log.log("🔄 Broadcasting 'filter-updated' event...");
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("filter-updated", appSettings);
+    });
+});
 
 // Store
 ipcMain.handle("get-tickers", (event, listType = "daily") => {
