@@ -47,23 +47,10 @@
                 -webkit-app-region: drag;
                 color: #ffffff; /* White title */
             }
-
-            .filter-container {
-                margin-bottom: 10px;
-            }
-
-            input[type="checkbox"] {
-                accent-color: #66b3ff; /* Matching checkbox color */
-            }
         </style>
     </head>
     <body>
         <h2>News Headlines</h2>
-
-        <div class="filter-container">
-            <input type="checkbox" id="filter-checkbox" />
-            <label for="filter-checkbox">Show only tracked tickers</label>
-        </div>
 
         <table id="news-table">
             <thead>
@@ -120,10 +107,27 @@
                 }
             }
 
+            async function loadSettings() {
+                try {
+                    console.log("📢 Fetching settings...");
+                    window.settings = await window.settingsAPI.get();
+
+                    if (!window.settings.news) {
+                        console.log("⚠️ `settings.news` is missing, initializing...");
+                        window.settings.news = {};
+                    }
+
+                    console.log("✅ Loaded settings:", window.settings);
+                } catch (error) {
+                    console.error("⚠️ Error loading settings:", error);
+                    window.settings = { news: {} }; // Fallback
+                }
+            }
+
             function updateNewsTable() {
                 console.log("📢 Updating news table...");
 
-                const showOnlyTracked = document.querySelector("#filter-checkbox").checked;
+                const showOnlyTracked = window.settings.news.showTrackedTickers ?? false;
                 const tableBody = document.querySelector("#news-table tbody");
                 tableBody.innerHTML = "";
 
@@ -162,7 +166,13 @@
                 console.log("✅ News table updated!");
             }
 
-            document.querySelector("#filter-checkbox").addEventListener("change", updateNewsTable);
+            // ✅ Listen for global settings updates and apply changes dynamically
+            window.settingsAPI.onUpdate((updatedSettings) => {
+                console.log("🔄 Received 'settings-updated' event. Applying updated settings...", updatedSettings);
+
+                window.settings = updatedSettings;
+                updateNewsTable();
+            });
 
             // ✅ Listen for updates
             window.topAPI.onTickerUpdate(() => {
@@ -176,7 +186,9 @@
             });
 
             // ✅ Initial fetch
-            fetchTrackedTickers().then(fetchNews);
+            loadSettings().then(() => {
+                fetchTrackedTickers().then(fetchNews);
+            });
         </script>
     </body>
 </html>
