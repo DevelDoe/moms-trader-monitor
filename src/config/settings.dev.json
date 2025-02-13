@@ -12,7 +12,7 @@
         "Float": true,
         "Volume": true,
         "SprPercent": true,
-        "Time": true,
+        "Time": false,
         "HighOfDay": true,
         "hasNews": true,
         "count": true
