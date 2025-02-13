@@ -17,6 +17,9 @@ td {
     padding: 8px;
     text-align: left;
 }
+tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.01); /* Alternating row color */
+}
 h2 {
     -webkit-app-region: drag;
 }
