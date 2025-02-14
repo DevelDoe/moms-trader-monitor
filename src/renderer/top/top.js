@@ -231,6 +231,8 @@ function calculateScore(ticker) {
 
     if (ticker.HighOfDay) score += 20;
 
+    if (ticker.hasNews) score += 20;
+
     let floatValue = parseFloatValue(ticker.Float);
 
     if      (floatValue > 0 && floatValue < 1) score += 30;
