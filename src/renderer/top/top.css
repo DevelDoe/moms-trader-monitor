@@ -131,6 +131,6 @@ h2 {
 }
 
 .show-all #tickers-all {
-    /* max-height: 500px; Adjust based on content */
+    max-height: 500px; /* Adjust based on content */
     opacity: 1;
 }
