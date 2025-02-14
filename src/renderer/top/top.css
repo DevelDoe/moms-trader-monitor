@@ -67,7 +67,7 @@ h2 {
 #tickers-session tbody tr,
 #tickers-daily tbody tr {
     background-color: rgba(255, 255, 255, 0); /* Subtle gray tone */
-    transition: background-color 1s ease-in-out;
+    transition: background-color 1s ease;
 }
 
 /* 🎭 Fade out effect after 3 seconds */
@@ -84,8 +84,8 @@ h2 {
 
 /* Apply animations */
 .highlight-new {
-    animation: fadeOut 10s ease-out forwards;
+    animation: fadeOut 10s ease forwards;
 }
 .highlight-updated {
-    animation: fadeOutUpdated 10s ease-out forwards;
+    animation: fadeOutUpdated 10s ease forwards;
 }
