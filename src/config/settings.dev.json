@@ -8,11 +8,11 @@
         "length": 10,
         "Price": true,
         "ChangePercent": false,
-        "FiveM": false,
+        "FiveM": true,
         "Float": true,
         "Volume": true,
         "SprPercent": true,
-        "Time": true,
+        "Time": false,
         "HighOfDay": true,
         "hasNews": true,
         "count": true
