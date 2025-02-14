@@ -62,22 +62,25 @@ async function fetchAndUpdateTickers() {
         // ✅ Apply price filtering
         const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
         const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
-        const filteredAll = allData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
-        // ✅ Calculate scores and sort tickers
-        tickersSessions = filteredSession
-            .map((ticker) => ({
-                ...ticker,
-                score: calculateScore(ticker),
-            }))
-            .sort((a, b) => b.score - a.score); // Sort descending by score
-
-        tickersDaily = filteredDaily
+        // ✅ Only filter session and daily tickers, but leave tickersAll untouched
+        tickersSessions = sessionData
+            .filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice)
             .map((ticker) => ({
                 ...ticker,
                 score: calculateScore(ticker),
             }))
             .sort((a, b) => b.score - a.score);
+
+        tickersDaily = dailyData
+            .filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice)
+            .map((ticker) => ({
+                ...ticker,
+                score: calculateScore(ticker),
+            }))
+            .sort((a, b) => b.score - a.score);
+
+        // ✅ DO NOT filter allData – just map scores
         tickersAll = allData
             .map((ticker) => ({
                 ...ticker,
