@@ -132,7 +132,12 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     tableBody.innerHTML = ""; // ✅ Clear the table first
 
     const listType = tableId.includes("session") ? "session" : tableId.includes("daily") ? "daily" : "all";
-    const enabledColumns = listType === "all" ? {} : window.settings.top.lists?.[listType] || {};
+
+    // ✅ Always include all available keys for "All Tickers"
+    const allKeys = [...new Set(tickers.flatMap((t) => Object.keys(t)))];
+
+    // ✅ Only filter columns for session/daily, but not for "All Tickers"
+    const enabledColumns = listType === "all" ? allKeys : Object.keys(window.settings.top.lists?.[listType] || {});
 
     if (tickers.length === 0) {
         console.warn(`No data available for ${listType}!`);
@@ -143,7 +148,11 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses");
 
     // ✅ Generate the header dynamically
-    tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
+    // ✅ Ensure all columns are included for "All Tickers"
+    const columnsToShow = listType === "all" ? allKeys : allColumns;
+
+    // ✅ Generate headers dynamically
+    tableHead.innerHTML = "<tr>" + columnsToShow.map((col) => `<th>${col}</th>`).join("") + "</tr>";
 
     // ✅ Populate table rows
     tickers.forEach((ticker) => {
