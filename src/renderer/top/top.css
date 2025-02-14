@@ -150,3 +150,18 @@ h2 {
     cursor: pointer;
     text-align: center;
 }
+
+/* ✅ Hide scrollbar for all browsers */
+#tickers-wrapper,
+#tickers-all {
+    max-height: calc(100vh - 50px); /* Full viewport height minus button size */
+    overflow-y: scroll; /* Still allows scrolling */
+    scrollbar-width: none; /* Hides scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hides scrollbar in IE & Edge */
+}
+
+/* ✅ Hide scrollbar for Webkit-based browsers (Chrome, Safari, Edge) */
+#tickers-wrapper::-webkit-scrollbar,
+#tickers-all::-webkit-scrollbar {
+    display: none;
+}
