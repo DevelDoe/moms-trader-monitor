@@ -5,7 +5,7 @@
     "maxPrice": 100,
     "lists": {
       "session": {
-        "length": 100,
+        "length": 10,
         "Price": true,
         "ChangePercent": true,
         "FiveM": true,
