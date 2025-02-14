@@ -256,6 +256,11 @@ function getScoreBreakdown(ticker) {
         breakdown.push(`+20 (High of Day)`);
     }
 
+    if (ticker.hasNews) {
+        score += 40;
+        breakdown.push(`+20 (High of Day)`);
+    }
+
     let floatValue = parseFloatValue(ticker.Float);
     if (floatValue > 0 && floatValue < 1) {
         score += 30;
