@@ -294,7 +294,7 @@ function getScoreBreakdown(ticker) {
         breakdown.push(`-20 (Float 100M - 500M)`);
     } else if (floatValue > 200 && floatValue < 500) {
         score -= 30;
-        breakdown.push(`-20 (Float 200M - 500M)`);
+        breakdown.push(`-30 (Float 200M - 500M)`);
     } else if (floatValue > 500) {
         score -= 50;
         breakdown.push(`-50 (Float > 500M)`);
