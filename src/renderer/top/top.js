@@ -41,7 +41,7 @@ async function fetchAndUpdateTickers() {
         // ✅ Fetch tickers from API
         const sessionData = await window.topAPI.getTickers("session");
         const dailyData = await window.topAPI.getTickers("daily");
-        const allData = dailyData; 
+        const allData = await window.topAPI.getTickers("all"); // ✅ Fetch all tickers
 
         console.log("📊 Session Data:", sessionData);
         console.log("📊 Daily Data:", dailyData);
