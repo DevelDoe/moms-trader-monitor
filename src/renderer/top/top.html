@@ -117,44 +117,42 @@
         </script>
         <script>
             document.addEventListener("DOMContentLoaded", () => {
-                const toggleButton = document.getElementById("toggle-all-tickers");
-                const body = document.body;
-                let isExpanded = false;
+    const toggleButton = document.getElementById("toggle-all-tickers");
+    const body = document.body;
+    let isExpanded = false;
 
-                document.addEventListener("DOMContentLoaded", () => {
-                    const toggleButton = document.getElementById("toggle-all-tickers");
-                    const body = document.body;
-                    let isExpanded = false;
+    toggleButton.innerHTML = "Show All Tickers &#9660;"; // ▼ Default (down arrow)
 
-                    toggleButton.innerHTML = "Show All Tickers &#9660;"; // ▼ Default (down arrow)
+    toggleButton.addEventListener("click", () => {
+        isExpanded = !isExpanded;
 
-                    toggleButton.addEventListener("click", () => {
-                        isExpanded = !isExpanded;
-                        body.classList.toggle("show-all", isExpanded);
+        // ✅ Toggle visibility of tickers-all
+        document.getElementById("tickers-all").classList.toggle("visible", isExpanded);
+        document.getElementById("tickers-wrapper").classList.toggle("shifted", isExpanded);
 
-                        // ✅ Change button text and icon dynamically
-                        toggleButton.innerHTML = isExpanded
-                            ? "Hide All Tickers &#9650;" // ▲ Up arrow
-                            : "Show All Tickers &#9660;"; // ▼ Down arrow
+        // ✅ Change button text dynamically
+        toggleButton.innerHTML = isExpanded
+            ? "Hide All Tickers &#9650;" // ▲ Up arrow
+            : "Show All Tickers &#9660;"; // ▼ Down arrow
 
-                        if (isExpanded) {
-                            setTimeout(() => {
-                                window.scrollTo({
-                                    top: document.body.scrollHeight,
-                                    behavior: "smooth",
-                                });
-                            }, 300);
-                        } else {
-                            setTimeout(() => {
-                                window.scrollTo({
-                                    top: 0,
-                                    behavior: "smooth",
-                                });
-                            }, 300);
-                        }
-                    });
+        if (isExpanded) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: "smooth",
                 });
-            });
+            }, 300);
+        } else {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth",
+                });
+            }, 300);
+        }
+    });
+});
+
         </script>
         <script src="./top.js"></script>
     </body>
