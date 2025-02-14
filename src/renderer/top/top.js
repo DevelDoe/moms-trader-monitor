@@ -276,11 +276,11 @@ function getScoreBreakdown(ticker) {
 
     let floatValue = parseFloatValue(ticker.Float);
     if (floatValue > 0 && floatValue < 1) {
-        score += 30;
-        breakdown.push(`+30 (Float < 1M)`);
-    } else if (floatValue > 1 && floatValue < 5) {
         score += 20;
-        breakdown.push(`+20 (Float 1M - 5M)`);
+        breakdown.push(`+20 (Float < 1M)`);
+    } else if (floatValue > 1 && floatValue < 5) {
+        score += 15;
+        breakdown.push(`+15 (Float 1M - 5M)`);
     } else if (floatValue > 5 && floatValue < 10) {
         score += 10;
         breakdown.push(`+10 (Float 5M - 10M)`);
@@ -289,12 +289,15 @@ function getScoreBreakdown(ticker) {
     } else if (floatValue > 50 && floatValue < 100) {
         score -= 10;
         breakdown.push(`-10 (Float 50M - 100M)`);
-    } else if (floatValue > 100 && floatValue < 500) {
+    } else if (floatValue > 100 && floatValue < 200) {
         score -= 20;
         breakdown.push(`-20 (Float 100M - 500M)`);
-    } else if (floatValue > 500) {
+    } else if (floatValue > 200 && floatValue < 500) {
         score -= 30;
-        breakdown.push(`-30 (Float > 500M)`);
+        breakdown.push(`-20 (Float 200M - 500M)`);
+    } else if (floatValue > 500) {
+        score -= 50;
+        breakdown.push(`-50 (Float > 500M)`);
     }
 
     breakdown.push(`Final Score: ${score}`);
