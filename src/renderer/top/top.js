@@ -145,6 +145,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     // ✅ Generate the header dynamically
     tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
+    
 
     // ✅ Populate table rows
     tickers.forEach((ticker) => {
@@ -181,7 +182,10 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.textContent = ticker[key];
                 cell.className = "score-tooltip";
                 cell.setAttribute("title", scoreBreakdown);
-            } else {
+            } else if (key === "Bonuses") {
+                // Insert the bonuses symbols
+                cell.textContent = ticker[key] || ""; // Ensure there's a default value if Bonuses is undefined
+            }else {
                 cell.textContent = ticker[key];
             }
 
@@ -190,12 +194,12 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
         tableBody.appendChild(row);
 
-        // 🔥 Apply highlight class for new or updated tickers
-        if (isNew) {
-            row.classList.add("highlight-new");
-        } else if (isUpdated) {
-            row.classList.add("highlight-updated");
-        }
+        // // 🔥 Apply highlight class for new or updated tickers
+        // if (isNew) {
+        //     row.classList.add("highlight-new");
+        // } else if (isUpdated) {
+        //     row.classList.add("highlight-updated");
+        // }
     });
 
     console.log(`✅ Finished updating table: ${tableId}`);
