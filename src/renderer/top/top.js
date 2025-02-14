@@ -209,7 +209,7 @@ function clearSessionList() {
 function addClearSessionButton() {
     const btn = document.createElement("button");
     btn.id = "clear-session-btn";
-    btn.textContent = "🧹 Clear Session";
+    btn.textContent = "🧹 New Session";
     btn.addEventListener("click", clearSessionList);
 
     // ✅ Insert the button before session tickers table
