@@ -137,10 +137,10 @@ function updateTickersTable(tickers, tableId, prevTickers) {
         return;
     }
 
-    // ✅ Ensure "Bonuses" is included in the column headers manually
-    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter(
-        (key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses"
-    );
+    const allColumns =
+        tableId === "tickers-all"
+            ? [...new Set(tickers.flatMap((t) => Object.keys(t)).concat("Bonuses"))] // ✅ Allow all attributes
+            : [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses");
 
     // ✅ Generate the header dynamically
     tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
@@ -193,8 +193,6 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     console.log(`✅ Finished updating table: ${tableId}`);
 }
-
-
 
 // Clear session
 function clearSessionList() {
@@ -339,19 +337,19 @@ function getBonusesHTML(ticker) {
     let tooltipText = [];
 
     if (ticker.hasNews) {
-        bonuses.push('<span class="bonus news">N</span>'); 
+        bonuses.push('<span class="bonus news">N</span>');
         tooltipText.push("N: Has News"); // Tooltip text
     }
     if (ticker.HighOfDay) {
-        bonuses.push('<span class="bonus high">H</span>'); 
+        bonuses.push('<span class="bonus high">H</span>');
         tooltipText.push("H: High of Day");
     }
     if (parseFloatValue(ticker.Float) < 5) {
-        bonuses.push('<span class="bonus low-float">L</span>'); 
+        bonuses.push('<span class="bonus low-float">L</span>');
         tooltipText.push("L: Low Float");
     }
     if (parseFloatValue(ticker.Volume) > 10) {
-        bonuses.push('<span class="bonus volume">V</span>'); 
+        bonuses.push('<span class="bonus volume">V</span>');
         tooltipText.push("V: High Volume");
     }
 
@@ -359,7 +357,7 @@ function getBonusesHTML(ticker) {
         return "-"; // No bonuses
     }
 
-    return `<span class="bonus-container" title="${tooltipText.join('\n')}">
+    return `<span class="bonus-container" title="${tooltipText.join("\n")}">
                 ${bonuses.join(" ")}
             </span>`;
 }
