@@ -43,3 +43,35 @@ img {
 body::-webkit-scrollbar {
     display: none;
 }
+
+
+/* ✅ Style the Active Ticker section */
+#active-ticker {
+    margin-top: 20px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05); /* Subtle background */
+    border-radius: 8px;
+}
+
+#active-ticker h2 {
+    font-size: 14px;
+    color: darkgoldenrod;
+    margin-bottom: 5px;
+}
+
+#active-ticker table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#active-ticker th, #active-ticker td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ✅ Highlight Active Ticker Row */
+#active-ticker-row {
+    background: rgba(34, 139, 34, 0.2); /* Light green background */
+    transition: background 0.3s ease-in-out;
+}
