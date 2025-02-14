@@ -328,6 +328,7 @@ function updateActiveTicker(ticker) {
         <td>${ticker.Time}</td>
         <td>${ticker.HighOfDay}</td>
         <td>${ticker.count}</td>
+        <td>${ticker.hasNews}</td>
         <td>${ticker.score}</td>
     `;
 
