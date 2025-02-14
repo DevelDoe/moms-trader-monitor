@@ -131,9 +131,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     tableBody.innerHTML = ""; // ✅ Clear the table first
 
-    // ✅ Determine which columns should be displayed
-    const listType = tableId.includes("session") ? "session" : "daily";
-    const enabledColumns = window.settings.top.lists?.[listType] || {};
+    const listType = tableId.includes("session") ? "session" : tableId.includes("daily") ? "daily" : "all";
+    const enabledColumns = listType === "all" ? {} : window.settings.top.lists?.[listType] || {};
 
     if (tickers.length === 0) {
         console.warn(`No data available for ${listType}!`);
