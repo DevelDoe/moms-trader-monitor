@@ -341,7 +341,7 @@ function getBonusesHTML(ticker) {
         tooltipText.push("CAT: Has News"); // Tooltip text
     }
     if (ticker.HighOfDay) {
-        bonuses.push('<span class="bonus high">H</span>');
+        bonuses.push('<span class="bonus high">HOD</span>');
         tooltipText.push("HOD: High of Day");
     }
     if (parseFloatValue(ticker.Float) > 0 && parseFloatValue(ticker.Float) < 1) {
