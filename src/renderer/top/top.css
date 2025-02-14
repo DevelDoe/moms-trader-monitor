@@ -127,7 +127,7 @@ h2 {
 
 /* ✅ When active, slide up the session tickers and reveal all tickers */
 .show-all #tickers-wrapper {
-    transform: translateY(-50%);
+    transform: translateY(-100%);
 }
 
 .show-all #tickers-all {
