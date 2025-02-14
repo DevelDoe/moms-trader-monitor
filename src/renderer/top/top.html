@@ -133,9 +133,9 @@
 
                     if (isExpanded) {
                         setTimeout(() => {
-                            document.getElementById("tickers-wrapper").scrollIntoView({
+                            window.scrollTo({
+                                top: document.body.scrollHeight - window.innerHeight + 300, // ✅ Scroll down past the button
                                 behavior: "smooth",
-                                block: "start",
                             });
                         }, 300);
                     } else {
