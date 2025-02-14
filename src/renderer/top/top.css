@@ -12,6 +12,7 @@ table {
 }
 thead {
     color: darkgoldenrod;
+    text-transform: lowercase;
 }
 th,
 td {
