@@ -137,8 +137,10 @@ function updateTickersTable(tickers, tableId, prevTickers) {
         return;
     }
 
-    // ✅ Get the keys from the first ticker, ensuring "Symbol", "Count", "Score", and "Bonuses" are always included
-    const allColumns = Object.keys(tickers[0]).filter((key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses");
+    // ✅ Ensure "Bonuses" is included in the column headers manually
+    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter(
+        (key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses"
+    );
 
     // ✅ Generate the header dynamically
     tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
@@ -180,7 +182,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 // ✅ Insert dynamically styled bonus symbols
                 cell.innerHTML = getBonusesHTML(ticker);
             } else {
-                cell.textContent = ticker[key];
+                cell.textContent = ticker[key] ?? "-"; // ✅ Handle missing data gracefully
             }
 
             row.appendChild(cell);
@@ -191,6 +193,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     console.log(`✅ Finished updating table: ${tableId}`);
 }
+
 
 
 // Clear session
