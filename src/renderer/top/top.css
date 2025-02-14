@@ -84,8 +84,8 @@ h2 {
 
 /* Apply animations */
 .highlight-new {
-    animation: fadeOut 10s ease forwards;
+    animation: fadeOut 10s ease-in forwards;
 }
 .highlight-updated {
-    animation: fadeOutUpdated 10s ease forwards;
+    animation: fadeOutUpdated 10s ease-in forwards;
 }
