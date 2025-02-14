@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         fetchAndUpdateTickers();
     });
 
-    // ✅ Listen for settings updates 
+    // ✅ Listen for settings updates
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
 
@@ -32,7 +32,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         await fetchAndUpdateTickers();
     });
 });
-
 
 async function fetchAndUpdateTickers() {
     try {
@@ -79,6 +78,12 @@ async function fetchAndUpdateTickers() {
                 score: calculateScore(ticker),
             }))
             .sort((a, b) => b.score - a.score);
+        tickersAll = filteredAll
+            .map((ticker) => ({
+                ...ticker,
+                score: calculateScore(ticker),
+            }))
+            .sort((a, b) => b.score - a.score); // ✅ Sorting all tickers by score
 
         // ✅ Limit number of displayed entries
         tickersSessions = tickersSessions.slice(0, maxSessionLength);
@@ -239,7 +244,7 @@ function calculateScore(ticker) {
 
     let floatValue = parseFloatValue(ticker.Float);
 
-    if      (floatValue > 0 && floatValue < 1) score += 30;
+    if (floatValue > 0 && floatValue < 1) score += 30;
     else if (floatValue > 1 && floatValue < 5) score += 20;
     else if (floatValue > 5 && floatValue < 10) score += 10;
     else if (floatValue > 10 && floatValue < 50) score += 0;
