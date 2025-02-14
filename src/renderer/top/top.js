@@ -300,10 +300,17 @@ function getScoreBreakdown(ticker) {
     return breakdown.join("\n"); // ✅ Creates a tooltip with newlines for readability
 }
 
-// ✅ Find the ticker in either session or daily lists
+// ✅ Find the ticker from tickersDaily only (ensures all attributes exist)
 function findTickerBySymbol(symbol) {
-    return [...tickersSessions, ...tickersDaily].find((ticker) => ticker.Symbol === symbol);
+    const foundTicker = tickersDaily.find((ticker) => ticker.Symbol === symbol);
+
+    if (!foundTicker) {
+        console.warn(`❌ Ticker ${symbol} not found in tickersDaily!`);
+    }
+
+    return foundTicker;
 }
+
 
 // ✅ Update the Active Ticker Display
 function updateActiveTicker(ticker) {
