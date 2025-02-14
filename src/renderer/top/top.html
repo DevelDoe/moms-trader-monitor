@@ -123,14 +123,14 @@
                 let isExpanded = false;
 
                 // ✅ Default icon
-                toggleButton.innerHTML = "🔽"; // Down icon
+                // toggleButton.innerHTML = "🔽"; // Down icon
 
                 toggleButton.addEventListener("click", () => {
                     isExpanded = !isExpanded;
                     document.body.classList.toggle("show-all", isExpanded);
 
                     // ✅ Change icon dynamically
-                    toggleButton.innerHTML = isExpanded ? "🔼" : "🔽"; // Toggle up/down
+                    // toggleButton.innerHTML = isExpanded ? "🔼" : "🔽"; // Toggle up/down
 
                     setTimeout(() => {
                         if (isExpanded) {
