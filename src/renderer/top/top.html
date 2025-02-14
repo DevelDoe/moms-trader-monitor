@@ -140,9 +140,9 @@
                         }, 300);
                     } else {
                         setTimeout(() => {
-                            document.getElementById("tickers-all").scrollIntoView({
+                            window.scrollTo({
+                                top: 0, // ✅ Scroll back to the top
                                 behavior: "smooth",
-                                block: "start",
                             });
                         }, 300);
                     }
