@@ -7,7 +7,7 @@
       "session": {
         "length": 10,
         "Price": false,
-        "ChangePercent": true,
+        "ChangePercent": false,
         "FiveM": true,
         "Float": true,
         "Volume": true,
