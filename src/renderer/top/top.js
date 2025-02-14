@@ -62,31 +62,28 @@ async function fetchAndUpdateTickers() {
         // ✅ Apply price filtering
         const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
         const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
+        const filteredAll = allData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
-        // ✅ Only filter session and daily tickers, but leave tickersAll untouched
-        tickersSessions = sessionData
-            .filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice)
+        // ✅ Calculate scores and sort tickers
+        tickersSessions = filteredSession
+            .map((ticker) => ({
+                ...ticker,
+                score: calculateScore(ticker),
+            }))
+            .sort((a, b) => b.score - a.score); // Sort descending by score
+
+        tickersDaily = filteredDaily
             .map((ticker) => ({
                 ...ticker,
                 score: calculateScore(ticker),
             }))
             .sort((a, b) => b.score - a.score);
-
-        tickersDaily = dailyData
-            .filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice)
+        tickersAll = filteredAll
             .map((ticker) => ({
                 ...ticker,
                 score: calculateScore(ticker),
             }))
-            .sort((a, b) => b.score - a.score);
-
-        // ✅ DO NOT filter allData – just map scores
-        tickersAll = allData
-            .map((ticker) => ({
-                ...ticker,
-                score: calculateScore(ticker),
-            }))
-            .sort((a, b) => b.score - a.score);
+            .sort((a, b) => b.score - a.score); // ✅ Sorting all tickers by score
 
         // ✅ Limit number of displayed entries
         tickersSessions = tickersSessions.slice(0, maxSessionLength);
@@ -131,13 +128,9 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     tableBody.innerHTML = ""; // ✅ Clear the table first
 
-    const listType = tableId.includes("session") ? "session" : tableId.includes("daily") ? "daily" : "all";
-
-    // ✅ Always include all available keys for "All Tickers"
-    const allKeys = [...new Set(tickers.flatMap((t) => Object.keys(t)))];
-
-    // ✅ Only filter columns for session/daily, but not for "All Tickers"
-    const enabledColumns = listType === "all" ? allKeys : Object.keys(window.settings.top.lists?.[listType] || {});
+    // ✅ Determine which columns should be displayed
+    const listType = tableId.includes("session") ? "session" : "daily";
+    const enabledColumns = window.settings.top.lists?.[listType] || {};
 
     if (tickers.length === 0) {
         console.warn(`No data available for ${listType}!`);
@@ -145,14 +138,12 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     }
 
     // ✅ Ensure "Bonuses" is included in the column headers manually
-    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses");
+    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter(
+        (key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses"
+    );
 
     // ✅ Generate the header dynamically
-    // ✅ Ensure all columns are included for "All Tickers"
-    const columnsToShow = listType === "all" ? allKeys : allColumns;
-
-    // ✅ Generate headers dynamically
-    tableHead.innerHTML = "<tr>" + columnsToShow.map((col) => `<th>${col}</th>`).join("") + "</tr>";
+    tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
 
     // ✅ Populate table rows
     tickers.forEach((ticker) => {
@@ -202,6 +193,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     console.log(`✅ Finished updating table: ${tableId}`);
 }
+
+
 
 // Clear session
 function clearSessionList() {
@@ -346,19 +339,19 @@ function getBonusesHTML(ticker) {
     let tooltipText = [];
 
     if (ticker.hasNews) {
-        bonuses.push('<span class="bonus news">N</span>');
+        bonuses.push('<span class="bonus news">N</span>'); 
         tooltipText.push("N: Has News"); // Tooltip text
     }
     if (ticker.HighOfDay) {
-        bonuses.push('<span class="bonus high">H</span>');
+        bonuses.push('<span class="bonus high">H</span>'); 
         tooltipText.push("H: High of Day");
     }
     if (parseFloatValue(ticker.Float) < 5) {
-        bonuses.push('<span class="bonus low-float">L</span>');
+        bonuses.push('<span class="bonus low-float">L</span>'); 
         tooltipText.push("L: Low Float");
     }
     if (parseFloatValue(ticker.Volume) > 10) {
-        bonuses.push('<span class="bonus volume">V</span>');
+        bonuses.push('<span class="bonus volume">V</span>'); 
         tooltipText.push("V: High Volume");
     }
 
@@ -366,7 +359,7 @@ function getBonusesHTML(ticker) {
         return "-"; // No bonuses
     }
 
-    return `<span class="bonus-container" title="${tooltipText.join("\n")}">
+    return `<span class="bonus-container" title="${tooltipText.join('\n')}">
                 ${bonuses.join(" ")}
             </span>`;
 }
