@@ -141,7 +141,7 @@ h2 {
 /* ✅ Set button size */
 #toggle-all-tickers {
     display: block;
-    margin: 10px auto;
+    margin: 0;
     padding: 15px;
     font-size: 24px;
     background-color: #222;
