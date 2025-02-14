@@ -7,15 +7,15 @@
       "session": {
         "length": 10,
         "Price": true,
-        "ChangePercent": false,
-        "FiveM": false,
-        "Float": false,
-        "Volume": false,
-        "SprPercent": false,
-        "Time": false,
-        "HighOfDay": false,
-        "hasNews": false,
-        "count": false
+        "ChangePercent": true,
+        "FiveM": true,
+        "Float": true,
+        "Volume": true,
+        "SprPercent": true,
+        "Time": true,
+        "HighOfDay": true,
+        "hasNews": true,
+        "count": true
       },
       "daily": {
         "length": 4,
@@ -23,7 +23,7 @@
         "ChangePercent": false,
         "FiveM": false,
         "Float": false,
-        "Volume": true,
+        "Volume": false,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
