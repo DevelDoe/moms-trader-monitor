@@ -92,36 +92,25 @@ h2 {
 
 
 
-/* ✅ Default state: Hide All Tickers */
-#tickers-all {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
-}
-
-/* ✅ Expand when class 'visible' is added */
-#tickers-all.visible {
-    max-height: 500px; /* Adjust height based on content */
-    opacity: 1;
-}
-
-/* ✅ Move the session tickers UP when expanded */
+/* ✅ Ensure the wrapper is relative for movement */
 #tickers-wrapper {
+    position: relative;
     transition: transform 0.5s ease-in-out;
 }
 
-/* ✅ Shift up when 'shifted' class is added */
-#tickers-wrapper.shifted {
-    transform: translateY(-50%);
+/* ✅ Initially hide the "All Tickers" section */
+#tickers-all {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
 }
 
-/* ✅ Center button */
+/* ✅ Style the toggle button */
 #toggle-all-tickers {
     display: block;
     margin: 10px auto;
-    padding: 10px 15px;
-    font-size: 16px;
+    padding: 10px;
     background-color: #222;
     color: #e0e0e0;
     border: 1px solid #595959;
@@ -133,3 +122,12 @@ h2 {
     background-color: #444;
 }
 
+/* ✅ When active, slide up the session tickers and reveal all tickers */
+.show-all #tickers-wrapper {
+    transform: translateY(-50%);
+}
+
+.show-all #tickers-all {
+    max-height: 500px; /* Adjust based on content */
+    opacity: 1;
+}
