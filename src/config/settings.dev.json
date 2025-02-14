@@ -6,19 +6,6 @@
     "lists": {
       "session": {
         "length": 10,
-        "Price": false,
-        "ChangePercent": false,
-        "FiveM": false,
-        "Float": false,
-        "Volume": false,
-        "SprPercent": false,
-        "Time": false,
-        "HighOfDay": false,
-        "hasNews": false,
-        "count": false
-      },
-      "daily": {
-        "length": 4,
         "Price": true,
         "ChangePercent": true,
         "FiveM": true,
@@ -27,9 +14,22 @@
         "SprPercent": true,
         "Time": true,
         "HighOfDay": true,
-        "news": true,
         "hasNews": true,
         "count": true
+      },
+      "daily": {
+        "length": 4,
+        "Price": false,
+        "ChangePercent": false,
+        "FiveM": false,
+        "Float": false,
+        "Volume": false,
+        "SprPercent": false,
+        "Time": false,
+        "HighOfDay": false,
+        "news": true,
+        "hasNews": false,
+        "count": false
       }
     }
   },
