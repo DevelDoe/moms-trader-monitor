@@ -133,16 +133,16 @@
 
                     if (isExpanded) {
                         setTimeout(() => {
-                            window.scrollTo({
-                                top: document.body.scrollHeight - window.innerHeight + 300, // ✅ Scroll down past the button
+                            document.getElementById("tickers-wrapper").scrollIntoView({
                                 behavior: "smooth",
+                                block: "start",
                             });
                         }, 300);
                     } else {
                         setTimeout(() => {
-                            window.scrollTo({
-                                top: 0, // ✅ Scroll back to the top
+                            document.getElementById("tickers-all").scrollIntoView({
                                 behavior: "smooth",
+                                block: "start",
                             });
                         }, 300);
                     }
