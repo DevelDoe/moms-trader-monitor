@@ -179,13 +179,13 @@ h2 {
 }
 
 /* 🎯 Different Bonus Colors */
-.bonus.news { color: #ffcc00; }    /* 🟡 Yellow for News */
-.bonus.high { color: #ff4444; }    /* 🔴 Red for High of Day */
+.bonus.news { color: #ffcc00; }    
+.bonus.high { color: #ff4444; }   
 .bonus.gold-float { color: #ffd700; }
 .bonus.silver-float { color: #C0C0C0; }
 .bonus.bronse-float { color: #cd7f32; } 
-.bonus.volume { color: #28a745; }  /* 🟢 Green for High Volume */
-.bonus.spread { color: #8e44ad; }  /* 🟣 Purple for Wide Spread */
+.bonus.volume { color: #28a745; }  
+.bonus.spread { color: #8e44ad; }  
 
 /* ✅ Tooltip Effect */
 .bonus-container {
