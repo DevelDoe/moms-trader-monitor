@@ -117,37 +117,30 @@
         </script>
         <script>
             document.addEventListener("DOMContentLoaded", () => {
-    const toggleButton = document.getElementById("toggle-all-tickers");
-    const tickersWrapper = document.getElementById("tickers-wrapper");
-    const tickersAllSection = document.getElementById("tickers-all");
-    let isExpanded = false;
+                const toggleButton = document.getElementById("toggle-all-tickers");
+                const tickersWrapper = document.getElementById("tickers-wrapper");
+                const tickersAllSection = document.getElementById("tickers-all");
+                let isExpanded = false;
 
-    // ✅ Default icon
-    toggleButton.innerHTML = "🔽"; // Down icon
+                // ✅ Default icon
+                toggleButton.innerHTML = "🔽"; // Down icon
 
-    toggleButton.addEventListener("click", () => {
-        isExpanded = !isExpanded;
-        document.body.classList.toggle("show-all", isExpanded);
+                toggleButton.addEventListener("click", () => {
+                    isExpanded = !isExpanded;
+                    document.body.classList.toggle("show-all", isExpanded);
 
-        // ✅ Change icon dynamically
-        toggleButton.innerHTML = isExpanded ? "🔼" : "🔽"; // Toggle up/down
+                    // ✅ Change icon dynamically
+                    toggleButton.innerHTML = isExpanded ? "🔼" : "🔽"; // Toggle up/down
 
-        setTimeout(() => {
-            if (isExpanded) {
-                window.scrollTo({
-                    top: tickersAllSection.offsetTop - 100, // ✅ Adjust for visibility
-                    behavior: "smooth",
+                    setTimeout(() => {
+                        if (isExpanded) {
+                            tickersAllSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                        } else {
+                            tickersWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                    }, 300);
                 });
-            } else {
-                window.scrollTo({
-                    top: tickersWrapper.offsetTop - 100, // ✅ Adjust back to top
-                    behavior: "smooth",
-                });
-            }
-        }, 300);
-    });
-});
-
+            });
         </script>
         <script src="./top.js"></script>
     </body>
