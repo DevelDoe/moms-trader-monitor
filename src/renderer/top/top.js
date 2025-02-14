@@ -175,6 +175,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
+                    updateActiveTicker(ticker); // ✅ UPDATED: Set clicked ticker as active
                 });
             } else if (key === "score") {
                 // ✅ Add tooltip with score breakdown
