@@ -132,20 +132,16 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     const listType = tableId.includes("session") ? "session" : "daily";
     const enabledColumns = window.settings.top.lists?.[listType] || {};
 
-    console.log(`🟢 Enabled Columns for ${listType}:`, enabledColumns);
-
     if (tickers.length === 0) {
         console.warn(`No data available for ${listType}!`);
         return;
     }
 
+    // ✅ Get the keys from the first ticker, ensuring "Symbol", "Count", "Score", and "Bonuses" are always included
     const allColumns = Object.keys(tickers[0]).filter((key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses");
-
-    console.log(`📌 Final Columns for ${tableId}:`, allColumns);
 
     // ✅ Generate the header dynamically
     tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
-    
 
     // ✅ Populate table rows
     tickers.forEach((ticker) => {
@@ -166,7 +162,6 @@ function updateTickersTable(tickers, tableId, prevTickers) {
         allColumns.forEach((key) => {
             const cell = document.createElement("td");
 
-            // ✅ Make "Symbol" Clickable (Copy to Clipboard)
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
@@ -177,15 +172,14 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                     updateActiveTicker(ticker); // ✅ UPDATED: Set clicked ticker as active
                 });
             } else if (key === "score") {
-                // ✅ Add tooltip with score breakdown
                 const scoreBreakdown = getScoreBreakdown(ticker);
                 cell.textContent = ticker[key];
                 cell.className = "score-tooltip";
                 cell.setAttribute("title", scoreBreakdown);
             } else if (key === "Bonuses") {
-                // Insert the bonuses symbols
-                cell.textContent = ticker[key] || ""; // Ensure there's a default value if Bonuses is undefined
-            }else {
+                // ✅ Insert dynamically styled bonus symbols
+                cell.innerHTML = getBonusesHTML(ticker);
+            } else {
                 cell.textContent = ticker[key];
             }
 
@@ -193,17 +187,11 @@ function updateTickersTable(tickers, tableId, prevTickers) {
         });
 
         tableBody.appendChild(row);
-
-        // // 🔥 Apply highlight class for new or updated tickers
-        // if (isNew) {
-        //     row.classList.add("highlight-new");
-        // } else if (isUpdated) {
-        //     row.classList.add("highlight-updated");
-        // }
     });
 
     console.log(`✅ Finished updating table: ${tableId}`);
 }
+
 
 // Clear session
 function clearSessionList() {
@@ -341,4 +329,26 @@ function updateActiveTicker(ticker) {
     setTimeout(() => {
         row.style.background = "rgba(34, 139, 34, 0.2)"; // ✅ Fade back
     }, 1000);
+}
+
+function getBonusesHTML(ticker) {
+    let bonuses = [];
+
+    if (ticker.hasNews) {
+        bonuses.push('<span class="bonus news">N</span>'); // 🟡 Yellow "N" for News
+    }
+    if (ticker.HighOfDay) {
+        bonuses.push('<span class="bonus high">H</span>'); // 🔴 Red "H" for High of Day
+    }
+    if (parseFloatValue(ticker.Float) < 5) {
+        bonuses.push('<span class="bonus low-float">L</span>'); // 🔵 Blue "L" for Low Float
+    }
+    if (parseFloatValue(ticker.Volume) > 10) {
+        bonuses.push('<span class="bonus volume">V</span>'); // 🟢 Green "V" for High Volume
+    }
+    if (parseFloatValue(ticker.SprPercent) > 1) {
+        bonuses.push('<span class="bonus spread">S</span>'); // 🟣 Purple "S" for Wide Spread
+    }
+
+    return bonuses.join(" "); // ✅ Join symbols with spaces
 }
