@@ -336,19 +336,30 @@ function updateActiveTicker(ticker) {
 
 function getBonusesHTML(ticker) {
     let bonuses = [];
+    let tooltipText = [];
 
     if (ticker.hasNews) {
-        bonuses.push('<span class="bonus news">N</span>'); // 🟡 Yellow "N" for News
+        bonuses.push('<span class="bonus news">N</span>'); 
+        tooltipText.push("N: Has News"); // Tooltip text
     }
     if (ticker.HighOfDay) {
-        bonuses.push('<span class="bonus high">H</span>'); // 🔴 Red "H" for High of Day
+        bonuses.push('<span class="bonus high">H</span>'); 
+        tooltipText.push("H: High of Day");
     }
     if (parseFloatValue(ticker.Float) < 5) {
-        bonuses.push('<span class="bonus low-float">L</span>'); // 🔵 Blue "L" for Low Float
+        bonuses.push('<span class="bonus low-float">L</span>'); 
+        tooltipText.push("L: Low Float");
     }
     if (parseFloatValue(ticker.Volume) > 10) {
-        bonuses.push('<span class="bonus volume">V</span>'); // 🟢 Green "V" for High Volume
+        bonuses.push('<span class="bonus volume">V</span>'); 
+        tooltipText.push("V: High Volume");
     }
 
-    return bonuses.join(" "); // ✅ Join symbols with spaces
+    if (bonuses.length === 0) {
+        return "-"; // No bonuses
+    }
+
+    return `<span class="bonus-container" title="${tooltipText.join('\n')}">
+                ${bonuses.join(" ")}
+            </span>`;
 }
