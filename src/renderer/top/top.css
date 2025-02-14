@@ -108,8 +108,6 @@ h2 {
 
 /* ✅ Style the toggle button */
 #toggle-all-tickers {
-    position: absolute;
-    top: 10px;
     display: block;
     margin: 10px auto;
     padding: 10px;
