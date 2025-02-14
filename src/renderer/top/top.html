@@ -121,7 +121,6 @@
             document.addEventListener("DOMContentLoaded", () => {
                 const toggleButton = document.getElementById("toggle-all-tickers");
                 const body = document.body;
-
                 let isExpanded = false;
 
                 toggleButton.addEventListener("click", () => {
@@ -130,6 +129,24 @@
 
                     // ✅ Change button text
                     toggleButton.textContent = isExpanded ? "Hide All Tickers" : "Show All Tickers";
+
+                    if (isExpanded) {
+                        // ✅ Scroll to the bottom when opening
+                        setTimeout(() => {
+                            window.scrollTo({
+                                top: document.body.scrollHeight,
+                                behavior: "smooth",
+                            });
+                        }, 300); // Small delay to match animation
+                    } else {
+                        // ✅ Scroll back to top when closing
+                        setTimeout(() => {
+                            window.scrollTo({
+                                top: 0,
+                                behavior: "smooth",
+                            });
+                        }, 300);
+                    }
                 });
             });
         </script>
