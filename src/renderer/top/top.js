@@ -230,7 +230,8 @@ function calculateScore(ticker) {
     let score = ticker.count;
     if (ticker.HighOfDay) score += 20;
     let floatValue = parseFloatValue(ticker.Float);
-    if (floatValue < 1) score += 30;
+    if (floatValue === 0) score += 0;
+    else if (floatValue < 1) score += 30;
     else if (floatValue > 1 && floatValue < 5) score += 20;
     else if (floatValue > 5 && floatValue < 10) score += 10;
     else if (floatValue > 10 && floatValue < 50) score += 0;
@@ -254,7 +255,7 @@ function getScoreBreakdown(ticker) {
     let floatValue = parseFloatValue(ticker.Float);
     if (floatValue === 0) {
         score += 0;
-        breakdown.push(`+30 (Float < 1M)`);
+        breakdown.push(`+-0 (Float < 1M)`);
     } else if (floatValue < 1) {
         score += 30;
         breakdown.push(`+30 (Float < 1M)`);
