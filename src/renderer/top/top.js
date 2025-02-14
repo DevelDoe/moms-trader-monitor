@@ -355,7 +355,7 @@ function getBonusesHTML(ticker) {
         tooltipText.push("10M: less than 10M");
     }
     if (parseFloatValue(ticker.Volume) > 10) {
-        bonuses.push('<span class="bonus volume">V</span>');
+        bonuses.push('<span class="bonus volume">VOL</span>');
         tooltipText.push("VOL: High Volume");
     }
 
