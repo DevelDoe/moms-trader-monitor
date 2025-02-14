@@ -12,24 +12,24 @@
         "Float": true,
         "Volume": true,
         "SprPercent": true,
-        "Time": true,
+        "Time": false,
         "HighOfDay": true,
         "hasNews": true,
         "count": true
       },
       "daily": {
         "length": 4,
-        "Price": false,
-        "ChangePercent": false,
-        "FiveM": false,
-        "Float": false,
+        "Price": true,
+        "ChangePercent": true,
+        "FiveM": true,
+        "Float": true,
         "Volume": true,
-        "SprPercent": false,
-        "Time": false,
-        "HighOfDay": false,
+        "SprPercent": true,
+        "Time": true,
+        "HighOfDay": true,
         "news": true,
-        "hasNews": false,
-        "count": false
+        "hasNews": true,
+        "count": true
       }
     }
   },
