@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         fetchAndUpdateTickers();
     });
 
-    // ✅ Listen for settings updates (INCLUDING FILTERS)
+    // ✅ Listen for settings updates 
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
 
