@@ -14,7 +14,7 @@
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
-        "hasNews": false,
+        "hasNews": true,
         "count": false
       },
       "daily": {
