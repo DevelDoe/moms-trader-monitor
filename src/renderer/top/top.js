@@ -342,7 +342,7 @@ function getBonusesHTML(ticker) {
     }
     if (ticker.HighOfDay) {
         bonuses.push('<span class="bonus high">H</span>');
-        tooltipText.push("H: High of Day");
+        tooltipText.push("HOD: High of Day");
     }
     if (parseFloatValue(ticker.Float) > 0 && parseFloatValue(ticker.Float) < 1) {
         bonuses.push('<span class="bonus gold-float">1M</span>');
