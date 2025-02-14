@@ -38,3 +38,8 @@ img {
     user-drag: none;
     -webkit-user-drag: none;
 }
+
+
+body::-webkit-scrollbar {
+    display: none;
+}
