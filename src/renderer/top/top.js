@@ -43,8 +43,9 @@ async function fetchAndUpdateTickers() {
         const dailyData = await window.topAPI.getTickers("daily");
         const allData = dailyData; 
 
-        console.log("Session Data:", sessionData);
-        console.log("Daily Data:", dailyData);
+        console.log("📊 Session Data:", sessionData);
+        console.log("📊 Daily Data:", dailyData);
+        console.log("📊 All Data:", dailyData);
 
         // ✅ Store previous state for comparison
         let oldTickersSessions = { ...prevTickersSessions };
