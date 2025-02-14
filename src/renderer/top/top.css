@@ -95,13 +95,6 @@ h2 {
 
 
 
-/* ✅ Ensure the wrapper and all tickers sections fill the screen minus button height */
-#tickers-wrapper,
-#tickers-all {
-    max-height: calc(100vh - 50px); /* Adjust based on button height */
-    overflow-y: auto;
-}
-
 /* ✅ Initially hide the all tickers section */
 #tickers-all {
     max-height: 0;
