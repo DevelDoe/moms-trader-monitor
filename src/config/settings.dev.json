@@ -8,7 +8,7 @@
         "length": 10,
         "Price": false,
         "ChangePercent": false,
-        "FiveM": true,
+        "FiveM": false,
         "Float": true,
         "Volume": true,
         "SprPercent": true,
