@@ -243,17 +243,18 @@ function calculateScore(ticker) {
 
     if (ticker.HighOfDay) score += 20;
 
-    if (ticker.hasNews) score += 40;
+    if (ticker.hasNews) score += 30;
 
     let floatValue = parseFloatValue(ticker.Float);
 
-    if (floatValue > 0 && floatValue < 1) score += 30;
-    else if (floatValue > 1 && floatValue < 5) score += 20;
+    if (floatValue > 0 && floatValue < 1) score += 20;
+    else if (floatValue > 1 && floatValue < 5) score += 15;
     else if (floatValue > 5 && floatValue < 10) score += 10;
     else if (floatValue > 10 && floatValue < 50) score += 0;
     else if (floatValue > 50 && floatValue < 100) score -= 10;
-    else if (floatValue > 100 && floatValue < 500) score -= 20;
-    else if (floatValue > 500) score -= 30;
+    else if (floatValue > 100 && floatValue < 200) score -= 20;
+    else if (floatValue > 200 && floatValue < 500) score -= 30;
+    else if (floatValue > 500) score -= 50;
     return score;
 }
 
