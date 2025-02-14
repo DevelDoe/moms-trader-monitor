@@ -133,7 +133,7 @@ h2 {
     display: block;
     width: 100%;
     height: 4px;
-    background-color: black;
+    background-color: #1c1d23;
     margin: 5px 0;
     transition: 0.3s;
 }
