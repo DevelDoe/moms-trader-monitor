@@ -134,14 +134,14 @@
                     if (isExpanded) {
                         setTimeout(() => {
                             window.scrollTo({
-                                top: document.body.scrollHeight - window.innerHeight + 100, // ✅ Scroll 100px more
+                                top: document.body.scrollHeight - window.innerHeight + 100, // ✅ Scroll down past the button
                                 behavior: "smooth",
                             });
                         }, 300);
                     } else {
                         setTimeout(() => {
                             window.scrollTo({
-                                bottom: 0,
+                                top: 0, // ✅ Scroll back to the top
                                 behavior: "smooth",
                             });
                         }, 300);
