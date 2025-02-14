@@ -1,6 +1,7 @@
 // Local arrays for UI processing
 let tickersDaily = [];
 let tickersSessions = [];
+let tickersAll = [];
 
 // Store previous tickers for comparison
 let prevTickersSessions = {};
