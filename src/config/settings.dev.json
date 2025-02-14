@@ -6,11 +6,11 @@
     "lists": {
       "session": {
         "length": 10,
-        "Price": true,
+        "Price": false,
         "ChangePercent": false,
         "FiveM": false,
         "Float": false,
-        "Volume": true,
+        "Volume": false,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
