@@ -119,7 +119,7 @@ h2 {
     transition: transform 0.3s ease-in-out;
 }
 
-/* 🔄 Rotate the icon when expanded */
+🔄 Rotate the icon when expanded
 .show-all #toggle-all-tickers {
     transform: rotate(180deg);
 }
