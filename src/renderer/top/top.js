@@ -345,13 +345,13 @@ function getBonusesHTML(ticker) {
         tooltipText.push("H: High of Day");
     }
     if (parseFloatValue(ticker.Float) > 0 && parseFloatValue(ticker.Float) < 1) {
-        bonuses.push('<span class="bonus gold-float"><1M</span>');
+        bonuses.push('<span class="bonus gold-float">1M</span>');
         tooltipText.push("L: Float less than 1M");
     } else if (parseFloatValue(ticker.Float) > 1 && parseFloatValue(ticker.Float) < 5) {
-        bonuses.push('<span class="bonus silver-float"><5M</span>');
+        bonuses.push('<span class="bonus silver-float">5M</span>');
         tooltipText.push("L: Float less than 5M");
     } else if (parseFloatValue(ticker.Float) > 5 && parseFloatValue(ticker.Float) < 10) {
-        bonuses.push('<span class="bonus bronse-float"><10M</span>');
+        bonuses.push('<span class="bonus bronse-float">10M</span>');
         tooltipText.push("L: less than 10M");
     }
     if (parseFloatValue(ticker.Volume) > 10) {
