@@ -337,12 +337,12 @@ function getBonusesHTML(ticker) {
     let tooltipText = [];
 
     if (ticker.hasNews) {
-        bonuses.push('<span class="bonus news">CAT</span>');
-        tooltipText.push("CAT: Has News"); // Tooltip text
+        bonuses.push('<span class="bonus news">N</span>');
+        tooltipText.push("N: Has News"); // Tooltip text
     }
     if (ticker.HighOfDay) {
-        bonuses.push('<span class="bonus high">HOD</span>');
-        tooltipText.push("HOD: High of Day");
+        bonuses.push('<span class="bonus high">H</span>');
+        tooltipText.push("H: High of Day");
     }
     if (parseFloatValue(ticker.Float) > 0 && parseFloatValue(ticker.Float) < 1) {
         bonuses.push('<span class="bonus gold-float">1M</span>');
