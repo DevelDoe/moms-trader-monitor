@@ -327,7 +327,7 @@ function updateActiveTicker(ticker) {
         <td>${ticker.SprPercent}</td>
         <td>${ticker.Time}</td>
         <td>${ticker.HighOfDay}</td>
-        <td>${ticker.Count}</td>
+        <td>${ticker.count}</td>
         <td>${ticker.score}</td>
     `;
 
