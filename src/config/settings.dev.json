@@ -10,12 +10,12 @@
         "ChangePercent": false,
         "FiveM": false,
         "Float": false,
-        "Volume": true,
-        "SprPercent": true,
-        "Time": true,
-        "HighOfDay": true,
-        "hasNews": true,
-        "count": true
+        "Volume": false,
+        "SprPercent": false,
+        "Time": false,
+        "HighOfDay": false,
+        "hasNews": false,
+        "count": false
       },
       "daily": {
         "length": 4,
