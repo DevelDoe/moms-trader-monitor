@@ -51,7 +51,7 @@
                 </thead>
                 <tbody></tbody>
             </table>
-            
+
             <!-- ✅ Active Ticker Section -->
             <section id="active-ticker">
                 <h2>Active Ticker</h2>
@@ -118,10 +118,14 @@
                     navigator.clipboard
                         .writeText(text)
                         .then(() => {
-                            element.classList.add("copied"); // Add class for green effect
-                            setTimeout(() => {
-                                element.classList.remove("copied"); // Remove class after delay
-                            }, 500);
+                            element.classList.add("copied"); // ✅ Add visual feedback
+                            setTimeout(() => element.classList.remove("copied"), 500);
+
+                            // ✅ Find the clicked ticker's data
+                            const clickedTicker = findTickerBySymbol(text);
+                            if (clickedTicker) {
+                                updateActiveTicker(clickedTicker);
+                            }
                         })
                         .catch((err) => console.error("Failed to copy: ", err));
                 }
