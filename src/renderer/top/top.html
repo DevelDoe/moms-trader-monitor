@@ -63,7 +63,7 @@
         </section>
 
         <!-- ✅ Expand/Collapse Button -->
-        <button id="toggle-all-tickers">&#9660;</button>
+        <button id="toggle-all-tickers">&#8595;</button>
 
         <script>
             document.addEventListener("DOMContentLoaded", () => {
@@ -117,46 +117,44 @@
         </script>
         <script>
             document.addEventListener("DOMContentLoaded", () => {
-    const toggleButton = document.getElementById("toggle-all-tickers");
-    const tickersAllSection = document.getElementById("tickers-all");
-    const tickersWrapper = document.getElementById("tickers-wrapper");
-    let isExpanded = false;
+                const toggleButton = document.getElementById("toggle-all-tickers");
+                const body = document.body;
+                let isExpanded = false;
 
-    // ✅ Ensure tickers are loaded before adding event listeners
-    setTimeout(() => {
-        toggleButton.innerHTML = "Show All Tickers &#9660;"; // ▼ Default (down arrow)
+                document.addEventListener("DOMContentLoaded", () => {
+                    const toggleButton = document.getElementById("toggle-all-tickers");
+                    const body = document.body;
+                    let isExpanded = false;
 
-        toggleButton.addEventListener("click", () => {
-            isExpanded = !isExpanded;
+                    toggleButton.innerHTML = "Show All Tickers &#9660;"; // ▼ Default (down arrow)
 
-            // ✅ Toggle visibility of tickers-all
-            tickersAllSection.classList.toggle("visible", isExpanded);
-            tickersWrapper.classList.toggle("shifted", isExpanded);
+                    toggleButton.addEventListener("click", () => {
+                        isExpanded = !isExpanded;
+                        body.classList.toggle("show-all", isExpanded);
 
-            // ✅ Change button text dynamically
-            toggleButton.innerHTML = isExpanded
-                ? "Hide All Tickers &#9650;" // ▲ Up arrow
-                : "Show All Tickers &#9660;"; // ▼ Down arrow
+                        // ✅ Change button text and icon dynamically
+                        toggleButton.innerHTML = isExpanded
+                            ? "Hide All Tickers &#9650;" // ▲ Up arrow
+                            : "Show All Tickers &#9660;"; // ▼ Down arrow
 
-            if (isExpanded) {
-                setTimeout(() => {
-                    window.scrollTo({
-                        top: document.body.scrollHeight,
-                        behavior: "smooth",
+                        if (isExpanded) {
+                            setTimeout(() => {
+                                window.scrollTo({
+                                    top: document.body.scrollHeight,
+                                    behavior: "smooth",
+                                });
+                            }, 300);
+                        } else {
+                            setTimeout(() => {
+                                window.scrollTo({
+                                    top: 0,
+                                    behavior: "smooth",
+                                });
+                            }, 300);
+                        }
                     });
-                }, 300);
-            } else {
-                setTimeout(() => {
-                    window.scrollTo({
-                        top: 0,
-                        behavior: "smooth",
-                    });
-                }, 300);
-            }
-        });
-    }, 500); // ✅ Delay to ensure tickers load before modifying DOM
-});
-
+                });
+            });
         </script>
         <script src="./top.js"></script>
     </body>
