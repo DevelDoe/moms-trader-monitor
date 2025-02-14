@@ -92,6 +92,35 @@ h2 {
 
 
 
+
+/* ✅ Ensure the wrapper and all tickers sections fill the screen */
+#tickers-wrapper,
+#tickers-all {
+    max-height: 100vh; /* Full viewport height */
+    overflow-y: auto;  /* Enable scrolling within the sections if needed */
+}
+
+/* ✅ Initially hide the all tickers section */
+#tickers-all {
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+/* ✅ Expand tickers-all when toggled */
+.show-all #tickers-all {
+    max-height: 100vh; /* Expand fully */
+    opacity: 1;
+}
+
+/* ✅ Slide tickers-wrapper up when all tickers are shown */
+.show-all #tickers-wrapper {
+    transform: translateY(-100vh);
+    transition: transform 0.5s ease-in-out;
+}
+
+
+
 /* ✅ Ensure the wrapper is relative for movement */
 #tickers-wrapper {
     position: relative;
@@ -119,18 +148,6 @@ h2 {
     transition: transform 0.3s ease-in-out;
 }
 
-
-
 #toggle-all-tickers:hover {
     background-color: #444;
-}
-
-/* ✅ When active, slide up the session tickers and reveal all tickers */
-.show-all #tickers-wrapper {
-    transform: translateY(-100%);
-}
-
-.show-all #tickers-all {
-    max-height: 500px; /* Adjust based on content */
-    opacity: 1;
 }
