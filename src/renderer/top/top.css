@@ -93,11 +93,24 @@ h2 {
 
 
 
-/* ✅ Ensure the wrapper and all tickers sections fill the screen */
+/* ✅ Set button size */
+#toggle-all-tickers {
+    display: block;
+    margin: 10px auto;
+    padding: 15px;
+    font-size: 24px;
+    background-color: #222;
+    color: #e0e0e0;
+    border: 1px solid #595959;
+    cursor: pointer;
+    text-align: center;
+}
+
+/* ✅ Ensure the wrapper and all tickers sections fill the screen minus button height */
 #tickers-wrapper,
 #tickers-all {
-    max-height: 100vh; /* Full viewport height */
-    overflow-y: auto;  /* Enable scrolling within the sections if needed */
+    max-height: calc(100vh - 50px); /* Adjust based on button height */
+    overflow-y: auto;
 }
 
 /* ✅ Initially hide the all tickers section */
@@ -109,45 +122,12 @@ h2 {
 
 /* ✅ Expand tickers-all when toggled */
 .show-all #tickers-all {
-    max-height: 100vh; /* Expand fully */
+    max-height: calc(100vh - 50px);
     opacity: 1;
 }
 
 /* ✅ Slide tickers-wrapper up when all tickers are shown */
 .show-all #tickers-wrapper {
-    transform: translateY(-100vh);
+    transform: translateY(calc(-100vh + 50px));
     transition: transform 0.5s ease-in-out;
-}
-
-
-
-/* ✅ Ensure the wrapper is relative for movement */
-#tickers-wrapper {
-    position: relative;
-    transition: transform 0.5s ease-in-out;
-}
-
-/* ✅ Initially hide the "All Tickers" section */
-#tickers-all {
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
-}
-
-#toggle-all-tickers {
-    display: block;
-    margin: 10px auto;
-    padding: 10px 15px;
-    font-size: 20px;
-    background-color: #222;
-    color: #e0e0e0;
-    border: 1px solid #595959;
-    cursor: pointer;
-    text-align: center;
-    transition: transform 0.3s ease-in-out;
-}
-
-#toggle-all-tickers:hover {
-    background-color: #444;
 }
