@@ -298,3 +298,33 @@ function getScoreBreakdown(ticker) {
     breakdown.push(`Final Score: ${score}`);
     return breakdown.join("\n"); // ✅ Creates a tooltip with newlines for readability
 }
+
+// ✅ Find the ticker in either session or daily lists
+function findTickerBySymbol(symbol) {
+    return [...tickersSessions, ...tickersDaily].find((ticker) => ticker.Symbol === symbol);
+}
+
+// ✅ Update the Active Ticker Display
+function updateActiveTicker(ticker) {
+    const row = document.getElementById("active-ticker-row");
+    if (!row) return;
+
+    row.innerHTML = `
+        <td>${ticker.Symbol}</td>
+        <td>${ticker.Price}</td>
+        <td>${ticker.ChangePercent}</td>
+        <td>${ticker.FiveM}</td>
+        <td>${ticker.Float}</td>
+        <td>${ticker.Volume}</td>
+        <td>${ticker.SprPercent}</td>
+        <td>${ticker.Time}</td>
+        <td>${ticker.HOD}</td>
+        <td>${ticker.Count}</td>
+        <td>${ticker.score}</td>
+    `;
+
+    row.style.background = "rgba(34, 139, 34, 0.4)"; // ✅ Highlight change
+    setTimeout(() => {
+        row.style.background = "rgba(34, 139, 34, 0.2)"; // ✅ Fade back
+    }, 1000);
+}
