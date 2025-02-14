@@ -5,7 +5,7 @@ const path = require("path");
 
 function createTopWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 962,
+        width: 975,
         height: 800,
         frame: false,
         alwaysOnTop: false,
