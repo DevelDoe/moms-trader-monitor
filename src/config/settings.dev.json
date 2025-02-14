@@ -9,7 +9,7 @@
         "Price": false,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": true,
+        "Float": false,
         "Volume": true,
         "SprPercent": true,
         "Time": true,
