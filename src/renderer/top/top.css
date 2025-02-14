@@ -179,7 +179,7 @@ h2 {
 }
 
 /* 🎯 Different Bonus Colors */
-.bonus.news { color: #ffcc00; }    
+.bonus.news { color: rgb(255, 40, 40); }    
 .bonus.high { color: #8e44ad; }   
 .bonus.gold-float { color: #ffd700; }
 .bonus.silver-float { color: #C0C0C0; }
