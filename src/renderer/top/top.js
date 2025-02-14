@@ -337,7 +337,7 @@ function getBonusesHTML(ticker) {
     let tooltipText = [];
 
     if (ticker.hasNews) {
-        bonuses.push('<span class="bonus news">N</span>');
+        bonuses.push('<span class="bonus news">CAT</span>');
         tooltipText.push("N: Has News"); // Tooltip text
     }
     if (ticker.HighOfDay) {
