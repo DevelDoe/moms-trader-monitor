@@ -93,18 +93,7 @@ h2 {
 
 
 
-/* ✅ Set button size */
-#toggle-all-tickers {
-    display: block;
-    margin: 10px auto;
-    padding: 15px;
-    font-size: 24px;
-    background-color: #222;
-    color: #e0e0e0;
-    border: 1px solid #595959;
-    cursor: pointer;
-    text-align: center;
-}
+
 
 /* ✅ Ensure the wrapper and all tickers sections fill the screen minus button height */
 #tickers-wrapper,
@@ -130,4 +119,21 @@ h2 {
 .show-all #tickers-wrapper {
     transform: translateY(calc(-100vh + 50px));
     transition: transform 0.5s ease-in-out;
+}
+
+.burger-menu {
+    display: inline-block;
+    cursor: pointer;
+    width: 30px;
+    height: 25px;
+    position: relative;
+}
+
+.burger-menu span {
+    display: block;
+    width: 100%;
+    height: 4px;
+    background-color: #fff;
+    margin: 5px 0;
+    transition: 0.3s;
 }
