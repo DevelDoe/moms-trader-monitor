@@ -7,11 +7,11 @@
       "session": {
         "length": 10,
         "Price": true,
-        "ChangePercent": true,
+        "ChangePercent": false,
         "FiveM": false,
         "Float": false,
         "Volume": false,
-        "SprPercent": true,
+        "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
         "hasNews": false,
