@@ -13,7 +13,7 @@
         "Volume": false,
         "SprPercent": false,
         "Time": false,
-        "HighOfDay": false,
+        "HighOfDay": true,
         "hasNews": true,
         "count": false
       },
