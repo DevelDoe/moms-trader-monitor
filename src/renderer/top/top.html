@@ -121,24 +121,24 @@
                 const body = document.body;
                 let isExpanded = false;
 
+                // ✅ Default icon
+                toggleButton.innerHTML = "&#9662;"; // ▾ Down
+
                 toggleButton.addEventListener("click", () => {
                     isExpanded = !isExpanded;
                     body.classList.toggle("show-all", isExpanded);
 
-                    // ✅ Change button text
-                    toggleButton.textContent = isExpanded ? "🔼" : "🔽";
-
+                    // ✅ Change icon dynamically
+                    toggleButton.innerHTML = isExpanded ? "&#9658;" : "&#9662;"; // ▸ Right, ▾ Down
 
                     if (isExpanded) {
-                        // ✅ Scroll to the bottom when opening
                         setTimeout(() => {
                             window.scrollTo({
                                 top: document.body.scrollHeight,
                                 behavior: "smooth",
                             });
-                        }, 300); // Small delay to match animation
+                        }, 300);
                     } else {
-                        // ✅ Scroll back to top when closing
                         setTimeout(() => {
                             window.scrollTo({
                                 top: 0,
