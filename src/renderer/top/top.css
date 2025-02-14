@@ -96,7 +96,7 @@ h2 {
 /* ✅ Ensure the wrapper and all tickers sections fill the screen */
 #tickers-wrapper,
 #tickers-all {
-    max-height: 100vh-20px; /* Full viewport height */
+    max-height: 100vh; /* Full viewport height */
     overflow-y: auto;  /* Enable scrolling within the sections if needed */
 }
 
