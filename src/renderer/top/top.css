@@ -137,3 +137,16 @@ h2 {
     margin: 5px 0;
     transition: 0.3s;
 }
+
+/* ✅ Set button size */
+#toggle-all-tickers {
+    display: block;
+    margin: 10px auto;
+    padding: 15px;
+    font-size: 24px;
+    background-color: #222;
+    color: #e0e0e0;
+    border: 1px solid #595959;
+    cursor: pointer;
+    text-align: center;
+}
