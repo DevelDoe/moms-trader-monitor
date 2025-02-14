@@ -356,7 +356,7 @@ function getBonusesHTML(ticker) {
     }
     if (parseFloatValue(ticker.Volume) > 10) {
         bonuses.push('<span class="bonus volume">V</span>');
-        tooltipText.push("V: High Volume");
+        tooltipText.push("VOL: High Volume");
     }
 
     if (bonuses.length === 0) {
