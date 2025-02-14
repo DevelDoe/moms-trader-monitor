@@ -117,6 +117,22 @@
                 }
             });
         </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const toggleButton = document.getElementById("toggle-all-tickers");
+                const body = document.body;
+
+                let isExpanded = false;
+
+                toggleButton.addEventListener("click", () => {
+                    isExpanded = !isExpanded;
+                    body.classList.toggle("show-all", isExpanded);
+
+                    // ✅ Change button text
+                    toggleButton.textContent = isExpanded ? "Hide All Tickers" : "Show All Tickers";
+                });
+            });
+        </script>
         <script src="./top.js"></script>
     </body>
 </html>
