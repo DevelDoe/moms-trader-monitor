@@ -101,7 +101,6 @@ async function fetchAndUpdateTickers() {
         updateTickersTable(tickersDaily, "tickers-daily", oldTickersDaily);
         updateTickersTable(tickersAll, "tickers-all", {}); // ✅ No need to compare previous state
 
-
         console.log("✅ UI Updated Successfully!");
     } catch (error) {
         console.error("❌ Error fetching tickers:", error);
@@ -140,7 +139,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
         return;
     }
 
-    const allColumns = Object.keys(tickers[0]).filter((key) => enabledColumns[key] || key === "Symbol" || key === "score");
+    const allColumns = Object.keys(tickers[0]).filter((key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses");
 
     console.log(`📌 Final Columns for ${tableId}:`, allColumns);
 
@@ -313,7 +312,6 @@ function findTickerBySymbol(symbol) {
 
     return foundTicker;
 }
-
 
 // ✅ Update the Active Ticker Display
 function updateActiveTicker(ticker) {
