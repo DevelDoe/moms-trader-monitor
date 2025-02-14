@@ -44,7 +44,7 @@ async function fetchAndUpdateTickers() {
         const allData = dailyData; 
 
         console.log("Session Data:", sessionData);
-        console.log("📊 Daily Data:", dailyData);
+        console.log("Daily Data:", dailyData);
 
         // ✅ Store previous state for comparison
         let oldTickersSessions = { ...prevTickersSessions };
