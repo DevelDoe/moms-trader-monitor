@@ -349,9 +349,6 @@ function getBonusesHTML(ticker) {
     if (parseFloatValue(ticker.Volume) > 10) {
         bonuses.push('<span class="bonus volume">V</span>'); // 🟢 Green "V" for High Volume
     }
-    if (parseFloatValue(ticker.SprPercent) > 1) {
-        bonuses.push('<span class="bonus spread">S</span>'); // 🟣 Purple "S" for Wide Spread
-    }
 
     return bonuses.join(" "); // ✅ Join symbols with spaces
 }
