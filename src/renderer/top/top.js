@@ -63,6 +63,7 @@ async function fetchAndUpdateTickers() {
         // ✅ Apply price filtering
         const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
         const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
+        const filteredAll = allData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
         // ✅ Calculate scores and sort tickers
         tickersSessions = filteredSession
