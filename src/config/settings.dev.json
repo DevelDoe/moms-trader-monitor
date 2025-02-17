@@ -1,21 +1,25 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 0,
-    "maxPrice": 100,
+    "minPrice": 1.5,
+    "maxPrice": 10,
     "lists": {
       "session": {
         "length": 10,
-        "Price": true,
+        "Price": false,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": true,
+        "Float": false,
         "Volume": true,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
         "hasNews": false,
-        "count": true
+        "count": true,
+        "Symbol": false,
+        "Score": true,
+        "Bonuses": true,
+        "Count": true
       },
       "daily": {
         "length": 4,
@@ -29,7 +33,11 @@
         "HighOfDay": false,
         "news": true,
         "hasNews": false,
-        "count": false
+        "count": false,
+        "Symbol": true,
+        "Score": true,
+        "Bonuses": true,
+        "Count": false
       }
     }
   },

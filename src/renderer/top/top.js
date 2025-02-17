@@ -64,26 +64,26 @@ async function fetchAndUpdateTickers() {
         const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
         const filteredAll = allData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
 
-        // ✅ Calculate scores and sort tickers
+        // ✅ Calculate Scores and sort tickers
         tickersSessions = filteredSession
             .map((ticker) => ({
                 ...ticker,
-                score: calculateScore(ticker),
+                Score: calculateScore(ticker),
             }))
-            .sort((a, b) => b.score - a.score); // Sort descending by score
+            .sort((a, b) => b.Score - a.Score); // Sort descending by Score
 
         tickersDaily = filteredDaily
             .map((ticker) => ({
                 ...ticker,
-                score: calculateScore(ticker),
+                Score: calculateScore(ticker),
             }))
-            .sort((a, b) => b.score - a.score);
+            .sort((a, b) => b.Score - a.Score);
         tickersAll = filteredAll
             .map((ticker) => ({
                 ...ticker,
-                score: calculateScore(ticker),
+                Score: calculateScore(ticker),
             }))
-            .sort((a, b) => b.score - a.score); // ✅ Sorting all tickers by score
+            .sort((a, b) => b.Score - a.Score); // ✅ Sorting all tickers by Score
 
         // ✅ Limit number of displayed entries
         tickersSessions = tickersSessions.slice(0, maxSessionLength);
@@ -139,8 +139,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     const allColumns =
         tableId === "tickers-all"
-            ? [...new Set(tickers.flatMap((t) => Object.keys(t)).concat("Bonuses"))] // ✅ Allow all attributes
-            : [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol" || key === "score" || key === "Bonuses");
+            ? [...new Set(tickers.flatMap((t) => Object.keys(t)))].filter((key) => key !== "Bonuses" && key !== "Time" ) // ✅ Exclude Bonuses
+            : [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
 
     // ✅ Generate the header dynamically
     tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
@@ -153,7 +153,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
         const prevTicker = prevTickers[ticker.Symbol];
 
         let isNew = !prevTicker; // Not found in previous state
-        let isUpdated = prevTicker && (prevTicker.Price !== ticker.Price || prevTicker.Count !== ticker.Count || prevTicker.score !== ticker.score);
+        let isUpdated = prevTicker && (prevTicker.Price !== ticker.Price || prevTicker.Count !== ticker.Count || prevTicker.Score !== ticker.Score);
 
         if (isNew) {
             row.classList.add("highlight-new"); // 🟢 Apply new ticker highlight
@@ -167,17 +167,17 @@ function updateTickersTable(tickers, tableId, prevTickers) {
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
-                cell.className = "symbol";
+                cell.className = "symbol no-drag";
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
                     updateActiveTicker(ticker); // ✅ UPDATED: Set clicked ticker as active
                 });
-            } else if (key === "score") {
-                const scoreBreakdown = getScoreBreakdown(ticker);
+            } else if (key === "Score") {
+                const ScoreBreakdown = getScoreBreakdown(ticker);
                 cell.textContent = ticker[key];
-                cell.className = "score-tooltip";
-                cell.setAttribute("title", scoreBreakdown);
+                cell.className = "Score-tooltip no-drag";
+                cell.setAttribute("title", ScoreBreakdown);
             } else if (key === "Bonuses") {
                 // ✅ Insert dynamically styled bonus symbols
                 cell.innerHTML = getBonusesHTML(ticker);
@@ -212,7 +212,8 @@ function clearSessionList() {
 function addClearSessionButton() {
     const btn = document.createElement("button");
     btn.id = "clear-session-btn";
-    btn.textContent = "🧹 New Session";
+    btn.textContent = "New Session 🧹";
+    btn.className = "no-drag";
     btn.addEventListener("click", clearSessionList);
 
     // ✅ Insert the button before session tickers table
@@ -230,70 +231,73 @@ function parseFloatValue(floatStr) {
     return value;
 }
 function calculateScore(ticker) {
-    let score = ticker.count;
+    let Score = ticker.Count;
 
-    if (ticker.HighOfDay) score += 20;
+    if (ticker.HighOfDay) Score += 20;
 
-    if (ticker.hasNews) score += 30;
+    if (ticker.hasNews) Score += 30;
 
     let floatValue = parseFloatValue(ticker.Float);
 
-    if (floatValue > 0 && floatValue < 1) score += 20;
-    else if (floatValue > 1 && floatValue < 5) score += 15;
-    else if (floatValue > 5 && floatValue < 10) score += 10;
-    else if (floatValue > 10 && floatValue < 50) score += 0;
-    else if (floatValue > 50 && floatValue < 100) score -= 10;
-    else if (floatValue > 100 && floatValue < 200) score -= 20;
-    else if (floatValue > 200 && floatValue < 500) score -= 30;
-    else if (floatValue > 500) score -= 50;
-    return score;
+    if (floatValue > 0 && floatValue < 1) Score += 20;
+    else if (floatValue > 1 && floatValue < 5) Score += 15;
+    else if (floatValue > 5 && floatValue < 10) Score += 10;
+    else if (floatValue > 10 && floatValue < 50) Score += 0;
+    else if (floatValue > 50 && floatValue < 100) Score -= 10;
+    else if (floatValue > 100 && floatValue < 200) Score -= 20;
+    else if (floatValue > 200 && floatValue < 500) Score -= 30;
+    else if (floatValue > 500) Score -= 50;
+    return Score;
 }
 
 function getScoreBreakdown(ticker) {
     let breakdown = [];
-    let score = ticker.count;
+    let Score = ticker.Count;
 
-    breakdown.push(`Base Score (Count): ${ticker.count}`);
-
+    breakdown.push(`Base Count: ${ticker.Count}`); // Added \n for a line break
+    breakdown.push(`---------------------`); // Added \n for a line break
     if (ticker.HighOfDay) {
-        score += 20;
-        breakdown.push(`+20 (High of Day)`);
+        Score += 20;
+        breakdown.push(`High of Day: +20`);
     }
 
     if (ticker.hasNews) {
-        score += 40;
-        breakdown.push(`+40 (High of Day)`);
+        Score += 40;
+        breakdown.push(`Has News: +40`);
     }
 
     let floatValue = parseFloatValue(ticker.Float);
     if (floatValue > 0 && floatValue < 1) {
-        score += 20;
-        breakdown.push(`+20 (Float < 1M)`);
+        Score += 20;
+        breakdown.push(`Float < 1M: +20`);
     } else if (floatValue > 1 && floatValue < 5) {
-        score += 15;
-        breakdown.push(`+15 (Float 1M - 5M)`);
+        Score += 15;
+        breakdown.push(`Float 1M - 5M: +15`);
     } else if (floatValue > 5 && floatValue < 10) {
-        score += 10;
-        breakdown.push(`+10 (Float 5M - 10M)`);
+        Score += 10;
+        breakdown.push(`Float 5M - 10M: +10`);
     } else if (floatValue > 10 && floatValue < 50) {
-        breakdown.push(`+0 (Float 10M - 50M)`);
+        breakdown.push(`Float 10M - 50M: +0`);
     } else if (floatValue > 50 && floatValue < 100) {
-        score -= 10;
-        breakdown.push(`-10 (Float 50M - 100M)`);
+        Score -= 10;
+        breakdown.push(`Float 50M - 100M: -10`);
     } else if (floatValue > 100 && floatValue < 200) {
-        score -= 20;
-        breakdown.push(`-20 (Float 100M - 500M)`);
+        Score -= 20;
+        breakdown.push(`Float 100M - 500M: -20`);
     } else if (floatValue > 200 && floatValue < 500) {
-        score -= 30;
-        breakdown.push(`-30 (Float 200M - 500M)`);
+        Score -= 30;
+        breakdown.push(`Float 200M - 500M: -30`);
     } else if (floatValue > 500) {
-        score -= 50;
-        breakdown.push(`-50 (Float > 500M)`);
+        Score -= 50;
+        breakdown.push(`Float > 500M: -50`);
     }
+    breakdown.push(`---------------------`); // Added \n for a line break
+    breakdown.push(`Final Score: ${Score}`);
 
-    breakdown.push(`Final Score: ${score}`);
-    return breakdown.join("\n"); // ✅ Creates a tooltip with newlines for readability
+    return breakdown.join("\n"); // ✅ Ensures each entry appears on a new line
 }
+
+
 
 // ✅ Find the ticker from tickersDaily only (ensures all attributes exist)
 function findTickerBySymbol(symbol) {
@@ -319,11 +323,10 @@ function updateActiveTicker(ticker) {
         <td>${ticker.Float}</td>
         <td>${ticker.Volume}</td>
         <td>${ticker.SprPercent}</td>
-        <td>${ticker.Time}</td>
         <td>${ticker.HighOfDay}</td>
-        <td>${ticker.count}</td>
+        <td>${ticker.Count}</td>
         <td>${ticker.hasNews}</td>
-        <td>${ticker.score}</td>
+        <td>${ticker.Score}</td>
     `;
 
     row.style.background = "rgba(34, 139, 34, 0.4)"; // ✅ Highlight change
@@ -337,27 +340,29 @@ function getBonusesHTML(ticker) {
     let tooltipText = [];
 
     if (ticker.hasNews) {
-        bonuses.push('<span class="bonus news">N</span>');
+        bonuses.push('<span class="bonus news no-drag">N</span>');
         tooltipText.push("N: Has News"); // Tooltip text
     }
     if (ticker.HighOfDay) {
-        bonuses.push('<span class="bonus high">H</span>');
+        bonuses.push('<span class="bonus high no-drag">H</span>');
         tooltipText.push("H: High of Day");
     }
     if (parseFloatValue(ticker.Float) > 0 && parseFloatValue(ticker.Float) < 1) {
-        bonuses.push('<span class="bonus gold-float">1M</span>');
+        bonuses.push('<span class="bonus gold-float no-drag">1M</span>');
         tooltipText.push("1M: Float less than 1M");
     } else if (parseFloatValue(ticker.Float) > 1 && parseFloatValue(ticker.Float) < 5) {
-        bonuses.push('<span class="bonus silver-float">5M</span>');
+        bonuses.push('<span class="bonus silver-float no-drag">5M</span>');
         tooltipText.push("5M: Float less than 5M");
     } else if (parseFloatValue(ticker.Float) > 5 && parseFloatValue(ticker.Float) < 10) {
-        bonuses.push('<span class="bonus bronse-float">10M</span>');
+        bonuses.push('<span class="bonus bronse-float no-drag">10M</span>');
         tooltipText.push("10M: less than 10M");
     }
-    if (parseFloatValue(ticker.Volume) > 10) {
-        bonuses.push('<span class="bonus volume">V</span>');
-        tooltipText.push("V: High Volume");
-    }
+
+    // VOLUME should be relative 
+    // if (parseFloatValue(ticker.Volume) > 10) {
+    //     bonuses.push('<span class="bonus volume no-drag">V</span>');
+    //     tooltipText.push("V: High Volume");
+    // }
 
     if (bonuses.length === 0) {
         return "-"; // No bonuses

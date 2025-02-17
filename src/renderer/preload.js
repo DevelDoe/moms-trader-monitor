@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("newsAPI", {
     get: () => ipcRenderer.invoke("get-all-news"),
     toggle: () => ipcRenderer.send("toggle-news"),
     onUpdate: (callback) => ipcRenderer.on("news-updated", callback),
+    setBounds: (bounds) => ipcRenderer.send("set-window-bounds", bounds),
 });
 
 contextBridge.exposeInMainWorld("settingsAPI", {

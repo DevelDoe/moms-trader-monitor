@@ -320,6 +320,13 @@ ipcMain.on("toggle-news", () => {
     }
 });
 
+ipcMain.on("set-window-bounds", (event, bounds) => {
+    if (windows.news) { // Use windows.news instead of window.news
+        windows.news.setBounds(bounds);
+    }
+});
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
 

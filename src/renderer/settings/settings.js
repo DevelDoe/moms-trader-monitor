@@ -16,6 +16,38 @@ function openTab(evt, tabId) {
     if (evt) evt.currentTarget.classList.add("active"); // Ensure evt exists
 }
 
+const HARDCODED_ATTRIBUTES = {
+    session: {
+        Price: true,
+        ChangePercent: false,
+        FiveM: false,
+        Float: true,
+        Volume: true,
+        SprPercent: false,
+        Time: false,
+        HighOfDay: false,
+        hasNews: false,
+        Count: true,
+        Score: true,
+        Bonuses: true,
+    },
+    daily: {
+        Price: false,
+        ChangePercent: false,
+        FiveM: false,
+        Float: false,
+        Volume: false,
+        SprPercent: false,
+        Time: false,
+        HighOfDay: false,
+        hasNews: false,
+        Count: false,
+        Score: true,
+        Bonuses: true,
+    },
+};
+
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
@@ -212,30 +244,19 @@ function initializeNewsSection() {
 
 async function loadAttributeFilters(listType, containerId) {
     try {
-        console.log(`📥 Fetching attributes for ${listType}...`);
-        let attributes = await window.settingsAPI.getAttributes(listType);
+        console.log(`📥 Loading hardcoded attributes for ${listType}...`);
 
-        if (attributes.length === 0) {
-            console.log(`⚠️ No attributes for ${listType}. Waiting for updates...`);
-            return;
-        }
-
-        console.log(`✅ Received attributes for ${listType}:`, attributes);
+        const attributes = Object.keys(HARDCODED_ATTRIBUTES[listType]);
         const container = document.getElementById(containerId);
+
         if (!container) {
             console.error(`❌ Container ${containerId} not found!`);
             return;
         }
 
-        container.innerHTML = ""; // ✅ Clear previous checkboxes
+        container.innerHTML = ""; // Clear previous checkboxes
 
-        // ✅ Ensure `settings.top` exists
-        if (!window.settings || !window.settings.top) {
-            console.error("❌ `settings.top` is missing while loading attributes!");
-            return;
-        }
-
-        const selectedFilters = window.settings.top.lists?.[listType] || {}; // ✅ Use structured storage
+        const selectedFilters = HARDCODED_ATTRIBUTES[listType]; // Use hardcoded attributes
 
         attributes.forEach((attr) => {
             const label = document.createElement("label");
@@ -243,10 +264,10 @@ async function loadAttributeFilters(listType, containerId) {
             checkbox.type = "checkbox";
             checkbox.name = listType;
             checkbox.value = attr;
-            checkbox.checked = selectedFilters[attr] ?? true; // ✅ Preserve saved state
+            checkbox.checked = selectedFilters[attr];
 
             checkbox.addEventListener("change", () => {
-                updateFilters(window.settings); // ✅ Pass settings to updateFilters()
+                updateFilters(window.settings); // Update filters as usual
             });
 
             label.appendChild(checkbox);
@@ -254,11 +275,12 @@ async function loadAttributeFilters(listType, containerId) {
             container.appendChild(label);
         });
 
-        console.log(`✅ UI updated for ${listType}!`);
+        console.log(`✅ Hardcoded attributes loaded for ${listType}!`);
     } catch (error) {
         console.error(`❌ Error loading ${listType} attributes:`, error);
     }
 }
+
 
 async function updateFilters() {
     if (!window.settings || !window.settings.top) {

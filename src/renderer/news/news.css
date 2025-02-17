@@ -1,0 +1,86 @@
+body {
+    color: #e0e0e0; /* Light text for contrast */
+    padding: 0;
+    margin: 0 auto;
+}
+
+#news-wrapper {
+    background-color: rgba(28, 29, 35, 0.9); /* 50% opacity */
+    overflow: hidden;
+    height: 100vw;
+    transition: height 200ms ease;
+}
+
+.menu--collapsed {
+    height: 50px;
+}
+body {
+    /* transition: height 0.3s ease; */
+    overflow: hidden;
+    height: 50px; /* Default height */
+}
+
+body:hover {
+    height: 100vw; /* Expanded height on hover */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #2a2b32;
+    color: #e0e0e0; /* Light text for readability */
+}
+tbody tr:first-child {
+    background: #2a2b32;
+}
+th,
+td {
+    padding: 5px 15px;
+    text-align: left;
+}
+tr {
+    height: 49px;
+}
+th {
+    background: #3a3b41; /* Slightly lighter dark header */
+    color: #ffffff; /* White text for contrast */
+}
+
+tr:nth-child(even) {
+    background: #24252b; /* Alternating row color */
+}
+
+a {
+    color: #66b3ff; /* Soft blue for links */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h2 {
+    -webkit-app-region: drag;
+    font-size: 10px;
+    color: #595959;
+    margin-left: 10px;
+    width: 59%;
+}
+
+/* 🎭 Fade out for news rows over 15 minutes (900s) */
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/* This class will be added dynamically */
+.fade-out {
+    animation: fadeOut 1200s ease-in-out forwards;
+}
+.info {
+    color: #595959;
+}

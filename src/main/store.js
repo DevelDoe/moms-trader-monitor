@@ -20,10 +20,10 @@ class Store extends EventEmitter {
 
             // ✅ Ensure `hasNews` always exists (default: false)
             if (!this.dailyData.has(key)) {
-                this.dailyData.set(key, { ...ticker, count: 1, hasNews: false });
+                this.dailyData.set(key, { ...ticker, Count: 1, hasNews: false });
             } else {
                 let existingTicker = this.dailyData.get(key);
-                existingTicker.count++;
+                existingTicker.Count++;
 
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
@@ -35,10 +35,10 @@ class Store extends EventEmitter {
             }
 
             if (!this.sessionData.has(key)) {
-                this.sessionData.set(key, { ...ticker, count: 1, hasNews: false });
+                this.sessionData.set(key, { ...ticker, Count: 1, hasNews: false });
             } else {
                 let existingTicker = this.sessionData.get(key);
-                existingTicker.count++;
+                existingTicker.Count++;
 
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {

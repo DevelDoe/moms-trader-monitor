@@ -5,10 +5,10 @@ const path = require("path");
 
 function createNewsWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 1200,
-        height: 800,
+        width: 955,
+        height: 50,
         frame: false,
-        alwaysOnTop: false,
+        alwaysOnTop: true,
         transparent: true,
         resizable: true,
         webPreferences: {
