@@ -42,6 +42,6 @@
     }
   },
   "news": {
-    "showTrackedTickers": true
+    "showTrackedTickers": false
   }
 }
