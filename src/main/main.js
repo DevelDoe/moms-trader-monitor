@@ -156,7 +156,6 @@ function loadSettings() {
     }
 }
 
-
 // 🛠️ Function to merge settings with defaults, ensuring all keys exist
 function mergeSettingsWithDefaults(userSettings, defaultSettings) {
     return {
@@ -194,8 +193,6 @@ function mergeSettingsWithDefaults(userSettings, defaultSettings) {
         },
     };
 }
-
-
 
 // 🛠️ Function to save settings to the file
 function saveSettings(settingsToSave = appSettings) {

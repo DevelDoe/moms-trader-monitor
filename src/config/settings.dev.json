@@ -1,11 +1,21 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.75,
-    "maxPrice": 12,
+    "minPrice": 0.1,
+    "maxPrice": 99,
     "lists": {
       "session": {
-        "length": 10,
+        "Price": true,
+        "ChangePercent": true,
+        "FiveM": true,
+        "Float": true,
+        "Volume": true,
+        "SprPercent": true,
+        "Time": true,
+        "HighOfDay": true,
+        "length": 10
+      },
+      "daily": {
         "Price": true,
         "ChangePercent": false,
         "FiveM": false,
@@ -14,65 +24,24 @@
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
-        "hasNews": false,
-        "count": true,
-        "Symbol": false,
-        "Score": true,
-        "Bonuses": true,
-        "Count": true,
-        "News": true
-      },
-      "daily": {
-        "length": 4,
-        "Price": false,
-        "ChangePercent": false,
-        "FiveM": false,
-        "Float": false,
-        "Volume": false,
-        "SprPercent": false,
-        "Time": false,
-        "HighOfDay": false,
-        "news": true,
-        "hasNews": false,
-        "count": false,
-        "Symbol": true,
-        "Score": true,
-        "Bonuses": true,
-        "Count": false,
-        "News": false
+        "length": 10
       }
     },
-    "minFloat": 0,
-    "maxFloat": 200000000,
-    "minScore": 1,
+    "minVolume": 100000,
+    "maxVolume": 200000,
+    "minScore": 0,
     "maxScore": 0,
-    "minVolume": 200000,
-    "maxVolume": 0
+    "minFloat": 100000,
+    "maxFloat": 0
   },
   "news": {
     "showTrackedTickers": false,
-    "filteredTickers": [
-      "JTAI",
-      "SINT",
-      "SPHL",
-      "CPIX",
-      "EDIT",
-      "CSAI"
-    ],
+    "filteredTickers": [],
+    "allowMultiSymbols": true,
     "blockList": [
-      "Shares Are On The Rise",
-      "Shares Resumed Trade",
-      "Stock Skyrocketing Today",
-      "Shares Resume Trading",
-      "Shares Resume Trade",
-      "hares Halted On Circuit Breaker",
-      "Shares Halted On A Circuit Breaker",
-      "Dow Dips",
-      "Shares Are Trading Higher",
-      "S&P 500 Edges Higher"
+      "test"
     ],
     "goodList": [],
-    "badList": [],
-    "allowMultiSymbols": false
+    "badList": []
   }
 }

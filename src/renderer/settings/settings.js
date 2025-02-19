@@ -358,7 +358,9 @@ function initializeTopSection() {
 
 async function loadAttributeFilters(listType, containerId) {
     try {
-        console.log(`📥 Loading hardcoded attributes for ${listType}...`);
+        console.log(`📥 Loading attributes for ${listType}...`);
+        console.log("HARDCODED_ATTRIBUTES:", HARDCODED_ATTRIBUTES);
+        console.log("window.settings.top.lists:", window.settings.top.lists);
 
         const attributes = Object.keys(HARDCODED_ATTRIBUTES[listType]);
         const container = document.getElementById(containerId);
@@ -482,8 +484,16 @@ function toggleAll(listType, state) {
  */
 function initializeNewsSection() {
     if (!window.settings.news) {
+        console.warn("⚠️ `window.settings.news` was missing, initializing default values.");
         window.settings.news = { blockList: [], goodList: [], badList: [], allowMultiSymbols: true };
+    } else {
+        // ✅ Ensure each list exists before using it
+        window.settings.news.blockList = window.settings.news.blockList || [];
+        window.settings.news.goodList = window.settings.news.goodList || [];
+        window.settings.news.badList = window.settings.news.badList || [];
     }
+
+    console.log("🔍 Checking loaded news settings:", window.settings.news);
 
     console.log("🔍 Checking loaded news settings:", window.settings.news);
 
@@ -516,8 +526,6 @@ function initializeNewsSection() {
     setupKeywordManagement();
 }
 
-
-
 /**
  * ✅ Handles adding and removing keywords for BlockList, GoodList, and BadList
  */
@@ -537,11 +545,16 @@ function setupKeywordManagement() {
     }
 
     function renderList(element, items) {
+        if (!Array.isArray(items)) {
+            console.error(`❌ Expected an array but got:`, items);
+            items = []; // Fallback to an empty array
+        }
+    
         element.innerHTML = "";
         items.forEach((keyword, index) => {
             const li = document.createElement("li");
             li.textContent = keyword;
-
+    
             // ✅ Remove button for each keyword
             const removeBtn = document.createElement("button");
             removeBtn.textContent = "X";
@@ -550,11 +563,12 @@ function setupKeywordManagement() {
                 await saveSettings();
                 updateLists();
             });
-
+    
             li.appendChild(removeBtn);
             element.appendChild(li);
         });
     }
+    
 
     // ✅ Add new keyword to the selected list
     addKeywordBtn.addEventListener("click", async () => {
