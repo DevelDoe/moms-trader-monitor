@@ -58,12 +58,6 @@ const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../config/settings.d
 
 const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock"); // used to determine if this is a fresh new install
 
-// 🛠️ **Function to check if it's a fresh install**
-function isFirstInstall() {
-    return !fs.existsSync(SETTINGS_FILE) && !fs.existsSync(FIRST_RUN_FILE);
-}
-
-// Default settings for fresh installs
 // Default settings for fresh installs
 const DEFAULT_SETTINGS = {
     top: {
@@ -119,77 +113,10 @@ const DEFAULT_SETTINGS = {
     }
 };
 
-
-// 🛠️ Ensure `settings.dev.json` exists in development mode
-if (isDevelopment && !fs.existsSync(SETTINGS_FILE)) {
-    log.log("No `settings.dev.json` found, creating default dev settings...");
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+// 🛠️ **Function to check if it's a fresh install**
+function isFirstInstall() {
+    return !fs.existsSync(SETTINGS_FILE) && !fs.existsSync(FIRST_RUN_FILE);
 }
-
-// 🛠️ **Function to initialize settings**
-if (isFirstInstall()) {
-    log.log("Fresh install detected! Creating default settings...");
-
-    // Ensure the userData directory exists
-    const settingsDir = path.dirname(SETTINGS_FILE);
-    if (!fs.existsSync(settingsDir)) {
-        log.log(`Creating settings directory: ${settingsDir}`);
-        fs.mkdirSync(settingsDir, { recursive: true }); // ✅ Ensure all parent folders exist
-    }
-
-    // Write default settings
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
-
-    // Create marker file to prevent future resets
-    fs.writeFileSync(FIRST_RUN_FILE, "installed");
-
-    log.log("Settings file initialized:", SETTINGS_FILE);
-} else {
-    log.log("Keeping existing settings");
-}
-
-let appSettings = {}; // Declare appSettings before usage
-
-// 🛠️ Function to load and validate settings from a file
-function loadSettings() {
-    try {
-        if (!fs.existsSync(SETTINGS_FILE)) {
-            log.warn("Settings file not found. Using default settings.");
-            return { ...DEFAULT_SETTINGS };
-        }
-
-        const data = fs.readFileSync(SETTINGS_FILE, "utf-8").trim();
-        if (!data) {
-            log.warn("Settings file is empty! Using default settings.");
-            return { ...DEFAULT_SETTINGS };
-        }
-
-        const parsedSettings = JSON.parse(data);
-
-        // ✅ Ensure missing attributes are merged
-        const mergedSettings = mergeSettingsWithDefaults(parsedSettings, DEFAULT_SETTINGS);
-
-        // ✅ Save back to file if any attributes were missing
-        saveSettings(mergedSettings);
-
-        return mergedSettings;
-    } catch (err) {
-        log.error("❌ Error loading settings, resetting to defaults.", err);
-        return { ...DEFAULT_SETTINGS };
-    }
-}
-
-// Assign loaded settings to `appSettings`
-appSettings = loadSettings(); 
-
-// 🛠️ Function to save settings to the file
-function saveSettings(settingsToSave = appSettings) {
-    if (!settingsToSave) settingsToSave = { ...DEFAULT_SETTINGS };
-
-    log.log("Saving settings file...");
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsToSave, null, 2));
-}
-
 
 // 🛠️ Function to merge settings with defaults, ensuring all keys exist
 function mergeSettingsWithDefaults(userSettings, defaultSettings) {
@@ -229,6 +156,73 @@ function mergeSettingsWithDefaults(userSettings, defaultSettings) {
     };
 }
 
+// 🛠️ Ensure `settings.dev.json` exists in development mode
+if (isDevelopment && !fs.existsSync(SETTINGS_FILE)) {
+    log.log("No `settings.dev.json` found, creating default dev settings...");
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+}
+
+// 🛠️ **Function to initialize settings**
+if (isFirstInstall()) {
+    log.log("Fresh install detected! Creating default settings...");
+
+    // Ensure the userData directory exists
+    const settingsDir = path.dirname(SETTINGS_FILE);
+    if (!fs.existsSync(settingsDir)) {
+        log.log(`Creating settings directory: ${settingsDir}`);
+        fs.mkdirSync(settingsDir, { recursive: true }); // ✅ Ensure all parent folders exist
+    }
+
+    // Write default settings
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+
+    // Create marker file to prevent future resets
+    fs.writeFileSync(FIRST_RUN_FILE, "installed");
+
+    log.log("Settings file initialized:", SETTINGS_FILE);
+} else {
+    log.log("Keeping existing settings");
+}
+
+// 🛠️ Function to load and validate settings from a file
+function loadSettings() {
+    try {
+        if (!fs.existsSync(SETTINGS_FILE)) {
+            log.warn("Settings file not found. Using default settings.");
+            return { ...DEFAULT_SETTINGS };
+        }
+
+        const data = fs.readFileSync(SETTINGS_FILE, "utf-8").trim();
+        if (!data) {
+            log.warn("Settings file is empty! Using default settings.");
+            return { ...DEFAULT_SETTINGS };
+        }
+
+        const parsedSettings = JSON.parse(data);
+
+        // ✅ Ensure missing attributes are merged
+        const mergedSettings = mergeSettingsWithDefaults(parsedSettings, DEFAULT_SETTINGS);
+
+        // ✅ Save back to file if any attributes were missing
+        saveSettings(mergedSettings);
+
+        return mergedSettings;
+    } catch (err) {
+        log.error("❌ Error loading settings, resetting to defaults.", err);
+        return { ...DEFAULT_SETTINGS };
+    }
+}
+
+// 🛠️ Function to save settings to the file
+function saveSettings(settingsToSave = appSettings) {
+    if (!settingsToSave) settingsToSave = { ...DEFAULT_SETTINGS };
+
+    log.log("Saving settings file...");
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsToSave, null, 2));
+}
+
+// Assign loaded settings to `appSettings`
+appSettings = loadSettings(); 
 ////////////////////////////////////////////////////////////////////////////////////
 // IPC COMM
 

@@ -3,6 +3,12 @@
     "transparent": false,
     "minPrice": 0,
     "maxPrice": 100,
+    "minFloat": 0,
+    "maxFloat": 0,
+    "minScore": 0,
+    "maxScore": 0,
+    "minVolume": 0,
+    "maxVolume": 0,
     "lists": {
       "session": {
         "Price": true,
@@ -13,11 +19,11 @@
         "SprPercent": true,
         "Time": true,
         "HighOfDay": true,
-        "length": 10,
         "News": true,
         "Count": true,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 10
       },
       "daily": {
         "Price": false,
@@ -28,28 +34,26 @@
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
-        "length": 10,
         "News": false,
         "Count": false,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 10
       }
-    },
-    "minFloat": 0,
-    "maxFloat": 0,
-    "minScore": 0,
-    "maxScore": 0,
-    "minVolume": 0,
-    "maxVolume": 0
+    }
   },
   "news": {
     "showTrackedTickers": false,
     "filteredTickers": [
+      "RSLS",
       "JTAI",
+      "TRUG",
       "XHLD",
-      "TIVC",
+      "EDIT",
+      "CRML",
+      "SPGC",
       "PRPH",
-      "CSAI",
+      "SDST",
       "MVIS"
     ],
     "blockList": [
