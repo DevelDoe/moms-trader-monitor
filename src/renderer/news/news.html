@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>News Viewer</title>
         <link rel="stylesheet" href="../styles.css" />
-        <link rel="stylesheet" href="./news.css">
+        <link rel="stylesheet" href="./news.css" />
     </head>
     <body>
         <div id="news-wrapper">
@@ -20,30 +20,29 @@
 
         <script>
             document.addEventListener("DOMContentLoaded", () => {
-    let collapseTimeout;
-    const wrapper = document.getElementById("news-wrapper");
-    const table = document.getElementById("news-table");
+                let collapseTimeout;
+                const wrapper = document.getElementById("news-wrapper");
+                const table = document.getElementById("news-table");
 
-    document.body.addEventListener("mouseenter", () => {
-        clearTimeout(collapseTimeout);
+                document.body.addEventListener("mouseenter", () => {
+                    clearTimeout(collapseTimeout);
 
-        // Get the table's full height dynamically
-        const tableHeight = table.scrollHeight;
+                    // Get the table's full height dynamically
+                    const tableHeight = table.scrollHeight;
 
-        // Resize Electron window and wrapper dynamically based on table content
-        window.newsAPI.setBounds({ width: 955, height: tableHeight });
-        wrapper.style.height = `${tableHeight}px`;
-    });
+                    // Resize Electron window and wrapper dynamically based on table content
+                    window.newsAPI.setBounds({ width: 955, height: tableHeight });
+                    wrapper.style.height = `${tableHeight}px`;
+                });
 
-    document.body.addEventListener("mouseleave", () => {
-        wrapper.style.height = "50px"; // Collapse smoothly
-        
-        collapseTimeout = setTimeout(() => {
-            window.newsAPI.setBounds({ width: 955, height: 50 });
-        }, 1000);
-    });
-});
+                document.body.addEventListener("mouseleave", () => {
+                    wrapper.style.height = "50px"; // Collapse smoothly
 
+                    collapseTimeout = setTimeout(() => {
+                        window.newsAPI.setBounds({ width: 955, height: 50 });
+                    }, 1000);
+                });
+            });
         </script>
 
         <script>
@@ -52,16 +51,29 @@
 
             async function fetchTrackedTickers() {
                 try {
-                    console.log("📢 Fetching tracked tickers...");
+                    console.log("📢 Fetching filtered tickers from settings...");
 
-                    const tickers = await window.topAPI.getTickers("daily");
-                    trackedTickers = new Set(tickers.map((t) => t.Symbol?.toUpperCase()));
+                    const settings = await window.settingsAPI.get();
 
-                    console.log("✅ Tracked Tickers:", trackedTickers);
+                    // ✅ Ensure `filteredTickers` exists before using it
+                    if (!settings.news?.filteredTickers) {
+                        console.warn("⚠️ No filtered tickers found in settings! Defaulting to an empty set.");
+                        settings.news.filteredTickers = [];
+                    }
+
+                    // ✅ Update the global settings object
+                    window.settings = settings;
+
+                    trackedTickers = new Set(settings.news.filteredTickers);
+                    console.log("✅ Tracked Tickers (Filtered):", trackedTickers);
+
+                    updateNewsTable(); // Refresh table after updating tickers
+
+                    console.log("✅ Tracked Tickers (Filtered):", trackedTickers);
 
                     updateNewsTable(); // Refresh table after updating tickers
                 } catch (error) {
-                    console.error("⚠️ Error fetching tracked tickers:", error);
+                    console.error("⚠️ Error fetching filtered tickers:", error);
                 }
             }
 
@@ -106,60 +118,116 @@
                 console.log("📢 Updating news table...");
 
                 const showOnlyTracked = window.settings.news.showTrackedTickers ?? false;
+                const allowMultiSymbols = window.settings.news.allowMultiSymbols ?? true;
                 const tableBody = document.querySelector("#news-table tbody");
                 tableBody.innerHTML = "";
 
+                const blockList = window.settings.news?.blockList || [];
+                const goodList = window.settings.news?.goodList || [];
+                const badList = window.settings.news?.badList || [];
+
                 let filteredNews = allNews;
+
                 if (showOnlyTracked) {
-                    filteredNews = allNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase())));
+                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase())));
+                }
+
+                if (!allowMultiSymbols) {
+                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols.length <= 1);
                 }
 
                 console.log("📊 Filtered News:", filteredNews);
 
                 if (filteredNews.length === 0) {
                     console.warn("⚠️ No news available after filtering.");
-                    tableBody.innerHTML = "<tr><td colspan='1' class='info draggable'>No news available.</td></tr>";
+                    tableBody.innerHTML = "<tr><td colspan='4' class='info draggable'>No news available.</td></tr>";
                     return;
                 }
 
-                // ✅ Sort news by time (newest first)
-                let sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                const uniqueNews = new Map();
+                filteredNews.forEach((newsItem) => {
+                    const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
+                    if (!uniqueNews.has(key)) {
+                        uniqueNews.set(key, newsItem);
+                    }
+                });
+
+                let sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
                 console.log("📊 Sorted News Ready for Table:", sortedNews);
 
                 const now = new Date();
 
-                // ✅ Append sorted news to the table
                 sortedNews.forEach((article) => {
-                    const row = document.createElement("tr");
+                    const headline = decodeHTMLEntities(article.headline || ""); // ✅ Decode HTML entities
+                    const articleURL = article.url || "#";
 
-                    row.innerHTML = `
-                        <td class='draggable'>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
-                        <td class="no-drag"><a href="${article.url}" target="_blank">${article.headline || "No headline"}</a></td>
-                        <td>${article.source || "N/A"}</td>
-                        <td>${article.created_at ? new Date(article.created_at).toLocaleString() : "N/A"}</td>
-                    `;
+                    const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
-                    // ✅ Calculate time difference in seconds
-                    const newsAge = (now - new Date(article.created_at)) / 1000;
+                    if (!isBlocked) {
+                        const row = document.createElement("tr");
 
-                    // ✅ If the news is older than 5 minutes, start fading out
-                    if (newsAge >= 300) {
-                        row.classList.add("fade-out");
+                        const link = document.createElement("a");
+                        link.href = articleURL;
+                        link.textContent = headline.length > 100 ? headline.substring(0, 100) + "..." : headline;
+                        link.target = "_blank";
+                        link.rel = "noopener noreferrer";
+                        link.title = `Published: ${new Date(article.created_at).toLocaleString()}`;
+
+                        if (goodList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
+                            link.classList.add("good-news");
+                        }
+                        if (badList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
+                            link.classList.add("bad-news");
+                        }
+
+                        row.innerHTML = `
+                <td class='draggable'>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
+                <td class="no-drag"></td> 
+                <td>${article.source || "N/A"}</td>
+                <td>${article.created_at ? new Date(article.created_at).toLocaleString() : "N/A"}</td>
+            `;
+
+                        row.cells[1].appendChild(link);
+
+                        const newsAge = (now - new Date(article.created_at)) / 1000;
+                        if (newsAge >= 300) {
+                            row.classList.add("fade-out");
+                        }
+
+                        tableBody.appendChild(row);
                     }
-
-                    tableBody.appendChild(row);
                 });
 
                 console.log("✅ News table updated!");
             }
 
-            // ✅ Listen for global settings updates and apply changes dynamically
-            window.settingsAPI.onUpdate((updatedSettings) => {
-                console.log("🔄 Received 'settings-updated' event. Applying updated settings...", updatedSettings);
+            /**
+             * ✅ Helper Function: Decodes HTML Entities (Fixes &amp; issue)
+             */
+            function decodeHTMLEntities(text) {
+                const parser = new DOMParser();
+                const decodedString = parser.parseFromString(text, "text/html").body.textContent;
+                return decodedString || text;
+            }
 
+            // ✅ Listen for global settings updates and apply changes dynamically
+            // ✅ Listen for global settings updates and refresh news dynamically
+            window.settingsAPI.onUpdate(async (updatedSettings) => {
+                console.log("🔄 Received 'settings-updated' event. Checking changes...");
+
+                const prevSettings = JSON.stringify(window.settings.news);
                 window.settings = updatedSettings;
-                updateNewsTable();
+
+                const newSettings = JSON.stringify(updatedSettings.news);
+
+                // ✅ If any settings changed, update news
+                if (prevSettings !== newSettings) {
+                    console.log("✅ Detected news settings change, refreshing news table...");
+                    updateNewsTable();
+                } else {
+                    console.log("⚠️ No relevant news settings changed. Ignoring update.");
+                }
             });
 
             // ✅ Listen for updates

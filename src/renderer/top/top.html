@@ -5,7 +5,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'" />
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-hashes';" />
         <title>Top Tickers</title>
         <link rel="stylesheet" href="../styles.css" />
         <link rel="stylesheet" href="./top.css" />
@@ -80,6 +80,12 @@
                         </tr>
                     </tbody>
                 </table>
+
+                <!-- ✅ Scrollable News Section -->
+                <div id="news-container">
+                    <h3>Latest News</h3>
+                    <ul id="news-list" class="no-drag"></ul>
+                </div>
             </section>
         </section>
 

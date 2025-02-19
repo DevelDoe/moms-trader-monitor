@@ -21,6 +21,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         fetchAndUpdateTickers();
     });
 
+    window.topAPI.onNewsUpdate(({ ticker, newsItems }) => {
+        console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`);
+        fetchAndUpdateTickers(); // ✅ Refresh tickers after receiving news
+    });
+
     // ✅ Listen for settings updates
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
@@ -40,54 +45,102 @@ async function fetchAndUpdateTickers() {
         // ✅ Fetch tickers from API
         const sessionData = await window.topAPI.getTickers("session");
         const dailyData = await window.topAPI.getTickers("daily");
-        const allData = await window.topAPI.getTickers("all"); // ✅ Fetch all tickers
+        const allData = await window.topAPI.getTickers("all");
 
         console.log("📊 Session Data:", sessionData);
         console.log("📊 Daily Data:", dailyData);
-        console.log("📊 All Data:", dailyData);
+        console.log("📊 All Data:", allData);
 
         // ✅ Store previous state for comparison
         let oldTickersSessions = { ...prevTickersSessions };
         let oldTickersDaily = { ...prevTickersDaily };
 
-        // ✅ Ensure filters are applied correctly
+        // ✅ Extract filters from settings
         const minPrice = window.settings.top?.minPrice ?? 0;
-        const maxPrice = window.settings.top?.maxPrice ?? 1000;
+        const maxPrice = window.settings.top?.maxPrice ?? 0; // 0 means no filter
+        console.log("Applying price filter:", { minPrice, maxPrice });
+
+        const minFloat = window.settings.top?.minFloat ?? 0;
+        const maxFloat = window.settings.top?.maxFloat ?? 0; // 0 means no filter
+        console.log("Applying float filter:", { minFloat, maxFloat });
+
+        const minScore = window.settings.top?.minScore ?? 0;
+        const maxScore = window.settings.top?.maxScore ?? 0; // 0 means no filter
+        console.log("Applying score filter:", { minScore, maxScore });
+
+        const minVolume = window.settings.top?.minVolume ?? 0;
+        const maxVolume = window.settings.top?.maxVolume ?? 0; // 0 means no filter
+        console.log("Applying volume filter:", { minVolume, maxVolume });
+
         const maxSessionLength = window.settings.top?.lists?.session?.length ?? 10;
         const maxDailyLength = window.settings.top?.lists?.daily?.length ?? 10;
-
-        console.log("Applying price filter:", { minPrice, maxPrice });
         console.log("Applying list limits:", { session: maxSessionLength, daily: maxDailyLength });
 
-        // ✅ Apply price filtering
-        const filteredSession = sessionData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
-        const filteredDaily = dailyData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
-        const filteredAll = allData.filter((ticker) => ticker.Price >= minPrice && ticker.Price <= maxPrice);
+        console.log("✅ Checking Raw Data Before Filtering: ");
+        console.log("Session Data:", sessionData);
+        console.log("Daily Data:", dailyData);
 
-        // ✅ Calculate Scores and sort tickers
-        tickersSessions = filteredSession
+        // ✅ Apply filters to each dataset
+        const filteredSession = sessionData
             .map((ticker) => ({
                 ...ticker,
                 Score: calculateScore(ticker),
             }))
-            .sort((a, b) => b.Score - a.Score); // Sort descending by Score
-
-        tickersDaily = filteredDaily
-            .map((ticker) => ({
-                ...ticker,
-                Score: calculateScore(ticker),
-            }))
+            .filter(
+                (ticker) =>
+                    (minPrice === 0 || ticker.Price >= minPrice) &&
+                    (maxPrice === 0 || ticker.Price <= maxPrice) &&
+                    (minFloat === 0 || parseFloatValue(ticker.Float) >= minFloat) &&
+                    (maxFloat === 0 || parseFloatValue(ticker.Float) <= maxFloat) &&
+                    (minScore === 0 || ticker.Score >= minScore) &&
+                    (maxScore === 0 || ticker.Score <= maxScore) &&
+                    (minVolume === 0 || parseVolumeValue(ticker.Volume) >= minVolume) &&
+                    (maxVolume === 0 || parseVolumeValue(ticker.Volume) <= maxVolume)
+            )
             .sort((a, b) => b.Score - a.Score);
-        tickersAll = filteredAll
+
+        const filteredDaily = dailyData
             .map((ticker) => ({
                 ...ticker,
                 Score: calculateScore(ticker),
             }))
-            .sort((a, b) => b.Score - a.Score); // ✅ Sorting all tickers by Score
+            .filter(
+                (ticker) =>
+                    (minPrice === 0 || ticker.Price >= minPrice) &&
+                    (maxPrice === 0 || ticker.Price <= maxPrice) &&
+                    (minFloat === 0 || parseFloatValue(ticker.Float) >= minFloat) &&
+                    (maxFloat === 0 || parseFloatValue(ticker.Float) <= maxFloat) &&
+                    (minScore === 0 || ticker.Score >= minScore) &&
+                    (maxScore === 0 || ticker.Score <= maxScore) &&
+                    (minVolume === 0 || parseVolumeValue(ticker.Volume) >= minVolume) &&
+                    (maxVolume === 0 || parseVolumeValue(ticker.Volume) <= maxVolume)
+            )
+            .sort((a, b) => b.Score - a.Score);
+
+        const filteredAll = allData
+            .map((ticker) => ({
+                ...ticker,
+                Score: calculateScore(ticker),
+            }))
+            .filter(
+                (ticker) =>
+                    (minPrice === 0 || ticker.Price >= minPrice) &&
+                    (maxPrice === 0 || ticker.Price <= maxPrice) &&
+                    (minFloat === 0 || parseFloatValue(ticker.Float) >= minFloat) &&
+                    (maxFloat === 0 || parseFloatValue(ticker.Float) <= maxFloat) &&
+                    (minScore === 0 || ticker.Score >= minScore) &&
+                    (maxScore === 0 || ticker.Score <= maxScore) &&
+                    (minVolume === 0 || parseVolumeValue(ticker.Volume) >= minVolume) &&
+                    (maxVolume === 0 || parseVolumeValue(ticker.Volume) <= maxVolume)
+            )
+            .sort((a, b) => b.Score - a.Score);
+
+        console.log("✅ Filtered Session Data:", filteredSession);
+        console.log("✅ Filtered Daily Data:", filteredDaily);
 
         // ✅ Limit number of displayed entries
-        tickersSessions = tickersSessions.slice(0, maxSessionLength);
-        tickersDaily = tickersDaily.slice(0, maxDailyLength);
+        tickersSessions = filteredSession.slice(0, maxSessionLength);
+        tickersDaily = filteredDaily.slice(0, maxDailyLength);
 
         console.log("✅ Final Session List:", tickersSessions);
         console.log("✅ Final Daily List:", tickersDaily);
@@ -96,10 +149,33 @@ async function fetchAndUpdateTickers() {
         prevTickersSessions = Object.fromEntries(tickersSessions.map((t) => [t.Symbol, t]));
         prevTickersDaily = Object.fromEntries(tickersDaily.map((t) => [t.Symbol, t]));
 
+        // ✅ Save filtered tickers to settings for news filtering
+        const updatedSettings = {
+            ...window.settings,
+            news: { ...window.settings.news, filteredTickers: filteredAll.map((t) => t.Symbol) },
+        };
+        // ✅ Check if the filtered tickers have changed
+        const newFilteredTickers = filteredAll.map((t) => t.Symbol);
+        if (JSON.stringify(newFilteredTickers) !== JSON.stringify(window.settings.news.filteredTickers)) {
+            console.log("🔄 Updating filtered tickers in settings...");
+
+            const updatedSettings = {
+                ...window.settings,
+                news: { ...window.settings.news, filteredTickers: newFilteredTickers },
+            };
+
+            await window.settingsAPI.update(updatedSettings);
+            window.settings = updatedSettings; // ✅ Keep local settings in sync
+        }
+
+        // ✅ Ensure the settings object in memory is updated
+        window.settings = updatedSettings;
+        console.log("✅ Saved filtered tickers to settings.news.filteredTickers:", updatedSettings.news.filteredTickers);
+
         // ✅ Update UI
         updateTickersTable(tickersSessions, "tickers-session", oldTickersSessions);
         updateTickersTable(tickersDaily, "tickers-daily", oldTickersDaily);
-        updateTickersTable(tickersAll, "tickers-all", {}); // ✅ No need to compare previous state
+        updateTickersTable(filteredAll, "tickers-all", {}); // ✅ No need to compare previous state
 
         console.log("✅ UI Updated Successfully!");
     } catch (error) {
@@ -139,7 +215,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     const allColumns =
         tableId === "tickers-all"
-            ? [...new Set(tickers.flatMap((t) => Object.keys(t)))].filter((key) => key !== "Bonuses" && key !== "Time" ) // ✅ Exclude Bonuses
+            ? [...new Set(tickers.flatMap((t) => Object.keys(t)))].filter((key) => key !== "Bonuses" && key !== "Time") // ✅ Exclude Bonuses
             : [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
 
     // ✅ Generate the header dynamically
@@ -182,7 +258,17 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 // ✅ Insert dynamically styled bonus symbols
                 cell.innerHTML = getBonusesHTML(ticker);
             } else {
-                cell.textContent = ticker[key] ?? "-"; // ✅ Handle missing data gracefully
+                let value = ticker[key];
+
+                if (Array.isArray(value)) {
+                    value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
+                } else if (typeof value === "object" && value !== null) {
+                    value = JSON.stringify(value); // ✅ Prevent [object Object]
+                } else if (value === undefined || value === null) {
+                    value = "-"; // ✅ Show dash for missing values
+                }
+
+                cell.textContent = value;
             }
 
             row.appendChild(cell);
@@ -223,86 +309,119 @@ function addClearSessionButton() {
 
 // Scoring System
 function parseFloatValue(floatStr) {
-    if (!floatStr) return 0;
-    let sanitized = floatStr.replace(/[^0-9.]/g, "");
+    if (floatStr == null) return 0; // ✅ Ensure null/undefined returns 0
+    let str = String(floatStr).trim(); // ✅ Convert to string and remove spaces
+    let sanitized = str.replace(/[^0-9.]/g, ""); // ✅ Remove all non-numeric characters
     let value = parseFloat(sanitized) || 0;
-    if (floatStr.includes("B")) value *= 1000;
-    if (floatStr.includes("K")) value /= 1000;
+
+    if (str.toUpperCase().includes("B")) value *= 1_000_000_000; // ✅ Convert "B" to billions
+    if (str.toUpperCase().includes("M")) value *= 1_000_000; // ✅ Convert "M" to millions
+    if (str.toUpperCase().includes("K")) value *= 1_000; // ✅ Convert "K" to thousands
+
     return value;
 }
 
 function parseVolumeValue(floatStr) {
-    if (!floatStr) return 0;
-    let sanitized = floatStr.replace(/[^0-9.]/g, "");
+    if (floatStr == null) return 0; // ✅ Ensure null/undefined returns 0
+    let str = String(floatStr); // ✅ Convert to string
+    let sanitized = str.replace(/[^0-9.]/g, "");
     let value = parseFloat(sanitized) || 0;
 
-    if (floatStr.toUpperCase().includes("K")) value *= 1_000;        // Thousands
-    if (floatStr.toUpperCase().includes("M")) value *= 1_000_000;    // Millions
-    if (floatStr.toUpperCase().includes("B")) value *= 1_000_000_000; // Billions
+    if (str.toUpperCase().includes("K")) value *= 1_000; // Thousands
+    if (str.toUpperCase().includes("M")) value *= 1_000_000; // Millions
+    if (str.toUpperCase().includes("B")) value *= 1_000_000_000; // Billions
 
     return value;
 }
 
-
 function calculateScore(ticker) {
-    let Score = ticker.Count;
+    let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
+    const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to a real number
+    const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Convert Volume to a real number
 
     if (ticker.HighOfDay) Score += 20;
+    if (Array.isArray(ticker.News) && ticker.News.length > 0) Score += 40;
 
-    if (ticker.hasNews) Score += 30;
+    // ✅ Float Size Bonuses & Penalties
+    if (floatValue > 0 && floatValue < 2_000_000) {
+        Score += 20; // 🔥 Strong bonus for ultra-low float
+    } else if (floatValue >= 2_000_000 && floatValue < 5_000_000) {
+        Score += 15;
+    } else if (floatValue >= 5_000_000 && floatValue < 10_000_000) {
+        Score += 10;
+    } else if (floatValue >= 10_000_000 && floatValue < 50_000_000) {
+        Score += 0; // No change
+    } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
+        Score -= 10; // Small penalty for large float
+    } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
+        Score -= 20;
+    } else if (floatValue >= 200_000_000 && floatValue < 500_000_000) {
+        Score -= 30;
+    } else if (floatValue >= 500_000_000) {
+        Score -= 50; // 🚨 Heavy penalty for massive float
+    }
 
-    let floatValue = parseFloatValue(ticker.Float);
+    // ✅ Volume Adjustment
+    if (volumeValue < 300_000) {
+        Score -= 20; // 🛑 Low volume is a bad sign
+    }
 
-    if (floatValue > 0 && floatValue < 1) Score += 20;
-    else if (floatValue > 1 && floatValue < 5) Score += 15;
-    else if (floatValue > 5 && floatValue < 10) Score += 10;
-    else if (floatValue > 10 && floatValue < 50) Score += 0;
-    else if (floatValue > 50 && floatValue < 100) Score -= 10;
-    else if (floatValue > 100 && floatValue < 200) Score -= 20;
-    else if (floatValue > 200 && floatValue < 500) Score -= 30;
-    else if (floatValue > 500) Score -= 50;
     return Score;
 }
 
 function getScoreBreakdown(ticker) {
     let breakdown = [];
-    let Score = ticker.Count;
+    let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
+    const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to real number
+    const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Convert Volume to real number
 
-    breakdown.push(`Base Count: ${ticker.Count}`); // Added \n for a line break
-    breakdown.push(`---------------------`); // Added \n for a line break
+    breakdown.push(`Base Count: ${ticker.Count}`);
+    breakdown.push(`---------------------`);
+
     if (ticker.HighOfDay) {
         Score += 20;
         breakdown.push(`High of Day: +20`);
     }
 
-    if (ticker.hasNews) {
+    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
         Score += 40;
         breakdown.push(`Has News: +40`);
     }
 
-    if (parseVolumeValue(ticker.Volume) < 2000) {
-        Score += 5;
-        breakdown.push(`Low Volume: -20`);
+    if (volumeValue < 300_000) {
+        Score -= 20;
+        breakdown.push(`Volume < 300K: -20`);
     }
 
-    let floatValue = parseFloatValue(ticker.Float);
+    // ✅ Float Size Bonuses & Penalties
+    if (floatValue > 0 && floatValue < 2_000_000) {
+        Score += 20;
+        breakdown.push(`Float < 2M: +20`);
+    } else if (floatValue >= 2_000_000 && floatValue < 5_000_000) {
+        Score += 15;
+        breakdown.push(`Float 2M - 5M: +15`);
+    } else if (floatValue >= 5_000_000 && floatValue < 10_000_000) {
+        Score += 10;
+        breakdown.push(`Float 5M - 10M: +10`);
+    } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
+        Score -= 10;
+        breakdown.push(`Float 50M - 100M: -10`);
+    } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
+        Score -= 20;
+        breakdown.push(`Float 100M - 200M: -20`);
+    } else if (floatValue >= 200_000_000 && floatValue < 500_000_000) {
+        Score -= 30;
+        breakdown.push(`Float 200M - 500M: -30`);
+    } else if (floatValue >= 500_000_000) {
+        Score -= 50;
+        breakdown.push(`Float > 500M: -50`);
+    }
 
-    if        (floatValue > 0 && floatValue < 2)     { Score += 20; breakdown.push(`Float < 2M: +20`);
-    } else if (floatValue > 1 && floatValue < 5)     { Score += 15; breakdown.push(`Float 1M - 5M: +15`);
-    } else if (floatValue > 5 && floatValue < 10)    { Score += 10; breakdown.push(`Float 5M - 10M: +10`);
-    } else if (floatValue > 10 && floatValue < 50)   { breakdown.push(`Float 10M - 50M: +0`);
-    } else if (floatValue > 50 && floatValue < 100)  { Score -= 10; breakdown.push(`Float 50M - 100M: -10`);
-    } else if (floatValue > 100 && floatValue < 200) { Score -= 20; breakdown.push(`Float 100M - 200M: -20`);
-    } else if (floatValue > 200 && floatValue < 500) { Score -= 30; breakdown.push(`Float 200M - 500M: -30`);
-    } else if (floatValue > 500)                     { Score -= 50; breakdown.push(`Float > 500M: -50`); }
-
-    breakdown.push(`---------------------`); // Added \n for a line break
+    breakdown.push(`---------------------`);
     breakdown.push(`Final Score: ${Score}`);
 
-    return breakdown.join("\n"); // ✅ Ensures each entry appears on a new line
+    return breakdown.join("\n");
 }
-
-
 
 // ✅ Find the ticker from tickersDaily only (ensures all attributes exist)
 function findTickerBySymbol(symbol) {
@@ -315,10 +434,16 @@ function findTickerBySymbol(symbol) {
     return foundTicker;
 }
 
-// ✅ Update the Active Ticker Display
 function updateActiveTicker(ticker) {
     const row = document.getElementById("active-ticker-row");
-    if (!row) return;
+    const newsList = document.getElementById("news-list");
+
+    if (!row || !newsList) return;
+
+    // ✅ Ensure blockList, goodList, and badList exist
+    const blockList = window.settings.news?.blockList || [];
+    const goodList = window.settings.news?.goodList || [];
+    const badList = window.settings.news?.badList || [];
 
     row.innerHTML = `
         <td>${ticker.Symbol}</td>
@@ -330,51 +455,105 @@ function updateActiveTicker(ticker) {
         <td>${ticker.SprPercent}</td>
         <td>${ticker.HighOfDay}</td>
         <td>${ticker.Count}</td>
-        <td>${ticker.hasNews}</td>
+        <td>${Array.isArray(ticker.News) ? ticker.News.length : 0}</td>
         <td>${ticker.Score}</td>
     `;
 
-    row.style.background = "rgba(34, 139, 34, 0.4)"; // ✅ Highlight change
+    // ✅ Clear previous news list
+    newsList.innerHTML = "";
+
+    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
+        ticker.News.forEach((article) => {
+            const headline = decodeHtmlEntities(article.headline || "");
+            const articleURL = article.url || "#";
+
+            function decodeHtmlEntities(text) {
+                const txt = document.createElement("textarea");
+                txt.innerHTML = text;
+                return txt.value;
+            }
+
+            // ✅ Check if the headline contains blocklisted words/phrases
+            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+
+            if (!isBlocked) {
+                const li = document.createElement("li");
+
+                const link = document.createElement("a");
+                link.href = articleURL;
+                link.textContent = headline;
+                link.target = "_blank"; // ✅ Open in new tab
+                link.rel = "noopener noreferrer"; // ✅ Security best practice
+                link.title = `Published: ${new Date(article.created_at).toLocaleString()}`;
+
+                // ✅ Apply CSS classes based on goodList and badList
+                if (goodList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
+                    link.classList.add("good-news");
+                }
+                if (badList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
+                    link.classList.add("bad-news");
+                }
+
+                li.appendChild(link);
+                newsList.appendChild(li);
+            }
+        });
+    }
+
+    if (newsList.innerHTML.trim() === "") {
+        newsList.innerHTML = "<li style='opacity: 0.5'>No relevant news available</li>";
+    }
+
+    // ✅ Highlight ticker change
+    row.style.background = "rgba(34, 139, 34, 0.4)";
     setTimeout(() => {
-        row.style.background = "rgba(34, 139, 34, 0.2)"; // ✅ Fade back
+        row.style.background = "rgba(34, 139, 34, 0.2)";
     }, 1000);
 }
 
 function getBonusesHTML(ticker) {
+    console.log("🔎 Debugging Bonuses for:", ticker); // ✅ Log ticker object
+
     let bonuses = [];
     let tooltipText = [];
 
-    if (ticker.hasNews) {
-        bonuses.push('<span class="bonus news no-drag">N</span>');
-        tooltipText.push("N: Has News"); // Tooltip text
+    const floatValue = parseFloatValue(ticker.Float); // ✅ Convert "2.5M" -> 2,500,000
+    const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Ensure Volume is converted
+
+    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
+        console.log(`📰 News found for ${ticker.Symbol}:`, ticker.News.length); // ✅ Check news count
+        bonuses.push(`<span class="bonus news no-drag">N</span>`);
+        tooltipText.push(`N: Has News`);
     }
+
     if (ticker.HighOfDay) {
         bonuses.push('<span class="bonus high no-drag">H</span>');
         tooltipText.push("H: High of Day");
     }
-    if (parseFloatValue(ticker.Float) > 0 && parseFloatValue(ticker.Float) < 1) {
+
+    if (floatValue > 0 && floatValue < 2_000_000) {
         bonuses.push('<span class="bonus gold-float no-drag">2M</span>');
         tooltipText.push("2M: Float less than 2M");
-    } else if (parseFloatValue(ticker.Float) > 1 && parseFloatValue(ticker.Float) < 5) {
+    } else if (floatValue >= 2_000_000 && floatValue < 5_000_000) {
         bonuses.push('<span class="bonus silver-float no-drag">5M</span>');
-        tooltipText.push("5M: Float less than 5M");
-    } else if (parseFloatValue(ticker.Float) > 5 && parseFloatValue(ticker.Float) < 10) {
-        bonuses.push('<span class="bonus bronse-float no-drag">10M</span>');
-        tooltipText.push("10M: less than 10M");
-    } else if (parseFloatValue(ticker.Float) > 50 && parseFloatValue(ticker.Float) < 100) {
-        bonuses.push('<span class="bonus oneH-float no-drag">100M</span>');
-        tooltipText.push("100M: Float between 50 - 100M");
-    } else if (parseFloatValue(ticker.Float) > 100 && parseFloatValue(ticker.Float) < 200) {
-        bonuses.push('<span class="bonus twoH-float no-drag">200M</span>');
-        tooltipText.push("200M: Float between 100 - 200M");
-    } else if (parseFloatValue(ticker.Float) > 500 ) {
-        bonuses.push('<span class="bonus threeH-float no-drag">500M</span>');
+        tooltipText.push("5M: Float between 2M - 5M");
+    } else if (floatValue >= 5_000_000 && floatValue < 10_000_000) {
+        bonuses.push('<span class="bonus bronze-float no-drag">10M</span>');
+        tooltipText.push("10M: Float between 5M - 10M");
+    } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
+        bonuses.push('<span class="bonus high-float no-drag">100M</span>');
+        tooltipText.push("100M: Float between 50M - 100M");
+    } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
+        bonuses.push('<span class="bonus high-float no-drag">200M</span>');
+        tooltipText.push("200M: Float between 100M - 200M");
+    } else if (floatValue >= 500_000_000) {
+        bonuses.push('<span class="bonus high-float no-drag">500M</span>');
         tooltipText.push("500M: Float more than 500M");
     }
 
-    if (parseVolumeValue(ticker.Volume) < 2000) {
+    if (volumeValue < 300_000) {
         bonuses.push('<span class="bonus low-volume no-drag">V</span>');
-        tooltipText.push("V: Low Volume");
+        tooltipText.push("V: Low Volume (<300K)");
     }
 
     if (bonuses.length === 0) {

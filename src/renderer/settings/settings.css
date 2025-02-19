@@ -359,3 +359,94 @@ input:checked + .slider:before {
   <input type="checkbox">
   <span class="slider round"></span>
 </label> */
+
+
+section#min-max-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px; /* Adjust spacing between pairs */
+  }
+
+  section#min-max-filters label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 250px; /* Set a fixed width to align inputs */
+  }
+
+  section#min-max-filters input {
+    flex: 1; /* Make input take up remaining space */
+  }
+
+
+ /* ✅ Style the keyword controls */
+.keyword-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.keyword-controls select,
+.keyword-controls input {
+    padding: 5px;
+    font-size: 14px;
+}
+
+.keyword-controls button {
+    padding: 5px 10px;
+    background: #4caf50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.keyword-controls button:hover {
+    background: #45a049;
+}
+
+/* ✅ Style keyword lists */
+.keyword-lists {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+.keyword-lists div {
+    flex: 1;
+    background: #222;
+    padding: 10px;
+    border-radius: 5px;
+    min-height: 100px;
+}
+
+.keyword-lists h4 {
+    margin-bottom: 5px;
+    color: #ffcc00;
+}
+
+.keyword-lists ul {
+    list-style: none;
+    padding: 0;
+}
+
+.keyword-lists li {
+    padding: 5px;
+    background: #333;
+    margin: 3px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.keyword-lists li button {
+    background: red;
+    border: none;
+    color: white;
+    padding: 3px 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.keyword-lists li button:hover {
+    background: darkred;
+}

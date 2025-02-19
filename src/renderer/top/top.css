@@ -263,13 +263,7 @@ body:not(.show-all) #tickers-wrapper {
 .bonus.bronse-float {
     color: rgba(28, 88, 158, 0.5);
 } /* 🔵 Blue for Low Float */
-.bonus.oneH-float {
-    color: rgba(255, 0, 0, 0.5);
-}
-.bonus.twoH-float {
-    color: rgba(255, 0, 0, 0.75);
-}
-.bonus.threeH-float {
+.bonus.high-float {
     color: rgb(255, 0, 0);
 }
 
@@ -298,4 +292,61 @@ body:not(.show-all) #tickers-wrapper {
     font-size: 12px;
     z-index: 10;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+}
+
+
+#news-container {
+    padding: 5px;
+    border-top: 1px solid #444; /* ✅ Subtle separator */
+    height: 427px
+}
+
+/* ✅ Hide scrollbar for Webkit browsers (Chrome, Safari) */
+#news-list::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+#news-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 377px; /* ✅ Fixed height to enforce scrolling */
+    overflow-y: auto; /* ✅ Enable vertical scrolling */
+    scrollbar-width: thin; /* ✅ Makes the scrollbar small (for Firefox) */
+    -ms-overflow-style: none; /* ✅ Hide scrollbar for IE/Edge */
+}
+
+#news-list li {
+    padding: 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+}
+
+/* ✅ Ensure news headlines are clickable */
+#news-list li a {
+    color: #e0e0e0 ;
+    text-decoration: none;
+    font-weight: bold;
+    display: block;
+}
+
+#news-list li a:hover {
+    text-decoration: underline;
+    color: #76ff76; /* ✅ Lighter green on hover */
+}
+
+
+/* ✅ Good news - Highlight in green */
+.good-news {
+    color: #4caf50 !important; /* Green */
+    font-weight: bold !important;
+}
+
+/* ❌ Bad news - Highlight in red */
+.bad-news {
+    color: #f44336 !important; /* Red */
+    font-weight: bold !important;
 }

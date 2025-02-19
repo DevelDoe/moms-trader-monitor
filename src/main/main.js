@@ -237,7 +237,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
     saveSettings(); // ✅ Save settings after updates
 
     // ✅ Broadcast updated settings to all windows
-    log.log("🔄 Broadcasting 'filter-updated' event...");
+    log.log("Broadcasting 'filter-updated' event...");
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("settings-updated", appSettings);
     });
@@ -264,7 +264,7 @@ tickerStore.on("newsUpdated", (update) => {
         return; // Prevents unnecessary events
     }
 
-    log.log(`📢 Broadcasting ${newsItems.length} new articles`);
+    log.log(`Broadcasting ${newsItems.length} new articles`);
 
     // ✅ Send all news items at once instead of per ticker
     BrowserWindow.getAllWindows().forEach((win) => {

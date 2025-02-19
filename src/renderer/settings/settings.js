@@ -26,7 +26,7 @@ const HARDCODED_ATTRIBUTES = {
         SprPercent: false,
         Time: false,
         HighOfDay: false,
-        hasNews: false,
+        News: false,
         Count: true,
         Score: true,
         Bonuses: true,
@@ -40,13 +40,12 @@ const HARDCODED_ATTRIBUTES = {
         SprPercent: false,
         Time: false,
         HighOfDay: false,
-        hasNews: false,
+        News: false,
         Count: false,
         Score: true,
         Bonuses: true,
     },
 };
-
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
@@ -116,18 +115,56 @@ function initializeTopSection() {
 
     const minPriceInput = document.getElementById("min-price");
     const maxPriceInput = document.getElementById("max-price");
+    const minVolumeInput = document.getElementById("min-volume");
+    const maxVolumeInput = document.getElementById("max-volume");
+    const minFloatInput = document.getElementById("min-float");
+    const maxFloatInput = document.getElementById("max-float");
+    const minScoreInput = document.getElementById("min-score");
+    const maxScoreInput = document.getElementById("max-score");
     const topTransparentToggle = document.getElementById("top-transparent-toggle");
     const sessionLengthInput = document.getElementById("session-length");
     const dailyLengthInput = document.getElementById("daily-length");
 
-    if (!minPriceInput || !maxPriceInput || !topTransparentToggle || !sessionLengthInput || !dailyLengthInput) {
+    if (
+        !minPriceInput ||
+        !maxPriceInput ||
+        !minFloatInput ||
+        !maxFloatInput ||
+        !minScoreInput ||
+        !maxScoreInput ||
+        !minVolumeInput ||
+        !maxVolumeInput ||
+        !topTransparentToggle ||
+        !sessionLengthInput ||
+        !dailyLengthInput
+    ) {
         console.error("One or more input elements not found!");
         return;
     }
 
+    // ✅ Set placeholder to reflect "No limit" if 0 is set
+    minPriceInput.placeholder = minPriceInput.value === "0" ? "No limit" : "";
+    maxPriceInput.placeholder = maxPriceInput.value === "0" ? "No limit" : "";
+    minFloatInput.placeholder = minFloatInput.value === "0" ? "No limit" : "";
+    maxFloatInput.placeholder = maxFloatInput.value === "0" ? "No limit" : "";
+    minScoreInput.placeholder = minScoreInput.value === "0" ? "No limit" : "";
+    maxScoreInput.placeholder = maxScoreInput.value === "0" ? "No limit" : "";
+    minVolumeInput.placeholder = minVolumeInput.value === "0" ? "No limit" : "";
+    maxVolumeInput.placeholder = maxVolumeInput.value === "0" ? "No limit" : "";
+
     // ✅ Load saved values from `settings.top`
     if (window.settings.top.minPrice !== undefined) minPriceInput.value = window.settings.top.minPrice;
     if (window.settings.top.maxPrice !== undefined) maxPriceInput.value = window.settings.top.maxPrice;
+
+    if (window.settings.top.minFloat !== undefined) minFloatInput.value = window.settings.top.minFloat;
+    if (window.settings.top.maxFloat !== undefined) maxFloatInput.value = window.settings.top.maxFloat;
+
+    if (window.settings.top.minScore !== undefined) minScoreInput.value = window.settings.top.minScore;
+    if (window.settings.top.maxScore !== undefined) maxScoreInput.value = window.settings.top.maxScore;
+
+    if (window.settings.top.minVolume !== undefined) minVolumeInput.value = window.settings.top.minVolume;
+    if (window.settings.top.maxVolume !== undefined) maxVolumeInput.value = window.settings.top.maxVolume;
+
     if (window.settings.top.transparent !== undefined) topTransparentToggle.checked = window.settings.top.transparent;
 
     // ✅ Load saved length settings
@@ -137,22 +174,126 @@ function initializeTopSection() {
     console.log("✅ Applied topSettings:", {
         minPrice: minPriceInput.value,
         maxPrice: maxPriceInput.value,
+        minVolume: minVolumeInput.value,
+        maxVolume: maxVolumeInput.value,
+        minFloat: minFloatInput.value,
+        maxFloat: maxFloatInput.value,
+        minScore: minScoreInput.value,
+        maxScore: maxScoreInput.value,
         transparent: topTransparentToggle.checked,
         sessionLength: sessionLengthInput.value,
         dailyLength: dailyLengthInput.value,
     });
 
     function updatePriceFilter() {
-        const newMin = parseFloat(minPriceInput.value) || 0;
-        const newMax = parseFloat(maxPriceInput.value) || 1000;
+        let newMinPrice = parseFloat(minPriceInput.value) || 0;
+        let newMaxPrice = parseFloat(maxPriceInput.value) || 0;
+
+        // ✅ Preserve existing float and score filters
+        let currentMinFloat = parseFloat(minFloatInput.value) || 0;
+        let currentMaxFloat = parseFloat(maxFloatInput.value) || 0;
+        let currentMinScore = parseFloat(minScoreInput.value) || 0;
+        let currentMaxScore = parseFloat(maxScoreInput.value) || 0;
+        let currentMinVolume = parseFloat(minVolumeInput.value) || 0;
+        let currentMaxVolume = parseFloat(maxVolumeInput.value) || 0;
 
         const updatedSettings = {
-            ...window.settings.top, // Preserve other settings
-            minPrice: newMin,
-            maxPrice: newMax,
+            ...window.settings.top,
+            minPrice: newMinPrice,
+            maxPrice: newMaxPrice,
+            minFloat: currentMinFloat,
+            maxFloat: currentMaxFloat,
+            minScore: currentMinScore,
+            maxScore: currentMaxScore,
+            minVolume: currentMinVolume,
+            maxVolume: currentMaxVolume,
         };
 
-        console.log("Updated price filter:", updatedSettings);
+        console.log("Updated price filter with preserved float and score settings:", updatedSettings);
+        applyAllFilters(updatedSettings);
+    }
+
+    function updateVolumeFilter() {
+        let newMinVolume = parseFloat(minVolumeInput.value) || 0;
+        let newMaxVolume = parseFloat(maxVolumeInput.value) || 0;
+
+        // ✅ Preserve existing price and score filters
+        let currentMinPrice = parseFloat(minPriceInput.value) || 0;
+        let currentMaxPrice = parseFloat(maxPriceInput.value) || 0;
+        let currentMinScore = parseFloat(minScoreInput.value) || 0;
+        let currentMaxScore = parseFloat(maxScoreInput.value) || 0;
+        let currentMinFloat = parseFloat(minFloatInput.value) || 0;
+        let currentMaxFloat = parseFloat(maxFloatInput.value) || 0;
+
+        const updatedSettings = {
+            ...window.settings.top,
+            minVolume: newMinVolume,
+            maxVolume: newMaxVolume,
+            minPrice: currentMinPrice,
+            maxPrice: currentMaxPrice,
+            minScore: currentMinScore,
+            maxScore: currentMaxScore,
+            minFloat: currentMinFloat,
+            maxFloat: currentMaxFloat,
+        };
+
+        console.log("Updated float filter with preserved price and score settings:", updatedSettings);
+        applyAllFilters(updatedSettings);
+    }
+
+    function updateFloatFilter() {
+        let newMinFloat = parseFloat(minFloatInput.value) || 0;
+        let newMaxFloat = parseFloat(maxFloatInput.value) || 0;
+
+        // ✅ Preserve existing price and score filters
+        let currentMinPrice = parseFloat(minPriceInput.value) || 0;
+        let currentMaxPrice = parseFloat(maxPriceInput.value) || 0;
+        let currentMinScore = parseFloat(minScoreInput.value) || 0;
+        let currentMaxScore = parseFloat(maxScoreInput.value) || 0;
+        let currentMinVolume = parseFloat(minVolumeInput.value) || 0;
+        let currentMaxVolume = parseFloat(maxVolumeInput.value) || 0;
+
+        const updatedSettings = {
+            ...window.settings.top,
+            minFloat: newMinFloat,
+            maxFloat: newMaxFloat,
+            minPrice: currentMinPrice,
+            maxPrice: currentMaxPrice,
+            minScore: currentMinScore,
+            maxScore: currentMaxScore,
+            minVolume: currentMinVolume,
+            maxVolume: currentMaxVolume,
+        };
+
+        console.log("Updated float filter with preserved price and score settings:", updatedSettings);
+        applyAllFilters(updatedSettings);
+    }
+
+    function updateScoreFilter() {
+        let newMinScore = parseFloat(minScoreInput.value) || 0;
+        let newMaxScore = parseFloat(maxScoreInput.value) || 0;
+
+        // ✅ Preserve existing price and float filters
+        let currentMinPrice = parseFloat(minPriceInput.value) || 0;
+        let currentMaxPrice = parseFloat(maxPriceInput.value) || 0;
+        let currentMinFloat = parseFloat(minFloatInput.value) || 0;
+        let currentMaxFloat = parseFloat(maxFloatInput.value) || 0;
+        let currentMinVolume = parseFloat(minVolumeInput.value) || 0;
+        let currentMaxVolume = parseFloat(maxVolumeInput.value) || 0;
+
+        const updatedSettings = {
+            ...window.settings.top,
+            minScore: newMinScore,
+            maxScore: newMaxScore,
+            minPrice: currentMinPrice,
+            maxPrice: currentMaxPrice,
+            minFloat: currentMinFloat,
+            maxFloat: currentMaxFloat,
+            minVolume: currentMinVolume,
+            maxVolume: currentMaxVolume,
+        };
+
+        console.log("Updated score filter with preserved price and float settings:", updatedSettings);
         applyAllFilters(updatedSettings);
     }
 
@@ -203,44 +344,17 @@ function initializeTopSection() {
 
     minPriceInput.addEventListener("input", updatePriceFilter);
     maxPriceInput.addEventListener("input", updatePriceFilter);
+    minVolumeInput.addEventListener("input", updateVolumeFilter);
+    maxVolumeInput.addEventListener("input", updateVolumeFilter);
+    minFloatInput.addEventListener("input", updateFloatFilter);
+    maxFloatInput.addEventListener("input", updateFloatFilter);
+    minScoreInput.addEventListener("input", updateScoreFilter);
+    maxScoreInput.addEventListener("input", updateScoreFilter);
+
     topTransparentToggle.addEventListener("change", updateTransparency);
     sessionLengthInput.addEventListener("input", () => updateListLength("session", sessionLengthInput));
     dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
 }
-
-function initializeNewsSection() {
-    if (!window.settings.news) {
-        window.settings.news = {}; // ✅ Ensure "news" key exists
-    }
-
-    console.log("🔍 Checking loaded news settings:", window.settings.news);
-
-    const showTrackedTickersToggle = document.getElementById("show-tracked-tickers");
-
-    if (!showTrackedTickersToggle) {
-        console.error("❌ 'Show Only Tracked Tickers' toggle not found!");
-        return;
-    }
-
-    // ✅ Load saved setting
-    showTrackedTickersToggle.checked = window.settings.news.showTrackedTickers ?? false;
-
-    // ✅ Save setting on toggle
-    showTrackedTickersToggle.addEventListener("change", async () => {
-        // ✅ Ensure news settings exist before saving
-        if (!window.settings.news) {
-            window.settings.news = {};
-        }
-
-        window.settings.news.showTrackedTickers = showTrackedTickersToggle.checked;
-
-        console.log("💾 Updating settings with news key:", window.settings);
-
-        await window.settingsAPI.update(window.settings);
-        console.log("✅ Updated 'Show Only Tracked Tickers' setting:", showTrackedTickersToggle.checked);
-    });
-}
-
 
 async function loadAttributeFilters(listType, containerId) {
     try {
@@ -280,7 +394,6 @@ async function loadAttributeFilters(listType, containerId) {
         console.error(`❌ Error loading ${listType} attributes:`, error);
     }
 }
-
 
 async function updateFilters() {
     if (!window.settings || !window.settings.top) {
@@ -328,9 +441,20 @@ async function updateFilters() {
     }
 }
 
-
 function applyAllFilters(updatedTopSettings) {
     console.log("Applying filters");
+
+    // ✅ Ensure all filters persist
+    updatedTopSettings.minPrice = updatedTopSettings.minPrice ?? window.settings.top.minPrice;
+    updatedTopSettings.maxPrice = updatedTopSettings.maxPrice ?? window.settings.top.maxPrice;
+    updatedTopSettings.minFloat = updatedTopSettings.minFloat ?? window.settings.top.minFloat;
+    updatedTopSettings.maxFloat = updatedTopSettings.maxFloat ?? window.settings.top.maxFloat;
+    updatedTopSettings.minScore = updatedTopSettings.minScore ?? window.settings.top.minScore;
+    updatedTopSettings.maxScore = updatedTopSettings.maxScore ?? window.settings.top.maxScore;
+    updatedTopSettings.minVolume = updatedTopSettings.minVolume ?? window.settings.top.minVolume;
+    updatedTopSettings.maxVolume = updatedTopSettings.maxVolume ?? window.settings.top.maxVolume;
+
+    // ✅ Update settings in UI
     window.settingsAPI.update({ top: updatedTopSettings });
 
     if (window.topAPI.applyFilters) {
@@ -338,17 +462,6 @@ function applyAllFilters(updatedTopSettings) {
     } else {
         console.warn("⚠️ window.topAPI.applyFilters is not defined!");
     }
-}
-
-function saveSettings(newSettings) {
-    // ✅ Ensure `top` object structure is correct before saving
-    if (!newSettings.top || typeof newSettings.top !== "object") {
-        newSettings.top = { minPrice: 0, maxPrice: 1000 };
-    }
-
-    console.log("Saving settings:", newSettings);
-    window.settingsAPI.update(newSettings);
-    window.topAPI.refresh();
 }
 
 function toggleAll(listType, state) {
@@ -362,4 +475,115 @@ function toggleAll(listType, state) {
     });
 
     updateFilters(window.settings); // ✅ Pass the updated settings object
+}
+
+/**
+ * ✅ Initialize the News Section with BlockList, GoodList, and BadList
+ */
+function initializeNewsSection() {
+    if (!window.settings.news) {
+        window.settings.news = { blockList: [], goodList: [], badList: [], allowMultiSymbols: true };
+    }
+
+    console.log("🔍 Checking loaded news settings:", window.settings.news);
+
+    const showTrackedTickersToggle = document.getElementById("show-tracked-tickers");
+    const allowMultiSymbolsToggle = document.getElementById("allow-multi-symbols");
+
+    if (!showTrackedTickersToggle || !allowMultiSymbolsToggle) {
+        console.error("❌ 'Show Only Tracked Tickers' or 'Allow Multi-Symbol Headlines' toggle not found!");
+        return;
+    }
+
+    // ✅ Load saved settings
+    showTrackedTickersToggle.checked = window.settings.news.showTrackedTickers ?? false;
+    allowMultiSymbolsToggle.checked = window.settings.news.allowMultiSymbols ?? true;
+
+    // ✅ Save setting on toggle
+    showTrackedTickersToggle.addEventListener("change", async () => {
+        window.settings.news.showTrackedTickers = showTrackedTickersToggle.checked;
+        await saveSettings();
+        console.log("✅ Updated 'Show Only Tracked Tickers' setting:", showTrackedTickersToggle.checked);
+    });
+
+    allowMultiSymbolsToggle.addEventListener("change", async () => {
+        window.settings.news.allowMultiSymbols = allowMultiSymbolsToggle.checked;
+        await saveSettings();
+        console.log("✅ Updated 'Allow Multi-Symbol Headlines' setting:", allowMultiSymbolsToggle.checked);
+    });
+
+    // ✅ Initialize keyword management
+    setupKeywordManagement();
+}
+
+
+
+/**
+ * ✅ Handles adding and removing keywords for BlockList, GoodList, and BadList
+ */
+function setupKeywordManagement() {
+    const keywordType = document.getElementById("keyword-type");
+    const keywordInput = document.getElementById("keyword-input");
+    const addKeywordBtn = document.getElementById("add-keyword");
+
+    const blockListEl = document.getElementById("block-list");
+    const goodListEl = document.getElementById("good-list");
+    const badListEl = document.getElementById("bad-list");
+
+    function updateLists() {
+        renderList(blockListEl, window.settings.news.blockList);
+        renderList(goodListEl, window.settings.news.goodList);
+        renderList(badListEl, window.settings.news.badList);
+    }
+
+    function renderList(element, items) {
+        element.innerHTML = "";
+        items.forEach((keyword, index) => {
+            const li = document.createElement("li");
+            li.textContent = keyword;
+
+            // ✅ Remove button for each keyword
+            const removeBtn = document.createElement("button");
+            removeBtn.textContent = "X";
+            removeBtn.addEventListener("click", async () => {
+                items.splice(index, 1);
+                await saveSettings();
+                updateLists();
+            });
+
+            li.appendChild(removeBtn);
+            element.appendChild(li);
+        });
+    }
+
+    // ✅ Add new keyword to the selected list
+    addKeywordBtn.addEventListener("click", async () => {
+        const keyword = keywordInput.value.trim();
+        if (!keyword) return;
+
+        const listType = keywordType.value;
+
+        if (!window.settings.news[listType].includes(keyword)) {
+            window.settings.news[listType].push(keyword);
+            await saveSettings();
+            updateLists();
+        }
+
+        keywordInput.value = ""; // Clear input field
+    });
+
+    // ✅ Initialize UI with existing data
+    updateLists();
+}
+
+/**
+ * ✅ Saves updated settings globally
+ */
+async function saveSettings() {
+    try {
+        console.log("💾 Saving settings...", window.settings);
+        await window.settingsAPI.update(window.settings);
+    } catch (error) {
+        console.error("❌ Error saving settings:", error);
+    }
 }

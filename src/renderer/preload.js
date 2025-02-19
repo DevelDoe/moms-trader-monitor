@@ -13,7 +13,9 @@ contextBridge.exposeInMainWorld("topAPI", {
     clearSession: () => ipcRenderer.send("clear-session"),
     onSessionCleared: (callback) => ipcRenderer.on("session-cleared", callback),
     applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
+    onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
 });
+
 
 contextBridge.exposeInMainWorld("newsAPI", {
     get: () => ipcRenderer.invoke("get-all-news"),

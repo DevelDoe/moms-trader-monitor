@@ -1,15 +1,15 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.5,
-    "maxPrice": 10,
+    "minPrice": 1.75,
+    "maxPrice": 12,
     "lists": {
       "session": {
         "length": 10,
-        "Price": false,
+        "Price": true,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": false,
+        "Float": true,
         "Volume": true,
         "SprPercent": false,
         "Time": false,
@@ -19,7 +19,8 @@
         "Symbol": false,
         "Score": true,
         "Bonuses": true,
-        "Count": true
+        "Count": true,
+        "News": true
       },
       "daily": {
         "length": 4,
@@ -37,11 +38,41 @@
         "Symbol": true,
         "Score": true,
         "Bonuses": true,
-        "Count": false
+        "Count": false,
+        "News": false
       }
-    }
+    },
+    "minFloat": 0,
+    "maxFloat": 200000000,
+    "minScore": 1,
+    "maxScore": 0,
+    "minVolume": 200000,
+    "maxVolume": 0
   },
   "news": {
-    "showTrackedTickers": true
+    "showTrackedTickers": false,
+    "filteredTickers": [
+      "JTAI",
+      "SINT",
+      "SPHL",
+      "CPIX",
+      "EDIT",
+      "CSAI"
+    ],
+    "blockList": [
+      "Shares Are On The Rise",
+      "Shares Resumed Trade",
+      "Stock Skyrocketing Today",
+      "Shares Resume Trading",
+      "Shares Resume Trade",
+      "hares Halted On Circuit Breaker",
+      "Shares Halted On A Circuit Breaker",
+      "Dow Dips",
+      "Shares Are Trading Higher",
+      "S&P 500 Edges Higher"
+    ],
+    "goodList": [],
+    "badList": [],
+    "allowMultiSymbols": false
   }
 }

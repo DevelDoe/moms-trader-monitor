@@ -14,10 +14,10 @@
             <h1 class="draggable" style="width: 90%">Settings</h1>
 
             <div class="tab">
-                <button class="tablinks" onclick="openTab(event, 'general')">General</button>
+                <button class="tablinks active" onclick="openTab(event, 'general')">General</button>
                 <button class="tablinks" onclick="openTab(event, 'audio')">Audio</button>
-                <button class="tablinks active" onclick="openTab(event, 'top')">Top</button>
-                <button class="tablinks active" onclick="openTab(event, 'news')">News</button>
+                <button class="tablinks" onclick="openTab(event, 'top')">Top</button>
+                <button class="tablinks" onclick="openTab(event, 'news')">News</button>
             </div>
 
             <div id="general" class="tabcontent">
@@ -36,10 +36,16 @@
                     </label>
                 </div>
 
-                <div>
-                    <label> Min Price: <input type="number" id="min-price" step="0.05" /> </label>
-                    <label> Max Price: <input type="number" id="max-price" step="1" /> </label>
-                </div>
+                <section id="min-max-filters">
+                    <label title="Enter 0 to disable limit"> Min Price: <input type="number" id="min-price" step="0.05" /> </label>
+                    <label title="Enter 0 to disable limit"> Max Price: <input type="number" id="max-price" step="1" /> </label>
+                    <label title="Enter 0 to disable limit"> Min Volume: <input type="number" id="min-volume" step="100000" /> </label>
+                    <label title="Enter 0 to disable limit"> Max Volume: <input type="number" id="max-volume" step="100000" /> </label>
+                    <label title="Enter 0 to disable limit"> Min Float: <input type="number" id="min-float" step="100000" /> </label>
+                    <label title="Enter 0 to disable limit"> Max Float: <input type="number" id="max-float" step="100000" /> </label>
+                    <label title="Enter 0 to disable limit"> Min Score: <input type="number" id="min-score" step="1" /> </label>
+                    <label title="Enter 0 to disable limit"> Max Score: <input type="number" id="max-score" step="1" /> </label>
+                </section>
 
                 <div class="filter-section">
                     <h3>Session Attribute Filters</h3>
@@ -61,12 +67,49 @@
             <div id="news" class="tabcontent">
                 <h2>News</h2>
 
-                <!-- Toggle Switch for "Show Only Tracked Tickers" -->
+                <!-- ✅ Toggle "Show Only Tracked Tickers" -->
                 <label class="switch">
                     <input type="checkbox" id="show-tracked-tickers" />
                     <span class="slider round"></span>
                 </label>
                 <span>Show Only Tracked Tickers</span>
+
+                <!-- ✅ Toggle "Allow Multi-Symbol Headlines" -->
+                <label class="switch">
+                    <input type="checkbox" id="allow-multi-symbols" />
+                    <span class="slider round"></span>
+                </label>
+                <span>Allow Multi-Symbol Headlines</span>
+
+                <!-- ✅ Keyword Management Section -->
+                <h3>Keyword Filters</h3>
+
+                <div class="keyword-controls">
+                    <select id="keyword-type">
+                        <option value="blockList">Block List</option>
+                        <option value="goodList">Good List</option>
+                        <option value="badList">Bad List</option>
+                    </select>
+
+                    <input type="text" id="keyword-input" placeholder="Enter keyword..." />
+                    <button id="add-keyword">Add</button>
+                </div>
+
+                <!-- ✅ Display Lists -->
+                <div class="keyword-lists">
+                    <div>
+                        <h4>Block List</h4>
+                        <ul id="block-list"></ul>
+                    </div>
+                    <div>
+                        <h4>Good List</h4>
+                        <ul id="good-list"></ul>
+                    </div>
+                    <div>
+                        <h4>Bad List</h4>
+                        <ul id="bad-list"></ul>
+                    </div>
+                </div>
             </div>
         </div>
         <script src="./settings.js"></script>
