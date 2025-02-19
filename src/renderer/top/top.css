@@ -263,7 +263,19 @@ body:not(.show-all) #tickers-wrapper {
 .bonus.bronse-float {
     color: rgba(28, 88, 158, 0.5);
 } /* 🔵 Blue for Low Float */
+.bonus.oneH-float {
+    color: rgba(255, 0, 0, 0.5);
+}
+.bonus.twoH-float {
+    color: rgba(255, 0, 0, 0.75);
+}
+.bonus.threeH-float {
+    color: rgb(255, 0, 0);
+}
 
+.bonus.low-volume {
+    color: rgb(255, 0, 0);
+}
 /* .bonus.spread { }   */
 
 /* ✅ Tooltip Effect */

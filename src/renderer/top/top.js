@@ -230,6 +230,20 @@ function parseFloatValue(floatStr) {
     if (floatStr.includes("K")) value /= 1000;
     return value;
 }
+
+function parseVolumeValue(floatStr) {
+    if (!floatStr) return 0;
+    let sanitized = floatStr.replace(/[^0-9.]/g, "");
+    let value = parseFloat(sanitized) || 0;
+
+    if (floatStr.toUpperCase().includes("K")) value *= 1_000;        // Thousands
+    if (floatStr.toUpperCase().includes("M")) value *= 1_000_000;    // Millions
+    if (floatStr.toUpperCase().includes("B")) value *= 1_000_000_000; // Billions
+
+    return value;
+}
+
+
 function calculateScore(ticker) {
     let Score = ticker.Count;
 
@@ -266,31 +280,22 @@ function getScoreBreakdown(ticker) {
         breakdown.push(`Has News: +40`);
     }
 
-    let floatValue = parseFloatValue(ticker.Float);
-    if (floatValue > 0 && floatValue < 1) {
-        Score += 20;
-        breakdown.push(`Float < 1M: +20`);
-    } else if (floatValue > 1 && floatValue < 5) {
-        Score += 15;
-        breakdown.push(`Float 1M - 5M: +15`);
-    } else if (floatValue > 5 && floatValue < 10) {
-        Score += 10;
-        breakdown.push(`Float 5M - 10M: +10`);
-    } else if (floatValue > 10 && floatValue < 50) {
-        breakdown.push(`Float 10M - 50M: +0`);
-    } else if (floatValue > 50 && floatValue < 100) {
-        Score -= 10;
-        breakdown.push(`Float 50M - 100M: -10`);
-    } else if (floatValue > 100 && floatValue < 200) {
-        Score -= 20;
-        breakdown.push(`Float 100M - 500M: -20`);
-    } else if (floatValue > 200 && floatValue < 500) {
-        Score -= 30;
-        breakdown.push(`Float 200M - 500M: -30`);
-    } else if (floatValue > 500) {
-        Score -= 50;
-        breakdown.push(`Float > 500M: -50`);
+    if (parseVolumeValue(ticker.Volume) < 2000) {
+        Score += 5;
+        breakdown.push(`Low Volume: -20`);
     }
+
+    let floatValue = parseFloatValue(ticker.Float);
+
+    if        (floatValue > 0 && floatValue < 2)     { Score += 20; breakdown.push(`Float < 2M: +20`);
+    } else if (floatValue > 1 && floatValue < 5)     { Score += 15; breakdown.push(`Float 1M - 5M: +15`);
+    } else if (floatValue > 5 && floatValue < 10)    { Score += 10; breakdown.push(`Float 5M - 10M: +10`);
+    } else if (floatValue > 10 && floatValue < 50)   { breakdown.push(`Float 10M - 50M: +0`);
+    } else if (floatValue > 50 && floatValue < 100)  { Score -= 10; breakdown.push(`Float 50M - 100M: -10`);
+    } else if (floatValue > 100 && floatValue < 200) { Score -= 20; breakdown.push(`Float 100M - 200M: -20`);
+    } else if (floatValue > 200 && floatValue < 500) { Score -= 30; breakdown.push(`Float 200M - 500M: -30`);
+    } else if (floatValue > 500)                     { Score -= 50; breakdown.push(`Float > 500M: -50`); }
+
     breakdown.push(`---------------------`); // Added \n for a line break
     breakdown.push(`Final Score: ${Score}`);
 
@@ -348,21 +353,29 @@ function getBonusesHTML(ticker) {
         tooltipText.push("H: High of Day");
     }
     if (parseFloatValue(ticker.Float) > 0 && parseFloatValue(ticker.Float) < 1) {
-        bonuses.push('<span class="bonus gold-float no-drag">1M</span>');
-        tooltipText.push("1M: Float less than 1M");
+        bonuses.push('<span class="bonus gold-float no-drag">2M</span>');
+        tooltipText.push("2M: Float less than 2M");
     } else if (parseFloatValue(ticker.Float) > 1 && parseFloatValue(ticker.Float) < 5) {
         bonuses.push('<span class="bonus silver-float no-drag">5M</span>');
         tooltipText.push("5M: Float less than 5M");
     } else if (parseFloatValue(ticker.Float) > 5 && parseFloatValue(ticker.Float) < 10) {
         bonuses.push('<span class="bonus bronse-float no-drag">10M</span>');
         tooltipText.push("10M: less than 10M");
+    } else if (parseFloatValue(ticker.Float) > 50 && parseFloatValue(ticker.Float) < 100) {
+        bonuses.push('<span class="bonus oneH-float no-drag">100M</span>');
+        tooltipText.push("100M: Float between 50 - 100M");
+    } else if (parseFloatValue(ticker.Float) > 100 && parseFloatValue(ticker.Float) < 200) {
+        bonuses.push('<span class="bonus twoH-float no-drag">200M</span>');
+        tooltipText.push("200M: Float between 100 - 200M");
+    } else if (parseFloatValue(ticker.Float) > 500 ) {
+        bonuses.push('<span class="bonus threeH-float no-drag">500M</span>');
+        tooltipText.push("500M: Float more than 500M");
     }
 
-    // VOLUME should be relative 
-    // if (parseFloatValue(ticker.Volume) > 10) {
-    //     bonuses.push('<span class="bonus volume no-drag">V</span>');
-    //     tooltipText.push("V: High Volume");
-    // }
+    if (parseVolumeValue(ticker.Volume) < 2000) {
+        bonuses.push('<span class="bonus low-volume no-drag">V</span>');
+        tooltipText.push("V: Low Volume");
+    }
 
     if (bonuses.length === 0) {
         return "-"; // No bonuses
