@@ -131,31 +131,31 @@ if (isFirstInstall()) {
 function loadSettings() {
     try {
         if (!fs.existsSync(SETTINGS_FILE)) {
-            log.warn("⚠️ Settings file not found. Creating a new one...");
-            saveSettings(DEFAULT_SETTINGS);
+            log.warn("Settings file not found. Using default settings.");
             return { ...DEFAULT_SETTINGS };
         }
 
         const data = fs.readFileSync(SETTINGS_FILE, "utf-8").trim();
-
         if (!data) {
-            log.warn("⚠️ Settings file is empty! Resetting to default settings.");
-            saveSettings(DEFAULT_SETTINGS);
+            log.warn("Settings file is empty! Using default settings.");
             return { ...DEFAULT_SETTINGS };
         }
 
-        let parsedSettings = JSON.parse(data);
+        const parsedSettings = JSON.parse(data);
 
-        // ✅ Ensure missing settings are filled with defaults
-        parsedSettings = mergeSettingsWithDefaults(parsedSettings, DEFAULT_SETTINGS);
+        // ✅ Ensure missing attributes are merged
+        const mergedSettings = mergeSettingsWithDefaults(parsedSettings, DEFAULT_SETTINGS);
 
-        return parsedSettings;
+        // ✅ Save back to file if any attributes were missing
+        saveSettings(mergedSettings);
+
+        return mergedSettings;
     } catch (err) {
         log.error("❌ Error loading settings, resetting to defaults.", err);
-        saveSettings(DEFAULT_SETTINGS);
         return { ...DEFAULT_SETTINGS };
     }
 }
+
 
 // 🛠️ Function to merge settings with defaults, ensuring all keys exist
 function mergeSettingsWithDefaults(userSettings, defaultSettings) {
@@ -169,56 +169,42 @@ function mergeSettingsWithDefaults(userSettings, defaultSettings) {
                 session: {
                     ...defaultSettings.top.lists.session,
                     ...userSettings.top?.lists?.session,
-                    // Ensure every key inside session exists
-                    ...Object.fromEntries(
-                        Object.entries(defaultSettings.top.lists.session).map(([key, value]) => [
-                            key,
-                            userSettings.top?.lists?.session?.hasOwnProperty(key)
-                                ? userSettings.top.lists.session[key]
-                                : value,
-                        ])
-                    ),
+                    length: userSettings.top?.lists?.session?.length ?? defaultSettings.top.lists.session.length,
                 },
                 daily: {
                     ...defaultSettings.top.lists.daily,
                     ...userSettings.top?.lists?.daily,
-                    // Ensure every key inside daily exists
-                    ...Object.fromEntries(
-                        Object.entries(defaultSettings.top.lists.daily).map(([key, value]) => [
-                            key,
-                            userSettings.top?.lists?.daily?.hasOwnProperty(key)
-                                ? userSettings.top.lists.daily[key]
-                                : value,
-                        ])
-                    ),
+                    length: userSettings.top?.lists?.daily?.length ?? defaultSettings.top.lists.daily.length,
                 },
             },
+            minFloat: userSettings.top?.minFloat ?? defaultSettings.top.minFloat,
+            maxFloat: userSettings.top?.maxFloat ?? defaultSettings.top.maxFloat,
+            minScore: userSettings.top?.minScore ?? defaultSettings.top.minScore,
+            maxScore: userSettings.top?.maxScore ?? defaultSettings.top.maxScore,
+            minVolume: userSettings.top?.minVolume ?? defaultSettings.top.minVolume,
+            maxVolume: userSettings.top?.maxVolume ?? defaultSettings.top.maxVolume,
         },
         news: {
             ...defaultSettings.news,
             ...userSettings.news,
-            blockList: Array.isArray(userSettings.news?.blockList)
-                ? userSettings.news.blockList
-                : defaultSettings.news.blockList,
-            goodList: Array.isArray(userSettings.news?.goodList)
-                ? userSettings.news.goodList
-                : defaultSettings.news.goodList,
-            badList: Array.isArray(userSettings.news?.badList)
-                ? userSettings.news.badList
-                : defaultSettings.news.badList,
-            filteredTickers: Array.isArray(userSettings.news?.filteredTickers)
-                ? userSettings.news.filteredTickers
-                : defaultSettings.news.filteredTickers,
+            blockList: userSettings.news?.blockList || [],
+            goodList: userSettings.news?.goodList || [],
+            badList: userSettings.news?.badList || [],
+            allowMultiSymbols: userSettings.news?.allowMultiSymbols ?? false,
         },
     };
 }
 
 
+
 // 🛠️ Function to save settings to the file
-function saveSettings(settings) {
-    log.log("💾 Saving settings file...");
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+function saveSettings(settingsToSave = appSettings) {
+    if (!settingsToSave) settingsToSave = { ...DEFAULT_SETTINGS };
+
+    log.log("Saving settings file...");
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsToSave, null, 2));
 }
+
 
 let appSettings = loadSettings(); // Load app settings from file
 
