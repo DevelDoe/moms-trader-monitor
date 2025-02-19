@@ -354,6 +354,20 @@ function initializeTopSection() {
     topTransparentToggle.addEventListener("change", updateTransparency);
     sessionLengthInput.addEventListener("input", () => updateListLength("session", sessionLengthInput));
     dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
+
+    console.log("✅ Applied topSettings:", {
+        minPrice: minPriceInput.value,
+        maxPrice: maxPriceInput.value,
+        minVolume: minVolumeInput.value,
+        maxVolume: maxVolumeInput.value,
+        minFloat: minFloatInput.value,
+        maxFloat: maxFloatInput.value,
+        minScore: minScoreInput.value,
+        maxScore: maxScoreInput.value,
+        transparent: topTransparentToggle.checked,
+        sessionLength: sessionLengthInput.value,
+        dailyLength: dailyLengthInput.value,
+    });
 }
 
 async function loadAttributeFilters(listType, containerId) {
@@ -605,11 +619,45 @@ function setupKeywordManagement() {
 /**
  * ✅ Saves updated settings globally
  */
-async function saveSettings() {
+async function saveSettings(updatedSettings = {}) {
     try {
-        console.log("💾 Saving settings...", window.settings);
-        await window.settingsAPI.update(window.settings);
+        // 🔄 Fetch the latest settings first to prevent overwriting
+        const latestSettings = await window.settingsAPI.get();
+        if (!latestSettings) {
+            console.error("❌ Error fetching latest settings, using defaults.");
+            latestSettings = { ...DEFAULT_SETTINGS };
+        }
+
+        // ✅ Merge the updated settings while preserving existing values
+        const mergedSettings = {
+            ...latestSettings, // Preserve everything
+            top: {
+                ...latestSettings.top, // Preserve top filters
+                ...updatedSettings.top, // Apply top updates if any
+                lists: {
+                    session: {
+                        ...latestSettings.top?.lists?.session,
+                        ...updatedSettings.top?.lists?.session,
+                    },
+                    daily: {
+                        ...latestSettings.top?.lists?.daily,
+                        ...updatedSettings.top?.lists?.daily,
+                    }
+                }
+            },
+            news: {
+                ...latestSettings.news, // Preserve news filters
+                ...updatedSettings.news, // Apply news updates if any
+                blockList: [...(updatedSettings.news?.blockList || latestSettings.news?.blockList || [])],
+                goodList: [...(updatedSettings.news?.goodList || latestSettings.news?.goodList || [])],
+                badList: [...(updatedSettings.news?.badList || latestSettings.news?.badList || [])]
+            }
+        };
+
+        console.log("💾 Merged settings before saving:", mergedSettings);
+        await window.settingsAPI.update(mergedSettings);
     } catch (error) {
         console.error("❌ Error saving settings:", error);
     }
 }
+

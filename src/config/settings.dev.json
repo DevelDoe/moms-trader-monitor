@@ -13,32 +13,50 @@
         "SprPercent": true,
         "Time": true,
         "HighOfDay": true,
-        "length": 10
+        "length": 10,
+        "News": true,
+        "Count": true,
+        "Score": true,
+        "Bonuses": true
       },
       "daily": {
-        "Price": true,
+        "Price": false,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": true,
-        "Volume": true,
+        "Float": false,
+        "Volume": false,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
-        "length": 10
+        "length": 10,
+        "News": false,
+        "Count": false,
+        "Score": true,
+        "Bonuses": true
       }
-    }
+    },
+    "minFloat": 0,
+    "maxFloat": 0,
+    "minScore": 0,
+    "maxScore": 0,
+    "minVolume": 0,
+    "maxVolume": 0
   },
   "news": {
     "showTrackedTickers": false,
     "filteredTickers": [
       "JTAI",
       "XHLD",
+      "TIVC",
+      "PRPH",
       "CSAI",
       "MVIS"
     ],
-    "blockList": [],
+    "blockList": [
+      "Shares"
+    ],
     "goodList": [],
     "badList": [],
-    "allowMultiSymbols": true
+    "allowMultiSymbols": false
   }
 }
