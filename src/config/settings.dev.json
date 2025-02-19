@@ -1,8 +1,8 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 0.1,
-    "maxPrice": 99,
+    "minPrice": 0,
+    "maxPrice": 100,
     "lists": {
       "session": {
         "Price": true,
@@ -26,22 +26,19 @@
         "HighOfDay": false,
         "length": 10
       }
-    },
-    "minVolume": 100000,
-    "maxVolume": 200000,
-    "minScore": 0,
-    "maxScore": 0,
-    "minFloat": 100000,
-    "maxFloat": 0
+    }
   },
   "news": {
     "showTrackedTickers": false,
-    "filteredTickers": [],
-    "allowMultiSymbols": true,
-    "blockList": [
-      "test"
+    "filteredTickers": [
+      "JTAI",
+      "XHLD",
+      "CSAI",
+      "MVIS"
     ],
+    "blockList": [],
     "goodList": [],
-    "badList": []
+    "badList": [],
+    "allowMultiSymbols": true
   }
 }

@@ -404,44 +404,56 @@ async function updateFilters() {
     }
 
     try {
-        // 🔄 Fetch latest settings to ensure we don’t overwrite anything
+        // 🔄 Fetch latest settings to ensure we don’t overwrite existing values
         const latestSettings = await window.settingsAPI.get();
         if (!latestSettings || !latestSettings.top) {
             console.error("❌ Latest settings not found! Skipping update.");
             return;
         }
 
-        // ✅ Preserve the latest session & daily lengths
-        const sessionLength = latestSettings.top.lists?.session?.length ?? 10;
-        const dailyLength = latestSettings.top.lists?.daily?.length ?? 10;
-
-        // ✅ Preserve all filters + length
+        // ✅ Preserve previous attributes and merge with updates
         const updatedSettings = {
-            ...latestSettings.top, // Keep all settings
-            lists: {
-                session: { ...latestSettings.top.lists?.session, length: sessionLength },
-                daily: { ...latestSettings.top.lists?.daily, length: dailyLength },
+            ...latestSettings,  // Preserve top-level settings
+            top: {
+                ...latestSettings.top,  // Preserve all existing top settings
+                lists: {
+                    session: {
+                        ...latestSettings.top.lists?.session, // Keep session settings
+                        length: latestSettings.top.lists?.session?.length ?? 10
+                    },
+                    daily: {
+                        ...latestSettings.top.lists?.daily, // Keep daily settings
+                        length: latestSettings.top.lists?.daily?.length ?? 10
+                    }
+                }
             },
+            news: {
+                ...latestSettings.news, // Keep news settings
+                blockList: [...(latestSettings.news?.blockList || [])], // Ensure lists persist
+                goodList: [...(latestSettings.news?.goodList || [])],
+                badList: [...(latestSettings.news?.badList || [])],
+            }
         };
 
         // ✅ Capture new attribute selections without wiping lengths
         document.querySelectorAll("input[name='session']").forEach((checkbox) => {
-            updatedSettings.lists.session[checkbox.value] = checkbox.checked;
+            updatedSettings.top.lists.session[checkbox.value] = checkbox.checked;
         });
 
         document.querySelectorAll("input[name='daily']").forEach((checkbox) => {
-            updatedSettings.lists.daily[checkbox.value] = checkbox.checked;
+            updatedSettings.top.lists.daily[checkbox.value] = checkbox.checked;
         });
 
         console.log("💾 Saving updated filters (attributes + length preserved):", updatedSettings);
 
         // ✅ Save settings and apply changes
-        await window.settingsAPI.update({ top: updatedSettings });
+        await window.settingsAPI.update(updatedSettings);
         applyAllFilters(updatedSettings.top);
     } catch (error) {
         console.error("Error updating filters:", error);
     }
 }
+
 
 function applyAllFilters(updatedTopSettings) {
     console.log("Applying filters");

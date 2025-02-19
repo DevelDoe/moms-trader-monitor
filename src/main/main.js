@@ -127,6 +127,8 @@ if (isFirstInstall()) {
     log.log("Keeping existing settings");
 }
 
+let appSettings = {}; // Declare appSettings before usage
+
 // 🛠️ Function to load and validate settings from a file
 function loadSettings() {
     try {
@@ -155,6 +157,18 @@ function loadSettings() {
         return { ...DEFAULT_SETTINGS };
     }
 }
+
+// Assign loaded settings to `appSettings`
+appSettings = loadSettings(); 
+
+// 🛠️ Function to save settings to the file
+function saveSettings(settingsToSave = appSettings) {
+    if (!settingsToSave) settingsToSave = { ...DEFAULT_SETTINGS };
+
+    log.log("Saving settings file...");
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsToSave, null, 2));
+}
+
 
 // 🛠️ Function to merge settings with defaults, ensuring all keys exist
 function mergeSettingsWithDefaults(userSettings, defaultSettings) {
@@ -192,24 +206,6 @@ function mergeSettingsWithDefaults(userSettings, defaultSettings) {
             allowMultiSymbols: userSettings.news?.allowMultiSymbols ?? false,
         },
     };
-}
-
-// 🛠️ Function to save settings to the file
-function saveSettings(settingsToSave = appSettings) {
-    if (!settingsToSave) settingsToSave = { ...DEFAULT_SETTINGS };
-
-    log.log("Saving settings file...");
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsToSave, null, 2));
-}
-
-
-let appSettings = loadSettings(); // Load app settings from file
-
-function saveSettings() {
-    if (!appSettings) appSettings = { ...DEFAULT_SETTINGS };
-
-    log.log("Saving settings file...");
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(appSettings, null, 2));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
