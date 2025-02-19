@@ -64,11 +64,18 @@ function isFirstInstall() {
 }
 
 // Default settings for fresh installs
+// Default settings for fresh installs
 const DEFAULT_SETTINGS = {
     top: {
         transparent: false,
         minPrice: 0,
         maxPrice: 100,
+        minFloat: 0,
+        maxFloat: 0,
+        minScore: 0,
+        maxScore: 0,
+        minVolume: 0,
+        maxVolume: 0,
         lists: {
             session: {
                 Price: true,
@@ -79,25 +86,39 @@ const DEFAULT_SETTINGS = {
                 SprPercent: true,
                 Time: true,
                 HighOfDay: true,
+                News: true,
+                Count: true,
+                Score: true,
+                Bonuses: true,
                 length: 10,
             },
             daily: {
-                Price: true,
+                Price: false,
                 ChangePercent: false,
                 FiveM: false,
-                Float: true,
-                Volume: true,
+                Float: false,
+                Volume: false,
                 SprPercent: false,
                 Time: false,
                 HighOfDay: false,
-                length: 10,
+                News: false,
+                Count: false,
+                Score: true,
+                Bonuses: true,
+                length: 4,
             },
         },
     },
     news: {
-        showTrackedTickers: false
+        showTrackedTickers: false,
+        filteredTickers: [],
+        blockList: [],
+        goodList: [],
+        badList: [],
+        allowMultiSymbols: false
     }
 };
+
 
 // 🛠️ Ensure `settings.dev.json` exists in development mode
 if (isDevelopment && !fs.existsSync(SETTINGS_FILE)) {
