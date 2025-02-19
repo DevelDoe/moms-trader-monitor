@@ -127,32 +127,97 @@ if (isFirstInstall()) {
     log.log("Keeping existing settings");
 }
 
-// Function to load settings from a file
+// 🛠️ Function to load and validate settings from a file
 function loadSettings() {
     try {
         if (!fs.existsSync(SETTINGS_FILE)) {
-            log.warn("Settings file not found. Using default settings.");
+            log.warn("⚠️ Settings file not found. Creating a new one...");
+            saveSettings(DEFAULT_SETTINGS);
             return { ...DEFAULT_SETTINGS };
         }
 
         const data = fs.readFileSync(SETTINGS_FILE, "utf-8").trim();
 
         if (!data) {
-            log.warn("Settings file is empty! Using default settings.");
+            log.warn("⚠️ Settings file is empty! Resetting to default settings.");
+            saveSettings(DEFAULT_SETTINGS);
             return { ...DEFAULT_SETTINGS };
         }
 
-        const parsedSettings = JSON.parse(data);
+        let parsedSettings = JSON.parse(data);
 
         // ✅ Ensure missing settings are filled with defaults
-        return {
-            ...DEFAULT_SETTINGS,
-            ...parsedSettings,
-        };
+        parsedSettings = mergeSettingsWithDefaults(parsedSettings, DEFAULT_SETTINGS);
+
+        return parsedSettings;
     } catch (err) {
         log.error("❌ Error loading settings, resetting to defaults.", err);
-        return { ...DEFAULT_SETTINGS }; // Prevents crashes
+        saveSettings(DEFAULT_SETTINGS);
+        return { ...DEFAULT_SETTINGS };
     }
+}
+
+// 🛠️ Function to merge settings with defaults, ensuring all keys exist
+function mergeSettingsWithDefaults(userSettings, defaultSettings) {
+    return {
+        ...defaultSettings,
+        ...userSettings,
+        top: {
+            ...defaultSettings.top,
+            ...userSettings.top,
+            lists: {
+                session: {
+                    ...defaultSettings.top.lists.session,
+                    ...userSettings.top?.lists?.session,
+                    // Ensure every key inside session exists
+                    ...Object.fromEntries(
+                        Object.entries(defaultSettings.top.lists.session).map(([key, value]) => [
+                            key,
+                            userSettings.top?.lists?.session?.hasOwnProperty(key)
+                                ? userSettings.top.lists.session[key]
+                                : value,
+                        ])
+                    ),
+                },
+                daily: {
+                    ...defaultSettings.top.lists.daily,
+                    ...userSettings.top?.lists?.daily,
+                    // Ensure every key inside daily exists
+                    ...Object.fromEntries(
+                        Object.entries(defaultSettings.top.lists.daily).map(([key, value]) => [
+                            key,
+                            userSettings.top?.lists?.daily?.hasOwnProperty(key)
+                                ? userSettings.top.lists.daily[key]
+                                : value,
+                        ])
+                    ),
+                },
+            },
+        },
+        news: {
+            ...defaultSettings.news,
+            ...userSettings.news,
+            blockList: Array.isArray(userSettings.news?.blockList)
+                ? userSettings.news.blockList
+                : defaultSettings.news.blockList,
+            goodList: Array.isArray(userSettings.news?.goodList)
+                ? userSettings.news.goodList
+                : defaultSettings.news.goodList,
+            badList: Array.isArray(userSettings.news?.badList)
+                ? userSettings.news.badList
+                : defaultSettings.news.badList,
+            filteredTickers: Array.isArray(userSettings.news?.filteredTickers)
+                ? userSettings.news.filteredTickers
+                : defaultSettings.news.filteredTickers,
+        },
+    };
+}
+
+
+// 🛠️ Function to save settings to the file
+function saveSettings(settings) {
+    log.log("💾 Saving settings file...");
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
 }
 
 let appSettings = loadSettings(); // Load app settings from file
