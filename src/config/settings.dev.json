@@ -53,10 +53,40 @@
       "Market-Moving News for",
       "What's Going On"
     ],
-    "bullishList": [],
-    "bearishList": [],
-    "allowMultiSymbols": false,
-    "goodList": [],
-    "badList": []
+    "bullishList": [
+      "FDA",
+      "Clinical trials",
+      "Noteworthy Insider Activity",
+      "FDA Approvals",
+      "Drug Trials",
+      "FDA Approves",
+      "Phase 3 Trial Results",
+      "Breakthrough Therapy Designatio",
+      "Biotech Approval",
+      "Positive Data from Clinical Study",
+      "SEC Investigation Dropped",
+      "Regulatory Approval Granted",
+      "Government Contract Secured",
+      "Lawsuit Settlement Reached",
+      "Initiates Coverage",
+      "Buy Rating",
+      "Strong Buy",
+      "Price Target Raised to",
+      "Outperform",
+      "Raises Price Target",
+      "Reiterates Buy Rating",
+      "Maintains Overweight Rating",
+      "Upgrades to Buy"
+    ],
+    "bearishList": [
+      "To Acquire",
+      "Snaps Up",
+      "Takeover",
+      "Sell Alert",
+      "Upgrades",
+      "Underperform",
+      "Lowers Price Target"
+    ],
+    "allowMultiSymbols": false
   }
 }
