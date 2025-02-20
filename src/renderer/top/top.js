@@ -229,6 +229,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.innerHTML = getBonusesHTML(ticker);
             } else if (key === "News") {
                 // ✅ Check if the headline contains blocklisted words/phrases
+                let blockList = window.settings.news?.blockList || [];
                 const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
                 if (!isBlocked) {
