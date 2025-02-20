@@ -393,9 +393,7 @@ ipcMain.on("set-window-bounds", (event, bounds) => {
 
 app.on("ready", () => {
    
-    if (forceUpdate) {
-        app.getVersion = () => "0.1.0"; // Simulate an outdated version
-    }
+    
     
     log.log("App ready, bootstrapping...");
 
@@ -440,7 +438,11 @@ process.on("exit", () => {
 // UPDATES
 
 if (!isDevelopment || forceUpdate) {
-    autoUpdater.forceDevUpdateConfig = true;
+    if (forceUpdate) {
+        autoUpdater.forceDevUpdateConfig = true;
+        app.getVersion = () => "0.1.0"; // Simulate an outdated version
+    }
+   
     log.log("Production mode detected, checking for updates...");
     autoUpdater.checkForUpdatesAndNotify();
 
