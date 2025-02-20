@@ -53,7 +53,8 @@
     ],
     "blockList": [],
     "goodList": [
-      "FDA"
+      "FDA",
+      "Clinical trials"
     ],
     "badList": [],
     "allowMultiSymbols": false
