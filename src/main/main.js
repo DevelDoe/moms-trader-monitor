@@ -151,8 +151,8 @@ function mergeSettingsWithDefaults(userSettings, defaultSettings) {
             ...defaultSettings.news,
             ...userSettings.news,
             blockList: userSettings.news?.blockList || [],
-            bullishList: userSettings.news?.goodList || [],
-            bearishList: userSettings.news?.badList || [],
+            bullishList: userSettings.news?.bullishList || [],
+            bearishList: userSettings.news?.bearishList || [],
             allowMultiSymbols: userSettings.news?.allowMultiSymbols ?? false,
         },
     };
