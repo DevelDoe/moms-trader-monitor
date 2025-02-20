@@ -406,7 +406,7 @@ function getScoreBreakdown(ticker) {
     }
 
     // ✅ Bonus: 5 points per million in volume
-    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 10;
+    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 2;
     if (volumeBonus > 0) {
         Score += volumeBonus;
         breakdown.push(`Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M): +${volumeBonus}`);
@@ -588,10 +588,10 @@ function getBonusesHTML(ticker) {
         tooltipText.push("V: Low Volume (<300K)");
     }
 
-    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 10;
+    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 2;
     if (volumeBonus > 0) {
         bonuses.push(`<span class="bonus high-volume no-drag">V${Math.floor(volumeValue / 1_000_000)}</span>`);
-        tooltipText.push(`V+: Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M)`);
+        tooltipText.push(`V: Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M)`);
     }
 
     if (bonuses.length === 0) {
