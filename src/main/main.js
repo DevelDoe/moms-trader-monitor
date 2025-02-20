@@ -528,24 +528,25 @@ if (!isDevelopment || forceUpdate) {
     });
     const { exec } = require("child_process");
 
-    function updateShortcutIcon() {
-        const shortcutPath = path.join(process.env.APPDATA, "Microsoft", "Windows", "Start Menu", "Programs", "YourAppName.lnk");
-        const iconPath = path.join(__dirname, "build", "icon.ico");
-
-        const command = `powershell -Command "& {(New-Object -ComObject WScript.Shell).CreateShortcut('${shortcutPath}').IconLocation = '${iconPath}'}"`;
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                console.error("Error updating shortcut icon:", error);
-            } else {
-                console.log("Shortcut icon updated successfully");
-            }
-        });
-    }
-
+    
     autoUpdater.on("update-downloaded", () => {
         updateShortcutIcon();
     });
 } else {
     log.log("Skipping auto-updates in development mode");
+}
+
+function updateShortcutIcon() {
+    const shortcutPath = path.join(process.env.APPDATA, "Microsoft", "Windows", "Start Menu", "Programs", "YourAppName.lnk");
+    const iconPath = path.join(__dirname, "build", "icon.ico");
+
+    const command = `powershell -Command "& {(New-Object -ComObject WScript.Shell).CreateShortcut('${shortcutPath}').IconLocation = '${iconPath}'}"`;
+
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error("Error updating shortcut icon:", error);
+        } else {
+            console.log("Shortcut icon updated successfully");
+        }
+    });
 }
