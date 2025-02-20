@@ -583,7 +583,7 @@ function getBonusesHTML(ticker) {
         tooltipText.push("V: Low Volume (<300K)");
     }
 
-    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 5;
+    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 10;
     if (volumeBonus > 0) {
         bonuses.push(`<span class="bonus high-volume no-drag">V${Math.floor(volumeValue / 1_000_000)}</span>`);
         tooltipText.push(`V+: Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M)`);
