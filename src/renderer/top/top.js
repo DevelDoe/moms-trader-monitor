@@ -227,9 +227,18 @@ function updateTickersTable(tickers, tableId, prevTickers) {
             } else if (key === "Bonuses") {
                 // ✅ Insert dynamically styled bonus symbols
                 cell.innerHTML = getBonusesHTML(ticker);
-            } else {
-                let value = ticker[key];
+            } else if (key === "News") {
+                let blockList = window.settings.news?.blockList || [];
+                let filteredNews = [];
 
+                if (Array.isArray(ticker.News) && ticker.News.length > 0) {
+                    filteredNews = ticker.News.filter((newsItem) => {
+                        const headline = newsItem.headline || ""; // Ensure headline is a string
+                        const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+                        return !isBlocked; // Keep only non-blocked headlines
+                    });
+                }
+                
                 if (Array.isArray(value)) {
                     value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
                 } else if (typeof value === "object" && value !== null) {
@@ -237,6 +246,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 } else if (value === undefined || value === null) {
                     value = "-"; // ✅ Show dash for missing values
                 }
+            } else {
+                let value = ticker[key];
 
                 cell.textContent = value;
             }
@@ -311,7 +322,6 @@ function calculateScore(ticker) {
 
     if (ticker.HighOfDay) Score += 20;
 
-    
     let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
     if (Array.isArray(ticker.News) && ticker.News.length > 0) {
