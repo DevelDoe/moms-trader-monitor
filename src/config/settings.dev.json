@@ -2,7 +2,7 @@
   "top": {
     "transparent": false,
     "minPrice": 0,
-    "maxPrice": 1000,
+    "maxPrice": 2,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -45,24 +45,10 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "EFOI",
       "MNDR",
-      "ATYR",
       "SPGC",
       "TRUG",
-      "BSLK",
-      "AMD",
-      "SMCI",
-      "MRK",
-      "AAPL",
-      "MSFT",
-      "LRCX",
-      "TSLA",
-      "XOM",
-      "CCL",
-      "ORCL",
-      "GOOGL",
-      "DELL"
+      "BSLK"
     ],
     "blockList": [],
     "goodList": [],
