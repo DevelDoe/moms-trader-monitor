@@ -45,12 +45,13 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "XOS",
       "CYCU",
-      "MCVT",
+      "XOS",
       "WOK",
+      "MCVT",
       "EFOI",
-      "ATYR"
+      "ATYR",
+      "LAES"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days"
