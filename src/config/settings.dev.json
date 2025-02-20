@@ -37,7 +37,7 @@
         "News": false,
         "Count": false,
         "Score": true,
-        "Bonuses": false,
+        "Bonuses": true,
         "length": 4
       }
     }
