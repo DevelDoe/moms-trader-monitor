@@ -231,12 +231,21 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 let value = ticker[key];
                 // ✅ Check if the headline contains blocklisted words/phrases
                 let blockList = window.settings.news?.blockList || [];
-                console.log("key: ",ticker[key])
+                console.log("value: ", value);
 
                 if (value.length > 0) {
-
+                    let blockList = window.settings.news?.blockList || [];
+                    let filteredNews = [];
+                    
+                    filteredNews = value.filter((newsItem) => {
+                        const headline = newsItem.headline || ""; // Ensure headline is a string
+                        const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+                        return !isBlocked; // Keep only non-blocked headlines
+                    });
+                    
                 }
-                const isBlocked = blockList.some((blockedWord) => key.toLowerCase().includes(blockedWord.toLowerCase()));
+
+                
 
                 if (!isBlocked) {
                     value = value.length > 0 ? `📰` : "-";
