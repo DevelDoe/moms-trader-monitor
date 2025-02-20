@@ -236,6 +236,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 } else if (value === undefined || value === null) {
                     value = "-"; // ✅ Show dash for missing values
                 }
+                cell.textContent = value;
             } else {
                 let value = ticker[key];
 
