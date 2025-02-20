@@ -1,4 +1,4 @@
-// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹📡📊🔧📢🚨 
+// ./src/main/main.js 🚀❌🛑⏳🟢💾📡⚠️✅🌐🛠️🔄📩🧹📡📊🔧📢🚨
 ////////////////////////////////////////////////////////////////////////////////////
 // INIT
 const createLogger = require("../hlps/logger");
@@ -109,8 +109,8 @@ const DEFAULT_SETTINGS = {
         blockList: [],
         goodList: [],
         badList: [],
-        allowMultiSymbols: false
-    }
+        allowMultiSymbols: false,
+    },
 };
 
 // 🛠️ **Function to check if it's a fresh install**
@@ -222,7 +222,7 @@ function saveSettings(settingsToSave = appSettings) {
 }
 
 // Assign loaded settings to `appSettings`
-appSettings = loadSettings(); 
+appSettings = loadSettings();
 ////////////////////////////////////////////////////////////////////////////////////
 // IPC COMM
 
@@ -380,11 +380,11 @@ ipcMain.on("toggle-news", () => {
 });
 
 ipcMain.on("set-window-bounds", (event, bounds) => {
-    if (windows.news) { // Use windows.news instead of window.news
+    if (windows.news) {
+        // Use windows.news instead of window.news
         windows.news.setBounds(bounds);
     }
 });
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
@@ -394,8 +394,6 @@ app.on("ready", () => {
 
     // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
-
-   
 
     windows.splash.once("closed", () => {
         log.log("Splash screen closed. Loading main app...");
@@ -443,14 +441,14 @@ if (!isDevelopment) {
 
     autoUpdater.on("update-available", (info) => {
         log.log(`🔔 Update found: ${info.version}`);
-    
+
         // ✅ Close splash screen if it's still open
         if (windows.splash && !windows.splash.isDestroyed()) {
             log.log("Closing splash screen before starting update...");
             windows.splash.close();
             delete windows.splash; // ✅ Ensure reference is removed
         }
-    
+
         if (appSettings.hasDonated) {
             // 🛠 If user has donated, let them decide
             dialog
@@ -474,7 +472,6 @@ if (!isDevelopment) {
             autoUpdater.downloadUpdate();
         }
     });
-    
 
     autoUpdater.on("update-not-available", () => {
         log.log("No update available.");
@@ -513,6 +510,26 @@ if (!isDevelopment) {
             log.log("User hasn't donated, installing update now...");
             autoUpdater.quitAndInstall();
         }
+    });
+    const { exec } = require("child_process");
+
+    function updateShortcutIcon() {
+        const shortcutPath = path.join(process.env.APPDATA, "Microsoft", "Windows", "Start Menu", "Programs", "YourAppName.lnk");
+        const iconPath = path.join(__dirname, "build", "icon.ico");
+
+        const command = `powershell -Command "& {(New-Object -ComObject WScript.Shell).CreateShortcut('${shortcutPath}').IconLocation = '${iconPath}'}"`;
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error("Error updating shortcut icon:", error);
+            } else {
+                console.log("Shortcut icon updated successfully");
+            }
+        });
+    }
+
+    autoUpdater.on("update-downloaded", () => {
+        updateShortcutIcon();
     });
 } else {
     log.log("Skipping auto-updates in development mode");
