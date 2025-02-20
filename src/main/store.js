@@ -3,7 +3,6 @@ const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews } = require("./collectors/news"); // ✅ Ensure correct import
 
-
 class Store extends EventEmitter {
     constructor() {
         super();
@@ -55,14 +54,11 @@ class Store extends EventEmitter {
             }
         });
 
-        // ✅ Fetch news for newly added tickers only
-        if (newTickers.length > 0) {
-            log.log(`[store.js] 🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
+        log.log(`[store.js] 🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
 
-            newTickers.forEach((ticker) => {
-                fetchHistoricalNews(ticker);
-            });
-        }
+        newTickers.forEach((ticker) => {
+            fetchHistoricalNews(ticker);
+        });
 
         this.emit("update");
     }
