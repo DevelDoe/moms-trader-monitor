@@ -44,19 +44,7 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [
-      "JTAI",
-      "HLF",
-      "EFOI",
-      "XHLD",
-      "MNDR",
-      "SPGC",
-      "BSLK",
-      "PRPH",
-      "EDIT",
-      "ALT",
-      "FATE"
-    ],
+    "filteredTickers": [],
     "blockList": [],
     "goodList": [],
     "badList": [],
