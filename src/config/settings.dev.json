@@ -68,6 +68,6 @@
       "Takeover",
       "Sell Alert"
     ],
-    "allowMultiSymbols": false
+    "allowMultiSymbols": true
   }
 }
