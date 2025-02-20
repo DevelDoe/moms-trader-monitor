@@ -1,6 +1,6 @@
 {
     "name": "Moms-Trader-Monitor",
-    "version": "0.7.6",
+    "version": "0.7.7",
     "description": "Moms Traders Monitor is a tool designed to track high-potential stocks in real-time, using automated web scraping and scoring to identify actionable trade opportunities.",
     "main": "src/main/main.js",
     "scripts": {
@@ -16,10 +16,10 @@
     "dependencies": {
         "dotenv": "^16.4.7",
         "electron-updater": "^6.3.9",
-        "node-fetch": "^3.3.2",
         "puppeteer": "^24.2.0",
         "puppeteer-extra": "^3.3.6",
-        "puppeteer-extra-plugin-stealth": "^2.11.2"
+        "puppeteer-extra-plugin-stealth": "^2.11.2",
+        "undici": "^7.3.0"
     },
     "devDependencies": {
         "concurrently": "^8.2.1",

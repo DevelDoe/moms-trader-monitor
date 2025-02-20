@@ -85,8 +85,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         window.settingsAPI.onAttributesUpdate(async () => {
             console.log("🔔 New attributes detected! Refreshing settings...");
+
+            // 🔄 Reload the latest settings before updating the UI
+            window.settings = await window.settingsAPI.get();
+            console.log("🔄 Updated global settings:", window.settings);
+
+            // ✅ Reload and apply attribute filters
             await loadAttributeFilters("session", "session-filters");
             await loadAttributeFilters("daily", "daily-filters");
+
+            // ✅ Ensure settings apply correctly in UI
+            initializeTopSection();
+            initializeNewsSection();
+
+            // ✅ If there are UI elements that need a manual refresh, re-render them here
+            document.getElementById("session-filters").innerHTML = ""; // Clear old checkboxes
+            document.getElementById("daily-filters").innerHTML = ""; // Clear old checkboxes
+
+            await loadAttributeFilters("session", "session-filters");
+            await loadAttributeFilters("daily", "daily-filters");
+
+            console.log("✅ UI Updated after attributes change!");
         });
 
         const defaultTab = document.querySelector(".tablinks.active");
@@ -185,127 +204,133 @@ function initializeTopSection() {
         dailyLength: dailyLengthInput.value,
     });
 
-    function updatePriceFilter() {
-        let newMinPrice = parseFloat(minPriceInput.value) || 0;
-        let newMaxPrice = parseFloat(maxPriceInput.value) || 0;
+    async function updatePriceFilter() {
+        try {
+            const latestSettings = await window.settingsAPI.get();
 
-        // ✅ Preserve existing float and score filters
-        let currentMinFloat = parseFloat(minFloatInput.value) || 0;
-        let currentMaxFloat = parseFloat(maxFloatInput.value) || 0;
-        let currentMinScore = parseFloat(minScoreInput.value) || 0;
-        let currentMaxScore = parseFloat(maxScoreInput.value) || 0;
-        let currentMinVolume = parseFloat(minVolumeInput.value) || 0;
-        let currentMaxVolume = parseFloat(maxVolumeInput.value) || 0;
+            if (!latestSettings || !latestSettings.top) {
+                console.error("❌ Failed to fetch latest settings. Skipping update.");
+                return;
+            }
 
-        const updatedSettings = {
-            ...window.settings.top,
-            minPrice: newMinPrice,
-            maxPrice: newMaxPrice,
-            minFloat: currentMinFloat,
-            maxFloat: currentMaxFloat,
-            minScore: currentMinScore,
-            maxScore: currentMaxScore,
-            minVolume: currentMinVolume,
-            maxVolume: currentMaxVolume,
-        };
+            const newSettings = {
+                ...latestSettings,
+                top: {
+                    ...latestSettings.top,
+                    minPrice: parseFloat(document.getElementById("min-price").value) || 0,
+                    maxPrice: parseFloat(document.getElementById("max-price").value) || 0,
+                },
+            };
 
-        console.log("Updated price filter with preserved float and score settings:", updatedSettings);
-        applyAllFilters(updatedSettings);
+            await window.settingsAPI.update(newSettings);
+        } catch (error) {
+            console.error("❌ Error updating Price filter:", error);
+        }
     }
 
-    function updateVolumeFilter() {
-        let newMinVolume = parseFloat(minVolumeInput.value) || 0;
-        let newMaxVolume = parseFloat(maxVolumeInput.value) || 0;
+    async function updateVolumeFilter() {
+        try {
+            const latestSettings = await window.settingsAPI.get();
+            if (!latestSettings || !latestSettings.top) {
+                console.error("❌ Failed to fetch latest settings. Skipping update.");
+                return;
+            }
 
-        // ✅ Preserve existing price and score filters
-        let currentMinPrice = parseFloat(minPriceInput.value) || 0;
-        let currentMaxPrice = parseFloat(maxPriceInput.value) || 0;
-        let currentMinScore = parseFloat(minScoreInput.value) || 0;
-        let currentMaxScore = parseFloat(maxScoreInput.value) || 0;
-        let currentMinFloat = parseFloat(minFloatInput.value) || 0;
-        let currentMaxFloat = parseFloat(maxFloatInput.value) || 0;
+            let newMinVolume = parseFloat(document.getElementById("min-volume").value) || 0;
+            let newMaxVolume = parseFloat(document.getElementById("max-volume").value) || 0;
 
-        const updatedSettings = {
-            ...window.settings.top,
-            minVolume: newMinVolume,
-            maxVolume: newMaxVolume,
-            minPrice: currentMinPrice,
-            maxPrice: currentMaxPrice,
-            minScore: currentMinScore,
-            maxScore: currentMaxScore,
-            minFloat: currentMinFloat,
-            maxFloat: currentMaxFloat,
-        };
+            const newSettings = {
+                ...latestSettings,
+                top: {
+                    ...latestSettings.top,
+                    minVolume: newMinVolume,
+                    maxVolume: newMaxVolume,
+                },
+            };
 
-        console.log("Updated float filter with preserved price and score settings:", updatedSettings);
-        applyAllFilters(updatedSettings);
+            console.log("✅ Saving updated Volume filter:", newSettings);
+            await window.settingsAPI.update(newSettings);
+        } catch (error) {
+            console.error("❌ Error updating Volume filter:", error);
+        }
     }
 
-    function updateFloatFilter() {
-        let newMinFloat = parseFloat(minFloatInput.value) || 0;
-        let newMaxFloat = parseFloat(maxFloatInput.value) || 0;
+    async function updateFloatFilter() {
+        try {
+            const latestSettings = await window.settingsAPI.get();
+            if (!latestSettings || !latestSettings.top) {
+                console.error("❌ Failed to fetch latest settings. Skipping update.");
+                return;
+            }
 
-        // ✅ Preserve existing price and score filters
-        let currentMinPrice = parseFloat(minPriceInput.value) || 0;
-        let currentMaxPrice = parseFloat(maxPriceInput.value) || 0;
-        let currentMinScore = parseFloat(minScoreInput.value) || 0;
-        let currentMaxScore = parseFloat(maxScoreInput.value) || 0;
-        let currentMinVolume = parseFloat(minVolumeInput.value) || 0;
-        let currentMaxVolume = parseFloat(maxVolumeInput.value) || 0;
+            let newMinFloat = parseFloat(document.getElementById("min-float").value) || 0;
+            let newMaxFloat = parseFloat(document.getElementById("max-float").value) || 0;
 
-        const updatedSettings = {
-            ...window.settings.top,
-            minFloat: newMinFloat,
-            maxFloat: newMaxFloat,
-            minPrice: currentMinPrice,
-            maxPrice: currentMaxPrice,
-            minScore: currentMinScore,
-            maxScore: currentMaxScore,
-            minVolume: currentMinVolume,
-            maxVolume: currentMaxVolume,
-        };
+            const newSettings = {
+                ...latestSettings,
+                top: {
+                    ...latestSettings.top,
+                    minFloat: newMinFloat,
+                    maxFloat: newMaxFloat,
+                },
+            };
 
-        console.log("Updated float filter with preserved price and score settings:", updatedSettings);
-        applyAllFilters(updatedSettings);
+            console.log("✅ Saving updated Float filter:", newSettings);
+            await window.settingsAPI.update(newSettings);
+        } catch (error) {
+            console.error("❌ Error updating Float filter:", error);
+        }
     }
 
-    function updateScoreFilter() {
-        let newMinScore = parseFloat(minScoreInput.value) || 0;
-        let newMaxScore = parseFloat(maxScoreInput.value) || 0;
+    async function updateScoreFilter() {
+        try {
+            const latestSettings = await window.settingsAPI.get();
+            if (!latestSettings || !latestSettings.top) {
+                console.error("❌ Failed to fetch latest settings. Skipping update.");
+                return;
+            }
 
-        // ✅ Preserve existing price and float filters
-        let currentMinPrice = parseFloat(minPriceInput.value) || 0;
-        let currentMaxPrice = parseFloat(maxPriceInput.value) || 0;
-        let currentMinFloat = parseFloat(minFloatInput.value) || 0;
-        let currentMaxFloat = parseFloat(maxFloatInput.value) || 0;
-        let currentMinVolume = parseFloat(minVolumeInput.value) || 0;
-        let currentMaxVolume = parseFloat(maxVolumeInput.value) || 0;
+            let newMinScore = parseFloat(document.getElementById("min-score").value) || 0;
+            let newMaxScore = parseFloat(document.getElementById("max-score").value) || 0;
 
-        const updatedSettings = {
-            ...window.settings.top,
-            minScore: newMinScore,
-            maxScore: newMaxScore,
-            minPrice: currentMinPrice,
-            maxPrice: currentMaxPrice,
-            minFloat: currentMinFloat,
-            maxFloat: currentMaxFloat,
-            minVolume: currentMinVolume,
-            maxVolume: currentMaxVolume,
-        };
+            const newSettings = {
+                ...latestSettings,
+                top: {
+                    ...latestSettings.top,
+                    minScore: newMinScore,
+                    maxScore: newMaxScore,
+                },
+            };
 
-        console.log("Updated score filter with preserved price and float settings:", updatedSettings);
-        applyAllFilters(updatedSettings);
+            console.log("✅ Saving updated Score filter:", newSettings);
+            await window.settingsAPI.update(newSettings);
+        } catch (error) {
+            console.error("❌ Error updating Score filter:", error);
+        }
     }
 
-    function updateTransparency() {
-        const updatedSettings = {
-            ...window.settings.top,
-            transparent: topTransparentToggle.checked,
-        };
+    async function updateTransparency() {
+        try {
+            const latestSettings = await window.settingsAPI.get();
+            if (!latestSettings || !latestSettings.top) {
+                console.error("❌ Failed to fetch latest settings.");
+                return;
+            }
 
-        console.log("Updated transparency setting:", updatedSettings);
-        window.settingsAPI.update({ top: updatedSettings });
-        window.topAPI.refresh(); // ✅ Refresh top window UI
+            const newSettings = {
+                ...latestSettings, // ✅ Spread entire settings
+                top: {
+                    ...latestSettings.top, // ✅ Preserve other top settings
+                    transparent: topTransparentToggle.checked, // ✅ Update only transparency
+                },
+            };
+
+            await window.settingsAPI.update(newSettings);
+            console.log("✅ Updated transparency setting:", newSettings.top);
+            window.topAPI.refresh(); // ✅ Refresh UI
+        } catch (error) {
+            console.error("❌ Error updating transparency:", error);
+        }
     }
 
     async function updateListLength(type, input) {
@@ -314,29 +339,32 @@ function initializeTopSection() {
         try {
             // 🔄 Get latest settings before making changes
             const latestSettings = await window.settingsAPI.get();
-
             if (!latestSettings || !latestSettings.top) {
                 console.error("❌ Latest settings not found! Skipping update.");
                 return;
             }
 
             // ✅ Preserve all previous attributes while updating length
-            const updatedSettings = {
-                ...latestSettings.top,
-                lists: {
-                    ...latestSettings.top.lists,
-                    [type]: {
-                        ...latestSettings.top.lists?.[type], // Preserve existing checkboxes
-                        length: newLength, // Only update length
+            const newSettings = {
+                ...latestSettings, // ✅ Keep all settings
+                top: {
+                    ...latestSettings.top, // ✅ Preserve all top settings
+                    lists: {
+                        ...latestSettings.top.lists, // ✅ Preserve all list types
+                        [type]: {
+                            ...latestSettings.top.lists?.[type], // ✅ Preserve existing attributes
+                            length: newLength, // ✅ Only update length
+                        },
                     },
                 },
             };
 
             console.log(`✅ Updated ${type} list length:`, newLength);
 
-            // ✅ Save updated settings & apply filters
-            await window.settingsAPI.update({ top: updatedSettings });
-            applyAllFilters(updatedSettings);
+            // ✅ Save settings correctly
+            await window.settingsAPI.update(newSettings);
+
+            console.log("✅ Settings successfully updated:", newSettings);
         } catch (error) {
             console.error("❌ Error updating list length:", error);
         }
@@ -354,20 +382,6 @@ function initializeTopSection() {
     topTransparentToggle.addEventListener("change", updateTransparency);
     sessionLengthInput.addEventListener("input", () => updateListLength("session", sessionLengthInput));
     dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
-
-    console.log("✅ Applied topSettings:", {
-        minPrice: minPriceInput.value,
-        maxPrice: maxPriceInput.value,
-        minVolume: minVolumeInput.value,
-        maxVolume: maxVolumeInput.value,
-        minFloat: minFloatInput.value,
-        maxFloat: maxFloatInput.value,
-        minScore: minScoreInput.value,
-        maxScore: maxScoreInput.value,
-        transparent: topTransparentToggle.checked,
-        sessionLength: sessionLengthInput.value,
-        dailyLength: dailyLengthInput.value,
-    });
 }
 
 async function loadAttributeFilters(listType, containerId) {
@@ -397,7 +411,7 @@ async function loadAttributeFilters(listType, containerId) {
             checkbox.checked = selectedFilters[attr];
 
             checkbox.addEventListener("change", () => {
-                updateFilters(window.settings); // Update filters as usual
+                updateAttributeFilters(window.settings); // Update filters as usual
             });
 
             label.appendChild(checkbox);
@@ -411,84 +425,41 @@ async function loadAttributeFilters(listType, containerId) {
     }
 }
 
-async function updateFilters() {
-    if (!window.settings || !window.settings.top) {
-        console.error("❌ `settings.top` is missing! Skipping update.");
-        return;
-    }
-
+async function updateAttributeFilters() {
     try {
-        // 🔄 Fetch latest settings to ensure we don’t overwrite existing values
+        console.log("🔄 Fetching latest settings before updating filters...");
         const latestSettings = await window.settingsAPI.get();
-        if (!latestSettings || !latestSettings.top) {
-            console.error("❌ Latest settings not found! Skipping update.");
+        if (!latestSettings || !latestSettings.top || !latestSettings.news) {
+            console.error("❌ Failed to fetch latest settings. Skipping update.");
             return;
         }
 
-        // ✅ Preserve previous attributes and merge with updates
-        const updatedSettings = {
-            ...latestSettings,  // Preserve top-level settings
-            top: {
-                ...latestSettings.top,  // Preserve all existing top settings
-                lists: {
-                    session: {
-                        ...latestSettings.top.lists?.session, // Keep session settings
-                        length: latestSettings.top.lists?.session?.length ?? 10
-                    },
-                    daily: {
-                        ...latestSettings.top.lists?.daily, // Keep daily settings
-                        length: latestSettings.top.lists?.daily?.length ?? 10
-                    }
-                }
+        // ✅ Preserve all previous lists while updating checkboxes
+        const updatedLists = {
+            ...latestSettings.top.lists,
+            session: {
+                ...latestSettings.top.lists.session,
+                ...Object.fromEntries(Array.from(document.querySelectorAll("input[name='session']")).map((checkbox) => [checkbox.value, checkbox.checked])),
             },
-            news: {
-                ...latestSettings.news, // Keep news settings
-                blockList: [...(latestSettings.news?.blockList || [])], // Ensure lists persist
-                goodList: [...(latestSettings.news?.goodList || [])],
-                badList: [...(latestSettings.news?.badList || [])],
-            }
+            daily: {
+                ...latestSettings.top.lists.daily,
+                ...Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+            },
         };
 
-        // ✅ Capture new attribute selections without wiping lengths
-        document.querySelectorAll("input[name='session']").forEach((checkbox) => {
-            updatedSettings.top.lists.session[checkbox.value] = checkbox.checked;
-        });
+        // ✅ Spread everything and only update `lists`
+        const newSettings = {
+            ...latestSettings,
+            top: {
+                ...latestSettings.top,
+                lists: updatedLists,
+            },
+        };
 
-        document.querySelectorAll("input[name='daily']").forEach((checkbox) => {
-            updatedSettings.top.lists.daily[checkbox.value] = checkbox.checked;
-        });
-
-        console.log("💾 Saving updated filters (attributes + length preserved):", updatedSettings);
-
-        // ✅ Save settings and apply changes
-        await window.settingsAPI.update(updatedSettings);
-        applyAllFilters(updatedSettings.top);
+        console.log("💾 Saving updated filters:", newSettings);
+        await window.settingsAPI.update(newSettings);
     } catch (error) {
-        console.error("Error updating filters:", error);
-    }
-}
-
-
-function applyAllFilters(updatedTopSettings) {
-    console.log("Applying filters");
-
-    // ✅ Ensure all filters persist
-    updatedTopSettings.minPrice = updatedTopSettings.minPrice ?? window.settings.top.minPrice;
-    updatedTopSettings.maxPrice = updatedTopSettings.maxPrice ?? window.settings.top.maxPrice;
-    updatedTopSettings.minFloat = updatedTopSettings.minFloat ?? window.settings.top.minFloat;
-    updatedTopSettings.maxFloat = updatedTopSettings.maxFloat ?? window.settings.top.maxFloat;
-    updatedTopSettings.minScore = updatedTopSettings.minScore ?? window.settings.top.minScore;
-    updatedTopSettings.maxScore = updatedTopSettings.maxScore ?? window.settings.top.maxScore;
-    updatedTopSettings.minVolume = updatedTopSettings.minVolume ?? window.settings.top.minVolume;
-    updatedTopSettings.maxVolume = updatedTopSettings.maxVolume ?? window.settings.top.maxVolume;
-
-    // ✅ Update settings in UI
-    window.settingsAPI.update({ top: updatedTopSettings });
-
-    if (window.topAPI.applyFilters) {
-        window.topAPI.applyFilters(updatedTopSettings); // ✅ Send everything
-    } else {
-        console.warn("⚠️ window.topAPI.applyFilters is not defined!");
+        console.error("❌ Error updating filters:", error);
     }
 }
 
@@ -502,7 +473,7 @@ function toggleAll(listType, state) {
         checkbox.checked = state;
     });
 
-    updateFilters(window.settings); // ✅ Pass the updated settings object
+    updateAttributeFilters(); // ✅ Remove argument (fetches latest settings itself)
 }
 
 /**
@@ -510,16 +481,8 @@ function toggleAll(listType, state) {
  */
 function initializeNewsSection() {
     if (!window.settings.news) {
-        console.warn("⚠️ `window.settings.news` was missing, initializing default values.");
         window.settings.news = { blockList: [], goodList: [], badList: [], allowMultiSymbols: true };
-    } else {
-        // ✅ Ensure each list exists before using it
-        window.settings.news.blockList = window.settings.news.blockList || [];
-        window.settings.news.goodList = window.settings.news.goodList || [];
-        window.settings.news.badList = window.settings.news.badList || [];
     }
-
-    console.log("🔍 Checking loaded news settings:", window.settings.news);
 
     console.log("🔍 Checking loaded news settings:", window.settings.news);
 
@@ -535,23 +498,60 @@ function initializeNewsSection() {
     showTrackedTickersToggle.checked = window.settings.news.showTrackedTickers ?? false;
     allowMultiSymbolsToggle.checked = window.settings.news.allowMultiSymbols ?? true;
 
-    // ✅ Save setting on toggle
+    // ✅ Save setting on toggle (using direct API update)
     showTrackedTickersToggle.addEventListener("change", async () => {
-        window.settings.news.showTrackedTickers = showTrackedTickersToggle.checked;
-        await saveSettings();
-        console.log("✅ Updated 'Show Only Tracked Tickers' setting:", showTrackedTickersToggle.checked);
+        try {
+            const latestSettings = await window.settingsAPI.get();
+            if (!latestSettings || !latestSettings.news) {
+                console.error("❌ Failed to fetch latest settings. Skipping update.");
+                return;
+            }
+
+            const newSettings = {
+                ...latestSettings, // Preserve all settings
+                news: {
+                    ...latestSettings.news, // Preserve other news settings
+                    showTrackedTickers: showTrackedTickersToggle.checked,
+                },
+            };
+
+            await window.settingsAPI.update(newSettings);
+            console.log("✅ Updated 'Show Only Tracked Tickers' setting:", showTrackedTickersToggle.checked);
+        } catch (error) {
+            console.error("❌ Error updating 'Show Only Tracked Tickers' setting:", error);
+        }
     });
 
     allowMultiSymbolsToggle.addEventListener("change", async () => {
-        window.settings.news.allowMultiSymbols = allowMultiSymbolsToggle.checked;
-        await saveSettings();
-        console.log("✅ Updated 'Allow Multi-Symbol Headlines' setting:", allowMultiSymbolsToggle.checked);
+        try {
+            const latestSettings = await window.settingsAPI.get();
+            if (!latestSettings || !latestSettings.news) {
+                console.error("❌ Failed to fetch latest settings. Skipping update.");
+                return;
+            }
+
+            const newSettings = {
+                ...latestSettings, // Preserve all settings
+                news: {
+                    ...latestSettings.news, // Preserve other news settings
+                    allowMultiSymbols: allowMultiSymbolsToggle.checked,
+                },
+            };
+
+            await window.settingsAPI.update(newSettings);
+            console.log("✅ Updated 'Allow Multi-Symbol Headlines' setting:", allowMultiSymbolsToggle.checked);
+        } catch (error) {
+            console.error("❌ Error updating 'Allow Multi-Symbol Headlines' setting:", error);
+        }
     });
 
     // ✅ Initialize keyword management
     setupKeywordManagement();
 }
 
+/**
+ * ✅ Handles adding and removing keywords for BlockList, GoodList, and BadList
+ */
 /**
  * ✅ Handles adding and removing keywords for BlockList, GoodList, and BadList
  */
@@ -564,100 +564,110 @@ function setupKeywordManagement() {
     const goodListEl = document.getElementById("good-list");
     const badListEl = document.getElementById("bad-list");
 
-    function updateLists() {
-        renderList(blockListEl, window.settings.news.blockList);
-        renderList(goodListEl, window.settings.news.goodList);
-        renderList(badListEl, window.settings.news.badList);
+    function updateLists(updatedSettings) {
+        // 🔄 Use the latest settings (avoid stale data)
+        const settings = updatedSettings || window.settings;
+
+        renderList(blockListEl, settings.news.blockList, "blockList");
+        renderList(goodListEl, settings.news.goodList, "goodList");
+        renderList(badListEl, settings.news.badList, "badList");
     }
 
-    function renderList(element, items) {
+    function renderList(element, items, listType) {
         if (!Array.isArray(items)) {
             console.error(`❌ Expected an array but got:`, items);
             items = []; // Fallback to an empty array
         }
-    
-        element.innerHTML = "";
-        items.forEach((keyword, index) => {
+
+        element.innerHTML = ""; // Clear previous UI
+        items.forEach((keyword) => {
             const li = document.createElement("li");
             li.textContent = keyword;
-    
+
             // ✅ Remove button for each keyword
             const removeBtn = document.createElement("button");
             removeBtn.textContent = "X";
             removeBtn.addEventListener("click", async () => {
-                items.splice(index, 1);
-                await saveSettings();
-                updateLists();
+                try {
+                    const latestSettings = await window.settingsAPI.get();
+                    if (!latestSettings || !latestSettings.news) {
+                        console.error("❌ Failed to fetch latest settings. Skipping update.");
+                        return;
+                    }
+
+                    // ✅ Remove the keyword by filtering (prevents index issues)
+                    const updatedList = latestSettings.news[listType].filter((item) => item !== keyword);
+
+                    // ✅ Preserve all other settings while updating only the target list
+                    const updatedSettings = {
+                        ...latestSettings,
+                        news: {
+                            ...latestSettings.news,
+                            [listType]: updatedList,
+                        },
+                    };
+
+                    await window.settingsAPI.update(updatedSettings);
+
+                    // ✅ Keep local state updated
+                    window.settings = updatedSettings;
+
+                    // ✅ Update UI with the latest settings
+                    updateLists(updatedSettings);
+
+                    console.log(`✅ Removed keyword "${keyword}" from ${listType}`);
+                } catch (error) {
+                    console.error(`❌ Error removing keyword "${keyword}":`, error);
+                }
             });
-    
+
             li.appendChild(removeBtn);
             element.appendChild(li);
         });
     }
-    
 
     // ✅ Add new keyword to the selected list
     addKeywordBtn.addEventListener("click", async () => {
         const keyword = keywordInput.value.trim();
         if (!keyword) return;
 
-        const listType = keywordType.value;
+        try {
+            const latestSettings = await window.settingsAPI.get();
+            if (!latestSettings || !latestSettings.news) {
+                console.error("❌ Failed to fetch latest settings. Skipping update.");
+                return;
+            }
 
-        if (!window.settings.news[listType].includes(keyword)) {
-            window.settings.news[listType].push(keyword);
-            await saveSettings();
-            updateLists();
+            const listType = keywordType.value;
+
+            if (!latestSettings.news[listType].includes(keyword)) {
+                // ✅ Add keyword and preserve other settings
+                const updatedSettings = {
+                    ...latestSettings,
+                    news: {
+                        ...latestSettings.news,
+                        [listType]: [...latestSettings.news[listType], keyword],
+                    },
+                };
+
+                await window.settingsAPI.update(updatedSettings);
+
+                // ✅ Keep local state updated
+                window.settings = updatedSettings;
+
+                // ✅ Update UI with the latest settings
+                updateLists(updatedSettings);
+
+                console.log(`✅ Added keyword "${keyword}" to ${listType}`);
+            }
+        } catch (error) {
+            console.error(`❌ Error adding keyword "${keyword}":`, error);
         }
 
         keywordInput.value = ""; // Clear input field
     });
 
-    // ✅ Initialize UI with existing data
+    // ✅ Initialize UI with the latest data
     updateLists();
-}
-
-/**
- * ✅ Saves updated settings globally
- */
-async function saveSettings(updatedSettings = {}) {
-    try {
-        // 🔄 Fetch the latest settings first to prevent overwriting
-        const latestSettings = await window.settingsAPI.get();
-        if (!latestSettings) {
-            console.error("❌ Error fetching latest settings, using defaults.");
-            latestSettings = { ...DEFAULT_SETTINGS };
-        }
-
-        // ✅ Merge the updated settings while preserving existing values
-        const mergedSettings = {
-            ...latestSettings, // Preserve everything
-            top: {
-                ...latestSettings.top, // Preserve top filters
-                ...updatedSettings.top, // Apply top updates if any
-                lists: {
-                    session: {
-                        ...latestSettings.top?.lists?.session,
-                        ...updatedSettings.top?.lists?.session,
-                    },
-                    daily: {
-                        ...latestSettings.top?.lists?.daily,
-                        ...updatedSettings.top?.lists?.daily,
-                    }
-                }
-            },
-            news: {
-                ...latestSettings.news, // Preserve news filters
-                ...updatedSettings.news, // Apply news updates if any
-                blockList: [...(updatedSettings.news?.blockList || latestSettings.news?.blockList || [])],
-                goodList: [...(updatedSettings.news?.goodList || latestSettings.news?.goodList || [])],
-                badList: [...(updatedSettings.news?.badList || latestSettings.news?.badList || [])]
-            }
-        };
-
-        console.log("💾 Merged settings before saving:", mergedSettings);
-        await window.settingsAPI.update(mergedSettings);
-    } catch (error) {
-        console.error("❌ Error saving settings:", error);
-    }
 }
 

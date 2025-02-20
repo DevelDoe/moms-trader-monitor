@@ -4,7 +4,8 @@ const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 const dotenv = require("dotenv");
 const path = require("path");
-const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
+const { fetch } = require("undici");
+
 
 dotenv.config({ path: path.join(__dirname, "../../config/.env.alpaca") });
 
@@ -88,11 +89,10 @@ const fetchHistoricalNews = async (ticker) => {
     const midnight = new Date();
     midnight.setHours(0, 0, 0, 0);
     const start = encodeURIComponent(midnight.toISOString()); // ✅ Corrected from `since` to `start`
-    const encodedTicker = encodeURIComponent(ticker);  // ✅ Ensure ticker is properly encoded
+    const encodedTicker = encodeURIComponent(ticker); // ✅ Ensure ticker is properly encoded
 
     // ✅ Corrected API request - Uses `start` instead of `since`
-    const ALPACA_NEWS_URL = 
-        `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
+    const ALPACA_NEWS_URL = `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
 
     log.log(`Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
 
@@ -121,11 +121,6 @@ const fetchHistoricalNews = async (ticker) => {
         log.error(`❌ Error fetching historical news for ${ticker}:`, error.message);
     }
 };
-
-
-
-
-
 
 connectAlpacaNews();
 

@@ -10,8 +10,8 @@ let prevTickersDaily = {};
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
 
-    await applySavedFilters();
-    await fetchAndUpdateTickers();
+    await applySavedFilters(); // ✅ Apply saved settings before fetching data
+    await fetchAndUpdateTickers(); // ✅ Fetch tickers immediately on load
 
     addClearSessionButton();
 
@@ -21,22 +21,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         fetchAndUpdateTickers();
     });
 
+    // ✅ Listen for news updates (new articles)
     window.topAPI.onNewsUpdate(({ ticker, newsItems }) => {
         console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`);
         fetchAndUpdateTickers(); // ✅ Refresh tickers after receiving news
     });
 
-    // ✅ Listen for settings updates
+    // ✅ Listen for settings updates globally
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
 
-        // ✅ Update `window.settings`
+        // ✅ Sync new settings globally
         window.settings = updatedSettings;
 
+        // ✅ Re-apply filters & update UI
         await applySavedFilters();
         await fetchAndUpdateTickers();
+
+        // ✅ Refresh the active ticker UI
+        if (currentActiveTicker) {
+            updateActiveTicker(currentActiveTicker);
+        }
     });
 });
+
 
 async function fetchAndUpdateTickers() {
     try {
@@ -57,83 +65,38 @@ async function fetchAndUpdateTickers() {
 
         // ✅ Extract filters from settings
         const minPrice = window.settings.top?.minPrice ?? 0;
-        const maxPrice = window.settings.top?.maxPrice ?? 0; // 0 means no filter
-        console.log("Applying price filter:", { minPrice, maxPrice });
-
+        const maxPrice = window.settings.top?.maxPrice ?? 0;
         const minFloat = window.settings.top?.minFloat ?? 0;
-        const maxFloat = window.settings.top?.maxFloat ?? 0; // 0 means no filter
-        console.log("Applying float filter:", { minFloat, maxFloat });
-
+        const maxFloat = window.settings.top?.maxFloat ?? 0;
         const minScore = window.settings.top?.minScore ?? 0;
-        const maxScore = window.settings.top?.maxScore ?? 0; // 0 means no filter
-        console.log("Applying score filter:", { minScore, maxScore });
-
+        const maxScore = window.settings.top?.maxScore ?? 0;
         const minVolume = window.settings.top?.minVolume ?? 0;
-        const maxVolume = window.settings.top?.maxVolume ?? 0; // 0 means no filter
-        console.log("Applying volume filter:", { minVolume, maxVolume });
-
+        const maxVolume = window.settings.top?.maxVolume ?? 0;
         const maxSessionLength = window.settings.top?.lists?.session?.length ?? 10;
         const maxDailyLength = window.settings.top?.lists?.daily?.length ?? 10;
-        console.log("Applying list limits:", { session: maxSessionLength, daily: maxDailyLength });
 
-        console.log("✅ Checking Raw Data Before Filtering: ");
-        console.log("Session Data:", sessionData);
-        console.log("Daily Data:", dailyData);
+        console.log("Applying filters:", { minPrice, maxPrice, minFloat, maxFloat, minScore, maxScore, minVolume, maxVolume });
 
         // ✅ Apply filters to each dataset
-        const filteredSession = sessionData
-            .map((ticker) => ({
-                ...ticker,
-                Score: calculateScore(ticker),
-            }))
-            .filter(
-                (ticker) =>
-                    (minPrice === 0 || ticker.Price >= minPrice) &&
-                    (maxPrice === 0 || ticker.Price <= maxPrice) &&
-                    (minFloat === 0 || parseFloatValue(ticker.Float) >= minFloat) &&
-                    (maxFloat === 0 || parseFloatValue(ticker.Float) <= maxFloat) &&
-                    (minScore === 0 || ticker.Score >= minScore) &&
-                    (maxScore === 0 || ticker.Score <= maxScore) &&
-                    (minVolume === 0 || parseVolumeValue(ticker.Volume) >= minVolume) &&
-                    (maxVolume === 0 || parseVolumeValue(ticker.Volume) <= maxVolume)
-            )
-            .sort((a, b) => b.Score - a.Score);
+        const applyFilters = (data) =>
+            data
+                .map((ticker) => ({ ...ticker, Score: calculateScore(ticker) }))
+                .filter(
+                    (ticker) =>
+                        (minPrice === 0 || ticker.Price >= minPrice) &&
+                        (maxPrice === 0 || ticker.Price <= maxPrice) &&
+                        (minFloat === 0 || parseFloatValue(ticker.Float) >= minFloat) &&
+                        (maxFloat === 0 || parseFloatValue(ticker.Float) <= maxFloat) &&
+                        (minScore === 0 || ticker.Score >= minScore) &&
+                        (maxScore === 0 || ticker.Score <= maxScore) &&
+                        (minVolume === 0 || parseVolumeValue(ticker.Volume) >= minVolume) &&
+                        (maxVolume === 0 || parseVolumeValue(ticker.Volume) <= maxVolume)
+                )
+                .sort((a, b) => b.Score - a.Score);
 
-        const filteredDaily = dailyData
-            .map((ticker) => ({
-                ...ticker,
-                Score: calculateScore(ticker),
-            }))
-            .filter(
-                (ticker) =>
-                    (minPrice === 0 || ticker.Price >= minPrice) &&
-                    (maxPrice === 0 || ticker.Price <= maxPrice) &&
-                    (minFloat === 0 || parseFloatValue(ticker.Float) >= minFloat) &&
-                    (maxFloat === 0 || parseFloatValue(ticker.Float) <= maxFloat) &&
-                    (minScore === 0 || ticker.Score >= minScore) &&
-                    (maxScore === 0 || ticker.Score <= maxScore) &&
-                    (minVolume === 0 || parseVolumeValue(ticker.Volume) >= minVolume) &&
-                    (maxVolume === 0 || parseVolumeValue(ticker.Volume) <= maxVolume)
-            )
-            .sort((a, b) => b.Score - a.Score);
-
-        const filteredAll = allData
-            .map((ticker) => ({
-                ...ticker,
-                Score: calculateScore(ticker),
-            }))
-            .filter(
-                (ticker) =>
-                    (minPrice === 0 || ticker.Price >= minPrice) &&
-                    (maxPrice === 0 || ticker.Price <= maxPrice) &&
-                    (minFloat === 0 || parseFloatValue(ticker.Float) >= minFloat) &&
-                    (maxFloat === 0 || parseFloatValue(ticker.Float) <= maxFloat) &&
-                    (minScore === 0 || ticker.Score >= minScore) &&
-                    (maxScore === 0 || ticker.Score <= maxScore) &&
-                    (minVolume === 0 || parseVolumeValue(ticker.Volume) >= minVolume) &&
-                    (maxVolume === 0 || parseVolumeValue(ticker.Volume) <= maxVolume)
-            )
-            .sort((a, b) => b.Score - a.Score);
+        const filteredSession = applyFilters(sessionData);
+        const filteredDaily = applyFilters(dailyData);
+        const filteredAll = applyFilters(allData);
 
         console.log("✅ Filtered Session Data:", filteredSession);
         console.log("✅ Filtered Daily Data:", filteredDaily);
@@ -149,28 +112,36 @@ async function fetchAndUpdateTickers() {
         prevTickersSessions = Object.fromEntries(tickersSessions.map((t) => [t.Symbol, t]));
         prevTickersDaily = Object.fromEntries(tickersDaily.map((t) => [t.Symbol, t]));
 
-        // ✅ Save filtered tickers to settings for news filtering
-        const updatedSettings = {
-            ...window.settings,
-            news: { ...window.settings.news, filteredTickers: filteredAll.map((t) => t.Symbol) },
-        };
-        // ✅ Check if the filtered tickers have changed
-        const newFilteredTickers = filteredAll.map((t) => t.Symbol);
-        if (JSON.stringify(newFilteredTickers) !== JSON.stringify(window.settings.news.filteredTickers)) {
-            console.log("🔄 Updating filtered tickers in settings...");
-
-            const updatedSettings = {
-                ...window.settings,
-                news: { ...window.settings.news, filteredTickers: newFilteredTickers },
-            };
-
-            await window.settingsAPI.update(updatedSettings);
-            window.settings = updatedSettings; // ✅ Keep local settings in sync
+        // 🔄 Fetch the latest settings before updating
+        const latestSettings = await window.settingsAPI.get();
+        if (!latestSettings || !latestSettings.news) {
+            console.error("❌ Failed to fetch latest settings. Skipping update.");
+            return;
         }
 
-        // ✅ Ensure the settings object in memory is updated
-        window.settings = updatedSettings;
-        console.log("✅ Saved filtered tickers to settings.news.filteredTickers:", updatedSettings.news.filteredTickers);
+        // ✅ Extract new filtered tickers
+        const newFilteredTickers = filteredAll.map((t) => t.Symbol);
+
+        // ✅ Check if filtered tickers have changed
+        if (JSON.stringify(newFilteredTickers) !== JSON.stringify(latestSettings.news.filteredTickers)) {
+            console.log("🔄 Updating filtered tickers in settings...");
+
+            // ✅ Preserve other settings, only update `filteredTickers`
+            const updatedSettings = {
+                ...latestSettings,
+                news: {
+                    ...latestSettings.news,
+                    filteredTickers: newFilteredTickers,
+                },
+            };
+
+            // ✅ Save updated settings
+            await window.settingsAPI.update(updatedSettings);
+
+            // ✅ Keep local settings in sync
+            window.settings = updatedSettings;
+            console.log("✅ Saved filtered tickers to settings.news.filteredTickers:", updatedSettings.news.filteredTickers);
+        }
 
         // ✅ Update UI
         updateTickersTable(tickersSessions, "tickers-session", oldTickersSessions);
@@ -182,6 +153,7 @@ async function fetchAndUpdateTickers() {
         console.error("❌ Error fetching tickers:", error);
     }
 }
+
 
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
@@ -440,10 +412,12 @@ function updateActiveTicker(ticker) {
 
     if (!row || !newsList) return;
 
+    console.log(`🔄 Updating Active Ticker: ${ticker.Symbol}`);
+
     // ✅ Ensure blockList, goodList, and badList exist
-    const blockList = window.settings.news?.blockList || [];
-    const goodList = window.settings.news?.goodList || [];
-    const badList = window.settings.news?.badList || [];
+    let blockList = window.settings.news?.blockList || [];
+    let goodList = window.settings.news?.goodList || [];
+    let badList = window.settings.news?.badList || [];
 
     row.innerHTML = `
         <td>${ticker.Symbol}</td>
@@ -459,7 +433,7 @@ function updateActiveTicker(ticker) {
         <td>${ticker.Score}</td>
     `;
 
-    // ✅ Clear previous news list
+    // ✅ Clear and re-render news list
     newsList.innerHTML = "";
 
     if (Array.isArray(ticker.News) && ticker.News.length > 0) {
@@ -474,7 +448,9 @@ function updateActiveTicker(ticker) {
             }
 
             // ✅ Check if the headline contains blocklisted words/phrases
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+            const isBlocked = blockList.some((blockedWord) =>
+                headline.toLowerCase().includes(blockedWord.toLowerCase())
+            );
 
             if (!isBlocked) {
                 const li = document.createElement("li");
@@ -509,7 +485,10 @@ function updateActiveTicker(ticker) {
     setTimeout(() => {
         row.style.background = "rgba(34, 139, 34, 0.2)";
     }, 1000);
+
+    console.log("✅ Active ticker updated successfully!");
 }
+
 
 function getBonusesHTML(ticker) {
     console.log("🔎 Debugging Bonuses for:", ticker); // ✅ Log ticker object

@@ -2,7 +2,7 @@
   "top": {
     "transparent": false,
     "minPrice": 0,
-    "maxPrice": 100,
+    "maxPrice": 1000,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -11,15 +11,15 @@
     "maxVolume": 0,
     "lists": {
       "session": {
-        "Price": true,
-        "ChangePercent": true,
-        "FiveM": true,
-        "Float": true,
+        "Price": false,
+        "ChangePercent": false,
+        "FiveM": false,
+        "Float": false,
         "Volume": true,
-        "SprPercent": true,
-        "Time": true,
-        "HighOfDay": true,
-        "News": true,
+        "SprPercent": false,
+        "Time": false,
+        "HighOfDay": false,
+        "News": false,
         "Count": true,
         "Score": true,
         "Bonuses": true,
@@ -38,27 +38,26 @@
         "Count": false,
         "Score": true,
         "Bonuses": true,
-        "length": 10
+        "length": 4
       }
     }
   },
   "news": {
-    "showTrackedTickers": false,
+    "showTrackedTickers": true,
     "filteredTickers": [
-      "RSLS",
       "JTAI",
-      "TRUG",
+      "HLF",
+      "EFOI",
       "XHLD",
-      "EDIT",
-      "CRML",
+      "MNDR",
       "SPGC",
+      "BSLK",
       "PRPH",
-      "SDST",
-      "MVIS"
+      "EDIT",
+      "ALT",
+      "FATE"
     ],
-    "blockList": [
-      "Shares"
-    ],
+    "blockList": [],
     "goodList": [],
     "badList": [],
     "allowMultiSymbols": false
