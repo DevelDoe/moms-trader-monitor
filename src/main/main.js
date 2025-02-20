@@ -2,11 +2,11 @@
 ////////////////////////////////////////////////////////////////////////////////////
 // INIT
 const createLogger = require("../hlps/logger");
+const updateLog = require("../hlps/updateLogger"); // ✅ Import the update logger
 const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
 const DEBUG = process.env.DEBUG === "true";
 const forceUpdate = false;
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // PACKAGES
@@ -392,11 +392,7 @@ ipcMain.on("set-window-bounds", (event, bounds) => {
 // START APP
 
 app.on("ready", () => {
-   
-    
-    
     log.log("App ready, bootstrapping...");
-
 
     // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
@@ -442,33 +438,31 @@ if (!isDevelopment || forceUpdate) {
         autoUpdater.forceDevUpdateConfig = true;
         autoUpdater.allowDowngrade = true;
     }
-   
-    log.log("Production mode detected, checking for updates...");
+
+    updateLog("Production mode detected, checking for updates...");
     autoUpdater.checkForUpdatesAndNotify();
 
     if (forceUpdate) {
         ipcMain.on("force-update-check", () => {
-            log.log("Forcing update check in development mode...");
+            updateLog("Forcing update check in development mode...");
             autoUpdater.checkForUpdatesAndNotify();
         });
     }
 
     autoUpdater.on("checking-for-update", () => {
-        log.log("Checking for update...");
+        updateLog("Checking for update...");
     });
 
     autoUpdater.on("update-available", (info) => {
-        log.log(`🔔 Update found: ${info.version}`);
+        updateLog(`🔔 Update found: ${info.version}`);
 
-        // ✅ Close splash screen if it's still open
         if (windows.splash && !windows.splash.isDestroyed()) {
-            log.log("Closing splash screen before starting update...");
+            updateLog("Closing splash screen before starting update...");
             windows.splash.close();
-            delete windows.splash; // ✅ Ensure reference is removed
+            delete windows.splash;
         }
 
         if (appSettings.hasDonated) {
-            // 🛠 If user has donated, let them decide
             dialog
                 .showMessageBox({
                     type: "info",
@@ -478,39 +472,38 @@ if (!isDevelopment || forceUpdate) {
                 })
                 .then((result) => {
                     if (result.response === 0) {
-                        log.log("User confirmed download, starting...");
+                        updateLog("User confirmed download, starting...");
                         autoUpdater.downloadUpdate();
                     } else {
-                        log.log("User postponed update.");
+                        updateLog("User postponed update.");
                     }
                 });
         } else {
-            // 🛠 If user hasn’t donated, update automatically
-            log.log("User hasn't donated, auto-downloading update...");
+            updateLog("User hasn't donated, auto-downloading update...");
             autoUpdater.downloadUpdate();
         }
     });
 
     autoUpdater.on("update-not-available", () => {
-        log.log("No update available.");
+        updateLog("No update available.");
     });
 
     autoUpdater.on("error", (err) => {
-        log.error("Update error:", err);
+        updateLog(`Update error: ${err.message}`, true);
     });
+
     process.on("unhandledRejection", (reason, promise) => {
-        log.error("Unhandled Promise Rejection:", reason);
+        updateLog(`Unhandled Promise Rejection: ${reason}`, true);
     });
 
     autoUpdater.on("download-progress", (progressObj) => {
         let logMessage = `Download speed: ${progressObj.bytesPerSecond} - `;
         logMessage += `Downloaded ${progressObj.percent}% (${progressObj.transferred} / ${progressObj.total})`;
-        log.log(logMessage);
+        updateLog(logMessage);
     });
 
     autoUpdater.on("update-downloaded", () => {
         if (appSettings.hasDonated) {
-            // 🛠 Donors can choose when to install
             dialog
                 .showMessageBox({
                     type: "info",
@@ -524,34 +517,23 @@ if (!isDevelopment || forceUpdate) {
                     }
                 });
         } else {
-            // 🛠 Non-donors get auto-installed updates
-            log.log("User hasn't donated, installing update now...");
+            updateLog("User hasn't donated, installing update now...");
             autoUpdater.quitAndInstall();
         }
     });
-    const { exec } = require("child_process");
 
-    
     autoUpdater.on("update-downloaded", () => {
-        log.log("Update downloaded, updating shortcut icon...");
+        updateLog("Update downloaded, updating shortcut icon...");
         updateShortcutIcon();
     });
-    
 } else {
-    log.log("Skipping auto-updates in development mode");
+    updateLog("Skipping auto-updates in development mode.");
 }
 
 function updateShortcutIcon() {
-    const shortcutPath = path.join(
-        process.env.APPDATA,
-        "Microsoft",
-        "Windows",
-        "Start Menu",
-        "Programs",
-        "MomsTraderMonitor.lnk" // ✅ Make sure this matches the actual shortcut name
-    );
+    const shortcutPath = path.join(process.env.APPDATA, "Microsoft", "Windows", "Start Menu", "Programs", "MomsTraderMonitor.lnk");
 
-    const iconPath = path.join(__dirname, "build", "icon.ico"); // ✅ Ensure this icon exists
+    const iconPath = path.join(__dirname, "build", "icon.ico");
 
     const command = `
         $WScriptShell = New-Object -ComObject WScript.Shell;
@@ -562,9 +544,9 @@ function updateShortcutIcon() {
 
     exec(`powershell -Command "${command}"`, (error, stdout, stderr) => {
         if (error) {
-            log.error("Error updating shortcut icon:", error);
+            updateLog(`Error updating shortcut icon: ${error.message}`, true);
         } else {
-            log.log("Shortcut icon updated successfully.");
+            updateLog("Shortcut icon updated successfully.");
         }
     });
 }
