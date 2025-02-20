@@ -401,7 +401,7 @@ function getScoreBreakdown(ticker) {
     }
 
     // ✅ Bonus: 5 points per million in volume
-    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 5;
+    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 10;
     if (volumeBonus > 0) {
         Score += volumeBonus;
         breakdown.push(`Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M): +${volumeBonus}`);
