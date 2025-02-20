@@ -188,7 +188,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     const allColumns =
         tableId === "tickers-all"
-            ? [...new Set(tickers.flatMap((t) => Object.keys(t)))].filter((key) => key !== "Bonuses" && key !== "Time") // ✅ Exclude Bonuses
+            ? [...new Set(tickers.flatMap((t) => Object.keys(t)))].filter((key) => key !== "Bonuses" && key !== "Time" && key !== "HasNews") // ✅ Exclude Bonuses
             : [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
 
     // ✅ Generate the header dynamically
