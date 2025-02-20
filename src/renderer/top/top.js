@@ -461,10 +461,10 @@ function updateActiveTicker(ticker) {
 
     console.log(`🔄 Updating Active Ticker: ${ticker.Symbol}`);
 
-    // ✅ Ensure blockList, goodList, and badList exist
+    // ✅ Ensure blockList, bullishList, and bearishList exist
     let blockList = window.settings.news?.blockList || [];
-    let goodList = window.settings.news?.goodList || [];
-    let badList = window.settings.news?.badList || [];
+    let bullishList = window.settings.news?.bullishList || [];
+    let bearishList = window.settings.news?.bearishList || [];
 
     row.innerHTML = `
         <td>${ticker.Symbol}</td>
@@ -507,11 +507,11 @@ function updateActiveTicker(ticker) {
                 link.rel = "noopener noreferrer"; // ✅ Security best practice
                 link.title = `Published: ${new Date(article.created_at).toLocaleString()}`;
 
-                // ✅ Apply CSS classes based on goodList and badList
-                if (goodList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
+                // ✅ Apply CSS classes based on bullishList and bearishList
+                if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
                     link.classList.add("good-news");
                 }
-                if (badList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
+                if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
                     link.classList.add("bad-news");
                 }
 
