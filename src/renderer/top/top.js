@@ -241,9 +241,9 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                     } else if (value === undefined || value === null) {
                         value = "-"; // ✅ Show dash for missing values
                     }
-                }
 
-                cell.textContent = value;
+                    cell.textContent = value;
+                }
             } else {
                 cell.textContent = ticker[key];
             }
