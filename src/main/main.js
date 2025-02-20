@@ -6,9 +6,6 @@ const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
 const DEBUG = process.env.DEBUG === "true";
 const forceUpdate = true;
-if (forceUpdate) {
-    app.getVersion = () => "0.1.0"; // Simulate an outdated version
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -396,6 +393,11 @@ ipcMain.on("set-window-bounds", (event, bounds) => {
 
 app.on("ready", () => {
     log.log("App ready, bootstrapping...");
+
+    if (forceUpdate) {
+        app.getVersion = () => "0.1.0"; // Simulate an outdated version
+    }
+    
 
     // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
