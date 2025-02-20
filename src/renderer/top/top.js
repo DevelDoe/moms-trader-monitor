@@ -235,7 +235,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
 
                     if (!isBlocked) {
-                        value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
+                        value = value.length > 0 ? `📰` : "-";
                     } else if (typeof value === "object" && value !== null) {
                         value = JSON.stringify(value); // ✅ Prevent [object Object]
                     } else if (value === undefined || value === null) {
