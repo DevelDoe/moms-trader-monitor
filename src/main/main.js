@@ -440,7 +440,7 @@ process.on("exit", () => {
 if (!isDevelopment || forceUpdate) {
     if (forceUpdate) {
         autoUpdater.forceDevUpdateConfig = true;
-        app.getVersion = () => "0.1.0"; // Simulate an outdated version
+        autoUpdater.allowDowngrade = true;
     }
    
     log.log("Production mode detected, checking for updates...");
