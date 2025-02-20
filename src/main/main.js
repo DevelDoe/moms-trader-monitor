@@ -528,14 +528,9 @@ if (!isDevelopment || forceUpdate) {
             log.log("User hasn't donated, installing update now...");
             autoUpdater.quitAndInstall();
         }
-    });
-    const { exec } = require("child_process");
-
-    
-    autoUpdater.on("update-downloaded", () => {
-        log.log("Update downloaded, updating shortcut icon...");
         updateShortcutIcon();
     });
+    const { exec } = require("child_process");
 
 } else {
     log.log("Skipping auto-updates in development mode");
