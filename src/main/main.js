@@ -439,7 +439,7 @@ process.on("exit", () => {
 ////////////////////////////////////////////////////////////////////////////////////
 // UPDATES
 
-if (!isDevelopment) {
+if (!isDevelopment || forceUpdate) {
     log.log("Production mode detected, checking for updates...");
     autoUpdater.checkForUpdatesAndNotify();
 
