@@ -439,6 +439,13 @@ if (!isDevelopment) {
     log.log("Production mode detected, checking for updates...");
     autoUpdater.checkForUpdatesAndNotify();
 
+    if (forceUpdate) {
+        ipcMain.on("force-update-check", () => {
+            log.log("Forcing update check in development mode...");
+            autoUpdater.checkForUpdatesAndNotify();
+        });
+    }
+
     autoUpdater.on("checking-for-update", () => {
         log.log("Checking for update...");
     });
