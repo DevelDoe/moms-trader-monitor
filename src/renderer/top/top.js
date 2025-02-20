@@ -7,6 +7,8 @@ let tickersAll = [];
 let prevTickersSessions = {};
 let prevTickersDaily = {};
 
+const isBlocked = [];
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
 
