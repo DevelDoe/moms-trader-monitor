@@ -123,8 +123,8 @@
                 tableBody.innerHTML = "";
 
                 const blockList = window.settings.news?.blockList || [];
-                const goodList = window.settings.news?.goodList || [];
-                const badList = window.settings.news?.badList || [];
+                const bullishList = window.settings.news?.bullishList || [];
+                const bearishList = window.settings.news?.bearishList || [];
 
                 let filteredNews = allNews;
 
@@ -174,10 +174,10 @@
                         link.rel = "noopener noreferrer";
                         link.title = `Published: ${new Date(article.created_at).toLocaleString()}`;
 
-                        if (goodList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
+                        if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
                             link.classList.add("good-news");
                         }
-                        if (badList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
+                        if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
                             link.classList.add("bad-news");
                         }
 
