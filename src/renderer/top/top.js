@@ -231,18 +231,17 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 let value = ticker[key];
                 // ✅ Check if the headline contains blocklisted words/phrases
                 let blockList = window.settings.news?.blockList || [];
-                const isBlocked = blockList.some((blockedWord) => key.toLowerCase().includes(blockedWord.toLowerCase()));
+                const isBlocked = blockList.some((blockedWord) => ticker[key].toLowerCase().includes(blockedWord.toLowerCase()));
 
+                if (!isBlocked) {
+                    value = value.length > 0 ? `📰` : "-";
+                } else if (typeof value === "object" && value !== null) {
+                    value = JSON.stringify(value); // ✅ Prevent [object Object]
+                } else if (value === undefined || value === null) {
+                    value = "-"; // ✅ Show dash for missing values
+                }
 
-                    if (!isBlocked) {
-                        value = value.length > 0 ? `📰` : "-";
-                    } else if (typeof value === "object" && value !== null) {
-                        value = JSON.stringify(value); // ✅ Prevent [object Object]
-                    } else if (value === undefined || value === null) {
-                        value = "-"; // ✅ Show dash for missing values
-                    }
-
-                    cell.textContent = value;
+                cell.textContent = value;
             } else {
                 cell.textContent = ticker[key];
             }
