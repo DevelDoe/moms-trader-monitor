@@ -270,6 +270,9 @@ body:not(.show-all) #tickers-wrapper {
 .bonus.low-volume {
     color: rgb(255, 0, 0);
 }
+.bonus.high-volume {
+    color: #28a745;
+}
 /* .bonus.spread { }   */
 
 /* ✅ Tooltip Effect */
