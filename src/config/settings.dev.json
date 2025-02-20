@@ -1,10 +1,10 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.75,
+    "minPrice": 0,
     "maxPrice": 20,
     "minFloat": 0,
-    "maxFloat": 200000000,
+    "maxFloat": 0,
     "minScore": 0,
     "maxScore": 0,
     "minVolume": 200000,
@@ -42,7 +42,12 @@
   },
   "news": {
     "showTrackedTickers": false,
-    "filteredTickers": [],
+    "filteredTickers": [
+      "MNDR",
+      "FGEN",
+      "PRPH",
+      "STSS"
+    ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
