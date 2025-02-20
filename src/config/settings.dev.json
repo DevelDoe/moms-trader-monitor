@@ -51,6 +51,6 @@
     "blockList": [],
     "goodList": [],
     "badList": [],
-    "allowMultiSymbols": false
+    "allowMultiSymbols": true
   }
 }
