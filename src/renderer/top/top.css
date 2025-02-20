@@ -240,7 +240,7 @@ body:not(.show-all) #tickers-wrapper {
 
 /* 🎯 Different Bonus Colors */
 .bonus.news {
-    color: #28a745;
+    color:deeppink;
     
 } /* 🟡 Yellow for News */
 .bonus.high {
