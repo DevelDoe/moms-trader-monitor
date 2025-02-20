@@ -5,7 +5,7 @@
     "maxPrice": 20,
     "minFloat": 0,
     "maxFloat": 200000000,
-    "minScore": 1,
+    "minScore": 0,
     "maxScore": 0,
     "minVolume": 200000,
     "maxVolume": 0,
@@ -33,10 +33,10 @@
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
-        "News": true,
+        "News": false,
         "Count": false,
-        "Score": true,
-        "Bonuses": true
+        "Score": false,
+        "Bonuses": false
       }
     }
   },
