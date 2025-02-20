@@ -261,7 +261,7 @@ body:not(.show-all) #tickers-wrapper {
     color: rgba(3, 110, 231, 0.75);
 } /* 🔵 Blue for Low Float */
 .bonus.bronse-float {
-    color: rgba(28, 88, 158, 0.5);
+    color: white;
 } /* 🔵 Blue for Low Float */
 .bonus.high-float {
     color: rgb(255, 0, 0);
