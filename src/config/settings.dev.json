@@ -1,8 +1,8 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 0,
-    "maxPrice": 2,
+    "minPrice": 1,
+    "maxPrice": 20,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -45,10 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "MNDR",
-      "SPGC",
-      "TRUG",
-      "BSLK"
+      "EFOI",
+      "ATYR"
     ],
     "blockList": [],
     "goodList": [],
