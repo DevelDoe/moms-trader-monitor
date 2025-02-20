@@ -52,7 +52,9 @@
       "ATYR"
     ],
     "blockList": [],
-    "goodList": [],
+    "goodList": [
+      "FDA"
+    ],
     "badList": [],
     "allowMultiSymbols": false
   }
