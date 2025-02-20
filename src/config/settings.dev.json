@@ -11,10 +11,10 @@
     "maxVolume": 0,
     "lists": {
       "session": {
-        "Price": false,
+        "Price": true,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": true,
+        "Float": false,
         "Volume": true,
         "SprPercent": false,
         "Time": false,
