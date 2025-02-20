@@ -233,8 +233,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 let blockList = window.settings.news?.blockList || [];
                 const isBlocked = blockList.some((blockedWord) => key.toLowerCase().includes(blockedWord.toLowerCase()));
 
-                if (!isBlocked) {
-                    if (Array.isArray(value)) {
+
+                    if (!isBlocked) {
                         value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
                     } else if (typeof value === "object" && value !== null) {
                         value = JSON.stringify(value); // ✅ Prevent [object Object]
@@ -243,7 +243,6 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                     }
 
                     cell.textContent = value;
-                }
             } else {
                 cell.textContent = ticker[key];
             }
