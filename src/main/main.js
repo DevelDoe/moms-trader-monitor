@@ -5,7 +5,8 @@ const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const isDevelopment = process.env.NODE_ENV === "development";
 const DEBUG = process.env.DEBUG === "true";
-if (isDevelopment) {
+const forceUpdate = true;
+if (forceUpdate) {
     app.getVersion = () => "0.1.0"; // Simulate an outdated version
 }
 
