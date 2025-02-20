@@ -55,7 +55,7 @@
       "Market-Moving News for",
       "What's Going On"
     ],
-    "goodList": [
+    "bullish": [
       "FDA",
       "Clinical trials",
       "Noteworthy Insider Activity",
@@ -80,7 +80,7 @@
       "Maintains Overweight Rating",
       "Upgrades to Buy"
     ],
-    "badList": [
+    "bearish": [
       "To Acquire",
       "Snaps Up",
       "Takeover",
