@@ -15,15 +15,14 @@
         "ChangePercent": false,
         "FiveM": false,
         "Float": false,
-        "Volume": true,
+        "Volume": false,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
-        "News": true,
-        "Count": true,
-        "Score": true,
-        "Bonuses": true,
-        "length": 10
+        "News": false,
+        "Count": false,
+        "Score": false,
+        "Bonuses": false
       },
       "daily": {
         "Price": false,
@@ -37,17 +36,13 @@
         "News": true,
         "Count": false,
         "Score": true,
-        "Bonuses": true,
-        "length": 10
+        "Bonuses": true
       }
     }
   },
   "news": {
     "showTrackedTickers": false,
-    "filteredTickers": [
-      "XOS",
-      "AGH"
-    ],
+    "filteredTickers": [],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
