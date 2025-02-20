@@ -243,14 +243,14 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 }
 
                 if (filteredNews) {
-                    value = value.length > 0 ? `📰` : "-";
+                    filteredNews = filteredNews.length > 0 ? `📰` : "-";
                 } else if (typeof value === "object" && value !== null) {
-                    value = JSON.stringify(value); // ✅ Prevent [object Object]
+                    filteredNews = JSON.stringify(filteredNews); // ✅ Prevent [object Object]
                 } else if (value === undefined || value === null) {
-                    value = "-"; // ✅ Show dash for missing values
+                    filteredNews = "-"; // ✅ Show dash for missing values
                 }
 
-                cell.textContent = value;
+                cell.textContent = filteredNews;
             } else {
                 cell.textContent = ticker[key];
             }
