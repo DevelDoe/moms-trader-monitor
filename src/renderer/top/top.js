@@ -227,7 +227,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
             } else if (key === "Bonuses") {
                 // ✅ Insert dynamically styled bonus symbols
                 cell.innerHTML = getBonusesHTML(ticker);
-            } else if (key === "News"){
+            } else if (key === "News") {
                 let value = ticker[key];
                 if (Array.isArray(value)) {
                     value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
@@ -239,15 +239,6 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.textContent = value;
             } else {
                 let value = ticker[key];
-
-                if (Array.isArray(value)) {
-                    value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
-                } else if (typeof value === "object" && value !== null) {
-                    value = JSON.stringify(value); // ✅ Prevent [object Object]
-                } else if (value === undefined || value === null) {
-                    value = "-"; // ✅ Show dash for missing values
-                }
-
                 cell.textContent = value;
             }
 
@@ -321,7 +312,6 @@ function calculateScore(ticker) {
 
     if (ticker.HighOfDay) Score += 20;
 
-    
     let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
     if (Array.isArray(ticker.News) && ticker.News.length > 0) {
