@@ -536,7 +536,7 @@ function getBonusesHTML(ticker) {
     }
 
     if (volumeValue < 300_000) {
-        bonuses.push('<span class="bonus low-volume no-drag">V</span>');
+        bonuses.push('<span class="bonus low-volume no-drag">V-</span>');
         tooltipText.push("V: Low Volume (<300K)");
     }
 
