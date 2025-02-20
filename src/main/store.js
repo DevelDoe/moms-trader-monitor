@@ -121,7 +121,6 @@ class Store extends EventEmitter {
                     const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
-                        ticker.hasNews = true;
                         log.log(`[store.js] Added news to ${symbol} (Total: ${ticker.News.length})`);
                     } else {
                         log.log(`[store.js] Skipped duplicate news for ${symbol}: "${News.headline}"`);
@@ -136,7 +135,6 @@ class Store extends EventEmitter {
                     const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
-                        ticker.hasNews = true;
                         log.log(`[store.js] Added news to ${symbol} (Total: ${ticker.News.length})`);
                     } else {
                         log.log(`[store.js] Skipped duplicate news for ${symbol}: "${News.headline}"`);
