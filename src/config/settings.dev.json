@@ -56,7 +56,9 @@
       "FDA",
       "Clinical trials"
     ],
-    "badList": [],
+    "badList": [
+      "To Acquire"
+    ],
     "allowMultiSymbols": false
   }
 }
