@@ -45,7 +45,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
-
 async function fetchAndUpdateTickers() {
     try {
         console.log("Fetching updated tickers...");
@@ -153,7 +152,6 @@ async function fetchAndUpdateTickers() {
         console.error("❌ Error fetching tickers:", error);
     }
 }
-
 
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
@@ -338,6 +336,9 @@ function calculateScore(ticker) {
         Score -= 20; // 🛑 Low volume is a bad sign
     }
 
+    // ✅ Bonus: 5 points per million in volume
+    Score += Math.floor(volumeValue / 1_000_000) * 5;
+
     return Score;
 }
 
@@ -363,6 +364,13 @@ function getScoreBreakdown(ticker) {
     if (volumeValue < 300_000) {
         Score -= 20;
         breakdown.push(`Volume < 300K: -20`);
+    }
+
+    // ✅ Bonus: 5 points per million in volume
+    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 5;
+    if (volumeBonus > 0) {
+        Score += volumeBonus;
+        breakdown.push(`Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M): +${volumeBonus}`);
     }
 
     // ✅ Float Size Bonuses & Penalties
@@ -448,9 +456,7 @@ function updateActiveTicker(ticker) {
             }
 
             // ✅ Check if the headline contains blocklisted words/phrases
-            const isBlocked = blockList.some((blockedWord) =>
-                headline.toLowerCase().includes(blockedWord.toLowerCase())
-            );
+            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
             if (!isBlocked) {
                 const li = document.createElement("li");
@@ -488,7 +494,6 @@ function updateActiveTicker(ticker) {
 
     console.log("✅ Active ticker updated successfully!");
 }
-
 
 function getBonusesHTML(ticker) {
     console.log("🔎 Debugging Bonuses for:", ticker); // ✅ Log ticker object
