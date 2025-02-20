@@ -240,7 +240,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                     });
                 }
 
-                if (Array.isArray(value)) {
+                if (filteredNews.length > 0) {
                     value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
                 } else if (typeof value === "object" && value !== null) {
                     value = JSON.stringify(value); // ✅ Prevent [object Object]
