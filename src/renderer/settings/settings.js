@@ -477,11 +477,11 @@ function toggleAll(listType, state) {
 }
 
 /**
- * ✅ Initialize the News Section with BlockList, GoodList, and BadList
+ * ✅ Initialize the News Section with BlockList, bullish, and BadList
  */
 function initializeNewsSection() {
     if (!window.settings.news) {
-        window.settings.news = { blockList: [], goodList: [], badList: [], allowMultiSymbols: true };
+        window.settings.news = { blockList: [], bullish: [], badList: [], allowMultiSymbols: true };
     }
 
     console.log("🔍 Checking loaded news settings:", window.settings.news);
@@ -550,10 +550,10 @@ function initializeNewsSection() {
 }
 
 /**
- * ✅ Handles adding and removing keywords for BlockList, GoodList, and BadList
+ * ✅ Handles adding and removing keywords for BlockList, bullish, and BadList
  */
 /**
- * ✅ Handles adding and removing keywords for BlockList, GoodList, and BadList
+ * ✅ Handles adding and removing keywords for BlockList, bullish, and BadList
  */
 function setupKeywordManagement() {
     const keywordType = document.getElementById("keyword-type");
@@ -561,7 +561,7 @@ function setupKeywordManagement() {
     const addKeywordBtn = document.getElementById("add-keyword");
 
     const blockListEl = document.getElementById("block-list");
-    const goodListEl = document.getElementById("good-list");
+    const bullishEl = document.getElementById("bullish-list");
     const badListEl = document.getElementById("bad-list");
 
     function updateLists(updatedSettings) {
@@ -569,7 +569,7 @@ function setupKeywordManagement() {
         const settings = updatedSettings || window.settings;
 
         renderList(blockListEl, settings.news.blockList, "blockList");
-        renderList(goodListEl, settings.news.goodList, "goodList");
+        renderList(bullishEl, settings.news.bullishList, "bullishList");
         renderList(badListEl, settings.news.badList, "badList");
     }
 
