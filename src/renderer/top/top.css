@@ -342,13 +342,13 @@ body:not(.show-all) #tickers-wrapper {
 }
 
 
-/* ✅ Good news - Highlight in green */
+/* ✅ Bullish news - Highlight in green */
 .bullish-news {
     color: #4caf50 !important; /* Green */
     font-weight: bold !important;
 }
 
-/* ❌ Bad news - Highlight in red */
+/* ❌ Bearish news - Highlight in red */
 .bearish-news {
     color: #f44336 !important; /* Red */
     font-weight: bold !important;
