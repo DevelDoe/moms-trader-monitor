@@ -540,7 +540,6 @@ function getBonusesHTML(ticker) {
     }
 
     if (filteredNews.length > 0) {
-        console.log(`📰 News found for ${ticker.Symbol}:`, ticker.News.length); // ✅ Check news count
         bonuses.push(`<span class="bonus news no-drag">N</span>`);
         tooltipText.push(`N: Has News`);
     }
