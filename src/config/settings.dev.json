@@ -38,7 +38,7 @@
         "Count": false,
         "Score": true,
         "Bonuses": true,
-        "length": 5
+        "length": 10
       }
     }
   },
@@ -60,6 +60,7 @@
       "WOLF",
       "AMPL",
       "PCLA",
+      "LUNG",
       "TRIP",
       "XHLD",
       "ALLO"
