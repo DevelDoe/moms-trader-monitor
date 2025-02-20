@@ -22,7 +22,7 @@
         "News": false,
         "Count": false,
         "Score": false,
-        "Bonuses": false,
+        "Bonuses": true,
         "length": 10
       },
       "daily": {
