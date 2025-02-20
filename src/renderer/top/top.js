@@ -366,7 +366,7 @@ function calculateScore(ticker) {
     }
 
     // ✅ Bonus: 5 points per million in volume
-    Score += Math.floor(volumeValue / 1_000_000) * 10;
+    Score += Math.floor(volumeValue / 1_000_000) * 2;
 
     return Score;
 }
