@@ -228,6 +228,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 // ✅ Insert dynamically styled bonus symbols
                 cell.innerHTML = getBonusesHTML(ticker);
             } else if (key === "News"){
+                let value = ticker[key];
                 if (Array.isArray(value)) {
                     value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
                 } else if (typeof value === "object" && value !== null) {
