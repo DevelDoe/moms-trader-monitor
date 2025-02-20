@@ -392,12 +392,13 @@ ipcMain.on("set-window-bounds", (event, bounds) => {
 // START APP
 
 app.on("ready", () => {
-    log.log("App ready, bootstrapping...");
-
+   
     if (forceUpdate) {
         app.getVersion = () => "0.1.0"; // Simulate an outdated version
     }
     
+    log.log("App ready, bootstrapping...");
+
 
     // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
