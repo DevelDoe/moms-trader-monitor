@@ -82,7 +82,8 @@
       "Takeover",
       "Sell Alert",
       "Upgrades",
-      "Underperform"
+      "Underperform",
+      "Lowers Price Target"
     ],
     "allowMultiSymbols": false
   }
