@@ -73,7 +73,8 @@
       "Buy Rating",
       "Strong Buy",
       "Price Target Raised to",
-      "Outperform"
+      "Outperform",
+      "Raises Price Target"
     ],
     "badList": [
       "To Acquire",
