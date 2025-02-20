@@ -11,7 +11,7 @@
     "maxVolume": 0,
     "lists": {
       "session": {
-        "Price": false,
+        "Price": true,
         "ChangePercent": false,
         "FiveM": false,
         "Float": false,
@@ -26,7 +26,7 @@
       },
       "daily": {
         "Price": false,
-        "ChangePercent": false,
+        "ChangePercent": true,
         "FiveM": false,
         "Float": false,
         "Volume": false,
