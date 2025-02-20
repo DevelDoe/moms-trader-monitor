@@ -228,23 +228,22 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 // ✅ Insert dynamically styled bonus symbols
                 cell.innerHTML = getBonusesHTML(ticker);
             } else if (key === "News") {
-                 // ✅ Check if the headline contains blocklisted words/phrases
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+                // ✅ Check if the headline contains blocklisted words/phrases
+                const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
-            if (!isBlocked) {
-                let value = ticker[key];
+                if (!isBlocked) {
+                    let value = ticker[key];
 
-                if (Array.isArray(value)) {
-                    value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
-                } else if (typeof value === "object" && value !== null) {
-                    value = JSON.stringify(value); // ✅ Prevent [object Object]
-                } else if (value === undefined || value === null) {
-                    value = "-"; // ✅ Show dash for missing values
+                    if (Array.isArray(value)) {
+                        value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
+                    } else if (typeof value === "object" && value !== null) {
+                        value = JSON.stringify(value); // ✅ Prevent [object Object]
+                    } else if (value === undefined || value === null) {
+                        value = "-"; // ✅ Show dash for missing values
+                    }
                 }
 
                 cell.textContent = value;
-            }
-                
             } else {
                 cell.textContent = ticker[key];
             }
