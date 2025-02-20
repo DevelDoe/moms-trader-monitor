@@ -231,6 +231,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 let value = ticker[key];
                 // ✅ Check if the headline contains blocklisted words/phrases
                 let blockList = window.settings.news?.blockList || [];
+                console.log("key: ",key)
                 const isBlocked = blockList.some((blockedWord) => ticker[key].headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
                 if (!isBlocked) {
