@@ -7,6 +7,9 @@ let tickersAll = [];
 let prevTickersSessions = {};
 let prevTickersDaily = {};
 
+let currentActiveTicker = null; // ✅ Ensure the variable exists globally
+
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
 
