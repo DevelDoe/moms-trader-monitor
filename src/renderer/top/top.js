@@ -229,6 +229,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.innerHTML = getBonusesHTML(ticker);
             } else if (key === "News") {
                 let value = ticker[key];
+
                 if (Array.isArray(value)) {
                     value = value.length > 0 ? `📰` : "-"; // ✅ Fix for news column
                 } else if (typeof value === "object" && value !== null) {
@@ -236,6 +237,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 } else if (value === undefined || value === null) {
                     value = "-"; // ✅ Show dash for missing values
                 }
+                
                 cell.textContent = value;
             } else {
                 cell.textContent = ticker[key];
