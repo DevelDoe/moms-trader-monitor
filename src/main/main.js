@@ -348,10 +348,10 @@ ipcMain.on("clear-session", () => {
     });
 });
 
-ipcMain.handle("get-attributes", async (_event, listType) => {
-    log.log("Get Attributes:", listType);
-    return tickerStore.getAvailableAttributes(listType);
-});
+// ipcMain.handle("get-attributes", async (_event, listType) => {
+//     log.log("Get Attributes:", listType);
+//     return tickerStore.getAvailableAttributes(listType);
+// });
 
 // top
 ipcMain.on("toggle-top", () => {
