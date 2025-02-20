@@ -232,8 +232,6 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 let blockList = window.settings.news?.blockList || [];
                 let filteredNews = [];
 
-                console.log("value: ", value);
-
                 if (value.length > 0) {
                     filteredNews = value.filter((newsItem) => {
                         const headline = newsItem.headline || ""; // Ensure headline is a string
