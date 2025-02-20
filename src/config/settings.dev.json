@@ -4,8 +4,8 @@
     "minPrice": 1.75,
     "maxPrice": 20,
     "minFloat": 0,
-    "maxFloat": 20000,
-    "minScore": 0,
+    "maxFloat": 200000000,
+    "minScore": 1,
     "maxScore": 0,
     "minVolume": 200000,
     "maxVolume": 0,
@@ -44,7 +44,10 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [],
+    "filteredTickers": [
+      "EFOI",
+      "ATYR"
+    ],
     "blockList": [],
     "goodList": [],
     "badList": [],
