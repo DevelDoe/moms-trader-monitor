@@ -238,8 +238,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 }
                 cell.textContent = value;
             } else {
-                let value = ticker[key];
-                cell.textContent = value;
+                cell.textContent = ticker[key];
             }
 
             row.appendChild(cell);
