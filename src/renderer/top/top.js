@@ -306,12 +306,13 @@ function parseVolumeValue(floatStr) {
 
 function calculateScore(ticker) {
     let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
-    let blockList = window.settings.news?.blockList || [];
     const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to a real number
     const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Convert Volume to a real number
 
     if (ticker.HighOfDay) Score += 20;
 
+    
+    let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
     if (Array.isArray(ticker.News) && ticker.News.length > 0) {
         filteredNews = ticker.News.filter((newsItem) => {
