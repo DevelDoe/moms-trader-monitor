@@ -232,6 +232,10 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 // ✅ Check if the headline contains blocklisted words/phrases
                 let blockList = window.settings.news?.blockList || [];
                 console.log("key: ",ticker[key])
+
+                if (value.length > 0) {
+
+                }
                 const isBlocked = blockList.some((blockedWord) => key.toLowerCase().includes(blockedWord.toLowerCase()));
 
                 if (!isBlocked) {
@@ -581,7 +585,7 @@ function getBonusesHTML(ticker) {
 
     const volumeBonus = Math.floor(volumeValue / 1_000_000) * 5;
     if (volumeBonus > 0) {
-        bonuses.push('<span class="bonus high-volume no-drag">V+</span>');
+        bonuses.push(`<span class="bonus high-volume no-drag">V${volumeValue / 1_000_000}</span>`);
         tooltipText.push(`V+: Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M)`);
     }
 
