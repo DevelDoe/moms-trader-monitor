@@ -53,6 +53,8 @@
       "Market-Moving News for",
       "What's Going On"
     ],
+    "goodList": [],
+    "badList": [],
     "allowMultiSymbols": false,
     "bullishList": [
       "FDA",
