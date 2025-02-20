@@ -44,17 +44,7 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [
-      "WOK",
-      "NIVF",
-      "CYCU",
-      "MCVT",
-      "XOS",
-      "EFOI",
-      "QUBT",
-      "LAES",
-      "HLF"
-    ],
+    "filteredTickers": [],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days"
     ],
