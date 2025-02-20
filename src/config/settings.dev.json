@@ -55,6 +55,9 @@
       "Market-Moving News for",
       "What's Going On"
     ],
+    "goodList": [],
+    "badList": [],
+    "allowMultiSymbols": false,
     "bullish": [
       "FDA",
       "Clinical trials",
@@ -88,7 +91,6 @@
       "Upgrades",
       "Underperform",
       "Lowers Price Target"
-    ],
-    "allowMultiSymbols": false
+    ]
   }
 }
