@@ -11,18 +11,18 @@
     "maxVolume": 0,
     "lists": {
       "session": {
-        "Price": true,
+        "Price": false,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": true,
-        "Volume": true,
+        "Float": false,
+        "Volume": false,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
         "News": false,
-        "Count": true,
-        "Score": true,
-        "Bonuses": true,
+        "Count": false,
+        "Score": false,
+        "Bonuses": false,
         "length": 10
       },
       "daily": {
