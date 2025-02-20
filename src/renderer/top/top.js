@@ -7,8 +7,6 @@ let tickersAll = [];
 let prevTickersSessions = {};
 let prevTickersDaily = {};
 
-const isBlocked = [];
-
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
 
@@ -312,7 +310,20 @@ function calculateScore(ticker) {
     const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Convert Volume to a real number
 
     if (ticker.HighOfDay) Score += 20;
-    if (Array.isArray(ticker.News) && ticker.News.length > 0) Score += 40;
+
+    let filteredNews = [];
+    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
+        filteredNews = ticker.News.filter((newsItem) => {
+            const headline = newsItem.headline || ""; // Ensure headline is a string
+            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+            return !isBlocked; // Keep only non-blocked headlines
+        });
+    }
+
+    // ✅ Add score only if there are valid (non-blocked) news items
+    if (filteredNews.length > 0) {
+        Score += 40;
+    }
 
     // ✅ Float Size Bonuses & Penalties
     if (floatValue > 0 && floatValue < 2_000_000) {
@@ -458,7 +469,7 @@ function updateActiveTicker(ticker) {
             }
 
             // ✅ Check if the headline contains blocklisted words/phrases
-            isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
             if (!isBlocked) {
                 const li = document.createElement("li");
