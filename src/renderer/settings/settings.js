@@ -431,22 +431,20 @@ async function updateAttributeFilters() {
     try {
         console.log("🔄 Fetching latest settings before updating filters...");
         const latestSettings = await window.settingsAPI.get();
-        if (!latestSettings || !latestSettings.top || !latestSettings.news) {
+        if (!latestSettings || !latestSettings.top) {
             console.error("❌ Failed to fetch latest settings. Skipping update.");
             return;
         }
 
-        // ✅ Preserve all previous lists while updating checkboxes
+        // ✅ Update settings dynamically while preserving other lists
         const updatedLists = {
             ...latestSettings.top.lists,
-            session: {
-                ...latestSettings.top.lists.session,
-                ...Object.fromEntries(Array.from(document.querySelectorAll("input[name='session']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-            },
-            daily: {
-                ...latestSettings.top.lists.daily,
-                ...Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-            },
+            session: Object.fromEntries(
+                Array.from(document.querySelectorAll("input[name='session']")).map((checkbox) => [checkbox.value, checkbox.checked])
+            ),
+            daily: Object.fromEntries(
+                Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])
+            ),
         };
 
         // ✅ Spread everything and only update `lists`
@@ -464,6 +462,7 @@ async function updateAttributeFilters() {
         console.error("❌ Error updating filters:", error);
     }
 }
+
 
 function toggleAll(listType, state) {
     if (!window.settings || !window.settings.top) {
