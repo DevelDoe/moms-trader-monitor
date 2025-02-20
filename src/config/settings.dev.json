@@ -45,9 +45,9 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
+      "XOS",
       "CYCU",
       "MCVT",
-      "XOS",
       "WOK",
       "EFOI",
       "ATYR"
