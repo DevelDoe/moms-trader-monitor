@@ -304,18 +304,6 @@ function parseVolumeValue(floatStr) {
     return value;
 }
 
-function getFilteredNews(news) {
-    let blockList = window.settings.news?.blockList || [];
-    let filteredNews = [];
-    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
-        filteredNews = ticker.News.filter((newsItem) => {
-            const headline = newsItem.headline || ""; // Ensure headline is a string
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
-            return !isBlocked; // Keep only non-blocked headlines
-        });
-    }
-}
-
 function calculateScore(ticker) {
     let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
     const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to a real number
