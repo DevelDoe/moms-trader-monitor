@@ -509,10 +509,10 @@ function updateActiveTicker(ticker) {
 
                 // ✅ Apply CSS classes based on bullishList and bearishList
                 if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
-                    link.classList.add("good-news");
+                    link.classList.add("bullish-news");
                 }
                 if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
-                    link.classList.add("bad-news");
+                    link.classList.add("bearish-news");
                 }
 
                 li.appendChild(link);
