@@ -390,7 +390,7 @@ async function loadAttributeFilters(listType, containerId) {
         console.log("HARDCODED_ATTRIBUTES:", HARDCODED_ATTRIBUTES);
         console.log("window.settings.top.lists:", window.settings.top.lists);
 
-        const attributes = Object.keys(HARDCODED_ATTRIBUTES[listType]);
+        const attributes = Object.keys(HARDCODED_ATTRIBUTES[listType]); // Only include predefined attributes
         const container = document.getElementById(containerId);
 
         if (!container) {
@@ -400,7 +400,8 @@ async function loadAttributeFilters(listType, containerId) {
 
         container.innerHTML = ""; // Clear previous checkboxes
 
-        const selectedFilters = HARDCODED_ATTRIBUTES[listType]; // Use hardcoded attributes
+        // ✅ Ensure settings exist before using them
+        const selectedFilters = window.settings.top.lists?.[listType] || {}; 
 
         attributes.forEach((attr) => {
             const label = document.createElement("label");
@@ -408,10 +409,10 @@ async function loadAttributeFilters(listType, containerId) {
             checkbox.type = "checkbox";
             checkbox.name = listType;
             checkbox.value = attr;
-            checkbox.checked = selectedFilters[attr];
+            checkbox.checked = selectedFilters[attr] ?? false; // ✅ Fetch value from settings
 
             checkbox.addEventListener("change", () => {
-                updateAttributeFilters(window.settings); // Update filters as usual
+                updateAttributeFilters(); // ✅ Save updates correctly
             });
 
             label.appendChild(checkbox);
@@ -419,11 +420,12 @@ async function loadAttributeFilters(listType, containerId) {
             container.appendChild(label);
         });
 
-        console.log(`✅ Hardcoded attributes loaded for ${listType}!`);
+        console.log(`✅ Attributes loaded dynamically from settings for ${listType}!`);
     } catch (error) {
         console.error(`❌ Error loading ${listType} attributes:`, error);
     }
 }
+
 
 async function updateAttributeFilters() {
     try {
