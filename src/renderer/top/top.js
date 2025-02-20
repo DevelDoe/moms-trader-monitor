@@ -371,7 +371,17 @@ function getScoreBreakdown(ticker) {
         breakdown.push(`High of Day: +20`);
     }
 
+    let blockList = window.settings.news?.blockList || [];
+    let filteredNews = [];
     if (Array.isArray(ticker.News) && ticker.News.length > 0) {
+        filteredNews = ticker.News.filter((newsItem) => {
+            const headline = newsItem.headline || ""; // Ensure headline is a string
+            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+            return !isBlocked; // Keep only non-blocked headlines
+        });
+    }
+
+    if (filteredNews.length > 0) {
         Score += 40;
         breakdown.push(`Has News: +40`);
     }
