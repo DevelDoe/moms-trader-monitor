@@ -3,6 +3,7 @@ const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews } = require("./collectors/news"); // ✅ Ensure correct import
 
+
 class Store extends EventEmitter {
     constructor() {
         super();
@@ -16,52 +17,74 @@ class Store extends EventEmitter {
     }
 
     addTickers(tickers) {
-        log.log(`[store.js] addNews() called with ${tickers.length} items.`);
-        let newTickers = []; // ✅ Track only new tickers
-
+        log.log(`[store.js] addTickers() called with ${tickers.length} items.`);
+        let newTickers = []; // ✅ Track new tickers
+        let updatedTickers = []; // ✅ Track updated tickers
+    
         tickers.forEach((ticker) => {
             const key = ticker.Symbol;
-
+    
             if (!this.dailyData.has(key)) {
+                // ✅ New ticker
                 this.dailyData.set(key, { ...ticker, Count: 1, News: [] });
-                newTickers.push(key); // ✅ Add to new tickers list
+                newTickers.push(key); // Add to new tickers list
             } else {
+                // ✅ Updated ticker
                 let existingTicker = this.dailyData.get(key);
                 existingTicker.Count++;
-
+    
+                // Check if any significant attribute has changed
+                const hasUpdates = Object.keys(ticker).some((attr) => {
+                    return ticker[attr] !== undefined && ticker[attr] !== existingTicker[attr];
+                });
+    
+                if (hasUpdates) {
+                    updatedTickers.push(key); // Add to updated tickers list
+                }
+    
+                // Update the existing ticker data
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-
+    
                 this.dailyData.set(key, existingTicker);
             }
-
+    
+            // ✅ Handle session data
             if (!this.sessionData.has(key)) {
                 this.sessionData.set(key, { ...ticker, Count: 1, News: [] });
             } else {
                 let existingTicker = this.sessionData.get(key);
                 existingTicker.Count++;
-
+    
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-
+    
                 this.sessionData.set(key, existingTicker);
             }
         });
-
-        // ✅ Fetch news for newly added tickers only
-
-        log.log(`[store.js] 🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
-
-        tickers.forEach((ticker) => {
-            fetchHistoricalNews(ticker);
-        });
-
+    
+        // ✅ Fetch news for new tickers
+        if (newTickers.length > 0) {
+            log.log(`[store.js] 🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
+            newTickers.forEach((ticker) => {
+                fetchHistoricalNews(ticker);
+            });
+        }
+    
+        // ✅ Fetch news for updated tickers
+        if (updatedTickers.length > 0) {
+            log.log(`[store.js] 🔄 Fetching news for updated tickers: ${updatedTickers.join(", ")}`);
+            updatedTickers.forEach((ticker) => {
+                fetchHistoricalNews(ticker);
+            });
+        }
+    
         this.emit("update");
     }
 
