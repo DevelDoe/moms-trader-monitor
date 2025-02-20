@@ -45,12 +45,13 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
+      "CYCU",
       "EFOI",
       "ATYR"
     ],
     "blockList": [],
     "goodList": [],
     "badList": [],
-    "allowMultiSymbols": true
+    "allowMultiSymbols": false
   }
 }
