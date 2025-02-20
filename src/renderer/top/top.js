@@ -554,12 +554,12 @@ function getBonusesHTML(ticker) {
     }
 
     if (filteredNews.length > 0) {
-        bonuses.push(`<span class="bonus news no-drag">N</span>`);
+        bonuses.push(`<span class="bonus news no-drag">CAT</span>`);
         tooltipText.push(`CAT: Has News`);
     }
 
     if (ticker.HighOfDay) {
-        bonuses.push('<span class="bonus high no-drag">H</span>');
+        bonuses.push('<span class="bonus high no-drag">HOD</span>');
         tooltipText.push("HOD: High of Day");
     }
 
