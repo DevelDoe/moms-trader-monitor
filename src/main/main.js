@@ -109,8 +109,8 @@ const DEFAULT_SETTINGS = {
         showTrackedTickers: false,
         filteredTickers: [],
         blockList: [],
-        goodList: [],
-        badList: [],
+        bullishList: [],
+        bearishList: [],
         allowMultiSymbols: false,
     },
 };
