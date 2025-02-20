@@ -45,8 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "WOK",
       "XOS",
+      "WOK",
       "STAI",
       "NIVF",
       "BRTX",
