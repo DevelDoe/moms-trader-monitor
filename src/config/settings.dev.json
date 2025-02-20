@@ -27,7 +27,7 @@
       },
       "daily": {
         "Price": false,
-        "ChangePercent": false,
+        "ChangePercent": true,
         "FiveM": false,
         "Float": false,
         "Volume": false,
