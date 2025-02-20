@@ -44,30 +44,7 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [
-      "XOS",
-      "WOK",
-      "STAI",
-      "NIVF",
-      "BRTX",
-      "LAES",
-      "HLF",
-      "REBN",
-      "TNMG",
-      "MCVT",
-      "CADL",
-      "CYD",
-      "APLD",
-      "DBRG",
-      "WOLF",
-      "LUNG",
-      "AGH",
-      "AMPL",
-      "PCLA",
-      "TRIP",
-      "XHLD",
-      "ALLO"
-    ],
+    "filteredTickers": [],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for"
