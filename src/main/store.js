@@ -56,9 +56,10 @@ class Store extends EventEmitter {
 
         log.log(`[store.js] 🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
 
-        newTickers.forEach((ticker) => {
-            fetchHistoricalNews(ticker);
-        });
+
+        // ✅ Fetch historical news for the ticker (new or updated)
+        log.log(`[store.js] 🚀 Fetching news for ticker: ${key}`);
+        fetchHistoricalNews(key);
 
         this.emit("update");
     }
