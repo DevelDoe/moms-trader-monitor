@@ -456,7 +456,7 @@ function updateActiveTicker(ticker) {
             }
 
             // ✅ Check if the headline contains blocklisted words/phrases
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+            isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
             if (!isBlocked) {
                 const li = document.createElement("li");
