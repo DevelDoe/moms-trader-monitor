@@ -46,8 +46,8 @@
     "showTrackedTickers": false,
     "filteredTickers": [
       "CYCU",
-      "EFOI",
       "MCVT",
+      "EFOI",
       "XOS",
       "ATYR"
     ],
