@@ -99,13 +99,13 @@ td.no-drag a:hover {
 }
 
 /* ✅ Good news - Highlight in green */
-.good-news {
+.bullish-news {
     color: #4caf50 !important; /* Green */
     font-weight: bold !important;
 }
 
 /* ❌ Bad news - Highlight in red */
-.bad-news {
+.bearish-news {
     color: #f44336 !important; /* Red */
     font-weight: bold !important;
 }
