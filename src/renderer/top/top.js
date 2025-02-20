@@ -228,6 +228,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 // ✅ Insert dynamically styled bonus symbols
                 cell.innerHTML = getBonusesHTML(ticker);
             } else if (key === "News"){
+
+            } else {
                 let value = ticker[key];
 
                 if (Array.isArray(value)) {
@@ -237,9 +239,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 } else if (value === undefined || value === null) {
                     value = "-"; // ✅ Show dash for missing values
                 }
-                cell.textContent = value;
-            } else {
-                
+
                 cell.textContent = value;
             }
 
