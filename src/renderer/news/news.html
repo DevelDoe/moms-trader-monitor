@@ -175,10 +175,10 @@
                         link.title = `Published: ${new Date(article.created_at).toLocaleString()}`;
 
                         if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
-                            link.classList.add("good-news");
+                            link.classList.add("bullish-news");
                         }
                         if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
-                            link.classList.add("bad-news");
+                            link.classList.add("bearish-news");
                         }
 
                         row.innerHTML = `
