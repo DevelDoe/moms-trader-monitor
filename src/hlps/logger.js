@@ -4,6 +4,7 @@ const os = require("os");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 const isDebug = process.env.DEBUG === "true";
+const isDataLogging = process.env.DATA === "true"; // ✅ Enable detailed logging when DATA=true
 
 // ✅ Log file path
 const logFilePath = path.join(
@@ -24,7 +25,7 @@ const SUPPRESS_LOGGING_FROM = new Set(["tickers.js", "main.js", "news.js"]); // 
 
 /**
  * Writes log messages to a file in production mode.
- * @param {string} level - Log level (INFO, WARN, ERROR)
+ * @param {string} level - Log level (INFO, WARN, ERROR, DATA)
  * @param {string} fileName - Source file name
  * @param {any[]} args - Log message arguments
  */
@@ -39,14 +40,14 @@ function writeToFile(level, fileName, args) {
  * Custom logger that logs to console in dev, and to a file in production.
  * Suppresses logs from scripts listed in `SUPPRESS_LOGGING_FROM`.
  * @param {string} modulePath - The __filename from the calling module.
- * @returns {object} log, warn, error functions
+ * @returns {object} log, warn, error, data functions
  */
 function createLogger(modulePath) {
     const fileName = path.basename(modulePath);
 
     return {
         log: (...args) => {
-            if (SUPPRESS_LOGGING_FROM.has(fileName)) return; // ✅ Suppress logging
+            if (SUPPRESS_LOGGING_FROM.has(fileName)) return;
             if (isDevelopment || isDebug) {
                 console.log(`[${fileName}]`, ...args);
             } else {
@@ -54,7 +55,7 @@ function createLogger(modulePath) {
             }
         },
         warn: (...args) => {
-            if (SUPPRESS_LOGGING_FROM.has(fileName)) return; // ✅ Suppress logging
+            if (SUPPRESS_LOGGING_FROM.has(fileName)) return;
             if (isDevelopment || isDebug) {
                 console.warn(`[${fileName}]`, ...args);
             } else {
@@ -62,11 +63,19 @@ function createLogger(modulePath) {
             }
         },
         error: (...args) => {
-            if (SUPPRESS_LOGGING_FROM.has(fileName)) return; // ✅ Suppress logging
+            if (SUPPRESS_LOGGING_FROM.has(fileName)) return;
             if (isDevelopment || isDebug) {
                 console.error(`[${fileName}]`, ...args);
             } else {
                 writeToFile("ERROR", fileName, args);
+            }
+        },
+        data: (...args) => {
+            if (!isDataLogging) return; // ✅ Only log if DATA=true
+            if (isDevelopment || isDebug) {
+                console.log(`[${fileName}] [DATA]`, ...args);
+            } else {
+                writeToFile("DATA", fileName, args);
             }
         }
     };
