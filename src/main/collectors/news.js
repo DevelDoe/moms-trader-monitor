@@ -70,12 +70,12 @@ const handleNewsData = (newsItem) => {
 
     newsArray.forEach((news) => {
         if (!Array.isArray(news.symbols) || news.symbols.length === 0) {
-            log.warn(`[news.js] Skipping news with no symbols: "${news.headline}"`);
+            log.warn(`Skipping news with no symbols: "${news.headline}"`);
             return;
         }
 
         tickerStore.addNews(newsArray);
-        log.log(`[news.js] ✅ Storing ${newsArray.length} news entries.`);
+        log.log(`Storing ${newsArray.length} news entries.`);
 
         BrowserWindow.getAllWindows().forEach((win) => {
             win.webContents.send("news-updated", { newsItems: newsArray });
@@ -118,7 +118,7 @@ const fetchHistoricalNews = async (ticker) => {
             tickerStore.addNews(newsData.news); // ✅ Store only the `news` array
         }
     } catch (error) {
-        log.error(`❌ Error fetching historical news for ${ticker}:`, error.message);
+        log.error(`Error fetching historical news for ${ticker}:`, error.message);
     }
 };
 
