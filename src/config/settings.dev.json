@@ -20,9 +20,10 @@
         "Time": false,
         "HighOfDay": false,
         "News": false,
-        "Count": true,
-        "Score": true,
-        "Bonuses": true
+        "Count": false,
+        "Score": false,
+        "Bonuses": false,
+        "length": 10
       },
       "daily": {
         "Price": false,
@@ -36,7 +37,8 @@
         "News": false,
         "Count": false,
         "Score": false,
-        "Bonuses": false
+        "Bonuses": false,
+        "length": 4
       }
     }
   },
