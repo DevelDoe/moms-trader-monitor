@@ -45,6 +45,7 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "HOLO",
       "TANH",
       "LTRY",
       "ESLA",
