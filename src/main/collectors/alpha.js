@@ -130,12 +130,12 @@ function processQueue() {
 async function fetchAlphaVantageData(ticker) {
     if (cache[ticker]) {
         log.log(`Using cached data for ${ticker}`);
-        return cache[ticker]; // ✅ Return cached data
+        return cache[ticker];
     }
 
     if (isRateLimited()) {
-        log.warn(`⏳ Skipping ${ticker}, waiting for cooldown to end.`);
-        return false; // 🚨 Skip fetching until cooldown ends
+        log.warn(`⏳ ${ticker} delayed due to cooldown. Will retry later.`);
+        return false;
     }
 
     let attempts = 0;
@@ -152,7 +152,7 @@ async function fetchAlphaVantageData(ticker) {
                 log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
                 currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
                 attempts++;
-                continue; 
+                continue;
             }
 
             if (!data || Object.keys(data).length === 0 || !data.Symbol) {
@@ -164,7 +164,6 @@ async function fetchAlphaVantageData(ticker) {
             cache[ticker] = data;
             saveCache();
 
-            // ✅ Store the result in `store.js`
             const store = require("../store");
             store.updateTicker(ticker, { about: data });
 
@@ -175,12 +174,13 @@ async function fetchAlphaVantageData(ticker) {
         }
     }
 
-    // ✅ Only activate cooldown **once**
+    // ✅ Only trigger cooldown if all keys fail
     if (!isRateLimited()) {
         await enforceCooldown();
     }
     return false;
 }
+
 
 function queueRequest(ticker) {
     requestQueue.push(ticker);
