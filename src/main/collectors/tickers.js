@@ -82,9 +82,17 @@ async function scrapeData() {
             // Update the processedKeys set with the keys of unique entries
             uniqueEntries.forEach((ticker) => {
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
-                const key = `${symbolNormalized}-${ticker.Time}`;
-                processedKeys.add(key);
+                
+                // ✅ Store processed times in `dailyData`
+                if (!tickerStore.dailyData.has(symbolNormalized)) {
+                    tickerStore.dailyData.set(symbolNormalized, { processedTimes: [] });
+                }
+                let storedTicker = tickerStore.dailyData.get(symbolNormalized);
+                storedTicker.processedTimes = [...(storedTicker.processedTimes || []), ticker.Time];
+            
+                tickerStore.dailyData.set(symbolNormalized, storedTicker);
             });
+            
 
             if (uniqueEntries.length > 0) {
                 log.log(`Storing ${uniqueEntries.length} new unique entries`);
