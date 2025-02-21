@@ -17,7 +17,7 @@
         "Float": false,
         "Volume": false,
         "SprPercent": false,
-        "Time": false,
+        "Time": true,
         "HighOfDay": true,
         "News": true,
         "Count": true,
