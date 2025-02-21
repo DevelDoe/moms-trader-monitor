@@ -22,7 +22,8 @@
         "News": true,
         "Count": true,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 10
       },
       "daily": {
         "Price": false,
@@ -36,7 +37,8 @@
         "News": false,
         "Count": false,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 4
       }
     }
   },
