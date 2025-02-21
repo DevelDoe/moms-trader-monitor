@@ -136,12 +136,12 @@ function queueRequest(ticker) {
 async function fetchAlphaVantageData(ticker) {
     if (cache[ticker]) {
         log.log(`Using cached data for ${ticker}`);
-        return cache[ticker];
+        return true; 
     }
 
     if (isRateLimited()) {
         log.warn(`⏳ ${ticker} delayed due to cooldown. Will retry later.`);
-        return false;
+        return false; 
     }
 
     let attempts = 0;
@@ -180,12 +180,13 @@ async function fetchAlphaVantageData(ticker) {
         }
     }
 
-    // ✅ Only trigger cooldown if all keys fail
+    // ✅ Activate cooldown if all API keys fail
     if (!isRateLimited()) {
         await enforceCooldown();
     }
     return false;
 }
+
 
 
 function queueRequest(ticker) {
