@@ -190,7 +190,7 @@ class Store extends EventEmitter {
         this.sessionData.clear();
         log.log("Session data cleared successfully!");
 
-        log.debug("Current sessionData after clear:", Array.from(this.sessionData.entries()));
+        log.log("Current sessionData after clear:", Array.from(this.sessionData.entries()));
         this.emit("sessionCleared");
     }
 
