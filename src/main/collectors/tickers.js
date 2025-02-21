@@ -87,4 +87,60 @@ async function scrapeData() {
         if (newScrape.length > 0) {
             log.log(`📊 Scraped ${newScrape.length} entries`);
 
-           
+            // ✅ Filter out duplicates based on Symbol and Time combination
+            const uniqueEntries = newScrape.filter((ticker) => {
+                const symbolNormalized = ticker.Symbol.trim().toUpperCase();
+                const key = `${symbolNormalized}-${ticker.Time}`;
+
+                // ✅ Check if ticker was already processed using `processedList`
+                if (processedList.some((entry) => entry.key === key)) {
+                    return false; // Skip duplicate
+                }
+                return true;
+            });
+
+            // ✅ Store processed entries in `processedList` (limit to 100)
+            uniqueEntries.forEach((ticker) => {
+                const symbolNormalized = ticker.Symbol.trim().toUpperCase();
+                const key = `${symbolNormalized}-${ticker.Time}`;
+
+                processedList.unshift({ key, Symbol: symbolNormalized, Time: ticker.Time });
+
+                // Keep only last 100 entries
+                if (processedList.length > 100) {
+                    processedList.pop();
+                }
+            });
+
+            // ✅ Save processedList to file
+            saveProcessedList();
+
+            if (uniqueEntries.length > 0) {
+                log.log(`✅ Storing ${uniqueEntries.length} new unique entries`);
+                tickerStore.addTickers(uniqueEntries);
+            } else {
+                log.log("⚠️ No new unique entries found. Skipping update.");
+            }
+        }
+    } catch (error) {
+        log.error(`❌ Scrape error: ${error.message}`);
+    } finally {
+        await page.close();
+        await browser.close();
+        log.log("🛑 Browser closed");
+    }
+}
+
+/**
+ * Collects tickers at random intervals
+ */
+function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
+    log.log("🔄 Starting scraper loop...");
+
+    function getRandomInterval(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    async function run() {
+        await scrapeData();
+        const interv
