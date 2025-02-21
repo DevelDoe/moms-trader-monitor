@@ -85,12 +85,16 @@ async function scrapeData() {
                 
                 // ✅ Store processed times in `dailyData`
                 if (!tickerStore.dailyData.has(symbolNormalized)) {
-                    tickerStore.dailyData.set(symbolNormalized, { processedTimes: [] });
+                    // ✅ Ensure `Count` starts at 1 and News is initialized
+                    tickerStore.dailyData.set(symbolNormalized, { Count: 1, News: [], processedTimes: [] });
                 }
+                
                 let storedTicker = tickerStore.dailyData.get(symbolNormalized);
+                storedTicker.Count = storedTicker.Count || 1; // ✅ Prevent NaN issues
                 storedTicker.processedTimes = [...(storedTicker.processedTimes || []), ticker.Time];
-            
+                
                 tickerStore.dailyData.set(symbolNormalized, storedTicker);
+                
             });
             
 
