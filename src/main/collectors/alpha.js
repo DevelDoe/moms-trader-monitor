@@ -77,7 +77,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
 
     if (!success) {
         log.warn(`🚨 Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
-        requestQueue.push(ticker); // Re-add ticker, but it will wait for cooldown
+        requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
     } else {
         log.log(`✅ Successfully fetched ${ticker}.`);
     }
@@ -85,25 +85,25 @@ const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`✅ Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
 
     if (!success && isRateLimited()) {
-        // Don't call callback immediately; let the cooldown finish first
-        return;
+        return; // 🚨 STOP PROCESSING: Don't call callback() during cooldown
     }
 
     setTimeout(() => {
         log.log(`⏳ Waiting 5 min before next request... Queue size: ${requestQueue.length()}`);
-        callback();
-    }, 5 * 60 * 1000 + 1000); // 5 min + 1 sec delay
+        callback(); // ✅ Continue queue processing only after delay
+    }, 5 * 60 * 1000 + 1000);
 }, 1);
 
 // ✅ Pause and Resume Queue on Cooldown
 async function enforceCooldown() {
     log.warn("🚨 All API keys exhausted! Pausing queue for cooldown.");
-    requestQueue.pause(); // ✅ Pause processing
+    requestQueue.pause(); // ✅ Pause queue
     lastRateLimitTime = Date.now();
 
     setTimeout(() => {
         log.log("✅ Cooldown period over. Resuming queue.");
-        requestQueue.resume(); // ✅ Resume processing after cooldown
+        requestQueue.resume(); // ✅ Resume queue after cooldown
+        requestQueue.process(); // ✅ Restart processing
     }, 5 * 60 * 1000 + 1000);
 }
 
@@ -160,6 +160,7 @@ async function fetchAlphaVantageData(ticker) {
     await enforceCooldown();
     return false;
 }
+
 
 
 
