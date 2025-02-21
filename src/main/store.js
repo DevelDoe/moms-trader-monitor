@@ -2,8 +2,7 @@ const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews } = require("./collectors/news");
-const { fetchAlphaVantageData, queueRequest } = require("./collectors/alpha"); 
-
+const { fetchAlphaVantageData, queueRequest } = require("./collectors/alpha");
 
 class Store extends EventEmitter {
     constructor() {
@@ -70,35 +69,10 @@ class Store extends EventEmitter {
         }
 
         // ✅ Fetch news for new session tickers only
-         if (newTickers.length > 0) {
-            log.log(`📊 Queuing Alpha Vantage data requests: ${newTickers.join(", ")}`);
-            newTickers.forEach((ticker) => {
-                queueRequest(ticker);
-                
-                // ✅ Attach fetched Alpha Vantage data once received
-                fetchAlphaVantageData(ticker).then((aboutData) => {
-                    if (aboutData) {
-                        log.log(`✅ Storing 'about' data for ${ticker}`);
-                        
-                        if (this.dailyData.has(ticker)) {
-                            let updatedTicker = this.dailyData.get(ticker);
-                            updatedTicker.about = aboutData;
-                            this.dailyData.set(ticker, updatedTicker);
-                        }
-            
-                        if (this.sessionData.has(ticker)) {
-                            let updatedTicker = this.sessionData.get(ticker);
-                            updatedTicker.about = aboutData;
-                            this.sessionData.set(ticker, updatedTicker);
-                        }
-            
-                        this.emit("update");
-                    }
-                });
-            });
-            
-        }
-
+        newTickers.forEach((ticker) => {
+            queueRequest(ticker);  // ✅ Add ticker to queue (ONLY ONCE)
+        });
+        
 
         this.emit("update");
     }
