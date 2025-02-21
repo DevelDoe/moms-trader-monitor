@@ -67,14 +67,17 @@ async function scrapeData() {
 
             // Filter out duplicates based on Symbol and Time combination
             const uniqueEntries = newScrape.filter((ticker) => {
-                // Normalize the symbol (trim and uppercase)
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
                 const key = `${symbolNormalized}-${ticker.Time}`;
-                if (processedKeys.has(key)) {
-                    return false; // Skip if we've already processed this entry
+            
+                // ✅ Check `dailyData` instead of a temporary Set
+                if (tickerStore.dailyData.has(symbolNormalized) && tickerStore.dailyData.get(symbolNormalized).processedTimes?.includes(ticker.Time)) {
+                    return false; // Already processed
                 }
+            
                 return true;
             });
+            
 
             // Update the processedKeys set with the keys of unique entries
             uniqueEntries.forEach((ticker) => {
