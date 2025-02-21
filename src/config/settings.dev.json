@@ -2,7 +2,7 @@
   "top": {
     "transparent": false,
     "minPrice": 0,
-    "maxPrice": 12,
+    "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 200000000,
     "minScore": 1,
