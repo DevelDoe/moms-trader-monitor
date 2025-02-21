@@ -19,13 +19,13 @@ if (fs.existsSync(processedListFile)) {
 
         // ✅ Ensure it's always an array (prevents "some is not a function" error)
         if (!Array.isArray(processedList)) {
-            log.warn("⚠️ processedList was not an array. Resetting to empty array.");
+            log.warn("processedList was not an array. Resetting to empty array.");
             processedList = [];
         } else {
-            log.log(`📂 Loaded ${processedList.length} processed tickers from file.`);
+            log.log(`Loaded ${processedList.length} processed tickers from file.`);
         }
     } catch (error) {
-        log.error("❌ Failed to load processedList from file. Resetting to empty array:", error);
+        log.error("Failed to load processedList from file. Resetting to empty array:", error);
         processedList = [];
     }
 }
@@ -47,7 +47,7 @@ async function launchBrowser() {
             args: ["--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox"],
         });
     } catch (error) {
-        log.error("❌ Browser launch failed:", error);
+        log.error("Browser launch failed:", error);
         return null;
     }
 }
@@ -57,7 +57,7 @@ async function launchBrowser() {
  */
 async function scrapeData() {
     const browser = await launchBrowser();
-    if (!browser) return log.error("❌ Failed to launch browser.");
+    if (!browser) return log.error("Failed to launch browser.");
 
     const page = await browser.newPage();
     await page.setUserAgent("Mozilla/5.0");
@@ -130,15 +130,15 @@ async function scrapeData() {
                 log.log(`✅ Storing ${uniqueEntries.length} new unique entries`);
                 tickerStore.addTickers(uniqueEntries);
             } else {
-                log.log("⚠️ No new unique entries found. Skipping update.");
+                log.log("No new unique entries found. Skipping update.");
             }
         }
     } catch (error) {
-        log.error(`❌ Scrape error: ${error.message}`);
+        log.error(`Scrape error: ${error.message}`);
     } finally {
         await page.close();
         await browser.close();
-        log.log("🛑 Browser closed");
+        log.log("Browser closed");
     }
 }
 
@@ -146,7 +146,7 @@ async function scrapeData() {
  * Collects tickers at random intervals
  */
 function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
-    log.log("🔄 Starting scraper loop...");
+    log.log("Starting scraper loop...");
 
     function getRandomInterval(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
