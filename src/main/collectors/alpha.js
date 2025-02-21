@@ -183,14 +183,10 @@ async function fetchAlphaVantageData(ticker) {
 }
 
 function queueRequest(ticker) {
-    if (isRateLimited()) {
-        log.warn(`⏳ Skipping queueRequest for ${ticker}, currently in cooldown.`);
-        return;
-    }
-    
     requestQueue.push(ticker);
     log.log(`📌 Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
 }
+
 
 
 // ✅ Export Functions
