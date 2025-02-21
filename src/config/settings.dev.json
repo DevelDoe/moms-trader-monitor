@@ -25,19 +25,18 @@
         "Bonuses": true
       },
       "daily": {
-        "Price": true,
-        "ChangePercent": true,
-        "FiveM": true,
-        "Float": true,
-        "Volume": true,
-        "SprPercent": true,
-        "Time": true,
-        "HighOfDay": true,
-        "News": true,
-        "Count": true,
-        "Score": true,
-        "Bonuses": true,
-        "length": 5
+        "Price": false,
+        "ChangePercent": false,
+        "FiveM": false,
+        "Float": false,
+        "Volume": false,
+        "SprPercent": false,
+        "Time": false,
+        "HighOfDay": false,
+        "News": false,
+        "Count": false,
+        "Score": false,
+        "Bonuses": false
       }
     }
   },
