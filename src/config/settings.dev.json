@@ -34,9 +34,9 @@
         "Time": false,
         "HighOfDay": false,
         "News": false,
-        "Count": false,
-        "Score": false,
-        "Bonuses": false
+        "Count": true,
+        "Score": true,
+        "Bonuses": true
       }
     }
   },
