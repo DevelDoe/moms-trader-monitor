@@ -101,56 +101,65 @@ class Store extends EventEmitter {
     addNews(newsItems) {
         log.log(`addNews() called`);
         if (!newsItems) {
-            log.log("No news items provided.");
+            log.warn("No news items provided.");
             return;
         }
-
+    
         const normalizedNews = Array.isArray(newsItems) ? newsItems : [newsItems];
-
+    
         if (normalizedNews.length === 0) {
-            log.log("No valid news items to store.");
+            log.warn("No valid news items to store.");
             return;
         }
-
+    
         const timestampedNews = normalizedNews.map((News) => ({
             ...News,
             storedAt: Date.now(),
             symbols: Array.isArray(News.symbols) ? News.symbols : [],
         }));
-
+    
         this.newsList.push(...timestampedNews);
         log.log(`Stored ${timestampedNews.length} new articles in global list.`);
-
+    
         timestampedNews.forEach((News) => {
             News.symbols.forEach((symbol) => {
                 log.log(`Processing news for ticker: ${symbol}`);
-
+    
                 if (this.dailyData.has(symbol)) {
                     let ticker = this.dailyData.get(symbol);
                     ticker.News = ticker.News || [];
-
+    
+                    // ✅ **Avoid duplicate news by checking headlines**
                     const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
                         log.log(`Added news to ${symbol} in dailyData (Total: ${ticker.News.length})`);
+                        this.dailyData.set(symbol, ticker); // ✅ Ensure data is stored
+                    } else {
+                        log.log(`Skipping duplicate news for ${symbol}: ${News.headline}`);
                     }
                 }
-
+    
                 if (this.sessionData.has(symbol)) {
                     let ticker = this.sessionData.get(symbol);
                     ticker.News = ticker.News || [];
-
+    
+                    // ✅ **Check for duplicates before adding**
                     const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
                         log.log(`Added news to ${symbol} in sessionData (Total: ${ticker.News.length})`);
+                        this.sessionData.set(symbol, ticker); // ✅ Ensure data is stored
+                    } else {
+                        log.log(`Skipping duplicate news for ${symbol}: ${News.headline}`);
                     }
                 }
             });
         });
-
+    
         this.emit("newsUpdated", { newsItems: timestampedNews });
     }
+    
 
     updateOverview(symbol, updateData) {
         log.log(`updateOverview() called for ${symbol}`);
