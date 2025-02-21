@@ -69,29 +69,28 @@ class Store extends EventEmitter {
             // }
             // ✅ Handle session data
             if (!this.sessionData.has(key)) {
-                let sessionTicker = { ...ticker, Count: 1, News: [] };
-
-                // ✅ If the ticker exists in dailyData, inherit `about` and `news`
+                let sessionTicker = { Symbol: ticker.Symbol, Count: 1 }; // ✅ Only keep necessary fields
+            
+                // ✅ If the ticker exists in dailyData, inherit `about` and `news` only
                 if (this.dailyData.has(key)) {
                     let dailyTicker = this.dailyData.get(key);
-                    sessionTicker.about = dailyTicker.about || {}; // ✅ Copy `about`
-                    sessionTicker.News = [...(dailyTicker.News || [])]; // ✅ Copy `News`
+                    if (dailyTicker.about) sessionTicker.about = dailyTicker.about; // ✅ Copy `about`
+                    if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News]; // ✅ Copy `News`
                     log.log(`Attached about & news to ${key} in session list.`);
                 }
-
+            
                 this.sessionData.set(key, sessionTicker);
             } else {
                 let existingTicker = this.sessionData.get(key);
                 existingTicker.Count++;
-
-                Object.keys(ticker).forEach((attr) => {
-                    if (ticker[attr] !== undefined) {
-                        existingTicker[attr] = ticker[attr];
-                    }
-                });
-
+            
+                // ✅ Only update attributes that exist in the new ticker (avoiding full overwrite)
+                if (ticker.about) existingTicker.about = ticker.about;
+                if (ticker.News) existingTicker.News = [...ticker.News];
+            
                 this.sessionData.set(key, existingTicker);
             }
+            
         });
 
         // ✅ Fetch news for new tickers
