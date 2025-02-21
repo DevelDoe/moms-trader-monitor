@@ -55,8 +55,10 @@
       "TRNR",
       "TXMD",
       "TANH",
+      "INOD",
       "RTC",
       "CYN",
+      "BSGM",
       "CAPT"
     ],
     "blockList": [
