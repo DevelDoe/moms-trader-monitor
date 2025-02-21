@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.45,
+    "minPrice": 1.75,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -57,7 +57,6 @@
       "MGTX",
       "LTRY",
       "QBTS",
-      "TLSA",
       "OSRH",
       "STAI",
       "RZLV",
@@ -81,8 +80,6 @@
       "TUYA",
       "MVIS",
       "ALLO",
-      "LNZA",
-      "INVZ",
       "GOTU",
       "PAGS"
     ],
