@@ -51,7 +51,8 @@
       "NAAS",
       "SINT",
       "TRNR",
-      "TXMD"
+      "TXMD",
+      "RTC"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
