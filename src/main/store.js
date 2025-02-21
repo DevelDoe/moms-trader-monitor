@@ -17,7 +17,7 @@ class Store extends EventEmitter {
     }
 
     addTickers(tickers) {
-        log.log(`[store.js] addTickers() called with ${tickers.length} items.`);
+        log.log(`addTickers() called with ${tickers.length} items.`);
         let newTickers = []; // ✅ Track new tickers
         let updatedTickers = []; // ✅ Track updated tickers
     
@@ -71,7 +71,7 @@ class Store extends EventEmitter {
     
         // ✅ Fetch news for new tickers
         if (newTickers.length > 0) {
-            log.log(`[store.js] 🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
+            log.log(`🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
             newTickers.forEach((ticker) => {
                 fetchHistoricalNews(ticker);
             });
@@ -79,7 +79,7 @@ class Store extends EventEmitter {
     
         // ✅ Fetch news for updated tickers
         if (updatedTickers.length > 0) {
-            log.log(`[store.js] 🔄 Fetching news for updated tickers: ${updatedTickers.join(", ")}`);
+            log.log(`Fetching news for updated tickers: ${updatedTickers.join(", ")}`);
             updatedTickers.forEach((ticker) => {
                 fetchHistoricalNews(ticker);
             });
@@ -109,7 +109,7 @@ class Store extends EventEmitter {
         }));
 
         this.newsList.push(...timestampedNews);
-        log.log(`[store.js] 📥 Stored ${timestampedNews.length} new articles in global list.`);
+        log.log(`Stored ${timestampedNews.length} new articles in global list.`);
 
         // ✅ Update tickers with unique news items
         timestampedNews.forEach((News) => {
@@ -121,9 +121,9 @@ class Store extends EventEmitter {
                     const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
-                        log.log(`[store.js] Added news to ${symbol} (Total: ${ticker.News.length})`);
+                        log.log(`Added news to ${symbol} (Total: ${ticker.News.length})`);
                     } else {
-                        log.log(`[store.js] Skipped duplicate news for ${symbol}: "${News.headline}"`);
+                        log.log(`Skipped duplicate news for ${symbol}"`);
                     }
 
                     this.dailyData.set(symbol, ticker);
