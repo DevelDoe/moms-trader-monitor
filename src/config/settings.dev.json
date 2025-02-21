@@ -31,7 +31,7 @@
         "Float": false,
         "Volume": true,
         "SprPercent": true,
-        "Time": false,
+        "Time": true,
         "HighOfDay": true,
         "News": true,
         "Count": true,
@@ -45,6 +45,7 @@
     "filteredTickers": [
       "MLGO",
       "OSRH",
+      "IVVD",
       "TANH",
       "RTC"
     ],
