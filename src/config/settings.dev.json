@@ -46,10 +46,10 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
-      "OSRH",
-      "INLF",
       "NIXX",
-      "CYD"
+      "CYD",
+      "OSRH",
+      "INLF"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",

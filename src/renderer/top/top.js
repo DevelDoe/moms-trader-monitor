@@ -586,8 +586,6 @@ function getBonusesHTML(ticker) {
         bonuses.push('<span class="bonus high-float no-drag">200M</span>');
         tooltipText.push("200M: Float between 125M-250M");
     } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
-        Score -= 30;
-        breakdown.push(`Float 250M-600M: -30`);
         bonuses.push('<span class="bonus high-float no-drag">500M</span>');
         tooltipText.push("500M: Float between 250M-500M");
         
