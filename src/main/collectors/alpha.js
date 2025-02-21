@@ -76,13 +76,18 @@ const requestQueue = async.queue(async (ticker, callback) => {
     const success = await fetchAlphaVantageData(ticker);
 
     if (!success) {
-        log.warn(`🚨 Failed to fetch ${ticker}, re-adding to queue.`);
-        requestQueue.push(ticker); // Re-add the ticker if it was not fetched
+        log.warn(`🚨 Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
+        requestQueue.push(ticker); // Re-add ticker, but it will wait for cooldown
     } else {
         log.log(`✅ Successfully fetched ${ticker}.`);
     }
 
     log.log(`✅ Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
+
+    if (!success && isRateLimited()) {
+        // Don't call callback immediately; let the cooldown finish first
+        return;
+    }
 
     setTimeout(() => {
         log.log(`⏳ Waiting 5 min before next request... Queue size: ${requestQueue.length()}`);
@@ -155,6 +160,7 @@ async function fetchAlphaVantageData(ticker) {
     await enforceCooldown();
     return false;
 }
+
 
 
 // ✅ Queue Requests Function
