@@ -69,11 +69,10 @@ class Store extends EventEmitter {
         }
 
         // ✅ Fetch news for new session tickers only
-        if (newSessionTickers.length > 0) {
-            log.log(`🚀 Fetching news for new session tickers: ${newSessionTickers.join(", ")}`);
-            newSessionTickers.forEach((ticker) => {
-                fetchHistoricalNews(ticker);
-            });
+         // ✅ Fetch Alpha Vantage data using queue system
+         if (newTickers.length > 0) {
+            log.log(`📊 Queuing Alpha Vantage data requests: ${newTickers.join(", ")}`);
+            newTickers.forEach((ticker) => queueRequest(ticker));
         }
 
         // ✅ Fetch Alpha Vantage data for newly added tickers
