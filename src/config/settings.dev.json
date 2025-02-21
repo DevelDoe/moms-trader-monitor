@@ -4,8 +4,8 @@
     "minPrice": 1.75,
     "maxPrice": 20,
     "minFloat": 0,
-    "maxFloat": 200000,
-    "minScore": 0,
+    "maxFloat": 200000000,
+    "minScore": 1,
     "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
@@ -42,7 +42,12 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [],
+    "filteredTickers": [
+      "MLGO",
+      "LTRY",
+      "NIXX",
+      "OSRH"
+    ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
