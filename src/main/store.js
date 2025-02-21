@@ -69,17 +69,17 @@ class Store extends EventEmitter {
             // }
             // ✅ Handle session data
             if (!this.sessionData.has(key)) {
-                let sessionTicker = { ...ticker, Count: 1, News: [] };
+                let sessionTicker = { Symbol: ticker.Symbol, Count: 1 };
 
-                // ✅ If the ticker exists in dailyData, inherit `about` and `news`
-                if (this.dailyData.has(key)) {
-                    let dailyTicker = this.dailyData.get(key);
-                    sessionTicker.about = dailyTicker.about || {}; // ✅ Copy `about`
-                    sessionTicker.News = [...(dailyTicker.News || [])]; // ✅ Copy `News`
-                    log.log(`Attached about & news to ${key} in session list.`);
-                }
+    if (this.dailyData.has(key)) {
+        let dailyTicker = this.dailyData.get(key);
+        if (dailyTicker.about) sessionTicker.about = dailyTicker.about;
+        if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News];
+        log.log(`Attached about & news to ${key} in session list.`);
+    }
 
-                this.sessionData.set(key, sessionTicker);
+    this.sessionData.set(key, sessionTicker);
+    log.log(`✅ Added ${key} to sessionData.`);
             } else {
                 let existingTicker = this.sessionData.get(key);
                 existingTicker.Count++;
