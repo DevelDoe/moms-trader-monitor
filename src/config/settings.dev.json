@@ -21,7 +21,7 @@
         "HighOfDay": false,
         "News": false,
         "Count": true,
-        "Score": false,
+        "Score": true,
         "Bonuses": false
       },
       "daily": {
