@@ -16,7 +16,7 @@
         "FiveM": false,
         "Float": false,
         "Volume": false,
-        "SprPercent": false,
+        "SprPercent": true,
         "Time": true,
         "HighOfDay": true,
         "News": true,
