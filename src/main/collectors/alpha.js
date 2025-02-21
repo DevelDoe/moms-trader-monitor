@@ -79,7 +79,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
     const success = await fetchAlphaVantageData(ticker);
 
     if (!success) {
-        log.warn(`🚨 Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
+        log.warn(`Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
         requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
     } else {
         log.log(`✅ Successfully fetched ${ticker}.`);
@@ -88,14 +88,14 @@ const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`✅ Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
 
     if (!success) {
-        log.warn(`🚨 Failed to fetch ${ticker}, pausing queue due to rate limit.`);
+        log.warn(`Failed to fetch ${ticker}, pausing queue due to rate limit.`);
     
         // ✅ PAUSE THE QUEUE TO PREVENT CONTINUOUS RETRIES
         requestQueue.pause();
         
         // ✅ ENFORCE FULL COOLDOWN PERIOD BEFORE RESUMING
         setTimeout(() => {
-            log.log("✅ Cooldown period over. Resuming queue.");
+            log.log("Cooldown period over. Resuming queue.");
             requestQueue.resume();  // ✅ Only resume AFTER cooldown ends
             processQueue();  // ✅ Ensure queue processing restarts
         }, 5 * 60 * 1000 + 1000);
@@ -106,7 +106,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
 }, 1);
 
 async function enforceCooldown() {
-    log.warn("🚨 All API keys exhausted! Pausing queue for cooldown.");
+    log.warn("All API keys exhausted! Pausing queue for cooldown.");
     requestQueue.pause();
     lastRateLimitTime = Date.now();
 
@@ -123,7 +123,7 @@ async function enforceCooldown() {
 // ✅ Process the Queue (Ensure it Runs)
 function processQueue() {
     if (requestQueue.length() > 0 && !isRateLimited()) {
-        log.log(`🔄 Resuming queue processing... Queue size: ${requestQueue.length()}`);
+        log.log(`Resuming queue processing... Queue size: ${requestQueue.length()}`);
         requestQueue.process();
     }
 }
@@ -136,7 +136,7 @@ async function fetchAlphaVantageData(ticker) {
     }
 
     if (isRateLimited()) {
-        log.warn(`⏳ ${ticker} delayed due to cooldown. Will retry later.`);
+        log.warn(`${ticker} delayed due to cooldown. Will retry later.`);
         return false; 
     }
 
@@ -162,7 +162,7 @@ async function fetchAlphaVantageData(ticker) {
                 return false;
             }
 
-            log.log(`✅ Fetched Alpha Vantage data for ${ticker}. Caching...`);
+            log.log(`Fetched Alpha Vantage data for ${ticker}. Caching...`);
             cache[ticker] = data;
             saveCache();
 
@@ -187,7 +187,7 @@ async function fetchAlphaVantageData(ticker) {
 
 function queueRequest(ticker) {
     requestQueue.push(ticker);
-    log.log(`📌 Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
+    log.log(`Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
 
     // Start processing if not already active
     if (!isRateLimited()) {
