@@ -6,7 +6,7 @@
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
-    "maxScore": -2,
+    "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
     "lists": {
@@ -36,13 +36,21 @@
         "News": false,
         "Count": false,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 3
       }
     }
   },
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
+      "MLGO",
+      "HOLO",
+      "NKGN",
+      "NAAS",
+      "GRAB",
+      "RETO",
+      "NVO",
       "AEP"
     ],
     "blockList": [
