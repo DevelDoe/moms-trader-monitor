@@ -45,6 +45,7 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
+      "MLGO",
       "NAAS",
       "APLD",
       "RETO",
