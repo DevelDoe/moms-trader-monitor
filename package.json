@@ -17,6 +17,7 @@
         "axios": "^1.7.9",
         "dotenv": "^16.4.7",
         "electron-updater": "^6.3.9",
+        "fs-extra": "^11.3.0",
         "p-queue": "^8.1.0",
         "puppeteer": "^24.2.0",
         "puppeteer-extra": "^3.3.6",
