@@ -46,6 +46,8 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "NAAS",
+      "TANH",
       "CYN"
     ],
     "blockList": [
