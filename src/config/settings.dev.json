@@ -44,14 +44,14 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "NAAS",
       "MLGO",
+      "NAAS",
       "FFIE",
+      "TANH",
       "OSRH",
       "LTRY",
       "LAES",
       "QUBT",
-      "TANH",
       "GASS",
       "NIXX",
       "APLD",
