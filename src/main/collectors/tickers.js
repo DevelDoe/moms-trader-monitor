@@ -14,12 +14,22 @@ const processedListFile = path.join(__dirname, "processedList.json");
 let processedList = [];
 if (fs.existsSync(processedListFile)) {
     try {
-        processedList = JSON.parse(fs.readFileSync(processedListFile, "utf8"));
-        log.log(`📂 Loaded ${processedList.length} processed tickers from file.`);
+        const fileData = fs.readFileSync(processedListFile, "utf8");
+        processedList = JSON.parse(fileData);
+
+        // ✅ Ensure it's always an array (prevents "some is not a function" error)
+        if (!Array.isArray(processedList)) {
+            log.warn("⚠️ processedList was not an array. Resetting to empty array.");
+            processedList = [];
+        } else {
+            log.log(`📂 Loaded ${processedList.length} processed tickers from file.`);
+        }
     } catch (error) {
-        log.error("❌ Failed to load processedList from file:", error);
+        log.error("❌ Failed to load processedList from file. Resetting to empty array:", error);
+        processedList = [];
     }
 }
+
 
 // ✅ Function to save processedList to file
 function saveProcessedList() {
