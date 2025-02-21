@@ -2,6 +2,7 @@ const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews } = require("./collectors/news");
+const { fetchAlphaVantageData } = require("./collectors/alpha"); // ✅ Import Alpha Vantage collector
 
 class Store extends EventEmitter {
     constructor() {
@@ -15,12 +16,12 @@ class Store extends EventEmitter {
         }, 60 * 1000); // Runs every 60 seconds
     }
 
-    addTickers(tickers) {
+    async addTickers(tickers) {
         log.log(`addTickers() called with ${tickers.length} items.`);
         let newTickers = []; // ✅ Track new tickers for dailyData
         let newSessionTickers = []; // ✅ Track new tickers for sessionData
     
-        tickers.forEach((ticker) => {
+        for (const ticker of tickers) {
             const key = ticker.Symbol;
     
             // ✅ Handle dailyData independently
@@ -36,47 +37,75 @@ class Store extends EventEmitter {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-    
+
                 this.dailyData.set(key, existingTicker);
             }
-    
-            // ✅ Handle sessionData independently, but copy `News` if available in `dailyData`
+
+            // ✅ Handle sessionData independently, but copy `News` & `about` if available in `dailyData`
             if (!this.sessionData.has(key)) {
                 let sessionTicker = { ...ticker, Count: 1 };
-    
-                // ✅ Only copy the `News` property if it exists in `dailyData`
+
                 if (this.dailyData.has(key)) {
                     let dailyTicker = this.dailyData.get(key);
-                    if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News]; // ✅ Copy only `News`
+                    
+                    if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News]; // ✅ Copy `News`
+                    if (dailyTicker.about) sessionTicker.about = dailyTicker.about; // ✅ Copy `about`
                 }
-    
+
                 this.sessionData.set(key, sessionTicker);
                 newSessionTickers.push(key);
             } else {
                 let existingTicker = this.sessionData.get(key);
                 existingTicker.Count++;
-    
+
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-    
+
                 this.sessionData.set(key, existingTicker);
             }
-        });
+        }
     
-        // ✅ Fetch news for new tickers in sessionData only
+        // ✅ Fetch news for new session tickers only
         if (newSessionTickers.length > 0) {
             log.log(`🚀 Fetching news for new session tickers: ${newSessionTickers.join(", ")}`);
             newSessionTickers.forEach((ticker) => {
                 fetchHistoricalNews(ticker);
             });
         }
-    
+
+        // ✅ Fetch Alpha Vantage data for newly added tickers
+        if (newTickers.length > 0) {
+            log.log(`📊 Fetching Alpha Vantage data for new tickers: ${newTickers.join(", ")}`);
+            for (const ticker of newTickers) {
+                fetchAlphaVantageData(ticker).then((aboutData) => {
+                    if (aboutData) {
+                        log.log(`✅ Storing 'about' data for ${ticker}`);
+                        
+                        // ✅ Update dailyData with `about` details
+                        if (this.dailyData.has(ticker)) {
+                            let updatedTicker = this.dailyData.get(ticker);
+                            updatedTicker.about = aboutData;
+                            this.dailyData.set(ticker, updatedTicker);
+                        }
+
+                        // ✅ Ensure sessionData also gets `about` details if it exists
+                        if (this.sessionData.has(ticker)) {
+                            let updatedTicker = this.sessionData.get(ticker);
+                            updatedTicker.about = aboutData;
+                            this.sessionData.set(ticker, updatedTicker);
+                        }
+
+                        this.emit("update");
+                    }
+                });
+            }
+        }
+
         this.emit("update");
     }
-    
 
     addNews(newsItems) {
         if (!newsItems) {
