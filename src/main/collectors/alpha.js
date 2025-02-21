@@ -121,12 +121,16 @@ async function enforceCooldown() {
 
 
 // ✅ Process the Queue (Ensure it Runs)
-function processQueue() {
-    if (requestQueue.length() > 0 && !isRateLimited()) {
-        log.log(`🔄 Resuming queue processing... Queue size: ${requestQueue.length()}`);
-        requestQueue.process();
+function queueRequest(ticker) {
+    requestQueue.push(ticker);
+    log.log(`📌 Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
+
+    // Start processing if not already active
+    if (!isRateLimited()) {
+        processQueue();
     }
 }
+
 
 // ✅ Fetch data from Alpha Vantage (or use cache)
 async function fetchAlphaVantageData(ticker) {
