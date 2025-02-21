@@ -261,19 +261,21 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
 // Clear session
 function clearSessionList() {
-    console.log("🧹 Clear session button clicked!");
+    console.log("🧹 Clear session button clicked! ✅ SENDING CLEAR EVENT...");
 
-    // ✅ Clear UI immediately
+    // ✅ Ensure tickersSessions is an empty array instead of undefined
     tickersSessions = [];
-    updateTickersTable(tickersSessions, "tickers-session");
+    updateTickersTable(tickersSessions ?? [], "tickers-session"); // ✅ Prevent null/undefined
 
     // ✅ Ask main process to clear session data
     window.topAPI.clearSession();
 
+    // ✅ Delay fetch to ensure data clears before refreshing
     setTimeout(() => {
-        fetchAndUpdateTickers(); // ✅ Refresh tickers AFTER clearing session
+        fetchAndUpdateTickers();
     }, 1000);
 }
+
 function addClearSessionButton() {
     const btn = document.createElement("button");
     btn.id = "clear-session-btn";
