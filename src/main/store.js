@@ -69,7 +69,7 @@ class Store extends EventEmitter {
         }
 
         if (newTickers.length > 0) {
-            log.log(`📊 Queuing Alpha Vantage data requests: ${newTickers.join(", ")}`);
+            log.log(`Queuing Alpha Vantage data requests: ${newTickers.join(", ")}`);
             
             newTickers.forEach((ticker) => {
                 queueRequest(ticker); // ✅ ONLY queue requests, don't fetch immediately
