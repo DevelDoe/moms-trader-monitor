@@ -46,11 +46,11 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "AIFF",
       "IVVD",
       "RTC",
-      "AIFF",
-      "TANH",
       "RILY",
+      "TANH",
       "BSGM"
     ],
     "blockList": [
