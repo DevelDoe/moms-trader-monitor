@@ -153,8 +153,6 @@ class Store extends EventEmitter {
         this.emit("sessionCleared");
     }
     
-    
-
     cleanupOldNews() {
         const TWENTY_MINUTES = 20 * 60 * 1000;
         const now = Date.now();
