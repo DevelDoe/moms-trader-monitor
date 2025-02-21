@@ -29,7 +29,7 @@ const API_KEYS = Object.keys(process.env)
     .map((key) => process.env[key]);
 
 let currentKeyIndex = 0;
-let lastRateLimitTime = null; // Track when the last rate limit was hit
+let lastRateLimitTime = null;
 
 // ✅ Get the next API key (rotates between keys)
 function getNextAPIKey() {
@@ -46,9 +46,7 @@ function saveCache() {
     }
 }
 
-// ✅ Check if we recently hit a rate limit
-let cooldownLogged = false; // Prevents multiple logs
-
+// ✅ Check if rate limit is active
 function isRateLimited() {
     if (!lastRateLimitTime) {
         lastRateLimitTime = Date.now();
@@ -59,16 +57,11 @@ function isRateLimited() {
     const elapsed = Date.now() - lastRateLimitTime;
 
     if (elapsed < cooldownPeriod) {
-        if (!cooldownLogged) {
-            // ✅ Only log the first time
-            log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
-            cooldownLogged = true; // ✅ Set flag to avoid duplicate logs
-        }
+        log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
         return true;
     }
 
-    lastRateLimitTime = null; // ✅ Reset cooldown
-    cooldownLogged = false; // ✅ Allow logging again for next cooldown
+    lastRateLimitTime = null;
     return false;
 }
 
@@ -76,33 +69,32 @@ function isRateLimited() {
 const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
-    const success = await fetchAlphaVantageData(ticker);
+    const data = await fetchAlphaVantageData(ticker);
 
-    if (!success) {
-        log.warn(`Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
-        requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
-    } else {
+    if (data) {
         log.log(`✅ Successfully fetched ${ticker}.`);
+    } else if (cache[ticker]) {
+        log.log(`🟡 Using cached data for ${ticker} due to failed API request.`);
+    } else {
+        log.warn(`🚨 Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
+        requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
     }
 
     log.log(`Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
 
-    if (!success) {
-        log.warn(`Failed to fetch ${ticker}, pausing queue due to rate limit.`);
-    
-        // ✅ PAUSE THE QUEUE TO PREVENT CONTINUOUS RETRIES
+    if (!data) {
+        log.warn(`🚨 Failed to fetch ${ticker}, pausing queue due to rate limit.`);
         requestQueue.pause();
-        
-        // ✅ ENFORCE FULL COOLDOWN PERIOD BEFORE RESUMING
+
         setTimeout(() => {
-            log.log("Cooldown period over. Resuming queue.");
-            requestQueue.resume();  // ✅ Only resume AFTER cooldown ends
-            processQueue();  // ✅ Ensure queue processing restarts
+            log.log("✅ Cooldown period over. Resuming queue.");
+            requestQueue.resume();
+            processQueue();
         }, 5 * 60 * 1000 + 1000);
     } else {
-        callback();  // ✅ Move to next item if successful
+        callback();
     }
-    
+
 }, 1);
 
 async function enforceCooldown() {
@@ -114,13 +106,11 @@ async function enforceCooldown() {
         log.log("✅ Cooldown period over. Resuming queue.");
         lastRateLimitTime = null;
         requestQueue.resume();
-        processQueue(); // ✅ Restart processing
+        processQueue();
     }, 5 * 60 * 1000 + 1000);
 }
 
-
-
-// ✅ Process the Queue (Ensure it Runs)
+// ✅ Process the Queue
 function processQueue() {
     if (requestQueue.length() > 0 && !isRateLimited()) {
         log.log(`Resuming queue processing... Queue size: ${requestQueue.length()}`);
@@ -128,19 +118,15 @@ function processQueue() {
     }
 }
 
-// ✅ Fetch data from Alpha Vantage (or use cache)
+// ✅ Fetch data from Alpha Vantage (or use cache if necessary)
 async function fetchAlphaVantageData(ticker) {
-    if (cache[ticker]) {
-        log.log(`Using cached data for ${ticker}`);
-        return true; 
-    }
-
     if (isRateLimited()) {
         log.warn(`${ticker} delayed due to cooldown. Will retry later.`);
-        return false; 
+        return null;
     }
 
     let attempts = 0;
+    let latestData = null;
 
     while (attempts < API_KEYS.length) {
         const API_KEY = getNextAPIKey();
@@ -152,51 +138,54 @@ async function fetchAlphaVantageData(ticker) {
 
             if (data.Note || (data.Information && data.Information.includes("rate limit"))) {
                 log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
-                currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
                 attempts++;
                 continue;
             }
 
             if (!data || Object.keys(data).length === 0 || !data.Symbol) {
                 log.warn(`Invalid response for ${ticker}. Not caching.`);
-                return false;
+                return null;
             }
 
-            log.log(`Fetched Alpha Vantage data for ${ticker}. Caching...`);
+            log.log(`✅ Fetched Alpha Vantage data for ${ticker}. Caching...`);
+            latestData = data;
             cache[ticker] = data;
             saveCache();
 
+            // ✅ Update the store
             const store = require("../store");
             store.updateTicker(ticker, { about: data });
 
-            return true;
+            return latestData;
         } catch (error) {
             log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
-            return false;
+            return null;
         }
     }
 
-    // ✅ Activate cooldown if all API keys fail
-    if (!isRateLimited()) {
+    // ✅ If API request fails, check cache
+    if (!latestData) {
+        if (cache[ticker]) {
+            log.log(`🟡 Returning cached data for ${ticker} due to API failure.`);
+            return cache[ticker];
+        }
+
+        // ✅ If no cache exists, enforce cooldown and requeue
         await enforceCooldown();
     }
-    return false;
+
+    return null;
 }
 
-
-
+// ✅ Queue Requests
 function queueRequest(ticker) {
     requestQueue.push(ticker);
-    log.log(`Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
+    log.log(`📌 Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
 
-    // Start processing if not already active
     if (!isRateLimited()) {
         processQueue();
     }
 }
 
-
-
 // ✅ Export Functions
 module.exports = { fetchAlphaVantageData, queueRequest, processQueue };
-
