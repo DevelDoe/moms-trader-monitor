@@ -12,17 +12,17 @@
     "lists": {
       "session": {
         "Price": false,
-        "ChangePercent": true,
-        "FiveM": true,
-        "Float": true,
-        "Volume": true,
-        "SprPercent": true,
-        "Time": true,
-        "HighOfDay": true,
-        "News": true,
-        "Count": true,
-        "Score": true,
-        "Bonuses": true
+        "ChangePercent": false,
+        "FiveM": false,
+        "Float": false,
+        "Volume": false,
+        "SprPercent": false,
+        "Time": false,
+        "HighOfDay": false,
+        "News": false,
+        "Count": false,
+        "Score": false,
+        "Bonuses": false
       },
       "daily": {
         "Price": false,
