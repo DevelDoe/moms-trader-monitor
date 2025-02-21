@@ -7,9 +7,9 @@ puppeteer.use(StealthPlugin());
 
 const log = createLogger(__filename);
 
-// This Set will store processed keys in the format "SYMBOL-TIME"
-let processedKeys = new Set();
-
+/**
+ * Launch Puppeteer Browser
+ */
 async function launchBrowser() {
     log.log("Launching Puppeteer...");
     try {
@@ -18,19 +18,23 @@ async function launchBrowser() {
             args: ["--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox"],
         });
     } catch (error) {
-        log.error("Browser launch failed:", error);
+        log.error("❌ Browser launch failed:", error);
+        return null;
     }
 }
 
+/**
+ * Scrapes data from Momo Screener
+ */
 async function scrapeData() {
     const browser = await launchBrowser();
-    if (!browser) return log.error("Failed to launch browser.");
+    if (!browser) return log.error("❌ Failed to launch browser.");
 
     const page = await browser.newPage();
     await page.setUserAgent("Mozilla/5.0");
 
     try {
-        log.log("Navigating to Momo Screener...");
+        log.log("🌐 Navigating to Momo Screener...");
         await page.goto("https://momoscreener.com/scanner", { waitUntil: "networkidle2" });
 
         await page.waitForSelector(".tableFixHead tbody tr", { visible: true, timeout: 60000 });
@@ -63,59 +67,55 @@ async function scrapeData() {
         });
 
         if (newScrape.length > 0) {
-            log.log(`Scraped ${newScrape.length} entries`);
+            log.log(`📊 Scraped ${newScrape.length} entries`);
 
             // Filter out duplicates based on Symbol and Time combination
             const uniqueEntries = newScrape.filter((ticker) => {
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
                 const key = `${symbolNormalized}-${ticker.Time}`;
-            
-                // ✅ Check `dailyData` instead of a temporary Set
-                if (tickerStore.dailyData.has(symbolNormalized) && tickerStore.dailyData.get(symbolNormalized).processedTimes?.includes(ticker.Time)) {
-                    return false; // Already processed
+                
+                // ✅ Check if ticker was already processed
+                if (tickerStore.processedList.some(entry => entry.key === key)) {
+                    return false; // Skip duplicate
                 }
-            
+
                 return true;
             });
-            
 
-            // Update the processedKeys set with the keys of unique entries
+            // ✅ Update `processedList` with new entries, limiting to 100 entries
             uniqueEntries.forEach((ticker) => {
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
-                
-                // ✅ Store processed times in `dailyData`
-                if (!tickerStore.dailyData.has(symbolNormalized)) {
-                    // ✅ Ensure `Count` starts at 1 and News is initialized
-                    tickerStore.dailyData.set(symbolNormalized, { Count: 1, News: [], processedTimes: [] });
+                const key = `${symbolNormalized}-${ticker.Time}`;
+
+                tickerStore.processedList.unshift({ key, Symbol: symbolNormalized, Time: ticker.Time });
+
+                // Keep only last 100 entries
+                if (tickerStore.processedList.length > 100) {
+                    tickerStore.processedList.pop();
                 }
-                
-                let storedTicker = tickerStore.dailyData.get(symbolNormalized);
-                storedTicker.Count = storedTicker.Count || 1; // ✅ Prevent NaN issues
-                storedTicker.processedTimes = [...(storedTicker.processedTimes || []), ticker.Time];
-                
-                tickerStore.dailyData.set(symbolNormalized, storedTicker);
-                
             });
-            
 
             if (uniqueEntries.length > 0) {
-                log.log(`Storing ${uniqueEntries.length} new unique entries`);
-                tickerStore.addTickers(uniqueEntries); // ✅ Store only unique entries
+                log.log(`✅ Storing ${uniqueEntries.length} new unique entries`);
+                tickerStore.addTickers(uniqueEntries);
             } else {
-                log.log("No new unique entries found. Skipping update.");
+                log.log("⚠️ No new unique entries found. Skipping update.");
             }
         }
     } catch (error) {
-        log.error(`Scrape error: ${error.message}`);
+        log.error(`❌ Scrape error: ${error.message}`);
     } finally {
-        await page.close(); // ✅ Prevent memory leaks
+        await page.close();
         await browser.close();
-        log.log("Browser closed");
+        log.log("🛑 Browser closed");
     }
 }
 
+/**
+ * Collects tickers at random intervals
+ */
 function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
-    log.log("Starting scraper loop...");
+    log.log("🔄 Starting scraper loop...");
 
     function getRandomInterval(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -124,7 +124,7 @@ function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
     async function run() {
         await scrapeData();
         const interval = getRandomInterval(minIntervalMs, maxIntervalMs);
-        log.log(`Next scrape in ${interval / 1000} seconds`);
+        log.log(`⏳ Next scrape in ${interval / 1000} seconds`);
         setTimeout(run, interval);
     }
 
