@@ -411,16 +411,18 @@ tickerStore.on("update", () => {
 });
 
 ipcMain.on("clear-session", () => {
-    log.log("🔄 Received 'clear-session' event in main.js."); // ✅ Log when event is received
+    log.log("🔄 Received 'clear-session' event in main.js. ✅ CALLING STORE...");
 
-    tickerStore.clearSessionData(); // ✅ Clears session data in the store
+    tickerStore.clearSessionData();
 
-    log.log("📢 Broadcasting clear session event to all windows."); // ✅ Log before broadcasting event
-
-    BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("session-cleared"); // ✅ Notify renderer
-    });
+    setTimeout(() => {
+        log.log("📢 Broadcasting clear session event to all windows... ✅");
+        BrowserWindow.getAllWindows().forEach((win) => {
+            win.webContents.send("session-cleared");
+        });
+    }, 500); // ✅ Give store time to clear session
 });
+
 
 
 // ipcMain.handle("get-attributes", async (_event, listType) => {
