@@ -46,8 +46,8 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
-      "RTC",
       "RILY",
+      "RTC",
       "WIMI",
       "TXMD",
       "SINT",
