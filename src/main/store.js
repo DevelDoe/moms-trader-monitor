@@ -1,9 +1,8 @@
 const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
-const { fetchHistoricalNews } = require("./collectors/news"); 
+const { fetchHistoricalNews } = require("./collectors/news");
 const { fetchAlphaVantageData } = require("./collectors/alpha"); // ✅ Import Alpha function
-
 
 class Store extends EventEmitter {
     constructor() {
@@ -21,10 +20,10 @@ class Store extends EventEmitter {
         log.log(`addTickers() called with ${tickers.length} items.`);
         let newTickers = []; // ✅ Track new tickers
         let updatedTickers = []; // ✅ Track updated tickers
-    
+
         tickers.forEach((ticker) => {
             const key = ticker.Symbol;
-    
+
             if (!this.dailyData.has(key)) {
                 // ✅ New ticker
                 this.dailyData.set(key, { ...ticker, Count: 1, News: [] });
@@ -33,43 +32,68 @@ class Store extends EventEmitter {
                 // ✅ Updated ticker
                 let existingTicker = this.dailyData.get(key);
                 existingTicker.Count++;
-    
+
                 // Check if any significant attribute has changed
                 const hasUpdates = Object.keys(ticker).some((attr) => {
                     return ticker[attr] !== undefined && ticker[attr] !== existingTicker[attr];
                 });
-    
+
                 if (hasUpdates) {
                     updatedTickers.push(key); // Add to updated tickers list
                 }
-    
+
                 // Update the existing ticker data
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-    
+
                 this.dailyData.set(key, existingTicker);
             }
-    
+
+            // ✅ Handle session data
+            // if (!this.sessionData.has(key)) {
+            //     this.sessionData.set(key, { ...ticker, Count: 1, News: [] });
+            // } else {
+            //     let existingTicker = this.sessionData.get(key);
+            //     existingTicker.Count++;
+
+            //     Object.keys(ticker).forEach((attr) => {
+            //         if (ticker[attr] !== undefined) {
+            //             existingTicker[attr] = ticker[attr];
+            //         }
+            //     });
+
+            //     this.sessionData.set(key, existingTicker);
+            // }
             // ✅ Handle session data
             if (!this.sessionData.has(key)) {
-                this.sessionData.set(key, { ...ticker, Count: 1, News: [] });
+                let sessionTicker = { ...ticker, Count: 1, News: [] };
+
+                // ✅ If the ticker exists in dailyData, inherit `about` and `news`
+                if (this.dailyData.has(key)) {
+                    let dailyTicker = this.dailyData.get(key);
+                    sessionTicker.about = dailyTicker.about || {}; // ✅ Copy `about`
+                    sessionTicker.News = [...(dailyTicker.News || [])]; // ✅ Copy `News`
+                    log.log(`Attached about & news to ${key} in session list.`);
+                }
+
+                this.sessionData.set(key, sessionTicker);
             } else {
                 let existingTicker = this.sessionData.get(key);
                 existingTicker.Count++;
-    
+
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-    
+
                 this.sessionData.set(key, existingTicker);
             }
         });
-    
+
         // ✅ Fetch news for new tickers
         if (newTickers.length > 0) {
             log.log(`Fetching news for new tickers: ${newTickers.join(", ")}`);
@@ -81,22 +105,22 @@ class Store extends EventEmitter {
         // Fetch general data from alpha for new tickers
         if (newTickers.length > 0) {
             log.log(`Fetching general data from ALpha for new tickers: ${newTickers.join(", ")}`);
-        
+
             for (const ticker of newTickers) {
                 fetchAlphaVantageData(ticker).then((data) => {
                     log.log(`Alpha Vantage Data for ${ticker}:`, data);
                 }); // ✅ Fetch and log response
             }
         }
-    
+
         // ✅ Fetch news for updated tickers
-        if (updatedTickers.length > 0) {
-            log.log(`Fetching news for updated tickers: ${updatedTickers.join(", ")}`);
-            updatedTickers.forEach((ticker) => {
-                fetchHistoricalNews(ticker);
-            });
-        }
-    
+        // if (updatedTickers.length > 0) {
+        //     log.log(`Fetching news for updated tickers: ${updatedTickers.join(", ")}`);
+        //     updatedTickers.forEach((ticker) => {
+        //         fetchHistoricalNews(ticker);
+        //     });
+        // }
+
         this.emit("update");
     }
 
@@ -158,6 +182,22 @@ class Store extends EventEmitter {
         });
 
         this.emit("newsUpdated", { newsItems: timestampedNews });
+    }
+    // TODO: when sessionlist gets new tickers they should look it that ticker exist in daily list and
+    // is so it should add the about key and the also do this for the news key.
+    updateTicker(symbol, updates) {
+        if (!this.dailyData.has(symbol)) {
+            log.warn(`Ticker ${symbol} not found in store. Skipping update.`);
+            return;
+        }
+
+        let ticker = this.dailyData.get(symbol);
+
+        // ✅ Merge `about` data
+        ticker.about = { ...ticker.about, ...updates.about };
+
+        this.dailyData.set(symbol, ticker);
+        log.log(`Updated ${symbol} with additional data.`);
     }
 
     getAllNews() {
