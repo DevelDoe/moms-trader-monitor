@@ -537,7 +537,6 @@ function getScoreBreakdown(ticker) {
 }
 
 function getBonusesHTML(ticker) {
-    console.log("🔎 Debugging Bonuses for:", ticker); // ✅ Log ticker object
 
     let bonuses = [];
     let tooltipText = [];
