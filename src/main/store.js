@@ -53,34 +53,8 @@ class Store extends EventEmitter {
             }
 
             // ✅ Handle session data
-            // if (!this.sessionData.has(key)) {
-            //     this.sessionData.set(key, { ...ticker, Count: 1, News: [] });
-            // } else {
-            //     let existingTicker = this.sessionData.get(key);
-            //     existingTicker.Count++;
-
-            //     Object.keys(ticker).forEach((attr) => {
-            //         if (ticker[attr] !== undefined) {
-            //             existingTicker[attr] = ticker[attr];
-            //         }
-            //     });
-
-            //     this.sessionData.set(key, existingTicker);
-            // }
-
-            // ✅ Handle session data
             if (!this.sessionData.has(key)) {
-                let sessionTicker = { Symbol: ticker.Symbol, Count: 1 };
-
-                if (this.dailyData.has(key)) {
-                    let dailyTicker = this.dailyData.get(key);
-                    if (dailyTicker.about) sessionTicker.about = dailyTicker.about;
-                    if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News];
-                    log.log(`Attached about & news to ${key} in session list.`);
-                }
-
-                this.sessionData.set(key, sessionTicker);
-                log.log(`✅ Added ${key} to sessionData.`);
+                this.sessionData.set(key, { ...ticker, Count: 1, News: [] });
             } else {
                 let existingTicker = this.sessionData.get(key);
                 existingTicker.Count++;
@@ -93,6 +67,32 @@ class Store extends EventEmitter {
 
                 this.sessionData.set(key, existingTicker);
             }
+
+            // ✅ Handle session data
+            // if (!this.sessionData.has(key)) {
+            //     let sessionTicker = { Symbol: ticker.Symbol, Count: 1 };
+
+            //     if (this.dailyData.has(key)) {
+            //         let dailyTicker = this.dailyData.get(key);
+            //         if (dailyTicker.about) sessionTicker.about = dailyTicker.about;
+            //         if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News];
+            //         log.log(`Attached about & news to ${key} in session list.`);
+            //     }
+
+            //     this.sessionData.set(key, sessionTicker);
+            //     log.log(`✅ Added ${key} to sessionData.`);
+            // } else {
+            //     let existingTicker = this.sessionData.get(key);
+            //     existingTicker.Count++;
+
+            //     Object.keys(ticker).forEach((attr) => {
+            //         if (ticker[attr] !== undefined) {
+            //             existingTicker[attr] = ticker[attr];
+            //         }
+            //     });
+
+            //     this.sessionData.set(key, existingTicker);
+            // }
         });
 
         // ✅ Fetch news for new tickers
