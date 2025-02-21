@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 2,
+    "minPrice": 0,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -15,15 +15,14 @@
         "ChangePercent": false,
         "FiveM": false,
         "Float": false,
-        "Volume": false,
+        "Volume": true,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
         "News": false,
         "Count": true,
         "Score": true,
-        "Bonuses": true,
-        "length": 10
+        "Bonuses": true
       },
       "daily": {
         "Price": false,
@@ -37,8 +36,7 @@
         "News": false,
         "Count": false,
         "Score": true,
-        "Bonuses": true,
-        "length": 4
+        "Bonuses": true
       }
     }
   },
@@ -46,7 +44,11 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "HOLO",
+      "NKGN",
+      "NAAS",
       "GRAB",
+      "RETO",
       "NVO",
       "AEP"
     ],
