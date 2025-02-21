@@ -19,7 +19,7 @@
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
-        "News": true,
+        "News": false,
         "Count": true,
         "Score": true,
         "Bonuses": true
