@@ -95,7 +95,7 @@ async function scrapeData() {
                 const key = `${symbolNormalized}-${ticker.Time}`;
 
                 // ✅ Check if ticker was already processed
-                if (tickerStore.processedList.some((entry) => entry.key === key)) {
+                if (processedList.some((entry) => entry.key === key)) {
                     return false; // Skip duplicate
                 }
 
