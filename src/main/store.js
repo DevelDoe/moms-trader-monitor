@@ -77,6 +77,17 @@ class Store extends EventEmitter {
                 fetchHistoricalNews(ticker);
             });
         }
+
+        // Fetch general data from alpha for new tickers
+        if (newTickers.length > 0) {
+            log.log(`Fetching general data from ALpha for new tickers: ${newTickers.join(", ")}`);
+        
+            for (const ticker of newTickers) {
+                fetchAlphaVantageData(ticker).then((data) => {
+                    log.log(`Alpha Vantage Data for ${ticker}:`, data);
+                }); // ✅ Fetch and log response
+            }
+        }
     
         // ✅ Fetch news for updated tickers
         if (updatedTickers.length > 0) {
