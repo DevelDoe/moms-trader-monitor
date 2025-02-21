@@ -154,7 +154,7 @@ async function fetchAlphaVantageData(ticker) {
 
             // ✅ Update the store
             const store = require("../store");
-            store.updateTicker(ticker, { about: data });
+            store.updateOverview(ticker, { overview: data });
 
             return latestData;
         } catch (error) {
