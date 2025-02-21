@@ -15,7 +15,7 @@ if (fs.existsSync(CACHE_FILE)) {
     try {
         cache = fs.readJsonSync(CACHE_FILE);
     } catch (error) {
-        console.error("❌ Error reading Alpha Vantage cache:", error);
+        log.error("Error reading Alpha Vantage cache:", error);
         cache = {}; // Reset cache if corrupted
     }
 }
@@ -40,7 +40,7 @@ function saveCache() {
     try {
         fs.writeJsonSync(CACHE_FILE, cache, { spaces: 2 });
     } catch (error) {
-        console.error("❌ Error saving Alpha Vantage cache:", error);
+        log.error("Error saving Alpha Vantage cache:", error);
     }
 }
 
@@ -52,7 +52,7 @@ function isRateLimited() {
     const elapsed = Date.now() - lastRateLimitTime;
 
     if (elapsed < cooldownPeriod) {
-        console.warn(`⏳ Cooldown active! Waiting ${((cooldownPeriod - elapsed) / 1000).toFixed(1)}s before retrying.`);
+        log.warn(`Cooldown active! Waiting ${((cooldownPeriod - elapsed) / 1000).toFixed(1)}s before retrying.`);
         return true;
     }
 
@@ -69,7 +69,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
 // ✅ Fetch data from Alpha Vantage (or use cache)
 async function fetchAlphaVantageData(ticker) {
     if (cache[ticker]) {
-        console.log(`🔄 Using cached data for ${ticker}`);
+        log.log(`Using cached data for ${ticker}`);
         return cache[ticker]; // ✅ Return cached data
     }
 
@@ -86,10 +86,10 @@ async function fetchAlphaVantageData(ticker) {
 
         // ✅ Handle rate limit response
         if (data.Note || (data.Information && data.Information.includes("rate limit"))) {
-            console.warn(`⚠️ Rate limit hit on key ${API_KEY}. Rotating...`);
+            log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
 
             if (currentKeyIndex === API_KEYS.length - 1) {
-                console.error("🚨 All API keys exhausted! Activating cooldown.");
+                log.error("All API keys exhausted! Activating cooldown.");
                 lastRateLimitTime = Date.now(); // Start cooldown
                 return null;
             }
@@ -99,17 +99,17 @@ async function fetchAlphaVantageData(ticker) {
 
         // ✅ Ensure valid data before caching
         if (!data || Object.keys(data).length === 0 || !data.Symbol) {
-            console.warn(`⚠️ Invalid response for ${ticker}. Not caching.`);
+            log.warn(`Invalid response for ${ticker}. Not caching.`);
             return null;
         }
 
-        console.log(`✅ Fetched Alpha Vantage data for ${ticker}. Caching...`);
+        log.log(`Fetched Alpha Vantage data for ${ticker}. Caching...`);
         cache[ticker] = data;
         saveCache();
 
         return data;
     } catch (error) {
-        console.error(`❌ Error fetching Alpha Vantage data for ${ticker}:`, error);
+        log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
         return null;
     }
 }
