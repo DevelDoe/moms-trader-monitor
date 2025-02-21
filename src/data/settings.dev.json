@@ -44,7 +44,13 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [],
+    "filteredTickers": [
+      "NKGN",
+      "OSRH",
+      "SPGC",
+      "SINT",
+      "BSGM"
+    ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
