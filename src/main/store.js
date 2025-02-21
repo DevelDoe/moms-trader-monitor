@@ -123,7 +123,7 @@ class Store extends EventEmitter {
         // }
 
         this.emit("update");
-    }
+    },
 
     addNews(newsItems) {
         if (!newsItems) {
