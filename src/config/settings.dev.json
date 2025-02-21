@@ -4,7 +4,7 @@
     "minPrice": 0,
     "maxPrice": 0,
     "minFloat": 0,
-    "maxFloat": 200000000,
+    "maxFloat": 0,
     "minScore": 1,
     "maxScore": 0,
     "minVolume": 0,
