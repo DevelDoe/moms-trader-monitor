@@ -68,9 +68,8 @@ class Store extends EventEmitter {
 
                 if (this.dailyData.has(key)) {
                     let dailyTicker = this.dailyData.get(key);
-
                     if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News];
-                    if (dailyTicker.about) sessionTicker.about = dailyTicker.about;
+                    if (dailyTicker.overview) sessionTicker.overview = dailyTicker.overview; // ✅ Copy overview
                 }
 
                 this.sessionData.set(key, sessionTicker);
@@ -153,8 +152,9 @@ class Store extends EventEmitter {
         this.emit("newsUpdated", { newsItems: timestampedNews });
     }
 
-    updateTicker(symbol, updateData) {
-        log.log(`updateTicker() called for ${symbol}`);
+    updateOverview(symbol, updateData) {
+        log.log(`updateOverview() called for ${symbol}`);
+
         if (!this.dailyData.has(symbol)) {
             log.warn(`Attempted to update non-existing ticker: ${symbol}`);
             return;
