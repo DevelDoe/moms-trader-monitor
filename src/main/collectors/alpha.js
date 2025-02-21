@@ -4,6 +4,7 @@ const path = require("path");
 const async = require("async");
 require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
+const log = createLogger(__filename);
 
 const CACHE_FILE = path.join(__dirname, "../../data/alpha_data.json");
 
