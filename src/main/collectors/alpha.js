@@ -50,7 +50,10 @@ function saveCache() {
 let cooldownLogged = false; // Prevents multiple logs
 
 function isRateLimited() {
-    if (!lastRateLimitTime) return false;
+    if (!lastRateLimitTime) {
+        lastRateLimitTime = Date.now();
+        return false;
+    }
 
     const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
     const elapsed = Date.now() - lastRateLimitTime;
@@ -70,35 +73,71 @@ function isRateLimited() {
 }
 
 // ✅ Queue system for delaying requests
-// ✅ Queue system for delaying requests
 const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`🔄 Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
-    await fetchAlphaVantageData(ticker);
+    const success = await fetchAlphaVantageData(ticker);
+
+    if (!success) {
+        log.warn(`🚨 Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
+        requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
+    } else {
+        log.log(`✅ Successfully fetched ${ticker}.`);
+    }
 
     log.log(`✅ Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
 
+    if (!success && isRateLimited()) {
+        return; // 🚨 STOP PROCESSING: Don't call callback() during cooldown
+    }
+
     setTimeout(() => {
-        log.log(`⏳ Waiting 5 min before next request... Queue size: ${requestQueue.length()}`);
-        callback();
-    }, 5 * 60 * 1000 + 1000); // 5 min + 1 sec delay
-}, 1); // Only 1 request at a time
+        if (!isRateLimited()) {
+            callback();
+        } else {
+            log.warn(`Queue paused due to cooldown. Retrying after ${((5 * 60 * 1000) / 1000).toFixed(1)}s.`);
+            setTimeout(callback, 5 * 60 * 1000 + 1000);
+        }
+    }, 5 * 60 * 1000 + 1000);
+    
+}, 1);
+
+// ✅ Pause and Resume Queue on Cooldown
+async function enforceCooldown() {
+    log.warn("🚨 All API keys exhausted! Pausing queue for cooldown.");
+    requestQueue.pause(); // ✅ Pause queue
+    lastRateLimitTime = Date.now();
+
+    setTimeout(() => {
+        log.log("✅ Cooldown period over. Resuming queue.");
+        requestQueue.resume(); // ✅ Resume queue after cooldown
+        processQueue(); // ✅ Restart processing
+    }, 5 * 60 * 1000 + 1000);
+}
+
+// ✅ Process the Queue (Ensure it Runs)
+function processQueue() {
+    if (requestQueue.length() > 0 && !isRateLimited()) {
+        log.log(`🔄 Resuming queue processing... Queue size: ${requestQueue.length()}`);
+        requestQueue.process();
+    }
+}
 
 // ✅ Fetch data from Alpha Vantage (or use cache)
 async function fetchAlphaVantageData(ticker) {
     if (cache[ticker]) {
         log.log(`Using cached data for ${ticker}`);
-        return cache[ticker]; // ✅ Return cached data
+        return true; // ✅ Return success if data exists
     }
 
     if (isRateLimited()) {
-        return null; // 🚨 Prevent sending requests during cooldown
+        return false; // 🚨 Prevent sending requests during cooldown
     }
 
     let attempts = 0; // ✅ Track how many keys we’ve tried
 
     while (attempts < API_KEYS.length) { // ✅ Ensure we try all keys
-        const API_KEY = API_KEYS[currentKeyIndex];
+        const API_KEY = getNextAPIKey();
         const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
 
         try {
@@ -119,34 +158,30 @@ async function fetchAlphaVantageData(ticker) {
             // ✅ Ensure valid data before caching
             if (!data || Object.keys(data).length === 0 || !data.Symbol) {
                 log.warn(`Invalid response for ${ticker}. Not caching.`);
-                return null;
+                return false;
             }
 
             log.log(`Fetched Alpha Vantage data for ${ticker}. Caching...`);
             cache[ticker] = data;
             saveCache();
 
-            return data; // ✅ Successfully retrieved data, exit function
+            return true; // ✅ Successfully retrieved data
         } catch (error) {
             log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
-            return null;
+            return false;
         }
     }
 
     // ✅ If we reach this point, all keys have been exhausted
-    log.error("All API keys exhausted! Activating cooldown.");
-    lastRateLimitTime = Date.now(); // Start cooldown
-    return null;
+    await enforceCooldown();
+    return false;
 }
-
-
-
 
 // ✅ Queue Requests Function
 function queueRequest(ticker) {
-    log.log(`📥 Adding ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
     requestQueue.push(ticker);
 }
 
 // ✅ Export Functions
-module.exports = { fetchAlphaVantageData, queueRequest };
+module.exports = { fetchAlphaVantageData, queueRequest, processQueue };
+
