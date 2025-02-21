@@ -178,7 +178,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     if (tickers.length === 0) {
         console.warn(`⚠️ No tickers available for ${tableId}`);
 
-        tableHead.innerHTML = "<tr><th>No Data Available</th></tr>";
+        // tableHead.innerHTML = "<tr><th>No Data Available</th></tr>";
         tableBody.innerHTML = ""; // ✅ Clear existing rows
 
         return;
