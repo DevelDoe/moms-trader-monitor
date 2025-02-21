@@ -52,7 +52,7 @@ class Store extends EventEmitter {
                 this.dailyData.set(key, existingTicker);
             }
 
-            ✅ Handle session data
+            // ✅ Handle session data
             if (!this.sessionData.has(key)) {
                 this.sessionData.set(key, { ...ticker, Count: 1, News: [] });
             } else {
