@@ -72,22 +72,22 @@ const requestQueue = async.queue(async (ticker, callback) => {
     const data = await fetchAlphaVantageData(ticker);
 
     if (data) {
-        log.log(`✅ Successfully fetched ${ticker}.`);
+        log.log(`Successfully fetched ${ticker}.`);
     } else if (cache[ticker]) {
-        log.log(`🟡 Using cached data for ${ticker} due to failed API request.`);
+        log.log(`Using cached data for ${ticker} due to failed API request.`);
     } else {
-        log.warn(`🚨 Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
+        log.warn(`Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
         requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
     }
 
     log.log(`Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
 
     if (!data) {
-        log.warn(`🚨 Failed to fetch ${ticker}, pausing queue due to rate limit.`);
+        log.warn(`Failed to fetch ${ticker}, pausing queue due to rate limit.`);
         requestQueue.pause();
 
         setTimeout(() => {
-            log.log("✅ Cooldown period over. Resuming queue.");
+            log.log("Cooldown period over. Resuming queue.");
             requestQueue.resume();
             processQueue();
         }, 5 * 60 * 1000 + 1000);
@@ -103,7 +103,7 @@ async function enforceCooldown() {
     lastRateLimitTime = Date.now();
 
     setTimeout(() => {
-        log.log("✅ Cooldown period over. Resuming queue.");
+        log.log("Cooldown period over. Resuming queue.");
         lastRateLimitTime = null;
         requestQueue.resume();
         processQueue();
@@ -147,7 +147,7 @@ async function fetchAlphaVantageData(ticker) {
                 return null;
             }
 
-            log.log(`✅ Fetched Alpha Vantage data for ${ticker}. Caching...`);
+            (`Fetched Alpha Vantage data for ${ticker}. Caching...`);
             latestData = data;
             cache[ticker] = data;
             saveCache();
@@ -166,7 +166,7 @@ async function fetchAlphaVantageData(ticker) {
     // ✅ If API request fails, check cache
     if (!latestData) {
         if (cache[ticker]) {
-            log.log(`🟡 Returning cached data for ${ticker} due to API failure.`);
+            log.log(`Returning cached data for ${ticker} due to API failure.`);
             return cache[ticker];
         }
 
@@ -180,7 +180,7 @@ async function fetchAlphaVantageData(ticker) {
 // ✅ Queue Requests
 function queueRequest(ticker) {
     requestQueue.push(ticker);
-    log.log(`📌 Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
+    log.log(`Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
 
     if (!isRateLimited()) {
         processQueue();
