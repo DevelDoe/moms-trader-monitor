@@ -50,7 +50,10 @@ function saveCache() {
 let cooldownLogged = false; // Prevents multiple logs
 
 function isRateLimited() {
-    if (!lastRateLimitTime) return false;
+    if (!lastRateLimitTime) {
+        lastRateLimitTime = Date.now();
+        return false;
+    }
 
     const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
     const elapsed = Date.now() - lastRateLimitTime;
