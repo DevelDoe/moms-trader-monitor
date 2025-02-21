@@ -42,7 +42,7 @@
     }
   },
   "news": {
-    "showTrackedTickers": false,
+    "showTrackedTickers": true,
     "filteredTickers": [
       "NAAS",
       "MLGO",
