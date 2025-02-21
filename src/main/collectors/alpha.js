@@ -47,6 +47,8 @@ function saveCache() {
 }
 
 // ✅ Check if we recently hit a rate limit
+let cooldownLogged = false; // Prevents multiple logs
+
 function isRateLimited() {
     if (!lastRateLimitTime) return false;
 
@@ -54,13 +56,18 @@ function isRateLimited() {
     const elapsed = Date.now() - lastRateLimitTime;
 
     if (elapsed < cooldownPeriod) {
-        log.warn(`Cooldown active! Waiting ${((cooldownPeriod - elapsed) / 1000).toFixed(1)}s before retrying.`);
+        if (!cooldownLogged) { // ✅ Only log the first time
+            log.warn(`⏳ Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
+            cooldownLogged = true; // ✅ Set flag to avoid duplicate logs
+        }
         return true;
     }
 
-    lastRateLimitTime = null; // Reset cooldown
+    lastRateLimitTime = null; // ✅ Reset cooldown
+    cooldownLogged = false; // ✅ Allow logging again for next cooldown
     return false;
 }
+
 
 // ✅ Queue system for delaying requests
 const requestQueue = async.queue(async (ticker, callback) => {
