@@ -52,6 +52,7 @@
       "SINT",
       "TRNR",
       "TXMD",
+      "TANH",
       "RTC"
     ],
     "blockList": [
