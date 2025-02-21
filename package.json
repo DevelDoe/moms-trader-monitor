@@ -14,6 +14,7 @@
     "author": "Morgan A Ray",
     "license": "MIT",
     "dependencies": {
+        "async": "^3.2.6",
         "axios": "^1.7.9",
         "dotenv": "^16.4.7",
         "electron-updater": "^6.3.9",
