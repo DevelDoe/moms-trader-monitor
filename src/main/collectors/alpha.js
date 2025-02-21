@@ -70,11 +70,17 @@ function isRateLimited() {
 }
 
 // ✅ Queue system for delaying requests
-// ✅ Queue system for delaying requests
 const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`🔄 Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
-    await fetchAlphaVantageData(ticker);
+    const success = await fetchAlphaVantageData(ticker);
+
+    if (!success) {
+        log.warn(`🚨 Failed to fetch ${ticker}, re-adding to queue.`);
+        requestQueue.push(ticker); // Re-add the ticker if it was not fetched
+    } else {
+        log.log(`✅ Successfully fetched ${ticker}.`);
+    }
 
     log.log(`✅ Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
 
@@ -82,17 +88,29 @@ const requestQueue = async.queue(async (ticker, callback) => {
         log.log(`⏳ Waiting 5 min before next request... Queue size: ${requestQueue.length()}`);
         callback();
     }, 5 * 60 * 1000 + 1000); // 5 min + 1 sec delay
-}, 1); // Only 1 request at a time
+}, 1);
+
+// ✅ Pause and Resume Queue on Cooldown
+async function enforceCooldown() {
+    log.warn("🚨 All API keys exhausted! Pausing queue for cooldown.");
+    requestQueue.pause(); // ✅ Pause processing
+    lastRateLimitTime = Date.now();
+
+    setTimeout(() => {
+        log.log("✅ Cooldown period over. Resuming queue.");
+        requestQueue.resume(); // ✅ Resume processing after cooldown
+    }, 5 * 60 * 1000 + 1000);
+}
 
 // ✅ Fetch data from Alpha Vantage (or use cache)
 async function fetchAlphaVantageData(ticker) {
     if (cache[ticker]) {
         log.log(`Using cached data for ${ticker}`);
-        return cache[ticker]; // ✅ Return cached data
+        return true; // ✅ Return success if data exists
     }
 
     if (isRateLimited()) {
-        return null; // 🚨 Prevent sending requests during cooldown
+        return false; // 🚨 Prevent sending requests during cooldown
     }
 
     let attempts = 0; // ✅ Track how many keys we’ve tried
@@ -119,27 +137,24 @@ async function fetchAlphaVantageData(ticker) {
             // ✅ Ensure valid data before caching
             if (!data || Object.keys(data).length === 0 || !data.Symbol) {
                 log.warn(`Invalid response for ${ticker}. Not caching.`);
-                return null;
+                return false;
             }
 
             log.log(`Fetched Alpha Vantage data for ${ticker}. Caching...`);
             cache[ticker] = data;
             saveCache();
 
-            return data; // ✅ Successfully retrieved data, exit function
+            return true; // ✅ Successfully retrieved data
         } catch (error) {
             log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
-            return null;
+            return false;
         }
     }
 
     // ✅ If we reach this point, all keys have been exhausted
-    log.error("All API keys exhausted! Activating cooldown.");
-    lastRateLimitTime = Date.now(); // Start cooldown
-    return null;
+    await enforceCooldown();
+    return false;
 }
-
-
 
 
 // ✅ Queue Requests Function
