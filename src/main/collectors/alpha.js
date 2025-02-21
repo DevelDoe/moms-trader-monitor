@@ -56,7 +56,8 @@ function isRateLimited() {
     const elapsed = Date.now() - lastRateLimitTime;
 
     if (elapsed < cooldownPeriod) {
-        if (!cooldownLogged) { // ✅ Only log the first time
+        if (!cooldownLogged) {
+            // ✅ Only log the first time
             log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
             cooldownLogged = true; // ✅ Set flag to avoid duplicate logs
         }
@@ -67,7 +68,6 @@ function isRateLimited() {
     cooldownLogged = false; // ✅ Allow logging again for next cooldown
     return false;
 }
-
 
 // ✅ Queue system for delaying requests
 const requestQueue = async.queue(async (ticker, callback) => {
@@ -97,7 +97,12 @@ async function fetchAlphaVantageData(ticker) {
         if (data.Note || (data.Information && data.Information.includes("rate limit"))) {
             log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
 
-            if (currentKeyIndex === API_KEYS.length - 1) {
+            // ✅ Rotate to next key and retry
+            currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+
+            // ✅ Ensure we actually try the last key before cooldown
+            if (currentKeyIndex === 0) {
+                // Back to the first key after trying all
                 log.error("All API keys exhausted! Activating cooldown.");
                 lastRateLimitTime = Date.now(); // Start cooldown
                 return null;
@@ -130,4 +135,3 @@ function queueRequest(ticker) {
 
 // ✅ Export Functions
 module.exports = { fetchAlphaVantageData, queueRequest };
-
