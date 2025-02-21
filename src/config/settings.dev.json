@@ -38,13 +38,17 @@
         "Count": false,
         "Score": false,
         "Bonuses": false,
-        "length": 4
+        "length": 3
       }
     }
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [],
+    "filteredTickers": [
+      "MLGO",
+      "RTC",
+      "CAPT"
+    ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
