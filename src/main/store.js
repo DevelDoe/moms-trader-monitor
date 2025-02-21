@@ -148,6 +148,34 @@ class Store extends EventEmitter {
         this.emit("newsUpdated", { newsItems: timestampedNews });
     }
 
+    updateTicker(symbol, updates) {
+        if (!this.dailyData.has(symbol)) {
+            log.warn(`⚠️ Ticker ${symbol} not found in dailyData. Skipping update.`);
+            return;
+        }
+    
+        let ticker = this.dailyData.get(symbol);
+    
+        // ✅ Merge `about` data without overwriting other properties
+        if (updates.about) {
+            ticker.about = { ...ticker.about, ...updates.about };
+            log.log(`📌 Updated ${symbol} with additional 'about' data.`);
+        }
+    
+        this.dailyData.set(symbol, ticker);
+    
+        // ✅ If ticker is also in sessionData, update it there as well
+        if (this.sessionData.has(symbol)) {
+            let sessionTicker = this.sessionData.get(symbol);
+            sessionTicker.about = { ...sessionTicker.about, ...updates.about };
+            this.sessionData.set(symbol, sessionTicker);
+            log.log(`📌 Also updated ${symbol} in sessionData.`);
+        }
+    
+        this.emit("update");
+    }
+    
+
     getAllNews() {
         return this.newsList;
     }
