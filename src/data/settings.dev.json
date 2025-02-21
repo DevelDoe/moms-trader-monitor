@@ -46,6 +46,7 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "HOLO",
       "RETO",
       "NVO"
     ],
