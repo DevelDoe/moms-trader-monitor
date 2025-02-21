@@ -7,6 +7,8 @@ const { fetchAlphaVantageData, queueRequest } = require("./collectors/alpha");
 class Store extends EventEmitter {
     constructor() {
         super();
+        log.log("Store instance initialized");
+
         this.sessionData = new Map(); // Resets on clear
         this.dailyData = new Map(); // Stores all tickers for the full day
         this.newsList = []; // ✅ Store all news in a single list
@@ -23,9 +25,11 @@ class Store extends EventEmitter {
 
         for (const ticker of tickers) {
             const key = ticker.Symbol;
+            log.debug(`Processing ticker: ${key}`);
 
             // ✅ Handle dailyData independently
             if (!this.dailyData.has(key)) {
+                log.log(`Adding new ticker to dailyData: ${key}`);
                 this.dailyData.set(key, { ...ticker, Count: 1, News: [] });
                 newTickers.push(key);
             } else {
@@ -39,10 +43,12 @@ class Store extends EventEmitter {
                 });
 
                 this.dailyData.set(key, existingTicker);
+                log.debug(`Updated ticker in dailyData: ${key} (Count: ${existingTicker.Count})`);
             }
 
-            // ✅ Handle sessionData independently, but copy `News` & `about` if available in `dailyData`
+            // ✅ Handle sessionData independently
             if (!this.sessionData.has(key)) {
+                log.log(`Adding new ticker to sessionData: ${key}`);
                 let sessionTicker = { ...ticker, Count: 1 };
 
                 if (this.dailyData.has(key)) {
@@ -65,23 +71,21 @@ class Store extends EventEmitter {
                 });
 
                 this.sessionData.set(key, existingTicker);
+                log.debug(`Updated ticker in sessionData: ${key} (Count: ${existingTicker.Count})`);
             }
         }
 
         if (newTickers.length > 0) {
             log.log(`Queuing Alpha Vantage data requests: ${newTickers.join(", ")}`);
-            
-            newTickers.forEach((ticker) => {
-                queueRequest(ticker); // ✅ ONLY queue requests, don't fetch immediately
-            });
+            newTickers.forEach((ticker) => queueRequest(ticker)); // ✅ ONLY queue requests, don't fetch immediately
         }
-        
-        
 
+        log.log(`addTickers() completed. Total tickers in sessionData: ${this.sessionData.size}, in dailyData: ${this.dailyData.size}`);
         this.emit("update");
     }
 
     addNews(newsItems) {
+        log.log(`addNews() called`);
         if (!newsItems) {
             log.warn("No news items provided.");
             return;
@@ -104,31 +108,28 @@ class Store extends EventEmitter {
         this.newsList.push(...timestampedNews);
         log.log(`Stored ${timestampedNews.length} new articles in global list.`);
 
-        // ✅ Attach news to tickers in BOTH dailyData and sessionData
         timestampedNews.forEach((News) => {
             News.symbols.forEach((symbol) => {
+                log.debug(`Processing news for ticker: ${symbol}`);
+
                 if (this.dailyData.has(symbol)) {
                     let ticker = this.dailyData.get(symbol);
-
                     const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
+
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
                         log.log(`Added news to ${symbol} (Total: ${ticker.News.length})`);
                     }
-
-                    this.dailyData.set(symbol, ticker);
                 }
 
                 if (this.sessionData.has(symbol)) {
                     let ticker = this.sessionData.get(symbol);
-
                     const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
+
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
                         log.log(`Added news to ${symbol} (Total: ${ticker.News.length})`);
                     }
-
-                    this.sessionData.set(symbol, ticker);
                 }
             });
         });
@@ -137,48 +138,48 @@ class Store extends EventEmitter {
     }
 
     updateTicker(symbol, updateData) {
+        log.log(`updateTicker() called for ${symbol}`);
         if (!this.dailyData.has(symbol)) {
-            log.warn(`⚠️ Attempted to update non-existing ticker: ${symbol}`);
+            log.warn(`Attempted to update non-existing ticker: ${symbol}`);
             return;
         }
 
-        // ✅ Update `dailyData`
         let dailyTicker = this.dailyData.get(symbol);
         Object.assign(dailyTicker, updateData);
         this.dailyData.set(symbol, dailyTicker);
 
-        // ✅ Ensure `sessionData` also gets updates if it exists
         if (this.sessionData.has(symbol)) {
             let sessionTicker = this.sessionData.get(symbol);
             Object.assign(sessionTicker, updateData);
             this.sessionData.set(symbol, sessionTicker);
         }
 
-        log.log(`✅ Updated ticker ${symbol} with new data:`, updateData);
+        log.log(`Updated ticker ${symbol} with new data: ${JSON.stringify(updateData)}`);
         this.emit("update");
     }
 
     getAllNews() {
+        log.log("getAllNews() called");
         return this.newsList;
     }
 
     getAllTickers(listType) {
+        log.log(`getAllTickers() called (List type: ${listType})`);
         const data = listType === "session" ? this.sessionData : this.dailyData;
         return Array.from(data.values());
     }
 
     clearSessionData() {
-        log.log("🧹 Clearing session data in store.js...");
+        log.log("Clearing session data...");
         this.sessionData.clear();
-        log.log("✅ Session data cleared successfully!");
+        log.log("Session data cleared successfully!");
 
-        // ✅ Print sessionData to confirm it's empty
-        log.log("🔍 Current sessionData after clear:", Array.from(this.sessionData.entries()));
-
+        log.debug("Current sessionData after clear:", Array.from(this.sessionData.entries()));
         this.emit("sessionCleared");
     }
 
     cleanupOldNews() {
+        log.log("cleanupOldNews() called");
         const TWENTY_MINUTES = 20 * 60 * 1000;
         const now = Date.now();
 
@@ -186,7 +187,7 @@ class Store extends EventEmitter {
         this.newsList = this.newsList.filter((News) => now - News.storedAt <= TWENTY_MINUTES);
         const afterCleanup = this.newsList.length;
 
-        log.log(`Cleaned up old news from global list. Before: ${beforeCleanup}, After: ${afterCleanup}`);
+        log.log(`✅ Cleaned up old news from global list. Before: ${beforeCleanup}, After: ${afterCleanup}`);
     }
 }
 
