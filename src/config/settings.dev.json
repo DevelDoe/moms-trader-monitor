@@ -168,6 +168,6 @@
       "SEC Investigation Launched",
       "Short Report Released"
     ],
-    "allowMultiSymbols": true
+    "allowMultiSymbols": false
   }
 }
