@@ -5,10 +5,15 @@ const createLogger = require("../../hlps/logger");
 
 const log = createLogger(__filename);
 
-// ✅ Load API keys from .env.alpha
-require("dotenv").config({ path: path.resolve(__dirname, "../../.env.alpha") });
+// ✅ Load API keys from .env
+require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 
-const API_KEYS = process.env.ALPHA_VANTAGE_API_KEYS.split(",").map((key) => key.trim());
+// ✅ Dynamically load all ALPHA_VANTAGE_API_KEY* keys
+const API_KEYS = Object.keys(process.env)
+    .filter((key) => key.startsWith("ALPHA_VANTAGE_API_KEY"))
+    .sort()
+    .map((key) => process.env[key]);
+
 let currentKeyIndex = 0;
 
 // ✅ Path to cache file
@@ -66,8 +71,8 @@ async function fetchAlphaVantageData(ticker) {
 
         // ✅ Check if we hit the rate limit
         if (data.Information && data.Information.includes("rate limit")) {
-            log.warn("⚠️ Alpha Vantage rate limit hit. Skipping fetch.");
-            return null;
+            log.warn("⚠️ Alpha Vantage rate limit hit. Rotating API key...");
+            return fetchAlphaVantageData(ticker); // ✅ Retry with next API key
         }
 
         // ✅ Handle empty or malformed responses
