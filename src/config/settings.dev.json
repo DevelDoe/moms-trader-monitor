@@ -54,6 +54,7 @@
       "TXMD",
       "TANH",
       "RTC",
+      "CYN",
       "CAPT"
     ],
     "blockList": [
