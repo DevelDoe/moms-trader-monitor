@@ -44,6 +44,7 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "HOLO",
       "OSRH",
       "IVVD",
       "RTC",
