@@ -8,7 +8,7 @@ const log = createLogger(__filename);
 // ✅ Load API keys from .env
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 
-// ✅ Dynamically load all ALPHA_VANTAGE_API_KEY* keys
+// ✅ Load all ALPHA_VANTAGE_API_KEY* dynamically
 const API_KEYS = Object.keys(process.env)
     .filter((key) => key.startsWith("ALPHA_VANTAGE_API_KEY"))
     .sort()
@@ -25,18 +25,15 @@ if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
-// ✅ Load or create cache file
+// ✅ Load cache if it exists
 let cache = {};
 if (fs.existsSync(CACHE_FILE)) {
     try {
         cache = JSON.parse(fs.readFileSync(CACHE_FILE, "utf-8"));
     } catch (error) {
         log.error("❌ Error reading Alpha Vantage cache:", error);
-        cache = {}; // ✅ Reset to empty object if file is corrupted
+        cache = {}; // ✅ Reset if corrupted
     }
-} else {
-    log.log("🆕 Creating new Alpha Vantage cache file.");
-    fs.writeFileSync(CACHE_FILE, JSON.stringify({}, null, 2)); // ✅ Create an empty JSON file
 }
 
 // ✅ Function to rotate API keys
@@ -54,7 +51,7 @@ function saveCache() {
     }
 }
 
-// ✅ Fetch data from Alpha Vantage or cache
+// ✅ Fetch data from Alpha Vantage or use cache
 async function fetchAlphaVantageData(ticker) {
     // ✅ Return cached data if available
     if (cache[ticker]) {
@@ -69,21 +66,21 @@ async function fetchAlphaVantageData(ticker) {
         const response = await fetch(url);
         const data = await response.json();
 
-        // ✅ Check if we hit the rate limit
-        if (data.Information && data.Information.includes("rate limit")) {
+        // ✅ Detect rate limit messages and retry with a new key
+        if (data.Note || data.Information?.includes("rate limit")) {
             log.warn("⚠️ Alpha Vantage rate limit hit. Rotating API key...");
             return fetchAlphaVantageData(ticker); // ✅ Retry with next API key
         }
 
-        // ✅ Handle empty or malformed responses
-        if (!data || Object.keys(data).length === 0) {
-            log.warn(`⚠️ Empty Alpha Vantage response for ${ticker}.`);
+        // ✅ Ensure valid data before caching
+        if (!data || Object.keys(data).length === 0 || !data.Symbol) {
+            log.warn(`⚠️ Invalid Alpha Vantage response for ${ticker}. Not caching.`);
             return null;
         }
 
         log.log(`✅ Fetched Alpha Vantage data for ${ticker}. Attaching to store.`);
 
-        // ✅ Store data in cache
+        // ✅ Store only **successful** responses in cache
         cache[ticker] = data;
         saveCache();
 
