@@ -20,10 +20,10 @@ class Store extends EventEmitter {
         log.log(`addTickers() called with ${tickers.length} items.`);
         let newTickers = []; // ✅ Track new tickers for dailyData
         let newSessionTickers = []; // ✅ Track new tickers for sessionData
-    
+
         for (const ticker of tickers) {
             const key = ticker.Symbol;
-    
+
             // ✅ Handle dailyData independently
             if (!this.dailyData.has(key)) {
                 this.dailyData.set(key, { ...ticker, Count: 1, News: [] });
@@ -31,7 +31,7 @@ class Store extends EventEmitter {
             } else {
                 let existingTicker = this.dailyData.get(key);
                 existingTicker.Count++;
-                
+
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
@@ -47,7 +47,7 @@ class Store extends EventEmitter {
 
                 if (this.dailyData.has(key)) {
                     let dailyTicker = this.dailyData.get(key);
-                    
+
                     if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News]; // ✅ Copy `News`
                     if (dailyTicker.about) sessionTicker.about = dailyTicker.about; // ✅ Copy `about`
                 }
@@ -67,7 +67,7 @@ class Store extends EventEmitter {
                 this.sessionData.set(key, existingTicker);
             }
         }
-    
+
         // ✅ Fetch news for new session tickers only
         if (newSessionTickers.length > 0) {
             log.log(`🚀 Fetching news for new session tickers: ${newSessionTickers.join(", ")}`);
@@ -83,7 +83,7 @@ class Store extends EventEmitter {
                 fetchAlphaVantageData(ticker).then((aboutData) => {
                     if (aboutData) {
                         log.log(`✅ Storing 'about' data for ${ticker}`);
-                        
+
                         // ✅ Update dailyData with `about` details
                         if (this.dailyData.has(ticker)) {
                             let updatedTicker = this.dailyData.get(ticker);
@@ -162,6 +162,28 @@ class Store extends EventEmitter {
         this.emit("newsUpdated", { newsItems: timestampedNews });
     }
 
+    updateTicker(symbol, updateData) {
+        if (!this.dailyData.has(symbol)) {
+            log.warn(`⚠️ Attempted to update non-existing ticker: ${symbol}`);
+            return;
+        }
+
+        // ✅ Update `dailyData`
+        let dailyTicker = this.dailyData.get(symbol);
+        Object.assign(dailyTicker, updateData);
+        this.dailyData.set(symbol, dailyTicker);
+
+        // ✅ Ensure `sessionData` also gets updates if it exists
+        if (this.sessionData.has(symbol)) {
+            let sessionTicker = this.sessionData.get(symbol);
+            Object.assign(sessionTicker, updateData);
+            this.sessionData.set(symbol, sessionTicker);
+        }
+
+        log.log(`✅ Updated ticker ${symbol} with new data:`, updateData);
+        this.emit("update");
+    }
+
     getAllNews() {
         return this.newsList;
     }
@@ -175,13 +197,13 @@ class Store extends EventEmitter {
         log.log("🧹 Clearing session data in store.js...");
         this.sessionData.clear();
         log.log("✅ Session data cleared successfully!");
-    
+
         // ✅ Print sessionData to confirm it's empty
         log.log("🔍 Current sessionData after clear:", Array.from(this.sessionData.entries()));
-    
+
         this.emit("sessionCleared");
     }
-    
+
     cleanupOldNews() {
         const TWENTY_MINUTES = 20 * 60 * 1000;
         const now = Date.now();
