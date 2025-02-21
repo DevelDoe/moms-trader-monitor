@@ -101,7 +101,6 @@ async function scrapeData() {
                 return true;
             });
 
-            // ✅ Update `processedList` with new entries, limiting to 100 entries
             // ✅ Store processed entries in `processedList` (limit to 100)
             uniqueEntries.forEach((ticker) => {
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
