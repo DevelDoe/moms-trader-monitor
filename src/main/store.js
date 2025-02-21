@@ -17,66 +17,66 @@ class Store extends EventEmitter {
 
     addTickers(tickers) {
         log.log(`addTickers() called with ${tickers.length} items.`);
-        let newTickers = []; // ✅ Track new tickers
-
+        let newTickers = []; // ✅ Track new tickers for dailyData
+        let newSessionTickers = []; // ✅ Track new tickers for sessionData
+    
         tickers.forEach((ticker) => {
             const key = ticker.Symbol;
-
-            // ✅ Handle dailyData
+    
+            // ✅ Handle dailyData independently
             if (!this.dailyData.has(key)) {
                 this.dailyData.set(key, { ...ticker, Count: 1, News: [] });
-                newTickers.push(key); // Add to new tickers list
+                newTickers.push(key);
             } else {
                 let existingTicker = this.dailyData.get(key);
                 existingTicker.Count++;
-
-                // ✅ Update only changed values
+                
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-
+    
                 this.dailyData.set(key, existingTicker);
             }
-
-            // ✅ Handle sessionData & inherit `News` from dailyData
+    
+            // ✅ Handle sessionData independently, but copy `News` if available in `dailyData`
             if (!this.sessionData.has(key)) {
-                let sessionTicker = { Symbol: ticker.Symbol, Count: 1 };
-
+                let sessionTicker = { ...ticker, Count: 1 };
+    
+                // ✅ Only copy the `News` property if it exists in `dailyData`
                 if (this.dailyData.has(key)) {
                     let dailyTicker = this.dailyData.get(key);
-                    if (dailyTicker.about) sessionTicker.about = dailyTicker.about;
-                    if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News]; // ✅ Copy news from daily
-                    log.log(`Attached about & news to ${key} in session list.`);
+                    if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News]; // ✅ Copy only `News`
                 }
-
+    
                 this.sessionData.set(key, sessionTicker);
-                log.log(`✅ Added ${key} to sessionData.`);
+                newSessionTickers.push(key);
             } else {
                 let existingTicker = this.sessionData.get(key);
                 existingTicker.Count++;
-
+    
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-
+    
                 this.sessionData.set(key, existingTicker);
             }
         });
-
-        // ✅ Fetch news ONLY for brand new tickers (NOT updates)
-        if (newTickers.length > 0) {
-            log.log(`🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
-            newTickers.forEach((ticker) => {
+    
+        // ✅ Fetch news for new tickers in sessionData only
+        if (newSessionTickers.length > 0) {
+            log.log(`🚀 Fetching news for new session tickers: ${newSessionTickers.join(", ")}`);
+            newSessionTickers.forEach((ticker) => {
                 fetchHistoricalNews(ticker);
             });
         }
-
+    
         this.emit("update");
     }
+    
 
     addNews(newsItems) {
         if (!newsItems) {
