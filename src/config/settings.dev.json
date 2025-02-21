@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.55,
+    "minPrice": 1.7,
     "maxPrice": 12,
     "minFloat": 0,
     "maxFloat": 200000000,
@@ -46,9 +46,7 @@
     "filteredTickers": [
       "NAAS",
       "MLGO",
-      "ESLA",
       "LTRY",
-      "HOLO",
       "LAES",
       "QUBT",
       "TANH",
@@ -112,7 +110,8 @@
       "Unusual Trading Volume",
       "Share Repurchase",
       "Board Of Directors Has Approved",
-      "Receives Data And Safety Monitoring"
+      "Receives Data And Safety Monitoring",
+      "Announces Deployment"
     ],
     "bearishList": [
       "Sell Alert",
