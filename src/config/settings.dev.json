@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.7,
+    "minPrice": 0,
     "maxPrice": 12,
     "minFloat": 0,
     "maxFloat": 200000000,
@@ -46,6 +46,8 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "HOLO",
+      "TXMD",
       "SINT"
     ],
     "blockList": [
