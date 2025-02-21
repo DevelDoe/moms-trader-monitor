@@ -32,8 +32,8 @@
         "Volume": true,
         "SprPercent": true,
         "Time": false,
-        "HighOfDay": false,
-        "News": false,
+        "HighOfDay": true,
+        "News": true,
         "Count": true,
         "Score": true,
         "Bonuses": true
