@@ -16,6 +16,9 @@ class Store extends EventEmitter {
         }, 60 * 1000); // Runs every 60 seconds
     }
 
+    /**
+     * ✅ Adds tickers to session and daily lists
+     */
     addTickers(tickers) {
         log.log(`addTickers() called with ${tickers.length} items.`);
         let newTickers = []; // ✅ Track new tickers
@@ -24,181 +27,108 @@ class Store extends EventEmitter {
         tickers.forEach((ticker) => {
             const key = ticker.Symbol;
 
+            // ✅ Maintain daily data (persists all day)
             if (!this.dailyData.has(key)) {
-                // ✅ New ticker
                 this.dailyData.set(key, { ...ticker, Count: 1, News: [] });
-                newTickers.push(key); // Add to new tickers list
+                newTickers.push(key);
             } else {
-                // ✅ Updated ticker
                 let existingTicker = this.dailyData.get(key);
-                existingTicker.Count++;
-
-                // Check if any significant attribute has changed
-                const hasUpdates = Object.keys(ticker).some((attr) => {
-                    return ticker[attr] !== undefined && ticker[attr] !== existingTicker[attr];
-                });
-
-                if (hasUpdates) {
-                    updatedTickers.push(key); // Add to updated tickers list
-                }
-
-                // Update the existing ticker data
+                existingTicker.Count++; // ✅ Increase the count in daily
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
                         existingTicker[attr] = ticker[attr];
                     }
                 });
-
                 this.dailyData.set(key, existingTicker);
+                updatedTickers.push(key);
             }
 
-            // ✅ Handle session data
+            // ✅ Handle session data (resets when cleared)
             if (!this.sessionData.has(key)) {
-                let sessionTicker = { Symbol: ticker.Symbol, Count: 1 }; // ✅ Only sets `Symbol` & `Count`
-            
-                if (this.dailyData.has(key)) { // ✅ If ticker exists in dailyData, inherit some fields
+                let sessionTicker = { Symbol: ticker.Symbol, Count: 1 };
+
+                // ✅ Inherit `about` and `news` if available in dailyData
+                if (this.dailyData.has(key)) {
                     let dailyTicker = this.dailyData.get(key);
-                    if (dailyTicker.about) sessionTicker.about = dailyTicker.about; // ✅ Preserve `about`
-                    if (dailyTicker.News) sessionTicker.News = [...dailyTicker.News]; // ✅ Preserve `News`
+                    sessionTicker.about = dailyTicker.about || {}; // ✅ Copy `about`
+                    sessionTicker.News = [...(dailyTicker.News || [])]; // ✅ Copy `news`
                     log.log(`Attached about & news to ${key} in session list.`);
                 }
-            
+
                 this.sessionData.set(key, sessionTicker);
                 log.log(`✅ Added ${key} to sessionData.`);
             } else {
                 let existingTicker = this.sessionData.get(key);
-                existingTicker.Count++;
-            
+                existingTicker.Count++; // ✅ Increase session count
                 Object.keys(ticker).forEach((attr) => {
                     if (ticker[attr] !== undefined) {
-                        existingTicker[attr] = ticker[attr]; // ✅ Overwrites attributes from ticker
+                        existingTicker[attr] = ticker[attr]; // ✅ Overwrite only if value exists
                     }
                 });
-            
                 this.sessionData.set(key, existingTicker);
             }
-            
         });
 
-        // ✅ Fetch news for new tickers
+        // ✅ Fetch news & Alpha Vantage data for new tickers
         if (newTickers.length > 0) {
-            log.log(`Fetching news for new tickers: ${newTickers.join(", ")}`);
+            log.log(`Fetching news & data for new tickers: ${newTickers.join(", ")}`);
             newTickers.forEach((ticker) => {
                 fetchHistoricalNews(ticker);
+                fetchAlphaVantageData(ticker);
             });
         }
-
-        // Fetch general data from alpha for new tickers
-        if (newTickers.length > 0) {
-            log.log(`Fetching general data from ALpha for new tickers: ${newTickers.join(", ")}`);
-
-            for (const ticker of newTickers) {
-                fetchAlphaVantageData(ticker);
-            }
-        }
-
-        // ✅ Fetch news for updated tickers
-        // if (updatedTickers.length > 0) {
-        //     log.log(`Fetching news for updated tickers: ${updatedTickers.join(", ")}`);
-        //     updatedTickers.forEach((ticker) => {
-        //         fetchHistoricalNews(ticker);
-        //     });
-        // }
 
         this.emit("update");
     }
 
-    addNews(newsItems) {
-        if (!newsItems) {
-            log.warn("No news items provided.");
-            return;
-        }
-
-        // ✅ Ensure `newsItems` is always an array
-        const normalizedNews = Array.isArray(newsItems) ? newsItems : [newsItems];
-
-        if (normalizedNews.length === 0) {
-            log.warn("No valid news items to store.");
-            return;
-        }
-
-        const timestampedNews = normalizedNews.map((News) => ({
-            ...News,
-            storedAt: Date.now(),
-            symbols: Array.isArray(News.symbols) ? News.symbols : [], // ✅ Ensure symbols is always an array
-        }));
-
-        this.newsList.push(...timestampedNews);
-        log.log(`Stored ${timestampedNews.length} new articles in global list.`);
-
-        // ✅ Update tickers with unique news items
-        timestampedNews.forEach((News) => {
-            News.symbols.forEach((symbol) => {
-                if (this.dailyData.has(symbol)) {
-                    let ticker = this.dailyData.get(symbol);
-
-                    // ✅ Prevent duplicate headlines
-                    const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
-                    if (!existingHeadlines.has(News.headline)) {
-                        ticker.News.push(News);
-                        log.log(`Added news to ${symbol} (Total: ${ticker.News.length})`);
-                    } else {
-                        log.log(`Skipped duplicate news for ${symbol}"`);
-                    }
-
-                    this.dailyData.set(symbol, ticker);
-                }
-
-                if (this.sessionData.has(symbol)) {
-                    let ticker = this.sessionData.get(symbol);
-
-                    const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
-                    if (!existingHeadlines.has(News.headline)) {
-                        ticker.News.push(News);
-                        log.log(`Added news to ${symbol} (Total: ${ticker.News.length})`);
-                    } else {
-                        log.log(`Skipped duplicate news for ${symbol}"`);
-                    }
-
-                    this.sessionData.set(symbol, ticker);
-                }
-            });
-        });
-
-        this.emit("newsUpdated", { newsItems: timestampedNews });
-    }
-    // TODO: when sessionlist gets new tickers they should look it that ticker exist in daily list and
-    // is so it should add the about key and the also do this for the news key.
     updateTicker(symbol, updates) {
         if (!this.dailyData.has(symbol)) {
-            log.warn(`Ticker ${symbol} not found in store. Skipping update.`);
+            log.warn(`⚠️ Ticker ${symbol} not found in dailyData. Skipping update.`);
             return;
         }
-
+    
         let ticker = this.dailyData.get(symbol);
-
-        // ✅ Merge `about` data
-        ticker.about = { ...ticker.about, ...updates.about };
-
+    
+        // ✅ Merge `about` data without overwriting other properties
+        if (updates.about) {
+            ticker.about = { ...ticker.about, ...updates.about };
+            log.log(`📌 Updated ${symbol} with additional 'about' data.`);
+        }
+    
         this.dailyData.set(symbol, ticker);
-        log.log(`Updated ${symbol} with additional data.`);
+    
+        // ✅ If ticker is also in sessionData, update it there as well
+        if (this.sessionData.has(symbol)) {
+            let sessionTicker = this.sessionData.get(symbol);
+            sessionTicker.about = { ...sessionTicker.about, ...updates.about };
+            this.sessionData.set(symbol, sessionTicker);
+            log.log(`📌 Also updated ${symbol} in sessionData.`);
+        }
+    
+        this.emit("update");
+    }
+    
+
+    /**
+     * ✅ Clear sessionData only (does not affect dailyData)
+     */
+    clearSessionData() {
+        this.sessionData.clear();
+        log.log("✅ Session data cleared.");
+        this.emit("sessionCleared");
     }
 
-    getAllNews() {
-        return this.newsList;
-    }
-
+    /**
+     * ✅ Fetches all tickers
+     */
     getAllTickers(listType) {
         const data = listType === "session" ? this.sessionData : this.dailyData;
         return Array.from(data.values());
     }
 
-    clearSessionData() {
-        this.sessionData.clear();
-        log.log("Session data cleared");
-        this.emit("sessionCleared");
-    }
-
+    /**
+     * ✅ Cleanup old news
+     */
     cleanupOldNews() {
         const TWENTY_MINUTES = 20 * 60 * 1000;
         const now = Date.now();
@@ -207,10 +137,10 @@ class Store extends EventEmitter {
         this.newsList = this.newsList.filter((News) => now - News.storedAt <= TWENTY_MINUTES);
         const afterCleanup = this.newsList.length;
 
-        log.log(`Cleaned up old news from global list. Before: ${beforeCleanup}, After: ${afterCleanup}`);
+        log.log(`📰 Cleaned up old news. Before: ${beforeCleanup}, After: ${afterCleanup}`);
     }
 }
 
-// Singleton instance
+// ✅ Singleton instance
 const tickerStore = new Store();
 module.exports = tickerStore;
