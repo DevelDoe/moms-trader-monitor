@@ -1,15 +1,34 @@
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const createLogger = require("../../hlps/logger");
-const tickerStore = require("../store"); // ✅ Import store
+const tickerStore = require("../store");
+const fs = require("fs");
+const path = require("path");
 
 puppeteer.use(StealthPlugin());
 
 const log = createLogger(__filename);
+const processedListFile = path.join(__dirname, "processedList.json");
 
-// This Set will store processed keys in the format "SYMBOL-TIME"
-let processedKeys = new Set();
+// ✅ Load processedList from file if available
+let processedList = [];
+if (fs.existsSync(processedListFile)) {
+    try {
+        processedList = JSON.parse(fs.readFileSync(processedListFile, "utf8"));
+        log.log(`📂 Loaded ${processedList.length} processed tickers from file.`);
+    } catch (error) {
+        log.error("❌ Failed to load processedList from file:", error);
+    }
+}
 
+// ✅ Function to save processedList to file
+function saveProcessedList() {
+    fs.writeFileSync(processedListFile, JSON.stringify(processedList.slice(0, 100), null, 2), "utf8");
+}
+
+/**
+ * Launch Puppeteer Browser
+ */
 async function launchBrowser() {
     log.log("Launching Puppeteer...");
     try {
@@ -18,19 +37,23 @@ async function launchBrowser() {
             args: ["--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox"],
         });
     } catch (error) {
-        log.error("Browser launch failed:", error);
+        log.error("❌ Browser launch failed:", error);
+        return null;
     }
 }
 
+/**
+ * Scrapes data from Momo Screener
+ */
 async function scrapeData() {
     const browser = await launchBrowser();
-    if (!browser) return log.error("Failed to launch browser.");
+    if (!browser) return log.error("❌ Failed to launch browser.");
 
     const page = await browser.newPage();
     await page.setUserAgent("Mozilla/5.0");
 
     try {
-        log.log("Navigating to Momo Screener...");
+        log.log("🌐 Navigating to Momo Screener...");
         await page.goto("https://momoscreener.com/scanner", { waitUntil: "networkidle2" });
 
         await page.waitForSelector(".tableFixHead tbody tr", { visible: true, timeout: 60000 });
@@ -63,44 +86,57 @@ async function scrapeData() {
         });
 
         if (newScrape.length > 0) {
-            log.log(`Scraped ${newScrape.length} entries`);
+            log.log(`📊 Scraped ${newScrape.length} entries`);
 
-            // Filter out duplicates based on Symbol and Time combination
+            // ✅ Filter out duplicates based on Symbol and Time combination
             const uniqueEntries = newScrape.filter((ticker) => {
-                // Normalize the symbol (trim and uppercase)
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
                 const key = `${symbolNormalized}-${ticker.Time}`;
-                if (processedKeys.has(key)) {
-                    return false; // Skip if we've already processed this entry
+
+                // ✅ Check if ticker was already processed
+                if (processedList.some((entry) => entry.key === key)) {
+                    return false; // Skip duplicate
                 }
                 return true;
             });
 
-            // Update the processedKeys set with the keys of unique entries
+            // ✅ Store processed entries in `processedList` (limit to 100)
             uniqueEntries.forEach((ticker) => {
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
                 const key = `${symbolNormalized}-${ticker.Time}`;
-                processedKeys.add(key);
+
+                processedList.unshift({ key, Symbol: symbolNormalized, Time: ticker.Time });
+
+                // Keep only last 100 entries
+                if (processedList.length > 100) {
+                    processedList.pop();
+                }
             });
 
+            // ✅ Save processedList to file
+            saveProcessedList();
+
             if (uniqueEntries.length > 0) {
-                log.log(`Storing ${uniqueEntries.length} new unique entries`);
-                tickerStore.addTickers(uniqueEntries); // ✅ Store only unique entries
+                log.log(`✅ Storing ${uniqueEntries.length} new unique entries`);
+                tickerStore.addTickers(uniqueEntries);
             } else {
-                log.log("No new unique entries found. Skipping update.");
+                log.log("⚠️ No new unique entries found. Skipping update.");
             }
         }
     } catch (error) {
-        log.error(`Scrape error: ${error.message}`);
+        log.error(`❌ Scrape error: ${error.message}`);
     } finally {
-        await page.close(); // ✅ Prevent memory leaks
+        await page.close();
         await browser.close();
-        log.log("Browser closed");
+        log.log("🛑 Browser closed");
     }
 }
 
+/**
+ * Collects tickers at random intervals
+ */
 function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
-    log.log("Starting scraper loop...");
+    log.log("🔄 Starting scraper loop...");
 
     function getRandomInterval(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -109,7 +145,7 @@ function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
     async function run() {
         await scrapeData();
         const interval = getRandomInterval(minIntervalMs, maxIntervalMs);
-        log.log(`Next scrape in ${interval / 1000} seconds`);
+        log.log(`⏳ Next scrape in ${interval / 1000} seconds`);
         setTimeout(run, interval);
     }
 
