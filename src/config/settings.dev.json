@@ -45,8 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "NVAX",
       "IVVD",
+      "NVAX",
       "SINT"
     ],
     "blockList": [
