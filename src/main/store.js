@@ -108,7 +108,7 @@ class Store extends EventEmitter {
 
             fetchAlphaVantageData(ticker).then((data) => {
                 if (data) {
-                    log.log(`Alpha Vantage Data for ${ticker}:`, JSON.stringify(data, null, 2));
+                    log.log(`Alpha Vantage Data for ${ticker}:`);
                 } else {
                     log.warn(`⚠️ No valid Alpha Vantage data available for ${ticker}.`);
                 }
