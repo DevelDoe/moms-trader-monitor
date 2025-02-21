@@ -19,7 +19,7 @@ class Store extends EventEmitter {
     }
 
     async addTickers(tickers) {
-        log.log(`addTickers() called with ${tickers.length} items.`);
+        log.log(`📌 addTickers() called with ${tickers.length} items.`);
         let newTickers = []; // ✅ Track new tickers for dailyData
         let newSessionTickers = []; // ✅ Track new tickers for sessionData
 
@@ -32,6 +32,21 @@ class Store extends EventEmitter {
                 log.log(`Adding new ticker to dailyData: ${key}`);
                 this.dailyData.set(key, { ...ticker, Count: 1, News: [] });
                 newTickers.push(key);
+
+                // ✅ Fetch historical news for the new ticker and attach it
+                log.log(`Fetching historical news for ${key}...`);
+                fetchHistoricalNews(key)
+                    .then((news) => {
+                        if (news && news.length > 0) {
+                            log.log(`✅ Successfully fetched ${news.length} historical news items for ${key}.`);
+                            this.addNews(news); // ✅ This will automatically add news to sessionData as well
+                        } else {
+                            log.warn(`⚠️ No historical news found for ${key}.`);
+                        }
+                    })
+                    .catch((error) => {
+                        log.error(`❌ Failed to fetch historical news for ${key}: ${error.message}`);
+                    });
             } else {
                 let existingTicker = this.dailyData.get(key);
                 existingTicker.Count++;
@@ -80,14 +95,14 @@ class Store extends EventEmitter {
             newTickers.forEach((ticker) => queueRequest(ticker)); // ✅ ONLY queue requests, don't fetch immediately
         }
 
-        log.log(`addTickers() completed. Total tickers in sessionData: ${this.sessionData.size}, in dailyData: ${this.dailyData.size}`);
+        log.log(`✅ addTickers() completed. Total tickers in sessionData: ${this.sessionData.size}, in dailyData: ${this.dailyData.size}`);
         this.emit("update");
     }
 
     addNews(newsItems) {
-        log.log(`addNews() called`);
+        log.log(`📌 addNews() called`);
         if (!newsItems) {
-            log.warn("No news items provided.");
+            log.warn("⚠️ No news items provided.");
             return;
         }
 
@@ -95,7 +110,7 @@ class Store extends EventEmitter {
         const normalizedNews = Array.isArray(newsItems) ? newsItems : [newsItems];
 
         if (normalizedNews.length === 0) {
-            log.warn("No valid news items to store.");
+            log.warn("⚠️ No valid news items to store.");
             return;
         }
 
@@ -106,7 +121,7 @@ class Store extends EventEmitter {
         }));
 
         this.newsList.push(...timestampedNews);
-        log.log(`Stored ${timestampedNews.length} new articles in global list.`);
+        log.log(`✅ Stored ${timestampedNews.length} new articles in global list.`);
 
         timestampedNews.forEach((News) => {
             News.symbols.forEach((symbol) => {
@@ -114,21 +129,23 @@ class Store extends EventEmitter {
 
                 if (this.dailyData.has(symbol)) {
                     let ticker = this.dailyData.get(symbol);
-                    const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
+                    ticker.News = ticker.News || [];
 
+                    const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
-                        log.log(`Added news to ${symbol} (Total: ${ticker.News.length})`);
+                        log.log(`✅ Added news to ${symbol} in dailyData (Total: ${ticker.News.length})`);
                     }
                 }
 
                 if (this.sessionData.has(symbol)) {
                     let ticker = this.sessionData.get(symbol);
-                    const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
+                    ticker.News = ticker.News || [];
 
+                    const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
-                        log.log(`Added news to ${symbol} (Total: ${ticker.News.length})`);
+                        log.log(`✅ Added news to ${symbol} in sessionData (Total: ${ticker.News.length})`);
                     }
                 }
             });
