@@ -120,4 +120,5 @@ function queueRequest(ticker) {
 }
 
 // ✅ Export Functions
-module.exports = { fetchAlphaVantageData }
+module.exports = { fetchAlphaVantageData, queueRequest };
+
