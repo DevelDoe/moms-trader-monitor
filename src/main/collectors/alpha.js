@@ -103,8 +103,16 @@ async function enforceCooldown() {
     setTimeout(() => {
         log.log("✅ Cooldown period over. Resuming queue.");
         requestQueue.resume(); // ✅ Resume queue after cooldown
-        requestQueue.process(); // ✅ Restart processing
+        processQueue(); // ✅ Restart processing
     }, 5 * 60 * 1000 + 1000);
+}
+
+// ✅ Process the Queue (Ensure it Runs)
+function processQueue() {
+    if (requestQueue.length() > 0 && !isRateLimited()) {
+        log.log(`🔄 Resuming queue processing... Queue size: ${requestQueue.length()}`);
+        requestQueue.process();
+    }
 }
 
 // ✅ Fetch data from Alpha Vantage (or use cache)
@@ -161,14 +169,11 @@ async function fetchAlphaVantageData(ticker) {
     return false;
 }
 
-
-
-
 // ✅ Queue Requests Function
 function queueRequest(ticker) {
-    log.log(`📥 Adding ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
     requestQueue.push(ticker);
 }
 
 // ✅ Export Functions
-module.exports = { fetchAlphaVantageData, queueRequest };
+module.exports = { fetchAlphaVantageData, queueRequest, processQueue };
+
