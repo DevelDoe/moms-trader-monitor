@@ -143,4 +143,12 @@ function collectTickers(minIntervalMs = 7000, maxIntervalMs = 60000) {
 
     async function run() {
         await scrapeData();
-        const interv
+        const interval = getRandomInterval(minIntervalMs, maxIntervalMs);
+        log.log(`⏳ Next scrape in ${interval / 1000} seconds`);
+        setTimeout(run, interval);
+    }
+
+    run();
+}
+
+module.exports = { collectTickers };
