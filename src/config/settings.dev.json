@@ -44,8 +44,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "NAAS",
       "MLGO",
+      "NAAS",
       "OSRH",
       "LTRY",
       "AIFF",
@@ -54,8 +54,8 @@
       "LAES",
       "TANH",
       "GASS",
-      "FLNC",
       "JTAI",
+      "FLNC",
       "NIXX",
       "EDIT",
       "STAI"
