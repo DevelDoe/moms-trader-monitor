@@ -7,7 +7,7 @@ const path = require("path");
 const { fetch } = require("undici");
 
 
-dotenv.config({ path: path.join(__dirname, "../../config/.env.alpaca") });
+dotenv.config({ path: path.join(__dirname, "../../config/.env") });
 
 let alpacaSocket = null;
 
