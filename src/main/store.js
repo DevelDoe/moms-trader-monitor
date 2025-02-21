@@ -71,7 +71,7 @@ class Store extends EventEmitter {
     
         // ✅ Fetch news for new tickers
         if (newTickers.length > 0) {
-            log.log(`🚀 Fetching news for new tickers: ${newTickers.join(", ")}`);
+            log.log(`Fetching news for new tickers: ${newTickers.join(", ")}`);
             newTickers.forEach((ticker) => {
                 fetchHistoricalNews(ticker);
             });
