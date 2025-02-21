@@ -129,7 +129,7 @@ async function fetchAlphaVantageData(ticker) {
     let attempts = 0; // ✅ Track how many keys we’ve tried
 
     while (attempts < API_KEYS.length) { // ✅ Ensure we try all keys
-        const API_KEY = API_KEYS[currentKeyIndex];
+        const API_KEY = getNextAPIKey();
         const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
 
         try {
