@@ -15,6 +15,7 @@ const API_KEYS = Object.keys(process.env)
     .map((key) => process.env[key]);
 
 let currentKeyIndex = 0;
+let lastRateLimitTime = null; // Timestamp when last rate limit was hit
 
 // ✅ Path to cache file
 const CACHE_FILE = path.join(__dirname, "../../data/alpha_data.json");
@@ -51,12 +52,32 @@ function saveCache() {
     }
 }
 
+// ✅ Enforce cooldown if rate limit was recently hit
+function isRateLimited() {
+    if (!lastRateLimitTime) return false; // No limit detected
+
+    const cooldownPeriod = 60 * 1000; // 1 minute cooldown before retrying
+    const elapsed = Date.now() - lastRateLimitTime;
+
+    if (elapsed < cooldownPeriod) {
+        log.warn(`⏳ Cooldown active! Waiting ${((cooldownPeriod - elapsed) / 1000).toFixed(1)}s before retrying.`);
+        return true;
+    }
+
+    lastRateLimitTime = null; // Reset after cooldown
+    return false;
+}
+
 // ✅ Fetch data from Alpha Vantage or use cache
 async function fetchAlphaVantageData(ticker) {
     // ✅ Return cached data if available
     if (cache[ticker]) {
         log.log(`🔄 Using cached Alpha Vantage data for ${ticker}.`);
         return cache[ticker];
+    }
+
+    if (isRateLimited()) {
+        return null; // 🚨 Prevent infinite requests during cooldown
     }
 
     const API_KEY = getNextAPIKey();
@@ -66,9 +87,16 @@ async function fetchAlphaVantageData(ticker) {
         const response = await fetch(url);
         const data = await response.json();
 
-        // ✅ Detect rate limit messages and retry with a new key
+        // ✅ Detect rate limit messages
         if (data.Note || data.Information?.includes("rate limit")) {
-            log.warn("⚠️ Alpha Vantage rate limit hit. Rotating API key...");
+            log.warn(`⚠️ Alpha Vantage rate limit hit on key ${API_KEY}. Rotating...`);
+
+            if (currentKeyIndex === API_KEYS.length - 1) {
+                log.error("🚨 All API keys exhausted! Activating cooldown.");
+                lastRateLimitTime = Date.now(); // Enforce cooldown
+                return null;
+            }
+
             return fetchAlphaVantageData(ticker); // ✅ Retry with next API key
         }
 
