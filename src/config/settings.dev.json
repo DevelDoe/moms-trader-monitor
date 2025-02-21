@@ -45,6 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
+      "MLGO",
+      "NAAS",
       "IVVD",
       "NVAX",
       "SINT"
