@@ -131,8 +131,23 @@ async function fetchAlphaVantageData(ticker) {
 }
 
 
+// ✅ Queue system for delaying requests
+const requestQueue = async.queue(async (ticker, callback) => {
+    log.log(`🔄 Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
+
+    await fetchAlphaVantageData(ticker);
+
+    log.log(`✅ Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
+
+    setTimeout(() => {
+        log.log(`⏳ Waiting 5 min before next request... Queue size: ${requestQueue.length()}`);
+        callback();
+    }, 5 * 60 * 1000 + 1000); // 5 min + 1 sec delay
+}, 1); // Only 1 request at a time
+
 // ✅ Queue Requests Function
 function queueRequest(ticker) {
+    log.log(`📥 Adding ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
     requestQueue.push(ticker);
 }
 
