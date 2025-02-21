@@ -86,47 +86,50 @@ async function fetchAlphaVantageData(ticker) {
         return null; // 🚨 Prevent sending requests during cooldown
     }
 
-    const API_KEY = getNextAPIKey();
-    const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
+    let attempts = 0; // ✅ Track how many keys we’ve tried
 
-    try {
-        const response = await axios.get(url);
-        const data = response.data;
+    while (attempts < API_KEYS.length) { // ✅ Ensure we try all keys
+        const API_KEY = API_KEYS[currentKeyIndex];
+        const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
 
-        // ✅ Handle rate limit response
-        if (data.Note || (data.Information && data.Information.includes("rate limit"))) {
-            log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
+        try {
+            const response = await axios.get(url);
+            const data = response.data;
 
-            // ✅ Rotate to next key and retry
-            currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+            // ✅ Detect rate limit
+            if (data.Note || (data.Information && data.Information.includes("rate limit"))) {
+                log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
 
-            // ✅ Ensure we actually try the last key before cooldown
-            if (currentKeyIndex === 0) {
-                // Back to the first key after trying all
-                log.error("All API keys exhausted! Activating cooldown.");
-                lastRateLimitTime = Date.now(); // Start cooldown
+                // ✅ Rotate to next API key
+                currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+                attempts++;
+
+                continue; // ✅ Try the next key
+            }
+
+            // ✅ Ensure valid data before caching
+            if (!data || Object.keys(data).length === 0 || !data.Symbol) {
+                log.warn(`Invalid response for ${ticker}. Not caching.`);
                 return null;
             }
 
-            return fetchAlphaVantageData(ticker); // ✅ Retry with next API key
-        }
+            log.log(`Fetched Alpha Vantage data for ${ticker}. Caching...`);
+            cache[ticker] = data;
+            saveCache();
 
-        // ✅ Ensure valid data before caching
-        if (!data || Object.keys(data).length === 0 || !data.Symbol) {
-            log.warn(`Invalid response for ${ticker}. Not caching.`);
+            return data; // ✅ Successfully retrieved data, exit function
+        } catch (error) {
+            log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
             return null;
         }
-
-        log.log(`Fetched Alpha Vantage data for ${ticker}. Caching...`);
-        cache[ticker] = data;
-        saveCache();
-
-        return data;
-    } catch (error) {
-        log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
-        return null;
     }
+
+    // ✅ If we reach this point, all keys have been exhausted
+    log.error("All API keys exhausted! Activating cooldown.");
+    lastRateLimitTime = Date.now(); // Start cooldown
+    return null;
 }
+
 
 // ✅ Queue Requests Function
 function queueRequest(ticker) {
