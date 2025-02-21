@@ -2,7 +2,8 @@ const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews } = require("./collectors/news");
-const { fetchAlphaVantageData } = require("./collectors/alpha"); // ✅ Import Alpha Vantage collector
+const { fetchAlphaVantageData, queueRequest } = require("./collectors/alpha"); 
+
 
 class Store extends EventEmitter {
     constructor() {
