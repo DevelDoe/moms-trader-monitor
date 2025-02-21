@@ -12,7 +12,7 @@
     "lists": {
       "session": {
         "Price": false,
-        "ChangePercent": false,
+        "ChangePercent": true,
         "FiveM": false,
         "Float": false,
         "Volume": false,
@@ -22,7 +22,8 @@
         "News": false,
         "Count": true,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 10
       },
       "daily": {
         "Price": false,
@@ -36,22 +37,64 @@
         "News": false,
         "Count": false,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 4
       }
     }
   },
   "news": {
-    "showTrackedTickers": false,
+    "showTrackedTickers": true,
     "filteredTickers": [
-      "MNDR",
-      "FGEN",
+      "NAAS",
+      "MLGO",
+      "VMAR",
+      "NKGN",
+      "TANH",
+      "SLRN",
+      "HOLO",
+      "CELH",
+      "IONQ",
+      "HMR",
+      "MGTX",
+      "NIXX",
+      "QBTS",
+      "TLSA",
+      "LTRY",
+      "OSRH",
       "PRPH",
-      "STSS"
+      "STAI",
+      "RZLV",
+      "SOBR",
+      "KITT",
+      "TALK",
+      "JG",
+      "AIFF",
+      "WIMI",
+      "VIPS",
+      "RTC",
+      "USEG",
+      "ACXP",
+      "INOD",
+      "CYD",
+      "ASST",
+      "TNMG",
+      "MX",
+      "EDIT",
+      "FUBO",
+      "JMIA",
+      "ARBE",
+      "TUYA",
+      "MVIS",
+      "ALLO",
+      "LNZA",
+      "GOTU",
+      "PAGS"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
-      "What's Going On"
+      "What's Going On",
+      "Why Five9"
     ],
     "bullishList": [
       "FDA Approves",

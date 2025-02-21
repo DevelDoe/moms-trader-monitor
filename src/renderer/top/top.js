@@ -9,7 +9,6 @@ let prevTickersDaily = {};
 
 let currentActiveTicker = null; // ✅ Ensure the variable exists globally
 
-
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
 
@@ -319,129 +318,6 @@ function parseVolumeValue(floatStr) {
     return value;
 }
 
-function calculateScore(ticker) {
-    let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
-    const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to a real number
-    const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Convert Volume to a real number
-
-    if (ticker.HighOfDay) Score += 20;
-
-    let blockList = window.settings.news?.blockList || [];
-    let filteredNews = [];
-    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
-        filteredNews = ticker.News.filter((newsItem) => {
-            const headline = newsItem.headline || ""; // Ensure headline is a string
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
-            return !isBlocked; // Keep only non-blocked headlines
-        });
-    }
-
-    // ✅ Add score only if there are valid (non-blocked) news items
-    if (filteredNews.length > 0) {
-        Score += 40;
-    }
-
-    // ✅ Float Size Bonuses & Penalties
-    if (floatValue > 0 && floatValue < 2_000_000) {
-        Score += 20; // 🔥 Strong bonus for ultra-low float
-    } else if (floatValue >= 2_000_000 && floatValue < 5_000_000) {
-        Score += 15;
-    } else if (floatValue >= 5_000_000 && floatValue < 10_000_000) {
-        Score += 10;
-    } else if (floatValue >= 10_000_000 && floatValue < 50_000_000) {
-        Score += 0; // No change
-    } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
-        Score -= 10; // Small penalty for large float
-    } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
-        Score -= 20;
-    } else if (floatValue >= 200_000_000 && floatValue < 500_000_000) {
-        Score -= 30;
-    } else if (floatValue >= 500_000_000) {
-        Score -= 50; // 🚨 Heavy penalty for massive float
-    }
-
-    // ✅ Volume Adjustment
-    if (volumeValue < 300_000) {
-        Score -= 20; // 🛑 Low volume is a bad sign
-    }
-
-    // ✅ Bonus: 5 points per million in volume
-    Score += Math.floor(volumeValue / 1_000_000) * 2;
-
-    return Score;
-}
-
-function getScoreBreakdown(ticker) {
-    let breakdown = [];
-    let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
-    const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to real number
-    const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Convert Volume to real number
-
-    breakdown.push(`Base Count: ${ticker.Count}`);
-    breakdown.push(`---------------------`);
-
-    if (ticker.HighOfDay) {
-        Score += 20;
-        breakdown.push(`High of Day: +20`);
-    }
-
-    let blockList = window.settings.news?.blockList || [];
-    let filteredNews = [];
-    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
-        filteredNews = ticker.News.filter((newsItem) => {
-            const headline = newsItem.headline || ""; // Ensure headline is a string
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
-            return !isBlocked; // Keep only non-blocked headlines
-        });
-    }
-
-    if (filteredNews.length > 0) {
-        Score += 40;
-        breakdown.push(`Has News: +40`);
-    }
-
-    if (volumeValue < 300_000) {
-        Score -= 20;
-        breakdown.push(`Volume < 300K: -20`);
-    }
-
-    // ✅ Bonus: 5 points per million in volume
-    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 2;
-    if (volumeBonus > 0) {
-        Score += volumeBonus;
-        breakdown.push(`Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M): +${volumeBonus}`);
-    }
-
-    // ✅ Float Size Bonuses & Penalties
-    if (floatValue > 0 && floatValue < 2_000_000) {
-        Score += 20;
-        breakdown.push(`Float < 2M: +20`);
-    } else if (floatValue >= 2_000_000 && floatValue < 5_000_000) {
-        Score += 15;
-        breakdown.push(`Float 2M - 5M: +15`);
-    } else if (floatValue >= 5_000_000 && floatValue < 10_000_000) {
-        Score += 10;
-        breakdown.push(`Float 5M - 10M: +10`);
-    } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
-        Score -= 10;
-        breakdown.push(`Float 50M - 100M: -10`);
-    } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
-        Score -= 20;
-        breakdown.push(`Float 100M - 200M: -20`);
-    } else if (floatValue >= 200_000_000 && floatValue < 500_000_000) {
-        Score -= 30;
-        breakdown.push(`Float 200M - 500M: -30`);
-    } else if (floatValue >= 500_000_000) {
-        Score -= 50;
-        breakdown.push(`Float > 500M: -50`);
-    }
-
-    breakdown.push(`---------------------`);
-    breakdown.push(`Final Score: ${Score}`);
-
-    return breakdown.join("\n");
-}
-
 // ✅ Find the ticker from tickersDaily only (ensures all attributes exist)
 function findTickerBySymbol(symbol) {
     const foundTicker = tickersDaily.find((ticker) => ticker.Symbol === symbol);
@@ -534,6 +410,137 @@ function updateActiveTicker(ticker) {
     console.log("✅ Active ticker updated successfully!");
 }
 
+const floatOneMillionHigh       = 2_000_000;
+const floatFiveMillion          = 7_500_000;
+const floatTenMillion           = 13_000_000;
+const floatFiftyMillion         = 65_000_000;
+const floatHundredMillion       = 125_000_000;
+const floatTwoHundredMillion    = 250_000_000;
+const floatFiveHundredMillion   = 600_000_000;
+
+function calculateScore(ticker) {
+    let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
+    const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to a real number
+    const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Convert Volume to a real number
+
+    if (ticker.HighOfDay) Score += 20;
+
+    let blockList = window.settings.news?.blockList || [];
+    let filteredNews = [];
+    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
+        filteredNews = ticker.News.filter((newsItem) => {
+            const headline = newsItem.headline || ""; // Ensure headline is a string
+            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+            return !isBlocked; // Keep only non-blocked headlines
+        });
+    }
+
+    // ✅ Add score only if there are valid (non-blocked) news items
+    if (filteredNews.length > 0) {
+        Score += 40;
+    }
+
+    // ✅ Float Size Bonuses & Penalties
+    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
+        Score += 20; // 🔥 Strong bonus for ultra-low float
+    } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
+        Score += 15;
+    } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
+        Score += 10;
+    } else if (floatValue >= floatTenMillion && floatValue < floatFiftyMillion) {
+        Score += 0; // No change
+    } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
+        Score -= 10; // Small penalty for large float
+    } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
+        Score -= 20;
+    } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
+        Score -= 30;
+    } else if (floatValue >= floatFiveHundredMillion) {
+        Score -= 50; // 🚨 Heavy penalty for massive float
+    }
+
+    // ✅ Volume Adjustment
+    if (volumeValue < 300_000) {
+        Score -= 20; // 🛑 Low volume is a bad sign
+    }
+
+    // ✅ Bonus: 5 points per million in volume
+    Score += Math.floor(volumeValue / 1_000_000) * 2;
+
+    return Score;
+}
+
+function getScoreBreakdown(ticker) {
+    let breakdown = [];
+    let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
+    const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to real number
+    const volumeValue = parseVolumeValue(ticker.Volume); // ✅ Convert Volume to real number
+
+    breakdown.push(`Base Count: ${ticker.Count}`);
+    breakdown.push(`---------------------`);
+
+    if (ticker.HighOfDay) {
+        Score += 20;
+        breakdown.push(`High of Day: +20`);
+    }
+
+    let blockList = window.settings.news?.blockList || [];
+    let filteredNews = [];
+    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
+        filteredNews = ticker.News.filter((newsItem) => {
+            const headline = newsItem.headline || ""; // Ensure headline is a string
+            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+            return !isBlocked; // Keep only non-blocked headlines
+        });
+    }
+
+    if (filteredNews.length > 0) {
+        Score += 40;
+        breakdown.push(`Has News: +40`);
+    }
+
+    if (volumeValue < 300_000) {
+        Score -= 20;
+        breakdown.push(`Volume < 300K: -20`);
+    }
+
+    // ✅ Bonus: 5 points per million in volume
+    const volumeBonus = Math.floor(volumeValue / 1_000_000) * 2;
+    if (volumeBonus > 0) {
+        Score += volumeBonus;
+        breakdown.push(`Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M): +${volumeBonus}`);
+    }
+
+    // ✅ Float Size Bonuses & Penalties
+    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
+        Score += 20;
+        breakdown.push(`Float <2M: +20`);
+    } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
+        Score += 15;
+        breakdown.push(`Float 2M-7.5M: +15`);
+    } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
+        Score += 10;
+        breakdown.push(`Float 7.5M-13M: +10`);
+    } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
+        Score -= 10;
+        breakdown.push(`Float 65M-125M: -10`);
+    } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
+        Score -= 20;
+        breakdown.push(`Float 125M-250M: -20`);
+    } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
+        Score -= 30;
+        breakdown.push(`Float 250M-600M: -30`);
+    } else if (floatValue >= floatFiveHundredMillion) {
+        Score -= 50;
+        breakdown.push(`Float 600M+: -50`);
+    }
+
+    breakdown.push(`---------------------`);
+    breakdown.push(`Final Score: ${Score}`);
+
+    return breakdown.join("\n");
+}
+
 function getBonusesHTML(ticker) {
     console.log("🔎 Debugging Bonuses for:", ticker); // ✅ Log ticker object
 
@@ -563,24 +570,44 @@ function getBonusesHTML(ticker) {
         tooltipText.push("HOD: High of Day");
     }
 
-    if (floatValue > 0 && floatValue < 2_000_000) {
-        bonuses.push('<span class="bonus gold-float no-drag">2M</span>');
+    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
+        bonuses.push('<span class="bonus gold-float no-drag">1M</span>');
         tooltipText.push("2M: Float less than 2M");
-    } else if (floatValue >= 2_000_000 && floatValue < 5_000_000) {
+    } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
         bonuses.push('<span class="bonus silver-float no-drag">5M</span>');
-        tooltipText.push("5M: Float between 2M - 5M");
-    } else if (floatValue >= 5_000_000 && floatValue < 10_000_000) {
+        tooltipText.push("5M: Float between 2M-7.5M");
+    } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
         bonuses.push('<span class="bonus bronze-float no-drag">10M</span>');
-        tooltipText.push("10M: Float between 5M - 10M");
-    } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
+        tooltipText.push("10M: Float between 7.5M-13M");
+    } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
         bonuses.push('<span class="bonus high-float no-drag">100M</span>');
-        tooltipText.push("100M: Float between 50M - 100M");
-    } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
+        tooltipText.push("100M: Float between 65M-125M");
+    } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
         bonuses.push('<span class="bonus high-float no-drag">200M</span>');
-        tooltipText.push("200M: Float between 100M - 200M");
-    } else if (floatValue >= 500_000_000) {
+        tooltipText.push("200M: Float between 125M-250M");
+    } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
+        Score -= 30;
+        breakdown.push(`Float 250M-600M: -30`);
         bonuses.push('<span class="bonus high-float no-drag">500M</span>');
+        tooltipText.push("500M: Float between 250M-500M");
+        
+    } else if (floatValue >= floatFiveHundredMillion) {
+        bonuses.push('<span class="bonus high-float no-drag">B</span>');
         tooltipText.push("500M: Float more than 500M");
+    }
+
+    if (floatValue > 0 && floatValue < 2_000_000) {
+       
+    } else if (floatValue >= 2_000_000 && floatValue < 7_500_000) {
+        
+    } else if (floatValue >= 7_500_000 && floatValue < 10_000_000) {
+        
+    } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
+        
+    } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
+        
+    } else if (floatValue >= 500_000_000) {
+        
     }
 
     if (volumeValue < 300_000) {
