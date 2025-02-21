@@ -106,11 +106,13 @@ class Store extends EventEmitter {
         if (newTickers.length > 0) {
             log.log(`Fetching general data from ALpha for new tickers: ${newTickers.join(", ")}`);
 
-            for (const ticker of newTickers) {
-                fetchAlphaVantageData(ticker).then((data) => {
-                    log.log(`Alpha Vantage Data for ${ticker}:`, data);
-                }); // ✅ Fetch and log response
-            }
+            fetchAlphaVantageData(ticker).then((data) => {
+                if (data) {
+                    log.log(`Alpha Vantage Data for ${ticker}:`, JSON.stringify(data, null, 2));
+                } else {
+                    log.warn(`⚠️ No valid Alpha Vantage data available for ${ticker}.`);
+                }
+            });
         }
 
         // ✅ Fetch news for updated tickers
