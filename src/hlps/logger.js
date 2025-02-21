@@ -21,7 +21,9 @@ if (!fs.existsSync(logDir)) {
 }
 
 // ✅ List of scripts to suppress logging from
-const SUPPRESS_LOGGING_FROM = new Set(["tickers.js", "main.js", "store.js", "news.js"]); // Modify as needed
+// const SUPPRESS_LOGGING_FROM = new Set(["main.js", "tickers.js", "store.js", "news.js", "alpha.js"]); 
+// const SUPPRESS_LOGGING_FROM = new Set(["main.js", "tickers.js", "store.js", "news.js"]); 
+const SUPPRESS_LOGGING_FROM = new Set(["main.js", "tickers.js",  "news.js"]); 
 
 /**
  * Writes log messages to a file in production mode.
