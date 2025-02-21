@@ -22,7 +22,8 @@
         "News": false,
         "Count": true,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 10
       },
       "daily": {
         "Price": false,
@@ -83,7 +84,8 @@
       "What's Going On",
       "Why Five9"
     ],
-    
+    "bullishList": [],
+    "bearishList": [],
     "allowMultiSymbols": false
   }
 }
