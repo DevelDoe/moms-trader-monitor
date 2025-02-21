@@ -12,25 +12,32 @@ async function fetchAlphaVantageData(ticker) {
     
     try {
         const response = await fetch(url);
-        const data = await response.json();
 
-        if (!data || !data.Symbol) {
-            log.warn(`No valid data found for ${ticker}`);
-            return;
+        // ✅ Log full response if status is not 200 OK
+        if (response.status !== 200) {
+            log.warn(`⚠️ Alpha Vantage API response for ${ticker}: HTTP ${response.status} - ${response.statusText}`);
+            return null; // ✅ Return `null` so store doesn't process bad data
         }
 
-        log.log(`Fetched Alpha Vantage data for ${ticker}. Attaching to store.`);
+        const data = await response.json();
 
-        // ✅ Lazy load tickerStore here to avoid circular dependency
+        // ✅ Handle empty or malformed responses
+        if (!data || Object.keys(data).length === 0) {
+            log.warn(`⚠️ Empty Alpha Vantage response for ${ticker}.`);
+            return null;
+        }
+
+        log.log(`✅ Fetched Alpha Vantage data for ${ticker}. Attaching to store.`);
+
         const tickerStore = require("../store");
+        tickerStore.updateTicker(ticker, { about: data });
 
-        tickerStore.updateTicker(ticker, { about: data }); // 🔥 Attach under `about`
-
-        log.log(`Updated ${ticker} with Alpha Vantage data.`);
-
+        return data;
     } catch (error) {
-        log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
+        log.error(`❌ Error fetching Alpha Vantage data for ${ticker}:`, error);
+        return null;
     }
 }
+
 
 module.exports = { fetchAlphaVantageData };
