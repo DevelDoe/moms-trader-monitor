@@ -44,23 +44,7 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [
-      "MLGO",
-      "HOLO",
-      "NKGN",
-      "NAAS",
-      "INOD",
-      "SINT",
-      "TPIC",
-      "IVVD",
-      "TRNR",
-      "TXMD",
-      "TANH",
-      "RTC",
-      "CYN",
-      "BSGM",
-      "CAPT"
-    ],
+    "filteredTickers": [],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
