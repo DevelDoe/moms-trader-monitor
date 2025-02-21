@@ -22,12 +22,11 @@
         "News": false,
         "Count": true,
         "Score": true,
-        "Bonuses": true,
-        "length": 10
+        "Bonuses": true
       },
       "daily": {
         "Price": false,
-        "ChangePercent": true,
+        "ChangePercent": false,
         "FiveM": false,
         "Float": false,
         "Volume": false,
@@ -36,9 +35,8 @@
         "HighOfDay": false,
         "News": false,
         "Count": false,
-        "Score": true,
-        "Bonuses": true,
-        "length": 5
+        "Score": false,
+        "Bonuses": false
       }
     }
   },
