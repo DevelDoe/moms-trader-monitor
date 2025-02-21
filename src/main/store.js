@@ -76,33 +76,6 @@ class Store extends EventEmitter {
             newTickers.forEach((ticker) => queueRequest(ticker));
         }
 
-        // ✅ Fetch Alpha Vantage data for newly added tickers
-        if (newTickers.length > 0) {
-            log.log(`📊 Fetching Alpha Vantage data for new tickers: ${newTickers.join(", ")}`);
-            for (const ticker of newTickers) {
-                fetchAlphaVantageData(ticker).then((aboutData) => {
-                    if (aboutData) {
-                        log.log(`✅ Storing 'about' data for ${ticker}`);
-
-                        // ✅ Update dailyData with `about` details
-                        if (this.dailyData.has(ticker)) {
-                            let updatedTicker = this.dailyData.get(ticker);
-                            updatedTicker.about = aboutData;
-                            this.dailyData.set(ticker, updatedTicker);
-                        }
-
-                        // ✅ Ensure sessionData also gets `about` details if it exists
-                        if (this.sessionData.has(ticker)) {
-                            let updatedTicker = this.sessionData.get(ticker);
-                            updatedTicker.about = aboutData;
-                            this.sessionData.set(ticker, updatedTicker);
-                        }
-
-                        this.emit("update");
-                    }
-                });
-            }
-        }
 
         this.emit("update");
     }
