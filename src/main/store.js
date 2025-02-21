@@ -143,10 +143,13 @@ class Store extends EventEmitter {
     }
 
     clearSessionData() {
+        log.log("🧹 Clearing session data in store.js..."); // ✅ Log before clearing
         this.sessionData.clear();
-        log.log("Session data cleared");
-        this.emit("sessionCleared");
+        log.log("✅ Session data cleared successfully!"); // ✅ Log after clearing
+    
+        this.emit("sessionCleared"); // ✅ Notify event listeners
     }
+    
 
     cleanupOldNews() {
         const TWENTY_MINUTES = 20 * 60 * 1000;
