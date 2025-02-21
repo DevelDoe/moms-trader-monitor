@@ -111,7 +111,8 @@
       "Dark Pool Order Detected",
       "Unusual Trading Volume",
       "Share Repurchase",
-      "Board Of Directors Has Approved"
+      "Board Of Directors Has Approved",
+      "Receives Data And Safety Monitoring"
     ],
     "bearishList": [
       "Sell Alert",
