@@ -1,7 +1,7 @@
 const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
-const PQueue = require("p-queue").default; // ✅ Fix: CommonJS compatible
+const async = require("async");
 require("dotenv").config(); // Load .env variables
 
 const CACHE_FILE = path.join(__dirname, "../../data/alpha_data.json");
@@ -61,7 +61,10 @@ function isRateLimited() {
 }
 
 // ✅ Queue System for 5-Minute Delay Between Requests
-const queue = new PQueue({ concurrency: 1, interval: 5 * 60 * 1000 + 1000 }); // 5 min + 1 sec delay
+const queue = async.queue(async (ticker, callback) => {
+    await fetchAlphaVantageData(ticker);
+    setTimeout(callback, 5 * 60 * 1000 + 1000); // 5 min + 1 sec delay
+}, 1);
 
 // ✅ Fetch data from Alpha Vantage (or use cache)
 async function fetchAlphaVantageData(ticker) {
