@@ -44,19 +44,7 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [
-      "MLGO",
-      "HOLO",
-      "NAAS",
-      "OSRH",
-      "RTC",
-      "WIMI",
-      "TXMD",
-      "SPGC",
-      "BSGM",
-      "TANH",
-      "SABR"
-    ],
+    "filteredTickers": [],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
