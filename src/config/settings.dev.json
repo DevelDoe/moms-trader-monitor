@@ -144,7 +144,8 @@
       "Massive Call Buying",
       "Dark Pool Order Detected",
       "Unusual Trading Volume",
-      "Share Repurchase"
+      "Share Repurchase",
+      "Board Of Directors Has Approved"
     ],
     "bearishList": [
       "Sell Alert",
