@@ -21,8 +21,8 @@
         "HighOfDay": false,
         "News": true,
         "Count": true,
-        "Score": false,
-        "Bonuses": false
+        "Score": true,
+        "Bonuses": true
       },
       "daily": {
         "Price": false,
@@ -44,6 +44,7 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "NKGN",
       "RTC",
       "RILY",
       "CAPT",
