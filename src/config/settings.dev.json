@@ -26,7 +26,7 @@
       },
       "daily": {
         "Price": false,
-        "ChangePercent": true,
+        "ChangePercent": false,
         "FiveM": false,
         "Float": false,
         "Volume": false,
@@ -35,8 +35,8 @@
         "HighOfDay": false,
         "News": false,
         "Count": false,
-        "Score": true,
-        "Bonuses": true
+        "Score": false,
+        "Bonuses": false
       }
     }
   },
