@@ -180,11 +180,6 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     const listType = tableId.includes("session") ? "session" : "daily";
     const enabledColumns = window.settings.top.lists?.[listType] || {};
 
-    if (tickers.length === 0) {
-        console.warn(`No data available for ${listType}!`);
-        return;
-    }
-
     const allColumns =
         tableId === "tickers-all"
             ? [...new Set(tickers.flatMap((t) => Object.keys(t)))].filter((key) => key !== "Bonuses" && key !== "Time")
