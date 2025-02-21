@@ -36,7 +36,8 @@
         "News": false,
         "Count": false,
         "Score": false,
-        "Bonuses": false
+        "Bonuses": false,
+        "length": 4
       }
     }
   },
