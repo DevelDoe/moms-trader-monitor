@@ -7,8 +7,6 @@ const log = createLogger(__filename);
 require("dotenv").config({ path: require("path").resolve(__dirname, "../../.env") });
 const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;; // 🔹 Set your API key
 
-
-
 // Function to fetch sector data for a single ticker
 async function fetchSector(ticker) {
     const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
