@@ -174,7 +174,12 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     const tableHead = table.querySelector("thead");
     const tableBody = table.querySelector("tbody");
 
-    tableBody.innerHTML = ""; // ✅ Clear the table first
+   // ✅ Ensure tickers array is not empty before calling Object.keys
+   if (tickers.length === 0) {
+    console.warn(`⚠️ No tickers available for ${tableId}`);
+    tableHead.innerHTML = "<tr><th>No Data Available</th></tr>";
+    return;
+}
 
     // ✅ Determine which columns should be displayed
     const listType = tableId.includes("session") ? "session" : "daily";
