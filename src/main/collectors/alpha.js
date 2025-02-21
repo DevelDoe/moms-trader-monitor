@@ -87,18 +87,21 @@ const requestQueue = async.queue(async (ticker, callback) => {
 
     log.log(`✅ Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
 
-    if (!success && isRateLimited()) {
-        return; // 🚨 STOP PROCESSING: Don't call callback() during cooldown
+    if (!success) {
+        log.warn(`🚨 Failed to fetch ${ticker}, pausing queue due to rate limit.`);
+    
+        // ✅ PAUSE THE QUEUE TO PREVENT CONTINUOUS RETRIES
+        requestQueue.pause();
+        
+        // ✅ ENFORCE FULL COOLDOWN PERIOD BEFORE RESUMING
+        setTimeout(() => {
+            log.log("✅ Cooldown period over. Resuming queue.");
+            requestQueue.resume();  // ✅ Only resume AFTER cooldown ends
+            processQueue();  // ✅ Ensure queue processing restarts
+        }, 5 * 60 * 1000 + 1000);
+    } else {
+        callback();  // ✅ Move to next item if successful
     }
-
-    setTimeout(() => {
-        if (!isRateLimited()) {
-            callback();
-        } else {
-            log.warn(`Queue paused due to cooldown. Retrying after ${((5 * 60 * 1000) / 1000).toFixed(1)}s.`);
-            setTimeout(callback, 5 * 60 * 1000 + 1000);
-        }
-    }, 5 * 60 * 1000 + 1000);
     
 }, 1);
 
