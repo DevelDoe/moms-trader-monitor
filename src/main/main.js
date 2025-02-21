@@ -56,7 +56,7 @@ const { connectAlpacaNews } = require("./collectors/news.js"); // ✅ Import new
 // DATA
 
 // Use system settings file for production, separate file for development
-const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../config/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
+const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
 
 const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock"); // used to determine if this is a fresh new install
 
