@@ -107,9 +107,7 @@ class Store extends EventEmitter {
             log.log(`Fetching general data from ALpha for new tickers: ${newTickers.join(", ")}`);
 
             for (const ticker of newTickers) {
-                fetchAlphaVantageData(ticker).then((data) => {
-                    log.log(`Alpha Vantage Data for ${ticker}:`);
-                }); // ✅ Fetch and log response
+                fetchAlphaVantageData(ticker)
             }
         }
 
