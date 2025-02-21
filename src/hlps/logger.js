@@ -19,6 +19,9 @@ if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir, { recursive: true });
 }
 
+// ✅ List of scripts to suppress logging from
+const SUPPRESS_LOGGING_FROM = new Set(["tickers.js", "main.js", "store.js"]); // Modify as needed
+
 /**
  * Writes log messages to a file in production mode.
  * @param {string} level - Log level (INFO, WARN, ERROR)
@@ -34,6 +37,7 @@ function writeToFile(level, fileName, args) {
 
 /**
  * Custom logger that logs to console in dev, and to a file in production.
+ * Suppresses logs from scripts listed in `SUPPRESS_LOGGING_FROM`.
  * @param {string} modulePath - The __filename from the calling module.
  * @returns {object} log, warn, error functions
  */
@@ -42,6 +46,7 @@ function createLogger(modulePath) {
 
     return {
         log: (...args) => {
+            if (SUPPRESS_LOGGING_FROM.has(fileName)) return; // ✅ Suppress logging
             if (isDevelopment || isDebug) {
                 console.log(`[${fileName}]`, ...args);
             } else {
@@ -49,6 +54,7 @@ function createLogger(modulePath) {
             }
         },
         warn: (...args) => {
+            if (SUPPRESS_LOGGING_FROM.has(fileName)) return; // ✅ Suppress logging
             if (isDevelopment || isDebug) {
                 console.warn(`[${fileName}]`, ...args);
             } else {
@@ -56,6 +62,7 @@ function createLogger(modulePath) {
             }
         },
         error: (...args) => {
+            if (SUPPRESS_LOGGING_FROM.has(fileName)) return; // ✅ Suppress logging
             if (isDevelopment || isDebug) {
                 console.error(`[${fileName}]`, ...args);
             } else {
