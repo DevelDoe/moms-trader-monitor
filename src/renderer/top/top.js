@@ -174,12 +174,15 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     const tableHead = table.querySelector("thead");
     const tableBody = table.querySelector("tbody");
 
-   // ✅ Ensure tickers array is not empty before calling Object.keys
-   if (tickers.length === 0) {
-    console.warn(`⚠️ No tickers available for ${tableId}`);
-    tableHead.innerHTML = "<tr><th>No Data Available</th></tr>";
-    return;
-}
+    // ✅ Ensure tickers array is not empty before calling Object.keys
+    if (tickers.length === 0) {
+        console.warn(`⚠️ No tickers available for ${tableId}`);
+
+        tableHead.innerHTML = "<tr><th>No Data Available</th></tr>";
+        tableBody.innerHTML = ""; // ✅ Clear existing rows
+
+        return;
+    }
 
     // ✅ Determine which columns should be displayed
     const listType = tableId.includes("session") ? "session" : "daily";
@@ -412,13 +415,13 @@ function updateActiveTicker(ticker) {
     console.log("✅ Active ticker updated successfully!");
 }
 
-const floatOneMillionHigh       = 2_000_000;
-const floatFiveMillion          = 7_500_000;
-const floatTenMillion           = 13_000_000;
-const floatFiftyMillion         = 65_000_000;
-const floatHundredMillion       = 125_000_000;
-const floatTwoHundredMillion    = 250_000_000;
-const floatFiveHundredMillion   = 600_000_000;
+const floatOneMillionHigh = 2_000_000;
+const floatFiveMillion = 7_500_000;
+const floatTenMillion = 13_000_000;
+const floatFiftyMillion = 65_000_000;
+const floatHundredMillion = 125_000_000;
+const floatTwoHundredMillion = 250_000_000;
+const floatFiveHundredMillion = 600_000_000;
 
 function calculateScore(ticker) {
     let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
@@ -544,7 +547,6 @@ function getScoreBreakdown(ticker) {
 }
 
 function getBonusesHTML(ticker) {
-
     let bonuses = [];
     let tooltipText = [];
 
@@ -589,24 +591,17 @@ function getBonusesHTML(ticker) {
     } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
         bonuses.push('<span class="bonus high-float no-drag">500M</span>');
         tooltipText.push("500M: Float between 250M-500M");
-        
     } else if (floatValue >= floatFiveHundredMillion) {
         bonuses.push('<span class="bonus high-float no-drag">B</span>');
         tooltipText.push("500M: Float more than 500M");
     }
 
     if (floatValue > 0 && floatValue < 2_000_000) {
-       
     } else if (floatValue >= 2_000_000 && floatValue < 7_500_000) {
-        
     } else if (floatValue >= 7_500_000 && floatValue < 10_000_000) {
-        
     } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
-        
     } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
-        
     } else if (floatValue >= 500_000_000) {
-        
     }
 
     if (volumeValue < 300_000) {
