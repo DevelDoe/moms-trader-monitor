@@ -43,7 +43,7 @@
     }
   },
   "news": {
-    "showTrackedTickers": false,
+    "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
       "RETO"
