@@ -4,6 +4,7 @@ const createLogger = require("../../hlps/logger");
 const tickerStore = require("../store");
 const fs = require("fs");
 const path = require("path");
+const log = createLogger(__filename);
 const processedListFile = path.join(__dirname, "processedList.json");
 
 // ✅ Load processedList from file if available
@@ -24,7 +25,7 @@ function saveProcessedList() {
 
 puppeteer.use(StealthPlugin());
 
-const log = createLogger(__filename);
+
 
 /**
  * Launch Puppeteer Browser
