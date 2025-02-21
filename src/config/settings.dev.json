@@ -45,6 +45,7 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
+      "NAAS",
       "HOLO",
       "TANH",
       "LTRY",
