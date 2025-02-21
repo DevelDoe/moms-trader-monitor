@@ -90,7 +90,7 @@ class Store extends EventEmitter {
 
     addNews(newsItems) {
         if (!newsItems) {
-            log.warn("[store.js] No news items provided.");
+            log.warn("No news items provided.");
             return;
         }
 
@@ -98,7 +98,7 @@ class Store extends EventEmitter {
         const normalizedNews = Array.isArray(newsItems) ? newsItems : [newsItems];
 
         if (normalizedNews.length === 0) {
-            log.warn("[store.js] No valid news items to store.");
+            log.warn("No valid news items to store.");
             return;
         }
 
@@ -135,9 +135,9 @@ class Store extends EventEmitter {
                     const existingHeadlines = new Set(ticker.News.map((n) => n.headline));
                     if (!existingHeadlines.has(News.headline)) {
                         ticker.News.push(News);
-                        log.log(`[store.js] Added news to ${symbol} (Total: ${ticker.News.length})`);
+                        log.log(`Added news to ${symbol} (Total: ${ticker.News.length})`);
                     } else {
-                        log.log(`[store.js] Skipped duplicate news for ${symbol}: "${News.headline}"`);
+                        log.log(`Skipped duplicate news for ${symbol}"`);
                     }
 
                     this.sessionData.set(symbol, ticker);
