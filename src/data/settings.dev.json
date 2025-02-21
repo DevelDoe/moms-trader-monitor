@@ -46,7 +46,8 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
-      "RETO"
+      "RETO",
+      "NVO"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
