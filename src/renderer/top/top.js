@@ -250,9 +250,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
                 if (filteredNews.length > 0) {
                     filteredNews = `📰`;
-                } else if (typeof value === "object" && value !== null || typeof value === "array" && value !== null) {
-                    filteredNews = JSON.stringify(filteredNews); // ✅ Prevent [object Object]
-                } else if (value === undefined || value === null) {
+                } else {
                     filteredNews = "-"; // ✅ Show dash for missing values
                 }
 
