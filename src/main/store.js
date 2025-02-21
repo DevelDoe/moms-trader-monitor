@@ -170,7 +170,7 @@ class Store extends EventEmitter {
             this.sessionData.set(symbol, sessionTicker);
         }
 
-        log.log(`Updated ticker ${symbol} with new data: ${JSON.stringify(updateData)}`);
+        log.log(`Updated ticker ${symbol} with new data`);
         this.emit("update");
     }
 
