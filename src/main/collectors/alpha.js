@@ -105,7 +105,6 @@ const requestQueue = async.queue(async (ticker, callback) => {
     
 }, 1);
 
-// ✅ Pause and Resume Queue on Cooldown
 async function enforceCooldown() {
     log.warn("🚨 All API keys exhausted! Pausing queue for cooldown.");
     requestQueue.pause(); // ✅ Pause queue
@@ -113,10 +112,11 @@ async function enforceCooldown() {
 
     setTimeout(() => {
         log.log("✅ Cooldown period over. Resuming queue.");
+        lastRateLimitTime = null; // ✅ Reset cooldown flag
         requestQueue.resume(); // ✅ Resume queue after cooldown
-        processQueue(); // ✅ Restart processing
     }, 5 * 60 * 1000 + 1000);
 }
+
 
 // ✅ Process the Queue (Ensure it Runs)
 function processQueue() {
