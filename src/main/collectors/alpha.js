@@ -57,7 +57,7 @@ function isRateLimited() {
 
     if (elapsed < cooldownPeriod) {
         if (!cooldownLogged) { // ✅ Only log the first time
-            log.warn(`⏳ Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
+            log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
             cooldownLogged = true; // ✅ Set flag to avoid duplicate logs
         }
         return true;
