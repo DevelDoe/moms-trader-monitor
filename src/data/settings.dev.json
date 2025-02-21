@@ -52,7 +52,9 @@
       "RTC",
       "WIMI",
       "TXMD",
+      "SPGC",
       "BSGM",
+      "TANH",
       "SABR"
     ],
     "blockList": [
