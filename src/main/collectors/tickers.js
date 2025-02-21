@@ -1,7 +1,27 @@
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const createLogger = require("../../hlps/logger");
-const tickerStore = require("../store"); // ✅ Import store
+const tickerStore = require("../store"); 
+const fs = require("fs");
+const path = require("path");
+const processedListFile = path.join(__dirname, "processedList.json");
+
+// ✅ Load processedList from file if available
+let processedList = [];
+if (fs.existsSync(processedListFile)) {
+    try {
+        processedList = JSON.parse(fs.readFileSync(processedListFile, "utf8"));
+        log.log(`📂 Loaded ${processedList.length} processed tickers from file.`);
+    } catch (error) {
+        log.error("❌ Failed to load processedList from file:", error);
+    }
+}
+
+// ✅ Function to save processedList to file
+function saveProcessedList() {
+    fs.writeFileSync(processedListFile, JSON.stringify(processedList.slice(0, 100), null, 2), "utf8");
+}
+
 
 puppeteer.use(StealthPlugin());
 
