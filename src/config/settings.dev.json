@@ -44,14 +44,14 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "MLGO",
       "NAAS",
-      "HOLO",
-      "TANH",
+      "MLGO",
       "LTRY",
       "ESLA",
+      "HOLO",
       "LAES",
       "QUBT",
+      "TANH",
       "NIXX",
       "OSRH",
       "STAI"
@@ -59,7 +59,8 @@
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
-      "What's Going On"
+      "What's Going On",
+      "Why Five9 Shares"
     ],
     "bullishList": [
       "FDA Approves",
