@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const createLogger = require("../../hlps/logger");
-const tickerStore = require("../store"); 
+const tickerStore = require("../store");
 const fs = require("fs");
 const path = require("path");
 const processedListFile = path.join(__dirname, "processedList.json");
@@ -21,7 +21,6 @@ if (fs.existsSync(processedListFile)) {
 function saveProcessedList() {
     fs.writeFileSync(processedListFile, JSON.stringify(processedList.slice(0, 100), null, 2), "utf8");
 }
-
 
 puppeteer.use(StealthPlugin());
 
@@ -93,9 +92,9 @@ async function scrapeData() {
             const uniqueEntries = newScrape.filter((ticker) => {
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
                 const key = `${symbolNormalized}-${ticker.Time}`;
-                
+
                 // ✅ Check if ticker was already processed
-                if (tickerStore.processedList.some(entry => entry.key === key)) {
+                if (tickerStore.processedList.some((entry) => entry.key === key)) {
                     return false; // Skip duplicate
                 }
 
@@ -103,17 +102,21 @@ async function scrapeData() {
             });
 
             // ✅ Update `processedList` with new entries, limiting to 100 entries
+            // ✅ Store processed entries in `processedList` (limit to 100)
             uniqueEntries.forEach((ticker) => {
                 const symbolNormalized = ticker.Symbol.trim().toUpperCase();
                 const key = `${symbolNormalized}-${ticker.Time}`;
 
-                tickerStore.processedList.unshift({ key, Symbol: symbolNormalized, Time: ticker.Time });
+                processedList.unshift({ key, Symbol: symbolNormalized, Time: ticker.Time });
 
                 // Keep only last 100 entries
-                if (tickerStore.processedList.length > 100) {
-                    tickerStore.processedList.pop();
+                if (processedList.length > 100) {
+                    processedList.pop();
                 }
             });
+
+            // ✅ Save processedList to file
+            saveProcessedList();
 
             if (uniqueEntries.length > 0) {
                 log.log(`✅ Storing ${uniqueEntries.length} new unique entries`);
