@@ -92,9 +92,14 @@ const requestQueue = async.queue(async (ticker, callback) => {
     }
 
     setTimeout(() => {
-        log.log(`⏳ Waiting 5 min before next request... Queue size: ${requestQueue.length()}`);
-        callback(); // ✅ Continue queue processing only after delay
+        if (!isRateLimited()) {
+            callback();
+        } else {
+            log.warn(`Queue paused due to cooldown. Retrying after ${((5 * 60 * 1000) / 1000).toFixed(1)}s.`);
+            setTimeout(callback, 5 * 60 * 1000 + 1000);
+        }
     }, 5 * 60 * 1000 + 1000);
+    
 }, 1);
 
 // ✅ Pause and Resume Queue on Cooldown
