@@ -89,7 +89,7 @@ const fetchHistoricalNews = async (ticker) => {
 
     const midnight = new Date();
     midnight.setHours(0, 0, 0, 0);
-    const start = encodeURIComponent(midnight.toISOString());
+    startDate.setDate(startDate.getDate() - 365); // Fetch past 7 days
     const encodedTicker = encodeURIComponent(ticker);
 
     const ALPACA_NEWS_URL = `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
