@@ -74,7 +74,7 @@ function isRateLimited() {
 
 // ✅ Queue system for delaying requests
 const requestQueue = async.queue(async (ticker, callback) => {
-    log.log(`🔄 Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
+    log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
     const success = await fetchAlphaVantageData(ticker);
 
@@ -85,7 +85,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
         log.log(`✅ Successfully fetched ${ticker}.`);
     }
 
-    log.log(`✅ Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
+    log.log(`Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
 
     if (!success) {
         log.warn(`Failed to fetch ${ticker}, pausing queue due to rate limit.`);
