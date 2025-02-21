@@ -178,11 +178,14 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     if (tickers.length === 0) {
         console.warn(`⚠️ No tickers available for ${tableId}`);
 
-        // tableHead.innerHTML = "<tr><th>No Data Available</th></tr>";
+        tableHead.innerHTML = "<tr><th>No Data Available</th></tr>";
         tableBody.innerHTML = ""; // ✅ Clear existing rows
 
         return;
     }
+
+    // 🔄 **Clear table before updating**
+    tableBody.innerHTML = ""; // ✅ Prevent duplicates when filtering
 
     // ✅ Determine which columns should be displayed
     const listType = tableId.includes("session") ? "session" : "daily";
@@ -245,8 +248,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                     });
                 }
 
-                if (filteredNews) {
-                    filteredNews = filteredNews.length > 0 ? `📰` : "-";
+                if (filteredNews.length > 0) {
+                    filteredNews = `📰`;
                 } else if (typeof value === "object" && value !== null) {
                     filteredNews = JSON.stringify(filteredNews); // ✅ Prevent [object Object]
                 } else if (value === undefined || value === null) {
@@ -266,6 +269,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
     console.log(`✅ Finished updating table: ${tableId}`);
 }
+
 
 // Clear session
 function clearSessionList() {
