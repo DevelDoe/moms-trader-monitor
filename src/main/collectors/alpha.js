@@ -1,7 +1,7 @@
 const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
-const PQueue = require("p-queue").default; // ✅ Fix: Use `.default`
+const PQueue = require("p-queue").default; // ✅ Fix: CommonJS compatible
 require("dotenv").config(); // Load .env variables
 
 const CACHE_FILE = path.join(__dirname, "../../data/alpha_data.json");
@@ -60,6 +60,9 @@ function isRateLimited() {
     return false;
 }
 
+// ✅ Queue System for 5-Minute Delay Between Requests
+const queue = new PQueue({ concurrency: 1, interval: 5 * 60 * 1000 + 1000 }); // 5 min + 1 sec delay
+
 // ✅ Fetch data from Alpha Vantage (or use cache)
 async function fetchAlphaVantageData(ticker) {
     if (cache[ticker]) {
@@ -108,23 +111,9 @@ async function fetchAlphaVantageData(ticker) {
     }
 }
 
-// ✅ Create queue (only 1 request at a time)
-const queue = new PQueue({ concurrency: 1 });
-
-// ✅ Function to queue requests
+// ✅ Queue Requests (Instead of Running Directly)
 function queueRequest(ticker) {
     queue.add(() => fetchAlphaVantageData(ticker));
 }
 
-// ✅ Example ticker list
-const tickers = ["AAPL", "GOOG", "MSFT"];
-
-// ✅ Queue initial requests
-tickers.forEach(queueRequest);
-
-// ✅ Requeue requests every 5 minutes and 1 second
-setInterval(() => {
-    tickers.forEach(queueRequest);
-}, 5 * 60 * 1000 + 1000); // 5 minutes + 1 second
-
-module.exports = { fetchAlphaVantageData };
+module.exports = { fetchAlphaVantageData, queueRequest };
