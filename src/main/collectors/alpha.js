@@ -60,8 +60,8 @@ function isRateLimited() {
     return false;
 }
 
-// ✅ Queue System for 5-Minute Delay Between Requests
-const queue = async.queue(async (ticker, callback) => {
+// ✅ Queue system for delaying requests
+const requestQueue = async.queue(async (ticker, callback) => {
     await fetchAlphaVantageData(ticker);
     setTimeout(callback, 5 * 60 * 1000 + 1000); // 5 min + 1 sec delay
 }, 1);
@@ -114,9 +114,10 @@ async function fetchAlphaVantageData(ticker) {
     }
 }
 
-// ✅ Queue Requests (Instead of Running Directly)
+// ✅ Queue Requests Function
 function queueRequest(ticker) {
-    queue.add(() => fetchAlphaVantageData(ticker));
+    requestQueue.push(ticker);
 }
 
-module.exports = { fetchAlphaVantageData, queueRequest };
+// ✅ Export Functions
+module.exports = { fetchAlphaVantageData }
