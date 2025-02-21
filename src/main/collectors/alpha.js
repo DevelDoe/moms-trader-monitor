@@ -3,7 +3,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const async = require("async");
 require("dotenv").config(); // Load .env variables
-const createLogger = require("../hlps/logger");
+const createLogger = require("../../hlps/logger");
 
 const CACHE_FILE = path.join(__dirname, "../../data/alpha_data.json");
 
