@@ -195,7 +195,6 @@ class Store extends EventEmitter {
     }
 
     cleanupOldNews() {
-        log.log("cleanupOldNews() called");
         const TWENTY_MINUTES = 20 * 60 * 1000;
         const now = Date.now();
 
@@ -203,7 +202,9 @@ class Store extends EventEmitter {
         this.newsList = this.newsList.filter((News) => now - News.storedAt <= TWENTY_MINUTES);
         const afterCleanup = this.newsList.length;
 
-        log.log(`Cleaned up old news from global list. Before: ${beforeCleanup}, After: ${afterCleanup}`);
+        if (beforeCleanup !== afterCleanup) {
+            log.log(`Cleaned up old news from global list. Before: ${beforeCleanup}, After: ${afterCleanup}`);
+        }
     }
 }
 
