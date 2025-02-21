@@ -14,16 +14,15 @@
         "Price": false,
         "ChangePercent": false,
         "FiveM": false,
-        "Float": true,
-        "Volume": true,
-        "SprPercent": true,
-        "Time": true,
-        "HighOfDay": true,
-        "News": true,
-        "Count": true,
-        "Score": true,
-        "Bonuses": true,
-        "length": 10
+        "Float": false,
+        "Volume": false,
+        "SprPercent": false,
+        "Time": false,
+        "HighOfDay": false,
+        "News": false,
+        "Count": false,
+        "Score": false,
+        "Bonuses": false
       },
       "daily": {
         "Price": false,
@@ -37,8 +36,7 @@
         "News": true,
         "Count": true,
         "Score": true,
-        "Bonuses": true,
-        "length": 4
+        "Bonuses": true
       }
     }
   },
