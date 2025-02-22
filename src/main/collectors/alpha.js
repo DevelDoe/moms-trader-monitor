@@ -88,14 +88,23 @@ const requestQueue = async.queue(async (ticker, callback) => {
             }, 5 * 60 * 1000); // 5-minute cooldown
         }
 
-        return callback(); // ✅ Do not remove ticker from queue
+        // ✅ Since async.queue removes tickers, we put it back at the front
+        requestQueue.unshift(ticker);
+        return callback(); // ✅ Exit early without removing from queue
     }
 
-    await fetchAlphaVantageData(ticker);
+    const success = await fetchAlphaVantageData(ticker);
 
-    log.log(`Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
-    callback(); // ✅ Remove only after successful fetch
+    if (success) {
+        log.log(`Successfully fetched fresh data for ${ticker}. Removing from queue.`);
+        callback(); // ✅ Remove only after successful fetch
+    } else {
+        log.warn(`Failed to fetch ${ticker}, re-adding to queue for retry.`);
+        requestQueue.unshift(ticker); // ✅ Keep ticker in queue if fetch failed
+        callback(); // ✅ Allow queue to continue processing
+    }
 }, 1);
+
 
 // ✅ Process the Queue only when not rate-limited
 function processQueue() {
