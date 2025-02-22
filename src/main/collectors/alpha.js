@@ -105,19 +105,6 @@ const requestQueue = async.queue(async (ticker, callback) => {
 
 }, 1);
 
-async function enforceCooldown() {
-    log.warn("All API keys exhausted! Pausing queue for cooldown.");
-    requestQueue.pause();
-    lastRateLimitTime = Date.now();
-
-    setTimeout(() => {
-        log.log("Cooldown period over. Resuming queue.");
-        lastRateLimitTime = null;
-        requestQueue.resume();
-        processQueue();
-    }, 5 * 60 * 1000 + 1000);
-}
-
 // ✅ Process the Queue
 function queueRequest(ticker) {
     // Add to queue ONLY if not already present
