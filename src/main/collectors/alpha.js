@@ -124,8 +124,10 @@ function processQueue() {
 async function fetchAlphaVantageData(ticker) {
     if (isRateLimited()) {
         log.warn(`[RATE-LIMIT] Skipping ${ticker} due to cooldown.`);
-        return;
+        return false;
     }
+
+    log.log(`[API REQUEST] Attempting to fetch data for ${ticker}.`);
 
     let attempts = 0;
     while (attempts < API_KEYS.length) {
@@ -133,7 +135,7 @@ async function fetchAlphaVantageData(ticker) {
         const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
 
         try {
-            log.log(`[API REQUEST] Fetching fresh data for ${ticker}.`);
+            log.log(`[API REQUEST] Fetching fresh data for ${ticker} with API key ${API_KEY}`);
 
             const response = await axios.get(url);
             const data = response.data;
@@ -148,7 +150,7 @@ async function fetchAlphaVantageData(ticker) {
             // ✅ Log Unexpected Responses
             if (!data || Object.keys(data).length === 0 || !data.Symbol) {
                 log.warn(`[INVALID RESPONSE] Unexpected response for ${ticker}:`, JSON.stringify(data, null, 2));
-                return;
+                return false; // ✅ Keep in queue for retry
             }
 
             // ✅ Step 3: Save new cache and trigger update
@@ -160,13 +162,16 @@ async function fetchAlphaVantageData(ticker) {
             const store = require("../store");
             store.updateOverview(ticker, { overview: data });
 
-            return;
+            return true; // ✅ Indicate success
         } catch (error) {
             log.error(`[ERROR] Fetching Alpha Vantage data for ${ticker}: ${error.message}`);
             attempts++;
         }
     }
+
+    return false; // ✅ If all attempts fail, keep ticker in queue
 }
+
 
 // ✅ Queue Requests
 function queueRequest(ticker) {
