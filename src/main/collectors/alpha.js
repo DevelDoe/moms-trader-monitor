@@ -56,8 +56,16 @@ function isRateLimited() {
     const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
     const elapsed = Date.now() - lastRateLimitTime;
 
-    return elapsed < cooldownPeriod;
+    if (elapsed < cooldownPeriod) {
+        log.warn(`[RATE-LIMIT] Cooldown active. Waiting ${(cooldownPeriod - elapsed) / 1000}s`);
+        return true;
+    }
+
+    log.log(`[RATE-LIMIT] Cooldown expired. Resuming API requests.`);
+    lastRateLimitTime = null;
+    return false;
 }
+
 
 // ✅ Search cache and update store immediately
 function searchCache(ticker) {
