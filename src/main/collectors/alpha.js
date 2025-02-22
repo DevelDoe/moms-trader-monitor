@@ -73,8 +73,6 @@ const requestQueue = async.queue(async (ticker, callback) => {
 
     if (data) {
         log.log(`Successfully fetched ${ticker}.`);
-    } else if (cache[ticker]) {
-        log.log(`Using cached data for ${ticker} due to failed API request.`);
     } else {
         log.warn(`Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
         requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
@@ -161,17 +159,6 @@ async function fetchAlphaVantageData(ticker) {
             log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
             return null;
         }
-    }
-
-    // ✅ If API request fails, check cache
-    if (!latestData) {
-        if (cache[ticker]) {
-            log.log(`Returning cached data for ${ticker} due to API failure.`);
-            return cache[ticker];
-        }
-
-        // ✅ If no cache exists, enforce cooldown and requeue
-        await enforceCooldown();
     }
 
     return null;
