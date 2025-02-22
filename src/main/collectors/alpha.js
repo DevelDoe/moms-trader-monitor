@@ -96,13 +96,9 @@ const requestQueue = async.queue(async (ticker, callback) => {
     const success = await fetchAlphaVantageData(ticker);
 
     if (success) {
-        log.log(`Successfully fetched fresh data for ${ticker}. Removing from queue.`);
+        log.log(`Successfully fetched fresh data for ${ticker}.`);
         callback(); // ✅ Remove only after successful fetch
-    } else {
-        log.warn(`Failed to fetch ${ticker}, re-adding to queue for retry.`);
-        requestQueue.unshift(ticker); // ✅ Keep ticker in queue if fetch failed
-        callback(); // ✅ Allow queue to continue processing
-    }
+    } 
 }, 1);
 
 
