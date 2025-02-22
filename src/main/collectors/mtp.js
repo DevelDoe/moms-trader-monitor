@@ -7,4 +7,12 @@ const connectMTP = () => {
 
 }
 
+function getMtpOverview(ticker) {
+    const store = require("../store");
+
+
+    store.updateMtpOverview(ticker, { mtpOverview });
+
+}
+
 module.exports = { connectMTP };
