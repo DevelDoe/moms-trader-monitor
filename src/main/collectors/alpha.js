@@ -94,6 +94,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
     } else {
         callback();
     }
+
 }, 1);
 
 async function enforceCooldown() {
@@ -119,24 +120,8 @@ function processQueue() {
 
 // ✅ Fetch data from Alpha Vantage (or use cache if necessary)
 async function fetchAlphaVantageData(ticker) {
-    const store = require("../store");
-
-    // ✅ Step 1: Return cache immediately if available
-    if (cache[ticker]) {
-        log.log(`[CACHE] Returning cached data for ${ticker}. Last fetched: ${cache[ticker].lastFetchedTime || "Unknown"}`);
-
-        // ✅ Update the store with cached data
-        store.updateOverview(ticker, { overview: cache[ticker] });
-
-        // ✅ Fetch fresh data in the background
-        setImmediate(() => fetchAlphaVantageData(ticker, false));
-
-        return cache[ticker]; // ✅ Return cached data first
-    }
-
-    // ✅ Step 2: Fetch fresh data from API
     if (isRateLimited()) {
-        log.warn(`[RATE-LIMIT] ${ticker} delayed due to cooldown. Will retry later.`);
+        log.warn(`${ticker} delayed due to cooldown. Will retry later.`);
         return null;
     }
 
@@ -148,60 +133,49 @@ async function fetchAlphaVantageData(ticker) {
         const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
 
         try {
-            log.log(`[API REQUEST] Fetching fresh data for ${ticker} using API Key ${currentKeyIndex + 1}/${API_KEYS.length}`);
-
             const response = await axios.get(url);
             const data = response.data;
 
-            // ✅ Handle Rate Limits
             if (data.Note || (data.Information && data.Information.includes("rate limit"))) {
-                log.warn(`[RATE LIMIT] API key ${API_KEY} hit rate limit. Rotating keys.`);
+                log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
                 attempts++;
                 continue;
             }
 
-            // ✅ Log Unexpected Responses
             if (!data || Object.keys(data).length === 0 || !data.Symbol) {
-                log.warn(`[INVALID RESPONSE] Unexpected response for ${ticker}:`, JSON.stringify(data, null, 2));
-                attempts++;
-                continue;
+                log.warn(`Invalid response for ${ticker}. Not caching.`);
+                return null;
             }
 
-            // ✅ Step 3: Save new cache and trigger update
-            log.log(`[SUCCESS] Fresh data received for ${ticker}. Updating cache.`);
-            latestData = { ...data, lastFetchedTime: new Date().toISOString() }; // Track fetch time
-            cache[ticker] = latestData;
+            (`Fetched Alpha Vantage data for ${ticker}. Caching...`);
+            latestData = data;
+            cache[ticker] = data;
             saveCache();
 
-            // ✅ Use updateOverview() to propagate the update
-            store.updateOverview(ticker, { overview: latestData });
+            // ✅ Update the store
+            const store = require("../store");
+            store.updateOverview(ticker, { overview: data });
 
-            return null; // ✅ No need to return, store handles updates
+            return latestData;
         } catch (error) {
-            // ✅ General Error Handling (API errors, network failures, etc.)
-            log.error(`[ERROR] Fetching Alpha Vantage data for ${ticker}: ${error.message}`);
-
-            if (error.response) {
-                log.error(`[ERROR] Response Data: ${JSON.stringify(error.response.data, null, 2)}`);
-                log.error(`[ERROR] Status Code: ${error.response.status}`);
-            }
-
-            attempts++; // Try another key before failing
+            log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
+            return null;
         }
     }
 
-    // ✅ If API request fails, return only cached data
-    if (!latestData && cache[ticker]) {
-        log.warn(`[CACHE FALLBACK] Returning cached data for ${ticker} due to API failure.`);
-        store.updateOverview(ticker, { overview: cache[ticker] });
-        return cache[ticker];
+    // ✅ If API request fails, check cache
+    if (!latestData) {
+        if (cache[ticker]) {
+            log.log(`Returning cached data for ${ticker} due to API failure.`);
+            return cache[ticker];
+        }
+
+        // ✅ If no cache exists, enforce cooldown and requeue
+        await enforceCooldown();
     }
 
-    // ✅ If no cache and no API data, enforce cooldown
-    await enforceCooldown();
     return null;
 }
-
 
 // ✅ Queue Requests
 function queueRequest(ticker) {
