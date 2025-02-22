@@ -121,10 +121,16 @@ async function enforceCooldown() {
 }
 
 // ✅ Process the Queue
-function processQueue() {
-    if (requestQueue.length() > 0 && !isRateLimited()) {
-        log.log(`Resuming queue processing... Queue size: ${requestQueue.length()}`);
-        requestQueue.process();
+function queueRequest(ticker) {
+    // Add to queue ONLY if not already present
+    if (!requestQueue._tasks.some(t => t.data === ticker)) {
+        requestQueue.push(ticker);
+        log.debug(`Queued ${ticker} (${requestQueue.length()} pending)`);
+    }
+    
+    // Only trigger processing if not rate limited
+    if (!isRateLimited()) {
+        processQueue();
     }
 }
 
