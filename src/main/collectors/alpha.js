@@ -145,12 +145,13 @@ async function fetchAlphaVantageData(ticker) {
                 log.warn(`Updating cache with fresh data for ${ticker}.`);
                 cache[ticker] = data;
                 saveCache();
+                const store = require("../store");
+                store.updateOverview(ticker, { overview: data });
             }
 
-            // ✅ Update the store
+           
 
-            const store = require("../store");
-            store.updateOverview(ticker, { overview: data });
+            
 
             return latestData;
         } catch (error) {
