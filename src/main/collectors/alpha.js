@@ -148,7 +148,7 @@ async function fetchAlphaVantageData(ticker) {
 
             if (data.Symbol) {
                 latestData = data;
-                log.warn(`Adding new data for ${ticker} to the cache.`);
+                log.warn(`Updating cache with fresh data for ${ticker}.`);
                 cache[ticker] = data;
                 saveCache();
             }
