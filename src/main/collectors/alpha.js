@@ -177,6 +177,18 @@ async function fetchAlphaVantageData(ticker) {
     return null;
 }
 
+// ✅ Search cache and update store immediately
+function searchCache(ticker) {
+    const store = require("../store");
+
+    if (cache[ticker]) {
+        log.log(`[CACHE] Found cached data for ${ticker}. Updating store.`);
+        store.updateOverview(ticker, { overview: cache[ticker] });
+    } else {
+        log.log(`[CACHE] No cached data found for ${ticker}.`);
+    }
+}
+
 // ✅ Queue Requests
 function queueRequest(ticker) {
     requestQueue.push(ticker);
@@ -188,4 +200,4 @@ function queueRequest(ticker) {
 }
 
 // ✅ Export Functions
-module.exports = { fetchAlphaVantageData, queueRequest, processQueue };
+module.exports = { fetchAlphaVantageData, queueRequest, processQueue, searchCache };
