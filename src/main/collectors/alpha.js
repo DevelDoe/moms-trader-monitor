@@ -3,200 +3,194 @@ const fs = require("fs-extra");
 const path = require("path");
 const async = require("async");
 const store = require("../store");
-require("dotenv").config();
+require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 
 const CACHE_FILE = path.join(__dirname, "../../data/alpha_data.json");
-const COOLDOWN_PERIOD = 5 * 60 * 1000 + 1000; // 5 minutes 1 second
-const REQUEST_TIMEOUT = 10000; // 10 seconds
-const RETRY_DELAY = 60000; // 1 minute
 
-// ❶ Cache Management Improvements
+// ✅ Ensure cache directory exists
+fs.ensureDirSync(path.dirname(CACHE_FILE));
+
+// ✅ Load cache if it exists
 let cache = {};
-let cacheDirty = false;
-let cacheSaveTimeout = null;
-
-const initializeCache = () => {
+if (fs.existsSync(CACHE_FILE)) {
     try {
-        if (fs.existsSync(CACHE_FILE)) {
-            cache = fs.readJsonSync(CACHE_FILE);
-            log.info(`Loaded cache with ${Object.keys(cache).length} entries`);
-        }
+        cache = fs.readJsonSync(CACHE_FILE);
     } catch (error) {
-        log.error("Cache initialization failed:", error);
+        log.error("Error reading Alpha Vantage cache:", error);
+        cache = {}; // Reset cache if corrupted
     }
-};
-initializeCache();
-
-// ❷ Optimized API Key Management
-const API_KEYS = Object.values(process.env)
-    .filter((_, key) => key.startsWith("ALPHA_VANTAGE_API_KEY"))
-    .filter(Boolean);
-
-if (API_KEYS.length === 0) {
-    log.error("No API keys found in environment variables!");
-    process.exit(1);
 }
 
+// ✅ Extract API keys from .env file
+// ✅ Properly access environment keys
+const API_KEYS = Object.entries(process.env)
+    .filter(([key]) => key.startsWith("ALPHA_VANTAGE_API_KEY"))
+    .sort(([a], [b]) => a.localeCompare(b))  // Sort alphabetically
+    .map(([, value]) => value)
+    .filter(Boolean);  // Remove empty values
+
 let currentKeyIndex = 0;
-const getNextAPIKey = () => {
-    const nextIndex = (currentKeyIndex + 1) % API_KEYS.length;
-    currentKeyIndex = API_KEYS[nextIndex] ? nextIndex : 0;
+let lastRateLimitTime = null;
+
+// ✅ Get the next API key (rotates between keys)
+function getNextAPIKey() {
+    currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
     return API_KEYS[currentKeyIndex];
-};
+}
 
-// ❸ Enhanced Rate Limiting
-let cooldownTimer = null;
-const rateLimitState = {
-    limited: false,
-    endTime: null,
-};
+// ✅ Save cache to file
+function saveCache() {
+    try {
+        fs.writeJsonSync(CACHE_FILE, cache, { spaces: 2 });
+    } catch (error) {
+        log.error("Error saving Alpha Vantage cache:", error);
+    }
+}
 
-const checkRateLimit = () => {
-    if (rateLimitState.limited && Date.now() < rateLimitState.endTime) {
-        const remaining = Math.ceil((rateLimitState.endTime - Date.now()) / 1000);
-        log.warn(`Rate limited: ${remaining}s remaining`);
+// ✅ Check if rate limit is active
+function isRateLimited() {
+    if (!lastRateLimitTime) {
+        lastRateLimitTime = Date.now();
+        return false;
+    }
+
+    const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
+    const elapsed = Date.now() - lastRateLimitTime;
+
+    if (elapsed < cooldownPeriod) {
+        log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
         return true;
     }
-    rateLimitState.limited = false;
+
+    lastRateLimitTime = null;
     return false;
-};
+}
 
-// ❹ Batched Cache Writing
-const saveCache = (immediate = false) => {
-    if (!cacheDirty) return;
-
-    if (cacheSaveTimeout) clearTimeout(cacheSaveTimeout);
-    
-    const write = () => {
-        fs.writeJsonSync(CACHE_FILE, cache, { spaces: 2 });
-        cacheDirty = false;
-        log.debug("Cache saved successfully");
-    };
-
-    immediate ? write() : cacheSaveTimeout = setTimeout(write, 5000);
-};
-
-// ❺ Improved Queue Configuration
+// ✅ Queue system for delaying requests
 const requestQueue = async.queue(async (ticker, callback) => {
-    log.debug(`Processing ${ticker} | Queue size: ${requestQueue.length()}`);
-    
-    try {
-        const data = await fetchAlphaVantageData(ticker);
-        
-        if (data) {
-            log.info(`Fetched ${ticker}`);
-            callback();
-            return;
-        }
+    log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
-        log.warn(`Failed ${ticker}, scheduling retry...`);
-        setTimeout(() => {
-            requestQueue.unshift(ticker);
-            log.debug(`Requeued ${ticker} after delay`);
-        }, RETRY_DELAY);
+    const data = await fetchAlphaVantageData(ticker);
 
-    } finally {
-        saveCache();
+    if (data) {
+        log.log(`Successfully fetched ${ticker}.`);
+    } else {
+        log.warn(`Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
+        requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
     }
-}, 1); // Maintain 1 concurrent request
 
-// ❻ Enhanced Request Handling
-const fetchAlphaVantageData = async (ticker) => {
-    if (checkRateLimit()) return null;
+    log.log(`Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
+
+    if (!data) {
+        log.warn(`Failed to fetch ${ticker}, pausing queue due to rate limit.`);
+        requestQueue.pause();
+
+        setTimeout(() => {
+            log.log("Cooldown period over. Resuming queue.");
+            requestQueue.resume();
+            processQueue();
+        }, 5 * 60 * 1000 + 1000);
+    } else {
+        callback();
+    }
+
+}, 1);
+
+async function enforceCooldown() {
+    log.warn("All API keys exhausted! Pausing queue for cooldown.");
+    requestQueue.pause();
+    lastRateLimitTime = Date.now();
+
+    setTimeout(() => {
+        log.log("Cooldown period over. Resuming queue.");
+        lastRateLimitTime = null;
+        requestQueue.resume();
+        processQueue();
+    }, 5 * 60 * 1000 + 1000);
+}
+
+// ✅ Process the Queue
+function processQueue() {
+    if (requestQueue.length() > 0 && !isRateLimited()) {
+        log.log(`Resuming queue processing... Queue size: ${requestQueue.length()}`);
+        requestQueue.process();
+    }
+}
+
+// ✅ Fetch data from Alpha Vantage (or use cache if necessary)
+async function fetchAlphaVantageData(ticker) {
+    if (isRateLimited()) {
+        log.warn(`${ticker} delayed due to cooldown. Will retry later.`);
+        return null;
+    }
 
     let attempts = 0;
-    const startTime = Date.now();
+    let latestData = null;
 
     while (attempts < API_KEYS.length) {
         const API_KEY = getNextAPIKey();
         const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
 
         try {
-            const response = await axios.get(url, { timeout: REQUEST_TIMEOUT });
-            const { data } = response;
+            const response = await axios.get(url);
+            const data = response.data;
 
-            if (data.Note?.includes("rate limit")) {
-                log.warn(`Rate limit hit on ${API_KEY.substring(0, 6)}...`);
+            if (data.Note || (data.Information && data.Information.includes("rate limit"))) {
+                log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
                 attempts++;
                 continue;
             }
 
-            if (!data?.Symbol) {
-                log.warn(`Invalid response for ${ticker}`);
-                delete cache[ticker]; // ❼ Clean invalid entries
-                cacheDirty = true;
+            if (!data || Object.keys(data).length === 0 || !data.Symbol) {
+                log.warn(`Invalid response for ${ticker}. Not caching.`);
                 return null;
             }
 
-            if (JSON.stringify(cache[ticker]) !== JSON.stringify(data)) {
+            if (data.Symbol) {
+                latestData = data;
+                log.warn(`Updating cache with fresh data for ${ticker}.`);
                 cache[ticker] = data;
-                cacheDirty = true;
-                store.updateOverview(ticker, { overview: data });
+                saveCache();
             }
 
-            return data;
+            // ✅ Update the store
+            store.updateOverview(ticker, { overview: data });
+
+            return latestData;
         } catch (error) {
-            if (error.response?.status === 429) {
-                activateCooldown();
-                return null;
-            }
-            log.error(`API Error (${API_KEY.substring(0, 6)}...):`, error.message);
+            log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
+            return null;
         }
-        
-        attempts++;
     }
 
-    if (attempts >= API_KEYS.length) {
-        activateCooldown();
-    }
     return null;
-};
+}
 
-// ❽ Centralized Cooldown Management
-const activateCooldown = () => {
-    if (rateLimitState.limited) return;
+// ✅ Queue Requests
+function queueRequest(ticker) {
+    requestQueue.push(ticker);
+    log.log(`Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
 
-    rateLimitState.limited = true;
-    rateLimitState.endTime = Date.now() + COOLDOWN_PERIOD;
-    
-    log.warn(`Activating cooldown until ${new Date(rateLimitState.endTime).toLocaleTimeString()}`);
-    
-    requestQueue.pause();
-    setTimeout(() => {
-        rateLimitState.limited = false;
-        requestQueue.resume();
-        log.info("Cooldown expired, resuming operations");
-    }, COOLDOWN_PERIOD);
-};
+    if (!isRateLimited()) {
+        processQueue();
+    }
+}
 
-// ❾ Cache Interface
-const searchCache = (ticker) => {
+// ✅ Search cache and update store immediately
+function searchCache(ticker) {
+    const store = require("../store");
+
     if (cache[ticker]) {
-        log.debug(`[CACHE] Serving ${ticker}`);
+        log.log(`[CACHE] Found cached data for ${ticker}. Updating store.`);
         store.updateOverview(ticker, { overview: cache[ticker] });
-        return true;
+    } else {
+        log.log(`[CACHE] No cached data found for ${ticker}.`);
     }
-    log.debug(`[CACHE] Miss ${ticker}`);
-    return false;
-};
+}
 
-// ❿ Queue Interface
-const queueRequest = (ticker) => {
-    if (requestQueue.length() > 1000) {
-        log.error("Queue overload! Rejecting new requests");
-        return;
-    }
-    
-    if (!searchCache(ticker)) {
-        requestQueue.push(ticker);
-        log.debug(`Queued ${ticker} (${requestQueue.length()} pending)`);
-    }
-};
-
-// Save cache on exit
-process.on("exit", () => saveCache(true));
-process.on("SIGINT", () => process.exit());
-
+// ✅ Export Functions
 module.exports = { searchCache, queueRequest };
+
+
