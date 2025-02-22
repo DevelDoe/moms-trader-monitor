@@ -82,30 +82,33 @@ function searchCache(ticker) {
 const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
-    if (isRateLimited()) {
+    // ✅ If the queue is paused due to rate limiting, re-add the ticker and exit early
+    if (requestQueue.paused || isRateLimited()) {
+        log.warn(`[RATE-LIMIT] Rate limit hit! Pausing queue.`);
+        
         if (!requestQueue.paused) {
-            log.warn(`[RATE-LIMIT] Rate limit hit! Pausing queue.`);
             requestQueue.pause();
             lastRateLimitTime = Date.now();
 
             setTimeout(() => {
                 log.log("[RATE-LIMIT] Cooldown complete. Resuming queue.");
-                lastRateLimitTime = null; // ✅ Ensure cooldown resets properly
+                lastRateLimitTime = null; // ✅ Reset cooldown properly
                 requestQueue.resume();
-                
                 log.log("[QUEUE] Restarting queue processing after cooldown.");
-                processQueue(); // ✅ Ensure processing restarts
+                processQueue(); // ✅ Restart processing properly
             }, 5 * 60 * 1000); // 5-minute cooldown
         }
 
-        requestQueue.unshift(ticker); // ✅ Keep ticker in queue
-        return callback(); // ✅ Exit early without removing from queue
+        requestQueue.unshift(ticker); // ✅ Keep the ticker in queue
+        return callback(); // ✅ Exit early
     }
 
+    // ✅ Actually attempt API request now
+    log.log(`[API] Attempting to fetch data for ${ticker}...`);
     const success = await fetchAlphaVantageData(ticker);
 
     if (success) {
-        log.log(`Successfully fetched fresh data for ${ticker}.`);
+        log.log(`Successfully fetched fresh data for ${ticker}. Removing from queue.`);
         callback(); // ✅ Remove only after successful fetch
     } else {
         log.warn(`Failed to fetch ${ticker}, keeping in queue for retry.`);
@@ -113,6 +116,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
         callback(); // ✅ Continue processing
     }
 }, 1);
+
 
 
 
