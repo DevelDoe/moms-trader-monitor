@@ -66,17 +66,16 @@ function isRateLimited() {
 }
 
 // ✅ Queue system for delaying requests
-const requestQueue = async.queue(async (ticker, callback) => {
+const requestQueue = async.queue(async (ticker, callback) => 
+{
     log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
     const data = await fetchAlphaVantageData(ticker);
 
     if (data) {
         log.log(`Successfully fetched ${ticker}.`);
-    } else if (cache[ticker]) {
-        log.log(`Using cached data for ${ticker} due to failed API request.`);
     } else {
-        log.warn(`Failed to fetch ${ticker}, re-adding to queue AFTER cooldown.`);
+        log.warn(`Failed to fetch ${ticker}, re-adding to queue!`);
         requestQueue.unshift(ticker); // ✅ Re-add ticker to the front of the queue
     }
 
