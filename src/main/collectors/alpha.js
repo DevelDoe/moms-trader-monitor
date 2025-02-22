@@ -118,18 +118,8 @@ function processQueue() {
     }
 }
 
+// ✅ Fetch data from Alpha Vantage (or use cache if necessary)
 async function fetchAlphaVantageData(ticker) {
-    // ✅ Step 1: Return cache immediately if available
-    if (cache[ticker]) {
-        log.log(`Returning cached data for ${ticker} immediately.`);
-        
-        // ✅ Fetch fresh data in the background without blocking response
-        setImmediate(() => fetchAlphaVantageData(ticker, false));
-
-        return cache[ticker]; // ✅ Return cached data first
-    }
-
-    // ✅ Step 2: Fetch fresh data from API
     if (isRateLimited()) {
         log.warn(`${ticker} delayed due to cooldown. Will retry later.`);
         return null;
@@ -157,34 +147,35 @@ async function fetchAlphaVantageData(ticker) {
                 return null;
             }
 
-            // ✅ Step 3: Save new cache and trigger update
-            log.log(`Fetched fresh Alpha Vantage data for ${ticker}. Updating cache.`);
+            (`Fetched Alpha Vantage data for ${ticker}. Caching...`);
             latestData = data;
             cache[ticker] = data;
             saveCache();
 
-            // ✅ Use updateOverview() to propagate the update
+            // ✅ Update the store
             const store = require("../store");
             store.updateOverview(ticker, { overview: data });
 
-            return null; // ✅ No need to manually return, store handles updates
+            return latestData;
         } catch (error) {
             log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
             return null;
         }
     }
 
-    // ✅ If API request fails, return only cached data
-    if (!latestData && cache[ticker]) {
-        log.log(`Returning cached data for ${ticker} due to API failure.`);
-        return cache[ticker];
+    // ✅ If API request fails, check cache
+    if (!latestData) {
+        if (cache[ticker]) {
+            log.log(`Returning cached data for ${ticker} due to API failure.`);
+            return cache[ticker];
+        }
+
+        // ✅ If no cache exists, enforce cooldown and requeue
+        await enforceCooldown();
     }
 
-    // ✅ If no cache and no API data, enforce cooldown
-    await enforceCooldown();
     return null;
 }
-
 
 // ✅ Queue Requests
 function queueRequest(ticker) {
