@@ -47,7 +47,6 @@ function saveCache() {
 }
 
 // ✅ Check if rate limit is active
-// ✅ Check if rate limit is active
 function isRateLimited() {
     if (!lastRateLimitTime) {
         lastRateLimitTime = Date.now();
