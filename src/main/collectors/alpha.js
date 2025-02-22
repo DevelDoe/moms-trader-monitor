@@ -75,20 +75,20 @@ const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
     if (isRateLimited()) {
-        log.warn(`[RATE-LIMIT] Rate limit hit! Pausing the entire queue.`);
+        if (!requestQueue.paused) {
+            log.warn(`[RATE-LIMIT] Rate limit hit! Pausing the entire queue.`);
+            requestQueue.pause();
+            lastRateLimitTime = Date.now();
 
-        // ✅ Pause queue for full cooldown duration
-        requestQueue.pause();
-        lastRateLimitTime = Date.now();
+            setTimeout(() => {
+                log.log("[RATE-LIMIT] Cooldown complete. Resuming queue.");
+                lastRateLimitTime = null;
+                requestQueue.resume();
+                processQueue(); // ✅ Resume processing all tickers
+            }, 5 * 60 * 1000); // 5-minute cooldown
+        }
 
-        setTimeout(() => {
-            log.log("[RATE-LIMIT] Cooldown complete. Resuming queue.");
-            lastRateLimitTime = null;
-            requestQueue.resume();
-            processQueue(); // ✅ Resume processing all tickers in order
-        }, 5 * 60 * 1000); // 5-minute cooldown
-
-        return callback(); // ✅ Do not remove from queue
+        return callback(); // ✅ Do not remove ticker from queue
     }
 
     await fetchAlphaVantageData(ticker);
@@ -104,6 +104,7 @@ function processQueue() {
         requestQueue.process();
     }
 }
+
 
 
 // ✅ Fetch data from Alpha Vantage
