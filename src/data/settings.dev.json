@@ -23,7 +23,7 @@
         "Count": true,
         "Score": true,
         "Bonuses": true,
-        "length": 7
+        "length": 6
       },
       "daily": {
         "Price": false,
