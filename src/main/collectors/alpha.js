@@ -59,20 +59,18 @@ function saveCache() {
 }
 
 // ✅ Check if rate limit is active
+// Modified isRateLimited function
 function isRateLimited() {
-    if (!lastRateLimitTime) {
-        lastRateLimitTime = Date.now();
-        return false;
-    }
+    if (!lastRateLimitTime) return false;
 
-    const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
-    const elapsed = Date.now() - lastRateLimitTime;
-
-    if (elapsed < cooldownPeriod) {
-        log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
+    const remaining = Math.max(0, lastRateLimitTime + COOLDOWN_PERIOD - Date.now());
+    
+    if (remaining > 0) {
+        log.warn(`Cooldown active: ${Math.round(remaining/1000)}s remaining`);
         return true;
     }
-
+    
+    // Auto-reset when cooldown expires
     lastRateLimitTime = null;
     return false;
 }
@@ -106,6 +104,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
     }
 
 }, 1);
+
 // ✅ Process the Queue
 function processQueue() {
     if (requestQueue.length() > 0 && !isRateLimited()) {
