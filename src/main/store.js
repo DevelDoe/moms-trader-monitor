@@ -2,7 +2,7 @@ const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews } = require("./collectors/news");
-const { fetchAlphaVantageData, queueRequest } = require("./collectors/alpha");
+const { fetchAlphaVantageData, queueRequest, searchCache } = require("./collectors/alpha");
 
 class Store extends EventEmitter {
     constructor() {
@@ -91,6 +91,7 @@ class Store extends EventEmitter {
 
         if (newTickers.length > 0) {
             log.log(`Queuing Alpha Vantage data requests: ${newTickers.join(", ")}`);
+            newTickers.forEach((ticker) => searchCache(ticker));
             newTickers.forEach((ticker) => queueRequest(ticker));
         }
 
