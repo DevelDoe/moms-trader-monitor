@@ -84,20 +84,21 @@ const requestQueue = async.queue(async (ticker, callback) => {
 
     if (isRateLimited()) {
         if (!requestQueue.paused) {
-            log.warn(`[RATE-LIMIT] Rate limit hit! Pausing for a 5 minute cooldown...`);
+            log.warn(`[RATE-LIMIT] Rate limit hit! Pausing queue.`);
             requestQueue.pause();
             lastRateLimitTime = Date.now();
 
             setTimeout(() => {
-                log.log("[RATE-LIMIT] Cooldown complete.");
-                lastRateLimitTime = null;
+                log.log("[RATE-LIMIT] Cooldown complete. Resuming queue.");
+                lastRateLimitTime = null; // ✅ Ensure cooldown resets properly
                 requestQueue.resume();
-                processQueue(); // ✅ Resume processing all tickers
+                
+                log.log("[QUEUE] Restarting queue processing after cooldown.");
+                processQueue(); // ✅ Ensure processing restarts
             }, 5 * 60 * 1000); // 5-minute cooldown
         }
 
-        // ✅ Since async.queue removes tickers, we put it back at the front
-        requestQueue.unshift(ticker);
+        requestQueue.unshift(ticker); // ✅ Keep ticker in queue
         return callback(); // ✅ Exit early without removing from queue
     }
 
@@ -106,8 +107,13 @@ const requestQueue = async.queue(async (ticker, callback) => {
     if (success) {
         log.log(`Successfully fetched fresh data for ${ticker}.`);
         callback(); // ✅ Remove only after successful fetch
-    } 
+    } else {
+        log.warn(`Failed to fetch ${ticker}, keeping in queue for retry.`);
+        requestQueue.unshift(ticker); // ✅ Keep ticker in queue if fetch failed
+        callback(); // ✅ Continue processing
+    }
 }, 1);
+
 
 
 // ✅ Process the Queue only when not rate-limited
