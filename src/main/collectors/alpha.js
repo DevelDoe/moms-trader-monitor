@@ -60,16 +60,19 @@ function saveCache() {
 
 // ✅ Check if rate limit is active
 function isRateLimited() {
-    if (!lastRateLimitTime) return false;
+    if (!lastRateLimitTime) {
+        lastRateLimitTime = Date.now();
+        return false;
+    }
 
-    const remaining = Math.max(0, lastRateLimitTime + COOLDOWN_PERIOD - Date.now());
-    
-    if (remaining > 0) {
-        log.warn(`Cooldown active: ${Math.round(remaining/1000)}s remaining`);
+    const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
+    const elapsed = Date.now() - lastRateLimitTime;
+
+    if (elapsed < cooldownPeriod) {
+        log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
         return true;
     }
-    
-    // Auto-reset when cooldown expires
+
     lastRateLimitTime = null;
     return false;
 }
@@ -103,7 +106,6 @@ const requestQueue = async.queue(async (ticker, callback) => {
     }
 
 }, 1);
-
 // ✅ Process the Queue
 function processQueue() {
     if (requestQueue.length() > 0 && !isRateLimited()) {
@@ -163,13 +165,9 @@ async function fetchAlphaVantageData(ticker) {
 
 // ✅ Queue Requests
 function queueRequest(ticker) {
-    // Add to queue ONLY if not already present
-    if (!requestQueue._tasks.some(t => t.data === ticker)) {
-        requestQueue.push(ticker);
-        log.debug(`Queued ${ticker} (${requestQueue.length()} pending)`);
-    }
-    
-    // Only trigger processing if not rate limited
+    requestQueue.push(ticker);
+    log.log(`Added ${ticker} to queue | Current queue size: ${requestQueue.length()}`);
+
     if (!isRateLimited()) {
         processQueue();
     }
