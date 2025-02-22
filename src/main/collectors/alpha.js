@@ -23,13 +23,22 @@ if (fs.existsSync(CACHE_FILE)) {
     }
 }
 
-// ✅ Extract API keys from .env file
-// ✅ Properly access environment keys
-const API_KEYS = Object.entries(process.env)
-    .filter(([key]) => key.startsWith("ALPHA_VANTAGE_API_KEY"))
-    .sort(([a], [b]) => a.localeCompare(b))  // Sort alphabetically
-    .map(([, value]) => value)
-    .filter(Boolean);  // Remove empty values
+// ✅ Extract and validate API keys
+const API_KEYS = (() => {
+    try {
+        const keys = Object.entries(process.env)
+            .filter(([key]) => key.startsWith("ALPHA_VANTAGE_API_KEY"))
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([, value]) => value?.trim())
+            .filter(Boolean);
+
+        if (!keys.length) throw new Error("No valid API keys found");
+        return keys;
+    } catch (error) {
+        log.error("API Key Configuration Error:", error.message);
+        process.exit(1);
+    }
+})();
 
 let currentKeyIndex = 0;
 let lastRateLimitTime = null;
