@@ -2,6 +2,7 @@ const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
 const async = require("async");
+const store = require("../store");
 require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
@@ -153,7 +154,6 @@ async function fetchAlphaVantageData(ticker) {
             }
 
             // ✅ Update the store
-            const store = require("../store");
             store.updateOverview(ticker, { overview: data });
 
             return latestData;
