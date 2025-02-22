@@ -71,19 +71,24 @@ function searchCache(ticker) {
     }
 }
 
-// ✅ Queue system for delaying requests
 const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
     if (isRateLimited()) {
-        log.warn(`[RATE-LIMIT] Skipping ${ticker} due to cooldown. Re-adding to queue.`);
-        
-        // ✅ Re-add to the queue with a delay
-        setTimeout(() => {
-            queueRequest(ticker);
-        }, 5000); // Small delay to avoid instant reprocessing
+        log.warn(`[RATE-LIMIT] Rate limit hit! Pausing the entire queue.`);
 
-        return callback(); // ✅ Do not remove it from queue, just delay processing
+        // ✅ Pause queue for full cooldown duration
+        requestQueue.pause();
+        lastRateLimitTime = Date.now();
+
+        setTimeout(() => {
+            log.log("[RATE-LIMIT] Cooldown complete. Resuming queue.");
+            lastRateLimitTime = null;
+            requestQueue.resume();
+            processQueue(); // ✅ Resume processing all tickers in order
+        }, 5 * 60 * 1000); // 5-minute cooldown
+
+        return callback(); // ✅ Do not remove from queue
     }
 
     await fetchAlphaVantageData(ticker);
@@ -92,14 +97,14 @@ const requestQueue = async.queue(async (ticker, callback) => {
     callback(); // ✅ Remove only after successful fetch
 }, 1);
 
-
-// ✅ Process the Queue
+// ✅ Process the Queue only when not rate-limited
 function processQueue() {
     if (requestQueue.length() > 0 && !isRateLimited()) {
         log.log(`Resuming queue processing... Queue size: ${requestQueue.length()}`);
         requestQueue.process();
     }
 }
+
 
 // ✅ Fetch data from Alpha Vantage
 async function fetchAlphaVantageData(ticker) {
