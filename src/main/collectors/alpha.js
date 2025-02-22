@@ -81,7 +81,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
             lastRateLimitTime = Date.now();
 
             setTimeout(() => {
-                log.log("[RATE-LIMIT] Cooldown complete. Resuming queue.");
+                log.log("[RATE-LIMIT] Cooldown complete.");
                 lastRateLimitTime = null;
                 requestQueue.resume();
                 processQueue(); // ✅ Resume processing all tickers
