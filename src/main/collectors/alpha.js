@@ -75,11 +75,23 @@ function searchCache(ticker) {
 const requestQueue = async.queue(async (ticker, callback) => {
     log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
+    if (isRateLimited()) {
+        log.warn(`[RATE-LIMIT] Skipping ${ticker} due to cooldown. Re-adding to queue.`);
+        
+        // ✅ Re-add to the queue with a delay
+        setTimeout(() => {
+            queueRequest(ticker);
+        }, 5000); // Small delay to avoid instant reprocessing
+
+        return callback(); // ✅ Do not remove it from queue, just delay processing
+    }
+
     await fetchAlphaVantageData(ticker);
 
     log.log(`Finished processing ticker: ${ticker} | Queue size after: ${requestQueue.length()}`);
-    callback();
+    callback(); // ✅ Remove only after successful fetch
 }, 1);
+
 
 // ✅ Process the Queue
 function processQueue() {
