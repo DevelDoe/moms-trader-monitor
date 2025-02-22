@@ -103,7 +103,6 @@ const requestQueue = async.queue(async (ticker, callback) => {
     } else {
         callback();
     }
-
 }, 1);
 
 // ✅ Process the Queue
@@ -151,6 +150,8 @@ async function fetchAlphaVantageData(ticker) {
             }
 
             // ✅ Update the store
+
+            const store = require("../store");
             store.updateOverview(ticker, { overview: data });
 
             return latestData;
@@ -187,5 +188,3 @@ function searchCache(ticker) {
 
 // ✅ Export Functions
 module.exports = { searchCache, queueRequest };
-
-
