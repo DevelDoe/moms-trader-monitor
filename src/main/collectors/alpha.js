@@ -47,6 +47,7 @@ function saveCache() {
 }
 
 // ✅ Check if rate limit is active
+// ✅ Check if rate limit is active
 function isRateLimited() {
     if (!lastRateLimitTime) {
         lastRateLimitTime = Date.now();
@@ -55,11 +56,6 @@ function isRateLimited() {
 
     const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
     const elapsed = Date.now() - lastRateLimitTime;
-
-    if (elapsed < cooldownPeriod) {
-        log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
-        return true;
-    }
 
     return elapsed < cooldownPeriod;
 }
