@@ -76,7 +76,7 @@ const requestQueue = async.queue(async (ticker, callback) => {
 
     if (isRateLimited()) {
         if (!requestQueue.paused) {
-            log.warn(`[RATE-LIMIT] Rate limit hit! Pausing...`);
+            log.warn(`[RATE-LIMIT] Rate limit hit! Pausing for a 5 minute cooldown...`);
             requestQueue.pause();
             lastRateLimitTime = Date.now();
 
