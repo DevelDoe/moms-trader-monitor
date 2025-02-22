@@ -66,8 +66,8 @@ function isRateLimited() {
 }
 
 // ✅ Queue system for delaying requests
-const requestQueue = async.queue(async (ticker, callback) => 
-{
+const requestQueue = async.queue(async (ticker, callback) => {
+
     log.log(`Processing ticker: ${ticker} | Queue size before: ${requestQueue.length()}`);
 
     const data = await fetchAlphaVantageData(ticker);
@@ -93,7 +93,6 @@ const requestQueue = async.queue(async (ticker, callback) =>
     } else {
         callback();
     }
-
 }, 1);
 
 async function enforceCooldown() {
@@ -146,7 +145,7 @@ async function fetchAlphaVantageData(ticker) {
                 return null;
             }
 
-            (`Fetched Alpha Vantage data for ${ticker}. Caching...`);
+            `Fetched Alpha Vantage data for ${ticker}. Caching...`;
             latestData = data;
             cache[ticker] = data;
             saveCache();
@@ -199,4 +198,4 @@ function queueRequest(ticker) {
 }
 
 // ✅ Export Functions
-module.exports = { fetchAlphaVantageData, queueRequest, processQueue, searchCache };
+module.exports = { queueRequest, searchCache };
