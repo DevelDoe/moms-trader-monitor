@@ -2,7 +2,6 @@ const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
 const async = require("async");
-const store = require("../store");
 require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
@@ -59,18 +58,20 @@ function saveCache() {
 }
 
 // ✅ Check if rate limit is active
-// Modified isRateLimited function
 function isRateLimited() {
-    if (!lastRateLimitTime) return false;
+    if (!lastRateLimitTime) {
+        lastRateLimitTime = Date.now();
+        return false;
+    }
 
-    const remaining = Math.max(0, lastRateLimitTime + COOLDOWN_PERIOD - Date.now());
-    
-    if (remaining > 0) {
-        log.warn(`Cooldown active: ${Math.round(remaining/1000)}s remaining`);
+    const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
+    const elapsed = Date.now() - lastRateLimitTime;
+
+    if (elapsed < cooldownPeriod) {
+        log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
         return true;
     }
-    
-    // Auto-reset when cooldown expires
+
     lastRateLimitTime = null;
     return false;
 }
