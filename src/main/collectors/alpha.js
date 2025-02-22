@@ -61,8 +61,7 @@ function isRateLimited() {
         return true;
     }
 
-    lastRateLimitTime = null;
-    return false;
+    return elapsed < cooldownPeriod;
 }
 
 // ✅ Queue system for delaying requests
@@ -185,6 +184,10 @@ function queueRequest(ticker) {
     if (!isRateLimited()) {
         processQueue();
     }
+}
+
+function searchCache(ticker) {
+    store.updateOverview(ticker, { overview: data });
 }
 
 // ✅ Export Functions
