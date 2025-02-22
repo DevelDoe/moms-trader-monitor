@@ -178,7 +178,6 @@ async function fetchAlphaVantageData(ticker) {
 }
 
 // ✅ Queue Requests
-// Modified queueRequest function
 function queueRequest(ticker) {
     // Add to queue ONLY if not already present
     if (!requestQueue._tasks.some(t => t.data === ticker)) {
