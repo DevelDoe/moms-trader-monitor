@@ -146,37 +146,49 @@ async function fetchAlphaVantageData(ticker) {
     while (attempts < API_KEYS.length) {
         const API_KEY = getNextAPIKey();
         const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${API_KEY}`;
-
+    
         try {
             const response = await axios.get(url);
             const data = response.data;
-
+    
+            // ✅ Handle Rate Limits
             if (data.Note || (data.Information && data.Information.includes("rate limit"))) {
                 log.warn(`Rate limit hit on key ${API_KEY}. Rotating...`);
                 attempts++;
-                continue;
+                continue; // Try with the next API key
             }
-
+    
+            // ✅ Handle Unexpected Responses
             if (!data || Object.keys(data).length === 0 || !data.Symbol) {
-                log.warn(`Invalid response for ${ticker}. Not caching.`);
-                return null;
+                log.warn(`Unexpected response for ${ticker}:`, JSON.stringify(data, null, 2));
+                attempts++;
+                continue; // Try with another key before failing
             }
-
+    
             // ✅ Step 3: Save new cache and trigger update
             log.log(`Fetched fresh Alpha Vantage data for ${ticker}. Updating cache.`);
             latestData = data;
             cache[ticker] = data;
             saveCache();
-
+    
             // ✅ Use updateOverview() to propagate the update
             store.updateOverview(ticker, { overview: data });
-
+    
             return null; // ✅ No need to manually return, store handles updates
         } catch (error) {
-            log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
-            return null;
+            // ✅ General Error Handling (API errors, network failures, etc.)
+            log.error(`Error fetching Alpha Vantage data for ${ticker}: ${error.message}`);
+    
+            // Log additional response details if available
+            if (error.response) {
+                log.error(`Response Data: ${JSON.stringify(error.response.data, null, 2)}`);
+                log.error(`Status Code: ${error.response.status}`);
+            }
+    
+            attempts++; // Try another key before failing
         }
     }
+    
 
     // ✅ If API request fails, return only cached data
     if (!latestData && cache[ticker]) {
