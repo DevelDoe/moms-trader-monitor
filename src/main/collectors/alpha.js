@@ -60,19 +60,16 @@ function saveCache() {
 
 // ✅ Check if rate limit is active
 function isRateLimited() {
-    if (!lastRateLimitTime) {
-        lastRateLimitTime = Date.now();
-        return false;
-    }
+    if (!lastRateLimitTime) return false;
 
-    const cooldownPeriod = 5 * 60 * 1000; // 5 minutes
-    const elapsed = Date.now() - lastRateLimitTime;
-
-    if (elapsed < cooldownPeriod) {
-        log.warn(`Cooldown active! Waiting ${(cooldownPeriod / 1000).toFixed(1)}s before retrying.`);
+    const remaining = Math.max(0, lastRateLimitTime + COOLDOWN_PERIOD - Date.now());
+    
+    if (remaining > 0) {
+        log.warn(`Cooldown active: ${Math.round(remaining/1000)}s remaining`);
         return true;
     }
-
+    
+    // Auto-reset when cooldown expires
     lastRateLimitTime = null;
     return false;
 }
@@ -106,19 +103,6 @@ const requestQueue = async.queue(async (ticker, callback) => {
     }
 
 }, 1);
-
-async function enforceCooldown() {
-    log.warn("All API keys exhausted! Pausing queue for cooldown.");
-    requestQueue.pause();
-    lastRateLimitTime = Date.now();
-
-    setTimeout(() => {
-        log.log("Cooldown period over. Resuming queue.");
-        lastRateLimitTime = null;
-        requestQueue.resume();
-        processQueue();
-    }, 5 * 60 * 1000 + 1000);
-}
 
 // ✅ Process the Queue
 function processQueue() {
