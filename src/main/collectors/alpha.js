@@ -106,7 +106,7 @@ async function fetchAlphaVantageData(ticker) {
                 lastRateLimitTime = Date.now(); // 🚨 Add this
                 attempts++;
                 continue;
-              }
+            }
 
             if (!data || Object.keys(data).length === 0 || !data.Symbol) {
                 log.warn(`Invalid response for ${ticker}. Not caching.`);
@@ -127,6 +127,11 @@ async function fetchAlphaVantageData(ticker) {
             log.error(`Error fetching Alpha Vantage data for ${ticker}:`, error);
             return null;
         }
+    }
+    // Add this after the while-loop
+    if (attempts >= API_KEYS.length) {
+        lastRateLimitTime = Date.now();
+        log.warn("All API keys exhausted. Activating global cooldown.");
     }
     return null;
 }
