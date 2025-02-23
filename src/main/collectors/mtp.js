@@ -70,7 +70,7 @@ const getSymbolOverview = async (symbol) => {
 };
 
 // Example usage: Fetching symbol overview for 'ROVR'
-getSymbolOverview("ROVR")
+getSymbolOverview("GERN")
     .then((data) => {
         if (data) {
             log.log("Symbol Overview:", data);
