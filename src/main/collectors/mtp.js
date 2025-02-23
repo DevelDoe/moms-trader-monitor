@@ -5,7 +5,7 @@ const log = createLogger(__filename);
 
 const connectMTP = () => {
     // Create a WebSocket connection to the server
-    const ws = new WebSocket('ws://localhost:9090'); // Replace with your actual WebSocket URL
+    const ws = new WebSocket('ws://127.0.0.1:9090');
 
     // Handle WebSocket connection open
     ws.on('open', () => {
