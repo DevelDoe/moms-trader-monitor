@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1,
+    "minPrice": 1.75,
     "maxPrice": 20,
     "minFloat": 0,
     "maxFloat": 0,
@@ -15,7 +15,7 @@
         "ChangePercent": false,
         "FiveM": false,
         "Float": false,
-        "Volume": false,
+        "Volume": true,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
@@ -44,11 +44,8 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "MLGO",
-      "HOLO",
-      "NAAS",
       "RETO",
-      "GRAB",
-      "SOBR"
+      "GRAB"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
