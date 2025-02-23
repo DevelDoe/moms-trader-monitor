@@ -29,6 +29,24 @@ const connectMTP = () => {
     });
 };
 
+// Function to fetch symbol data from the API using undici's fetch
+const getSymbolOverview = async (symbol) => {
+    try {
+        const response = await fetch(`http://localhost:8080/overview/${symbol}`);
+        
+        if (!response.ok) {
+            log.error(`Error fetching data for symbol ${symbol}: ${response.statusText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        log.log(`Fetched data for symbol ${symbol}:`, data);
+        return data;
+    } catch (error) {
+        log.error(`Error fetching data for symbol ${symbol}: ${error.message}`);
+    }
+};
+
 connectMTP();
 
 module.exports = { connectMTP };
