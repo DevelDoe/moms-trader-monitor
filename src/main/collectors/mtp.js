@@ -69,19 +69,6 @@ const getSymbolOverview = async (symbol) => {
     }
 };
 
-// Example usage: Fetching symbol overview for 'ROVR'
-getSymbolOverview("WOOF")
-    .then((data) => {
-        if (data) {
-            log.log("Symbol Overview:", data);
-        } else {
-            log.warn("No data found for the symbol.");
-        }
-    })
-    .catch((err) => {
-        log.error("Error:", err);
-    });
-
 // Since socket logic is not required for now, we remove it.
 
 module.exports = { getSymbolOverview };
