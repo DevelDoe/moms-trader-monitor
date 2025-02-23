@@ -468,13 +468,8 @@ ipcMain.on("set-window-bounds", (event, bounds) => {
 // START APP
 
 app.on("ready", () => {
-   
-    
-    
     log.log("App ready, bootstrapping...");
 
-
-    // ✅ Only create the splash window after Electron is ready
     windows.splash = createSplashWindow(isDevelopment);
 
     windows.splash.once("closed", () => {
