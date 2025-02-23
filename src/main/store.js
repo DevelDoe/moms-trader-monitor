@@ -5,18 +5,6 @@ const { fetchHistoricalNews } = require("./collectors/news");
 const { queueRequest, searchCache } = require("./collectors/alpha");
 const { connectMTP, getSymbolOverview } = require("./collectors/mtp");
 
-getSymbolOverview('ROVR')
-    .then(data => {
-        if (data) {
-            log.log('Symbol Overview:', data);
-        } else {
-            log.warn('No data found for the symbol.');
-        }
-    })
-    .catch(err => {
-        log.error('Error:', err);
-    });
-
 class Store extends EventEmitter {
     constructor() {
         super();
