@@ -51,19 +51,6 @@ const getSymbolOverview = async (symbol) => {
     }
 };
 
-
-getSymbolOverview('ROVR')
-    .then(data => {
-        if (data) {
-            log.log('Symbol Overview:', data);
-        } else {
-            log.warn('No data found for the symbol.');
-        }
-    })
-    .catch(err => {
-        log.error('Error:', err);
-    });
-
 connectMTP();
 
 module.exports = { connectMTP, getSymbolOverview };
