@@ -28,10 +28,4 @@ const connectMTP = () => {
     });
 };
 
-function getMtpOverview(ticker) {
-    const store = require("../store");
-
-    store.addMtpOverviwe(newsArray);
-}
-
 module.exports = { connectMTP };
