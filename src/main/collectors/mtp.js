@@ -28,4 +28,6 @@ const connectMTP = () => {
     });
 };
 
+connectMTP();
+
 module.exports = { connectMTP };
