@@ -95,6 +95,17 @@ class Store extends EventEmitter {
             newTickers.forEach((ticker) => {
                 searchCache(ticker);
                 queueRequest(ticker);
+                getSymbolOverview(ticker)
+                    .then((data) => {
+                        if (data) {
+                            log.log("Symbol Overview:", data);
+                        } else {
+                            log.warn("No data found for the symbol.");
+                        }
+                    })
+                    .catch((err) => {
+                        log.error("Error:", err);
+                    });
             });
         }
 
