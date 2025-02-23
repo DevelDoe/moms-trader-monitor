@@ -20,14 +20,10 @@ if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir, { recursive: true });
 }
 
-// ✅ List of scripts to suppress logging from
-// const SUPPRESS_LOGGING_FROM = new Set(["main.js", "tickers.js", "store.js", "news.js", "alpha.js"]); 
-// const SUPPRESS_LOGGING_FROM = new Set(["tickers.js", "store.js", "news.js", "alpha.js"]); 
-const SUPPRESS_LOGGING_FROM = new Set(["tickers.js", "news.js", "alpha.js"]); 
-// const SUPPRESS_LOGGING_FROM = new Set(["main.js", "tickers.js", "store.js", "news.js"]); 
-// const SUPPRESS_LOGGING_FROM = new Set(["main.js", "tickers.js",  "news.js"]); 
-// const SUPPRESS_LOGGING_FROM = new Set(["main.js", "tickers.js"]); 
-// const SUPPRESS_LOGGING_FROM = new Set(["main.js"]); 
+// ✅ List of scripts to allow logging from
+const ALLOWED_LOGGING_FROM = new Set(["main.js", "tickers.js", "store.js", "news.js", "alpha.js"]); // Add scripts here
+// If you want to allow only specific scripts, add them to this list, for example:
+// const ALLOWED_LOGGING_FROM = new Set(["main.js", "store.js"]);
 
 /**
  * Writes log messages to a file in production mode.
@@ -44,7 +40,7 @@ function writeToFile(level, fileName, args) {
 
 /**
  * Custom logger that logs to console in dev, and to a file in production.
- * Suppresses logs from scripts listed in `SUPPRESS_LOGGING_FROM`.
+ * Allows logs from scripts listed in `ALLOWED_LOGGING_FROM`, suppresses logs from others.
  * @param {string} modulePath - The __filename from the calling module.
  * @returns {object} log, warn, error, data functions
  */
@@ -53,7 +49,7 @@ function createLogger(modulePath) {
 
     return {
         log: (...args) => {
-            if (SUPPRESS_LOGGING_FROM.has(fileName)) return;
+            if (!ALLOWED_LOGGING_FROM.has(fileName)) return; // Allow only specified scripts
             if (isDevelopment || isDebug) {
                 console.log(`[${fileName}]`, ...args);
             } else {
@@ -61,7 +57,7 @@ function createLogger(modulePath) {
             }
         },
         warn: (...args) => {
-            if (SUPPRESS_LOGGING_FROM.has(fileName)) return;
+            if (!ALLOWED_LOGGING_FROM.has(fileName)) return; // Allow only specified scripts
             if (isDevelopment || isDebug) {
                 console.warn(`[${fileName}]`, ...args);
             } else {
@@ -69,7 +65,7 @@ function createLogger(modulePath) {
             }
         },
         error: (...args) => {
-            if (SUPPRESS_LOGGING_FROM.has(fileName)) return;
+            if (!ALLOWED_LOGGING_FROM.has(fileName)) return; // Allow only specified scripts
             if (isDevelopment || isDebug) {
                 console.error(`[${fileName}]`, ...args);
             } else {
@@ -78,6 +74,7 @@ function createLogger(modulePath) {
         },
         data: (...args) => {
             if (!isDataLogging) return; // ✅ Only log if DATA=true
+            if (!ALLOWED_LOGGING_FROM.has(fileName)) return; // Allow only specified scripts
             if (isDevelopment || isDebug) {
                 console.log(`[${fileName}] [DATA]`, ...args);
             } else {
