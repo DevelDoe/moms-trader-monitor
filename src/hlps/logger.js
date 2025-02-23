@@ -22,8 +22,6 @@ if (!fs.existsSync(logDir)) {
 
 // ✅ List of scripts to allow logging from
 const ALLOWED_LOGGING_FROM = new Set(["main.js", "tickers.js", "store.js", "news.js", "alpha.js"]); // Add scripts here
-// If you want to allow only specific scripts, add them to this list, for example:
-// const ALLOWED_LOGGING_FROM = new Set(["main.js", "store.js"]);
 
 /**
  * Writes log messages to a file in production mode.
