@@ -47,6 +47,9 @@ const getSymbolOverview = async (symbol) => {
             return null;
         }
 
+        const rawText = await response.text();
+        console.log(`Raw response text: ${rawText}`);
+
         // Now try parsing it
         const data = JSON.parse(rawText);
         log.log(`Fetched data for symbol ${symbol}:`, data);
