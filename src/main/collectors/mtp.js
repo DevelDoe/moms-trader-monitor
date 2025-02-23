@@ -11,8 +11,8 @@ function getMtpOverview(ticker) {
     const store = require("../store");
 
 
-    store.updateMtpOverview(ticker, { overview: overview });
+    store.addMtpOverviwe(newsArray);
 
 }
 
-module.exports = { getMtpOverview, connectMTP };
+module.exports = { connectMTP };
