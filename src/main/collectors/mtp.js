@@ -27,7 +27,7 @@ const connectMTP = () => {
         log.error(`WebSocket error: ${err.message}`);
     });
 };
-connectMTP();
+// connectMTP();
 
 // Function to fetch symbol data from the API using vanilla JavaScript's fetch
 const getSymbolOverview = async (symbol) => {
