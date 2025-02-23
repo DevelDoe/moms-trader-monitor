@@ -49,4 +49,4 @@ const getSymbolOverview = async (symbol) => {
 
 connectMTP();
 
-module.exports = { connectMTP };
+module.exports = { connectMTP, getSymbolOverview };
