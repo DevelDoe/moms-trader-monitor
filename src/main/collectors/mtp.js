@@ -27,10 +27,12 @@ const connectMTP = () => {
         log.error(`WebSocket error: ${err.message}`);
     });
 };
+connectMTP();
 
 // Function to fetch symbol data from the API using vanilla JavaScript's fetch
 const getSymbolOverview = async (symbol) => {
     try {
+        log.log(`Sending GET request for symbol overview of ${symbol}`);
         const response = await fetch(`http://127.0.0.1:8080/overview/${symbol}`, {
             method: "GET",
             headers: {
@@ -38,9 +40,7 @@ const getSymbolOverview = async (symbol) => {
                 Accept: "application/json",
             },
         });
-
-        // Log response status
-        console.log(`Response Status: ${response.status}`);
+        log.log(`Response Status: ${response.status}`);
 
         if (!response.ok) {
             log.error(`Error fetching data for symbol ${symbol}: ${response.statusText}`);
@@ -48,14 +48,24 @@ const getSymbolOverview = async (symbol) => {
         }
 
         const rawText = await response.text();
-        console.log(`Raw response text: ${rawText}`);
+        log.log(`Raw response received with length ${rawText.length} characters`);
 
-        // Now try parsing it
+        // Try parsing the JSON response
         const data = JSON.parse(rawText);
+        if (Array.isArray(data)) {
+            log.log(`Received an array with ${data.length} objects`);
+        } else if (typeof data === "object" && data !== null) {
+            const keys = Object.keys(data);
+            log.log(`Received an object with ${keys.length} properties`);
+        } else {
+            log.log("Received data is not an object or array");
+        }
+
         log.log(`Fetched data for symbol ${symbol}:`, data);
         return data;
     } catch (error) {
         log.error(`Error fetching data for symbol ${symbol}: ${error.message}`);
+        return null;
     }
 };
 
@@ -72,6 +82,6 @@ getSymbolOverview("ROVR")
         log.error("Error:", err);
     });
 
-connectMTP();
+// Since socket logic is not required for now, we remove it.
 
-module.exports = { connectMTP, getSymbolOverview };
+module.exports = { getSymbolOverview };
