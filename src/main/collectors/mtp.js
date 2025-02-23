@@ -1,5 +1,6 @@
 const { BrowserWindow } = require("electron");
 const WebSocket = require("ws");
+const { fetch } = require("undici");
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 
