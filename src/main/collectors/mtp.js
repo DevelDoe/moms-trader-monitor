@@ -34,6 +34,9 @@ const getSymbolOverview = async (symbol) => {
     try {
         const response = await fetch(`http://localhost:8080/overview/${symbol}`);
         
+        // Log the status code and response text
+        log.log(`Response Status: ${response.status} ${response.statusText}`);
+
         if (!response.ok) {
             log.error(`Error fetching data for symbol ${symbol}: ${response.statusText}`);
             return null;
@@ -43,9 +46,11 @@ const getSymbolOverview = async (symbol) => {
         log.log(`Fetched data for symbol ${symbol}:`, data);
         return data;
     } catch (error) {
+        // Log the full error message
         log.error(`Error fetching data for symbol ${symbol}: ${error.message}`);
     }
 };
+
 
 getSymbolOverview('ROVR')
     .then(data => {
