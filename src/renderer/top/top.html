@@ -11,7 +11,7 @@
         <link rel="stylesheet" href="./top.css" />
     </head>
     <body class="draggable">
-        <section id="tickers-wrapper">
+        <section id="tickers-wrapper" class="open">
             <div class="table">
                 <h2>Session Top Tickers</h2>
                 <table id="tickers-session">
@@ -19,7 +19,7 @@
                         <tr>
                             <th>Symbol</th>
                             <th>Price</th>
-                            <th>ChangePercent</th>
+                            <th>Change</th>
                             <th>FiveM</th>
                             <th>Float</th>
                             <th>Volume</th>
@@ -40,7 +40,7 @@
                         <tr>
                             <th>Symbol</th>
                             <th>Price</th>
-                            <th>ChangePercent</th>
+                            <th>Change</th>
                             <th>FiveM</th>
                             <th>Float</th>
                             <th>Volume</th>
@@ -54,39 +54,6 @@
                     <tbody></tbody>
                 </table>
             </div>
-
-            <!-- ✅ Active Ticker Section -->
-            <section id="active-ticker">
-                <h2>Active Ticker</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Symbol</th>
-                            <th>Price</th>
-                            <th>ChangePercent</th>
-                            <th>FiveM</th>
-                            <th>Float</th>
-                            <th>Volume</th>
-                            <th>SprPercent</th>
-                            <th>HOD</th>
-                            <th>Count</th>
-                            <th>News</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr id="active-ticker-row">
-                            <td colspan="11" >No ticker selected</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <!-- ✅ Scrollable News Section -->
-                <div id="news-container">
-                    <h2>Latest News</h2>
-                    <ul id="news-list" class="no-drag"></ul>
-                </div>
-            </section>
         </section>
 
         <!-- ✅ All Tickers Section -->
@@ -99,47 +66,9 @@
         </section>
 
         <!-- ✅ Expand/Collapse Button -->
-        <button id="toggle-all-tickers" class="no-drag">
-            <div class="burger-menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </button>
+        <button id="toggle-all-tickers" class="no-drag">all</button>
 
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                const tables = document.querySelectorAll("#tickers-session, #tickers-daily");
-
-                tables.forEach((table) => {
-                    table.addEventListener("click", (event) => {
-                        const target = event.target;
-
-                        // Check if the clicked element is inside the first column of a row
-                        if (target.tagName === "TD" && target.cellIndex === 0) {
-                            const symbol = target.textContent.trim();
-                            copyToClipboard(symbol, target);
-                        }
-                    });
-                });
-
-                function copyToClipboard(text, element) {
-                    navigator.clipboard
-                        .writeText(text)
-                        .then(() => {
-                            element.classList.add("copied"); // ✅ Add visual feedback
-                            setTimeout(() => element.classList.remove("copied"), 500);
-
-                            // ✅ Find the clicked ticker's data
-                            const clickedTicker = findTickerBySymbol(text);
-                            if (clickedTicker) {
-                                updateActiveTicker(clickedTicker);
-                            }
-                        })
-                        .catch((err) => console.error("Failed to copy: ", err));
-                }
-            });
-        </script>
+        
         <script>
             document.addEventListener("DOMContentLoaded", async () => {
                 // Fetch and store settings globally
@@ -172,17 +101,24 @@
                 // toggleButton.innerHTML = "🔽"; // Down icon
 
                 toggleButton.addEventListener("click", () => {
+                    // Toggle the isExpanded state
                     isExpanded = !isExpanded;
-                    document.body.classList.toggle("show-all", isExpanded);
 
+                    // Toggle the "show-all" class on the body element
+                    document.body.classList.toggle("show-all", isExpanded);
+                    tickersWrapper.classList.toggle("open");
+
+                    // Use a slight delay to ensure the class toggle has taken effect
                     setTimeout(() => {
                         if (isExpanded) {
+                            // Scroll to the tickersAllSection if expanded
                             tickersAllSection.scrollIntoView({ behavior: "smooth", block: "start" });
                         } else {
+                            // Scroll to the tickersWrapper if not expanded
                             tickersWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
                             window.scrollTo(0, 0); // Force scroll to top after the animation
                         }
-                    }, 50);
+                    }, 50); // 50ms delay to ensure smooth transitions
                 });
             });
         </script>

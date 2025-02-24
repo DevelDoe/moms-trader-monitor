@@ -35,7 +35,6 @@ const connectAlpacaNews = () => {
 
     alpacaSocket.onmessage = (event) => {
         try {
-            log.log(`Raw WebSocket Message: ${event.data}`); // ✅ Log raw message
             const data = JSON.parse(event.data);
 
             if (!Array.isArray(data) || data.length === 0) {
@@ -65,13 +64,13 @@ const connectAlpacaNews = () => {
 // ✅ Lazy Load `tickerStore` only when needed
 const handleNewsData = (newsItem) => {
     const tickerStore = require("../store"); // 🔥 Require here to avoid circular dependency
-    log.log(`Processing news item: ${JSON.stringify(newsItem)}`); // ✅ Log full news data
+    log.log(`Processing news item with headline: ${JSON.stringify(newsItem.headline)}`); // ✅ Log full news data
 
     const newsArray = Array.isArray(newsItem) ? newsItem : [newsItem];
 
     newsArray.forEach((news) => {
         if (!Array.isArray(news.symbols) || news.symbols.length === 0) {
-            log.warn(`Skipping news with no symbols: "${news.headline}" | Raw: ${JSON.stringify(news)}`);
+            log.warn(`Skipping news with no symbols: "${news.headline}" `);
             return;
         }
 

@@ -38,6 +38,7 @@ const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
 const { createTopWindow } = require("./windows/top");
+const { createActiveWindow } = require("./windows/active");
 const { createNewsWindow } = require("./windows/news");
 
 let windows = {};
@@ -422,13 +423,6 @@ ipcMain.on("clear-session", () => {
     }, 500); // ✅ Give store time to clear session
 });
 
-
-
-// ipcMain.handle("get-attributes", async (_event, listType) => {
-//     log.log("Get Attributes:", listType);
-//     return tickerStore.getAvailableAttributes(listType);
-// });
-
 // top
 ipcMain.on("toggle-top", () => {
     if (windows.top) {
@@ -448,6 +442,32 @@ ipcMain.on("refresh-top", async () => {
     windows.top = await createTopWindow(isDevelopment);
     windows.top.show();
 });
+
+// active
+ipcMain.on("toggle-active", () => {
+    if (windows.top) {
+        log.log("Toggle Active Window");
+        windows.active.isVisible() ? windows.active.hide() : windows.active.show();
+    }
+});
+
+ipcMain.on("set-active-ticker", (event, ticker) => {
+    console.log("Received ticker:", ticker, "Type:", typeof ticker);
+
+    if (typeof ticker !== "string") {
+        console.error("Invalid ticker type! Converting to string...");
+        ticker = String(ticker);
+    }
+
+    if (windows.active) {
+        console.log(`Sending Active Ticker to Renderer: ${ticker}`);
+        windows.active.webContents.send("update-active-ticker", ticker);
+    } else {
+        console.warn("Active ticker window not found.");
+    }
+});
+
+
 
 // news
 ipcMain.on("toggle-news", () => {
@@ -481,6 +501,7 @@ app.on("ready", () => {
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
         windows.top = createWindow("top", () => createTopWindow(isDevelopment));
+        windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
         windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
 
         Object.values(windows).forEach((window) => window?.hide());

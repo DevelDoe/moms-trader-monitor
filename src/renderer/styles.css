@@ -5,6 +5,14 @@ body {
     font-size: 16px;
 }
 
+h2 {
+    -webkit-app-region: drag;
+    font-size: 10px;
+    color: #595959;
+    margin-left: 10px;
+    width: 59%;
+}
+
 /* Disable text selection across the entire application */
 * {
     user-select: none; /* Standard */

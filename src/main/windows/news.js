@@ -5,8 +5,8 @@ const path = require("path");
 
 function createNewsWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 955,
-        height: 50,
+        width: 660,
+        height: 1055,
         frame: false,
         alwaysOnTop: true,
         transparent: true,

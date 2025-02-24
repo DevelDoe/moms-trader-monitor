@@ -1,21 +1,21 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.75,
+    "minPrice": 1.8,
     "maxPrice": 20,
     "minFloat": 0,
     "maxFloat": 0,
-    "minScore": 0,
+    "minScore": 1,
     "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
     "lists": {
       "session": {
-        "Price": true,
+        "Price": false,
         "ChangePercent": false,
         "FiveM": false,
         "Float": false,
-        "Volume": true,
+        "Volume": false,
         "SprPercent": false,
         "Time": false,
         "HighOfDay": false,
@@ -23,11 +23,11 @@
         "Count": true,
         "Score": true,
         "Bonuses": true,
-        "length": 10
+        "length": 8
       },
       "daily": {
         "Price": false,
-        "ChangePercent": false,
+        "ChangePercent": true,
         "FiveM": false,
         "Float": false,
         "Volume": false,
@@ -38,16 +38,18 @@
         "Count": false,
         "Score": true,
         "Bonuses": true,
-        "length": 4
+        "length": 3
       }
     }
   },
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "MLGO",
-      "RETO",
-      "GRAB"
+      "PEPG",
+      "WAFU",
+      "ISPC",
+      "BTDR",
+      "AGL"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
@@ -55,7 +57,8 @@
       "What's Going On",
       "Why Five9 Shares",
       "Shares Halted On",
-      "Shares Resume Trade"
+      "Shares Resume Trade",
+      "Stock Is skyrocketing"
     ],
     "bullishList": [
       "FDA Approves",

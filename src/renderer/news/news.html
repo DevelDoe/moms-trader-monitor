@@ -19,33 +19,6 @@
         </div>
 
         <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                let collapseTimeout;
-                const wrapper = document.getElementById("news-wrapper");
-                const table = document.getElementById("news-table");
-
-                document.body.addEventListener("mouseenter", () => {
-                    clearTimeout(collapseTimeout);
-
-                    // Get the table's full height dynamically
-                    const tableHeight = table.scrollHeight;
-
-                    // Resize Electron window and wrapper dynamically based on table content
-                    window.newsAPI.setBounds({ width: 955, height: tableHeight });
-                    wrapper.style.height = `${tableHeight}px`;
-                });
-
-                document.body.addEventListener("mouseleave", () => {
-                    wrapper.style.height = "50px"; // Collapse smoothly
-
-                    collapseTimeout = setTimeout(() => {
-                        window.newsAPI.setBounds({ width: 955, height: 50 });
-                    }, 1000);
-                });
-            });
-        </script>
-
-        <script>
             let allNews = [];
             let trackedTickers = new Set();
 

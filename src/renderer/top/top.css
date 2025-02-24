@@ -3,7 +3,10 @@ body {
     color: #e0e0e0; /* Light text for contrast */
     position: relative;
     height: 100vw;
+    overflow: hidden; /* Disable scrolling for the entire body */
+    height: 100vh;
 }
+
 body::-webkit-scrollbar {
     display: none;
 }
@@ -26,15 +29,8 @@ td {
 tr:nth-child(even) {
     background: rgba(255, 255, 255, 0.1); /* Alternating row color */
 }
-h2 {
-    -webkit-app-region: drag;
-    font-size: 10px;
-    color: #595959;
-    margin-left: 10px;
-    width: 59%;
-}
 
-#tickers-session{
+#tickers-session {
     margin-right: 20px;
 }
 
@@ -51,36 +47,19 @@ h2 {
     transition: background-color 0.3s ease-in-out;
 }
 
-
-#active-ticker {
-    position: absolute;
-    top: 400px;
-    /* left: 21px; */
-    padding: 10px;
-    background: rgba(0,255,255,0.01);
-    border-radius: 2px;
-    width: 96% !important;
-}
-#active-ticker h2 {
-    -webkit-app-region: drag;
-    font-size: 10px;
-    color: #595959;
-    margin-left: 10px;
-    width: 96%;
-}
 #clear-session-btn {
     position: absolute;
     top: 0px;
     left: 142px;
     padding: 4px 7px;
-    background-color: rgba(255,255,255,0.1);
+    background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid #2b2b2b;
     color: #1c1d23;
     border-radius: 3px;
 }
 #clear-session-btn:hover {
     color: #90ee90;
-    background-color: rgba(255,255,255,0.5);
+    background-color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
 }
 .symbol:hover {
@@ -126,13 +105,16 @@ h2 {
 .highlight-updated {
     animation: fadeOutUpdated 3s ease-in forwards;
 }
-#tickers-all-section{
+
+/* ALL TICKERS */
+#tickers-all-section {
     height: 530px;
     overflow: auto;
     display: inline-block;
 }
 /* ✅ Initially hide the all tickers section */
-#tickers-all, #tickers-all h2 {
+#tickers-all,
+#tickers-all h2 {
     max-height: 0;
     opacity: 0;
     overflow: hidden;
@@ -140,28 +122,27 @@ h2 {
     float: left;
 }
 
-body {
-    overflow: hidden; /* Disable scrolling for the entire body */
-    height: 100vh;
-}
-
 #tickers-all {
     max-height: 100vh; /* Full viewport height */
-    overflow-y: auto;   /* Enable vertical scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
     scrollbar-width: none; /* Hide scrollbar for Firefox */
     -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
 }
 
-#tickers-all::-webkit-scrollbar, #tickers-all-section::-webkit-scrollbar {
+#tickers-all::-webkit-scrollbar,
+#tickers-all-section::-webkit-scrollbar {
     display: none; /* Hide scrollbar for Chrome/Safari */
 }
-
 
 /* ✅ Show all tickers when toggled */
 .show-all #tickers-all {
     max-height: calc(100vh); /* Expand to fit within viewport minus button */
     opacity: 1;
     overflow: hidden;
+}
+
+#tickers-wrapper.open {
+    min-height: 1000px;
 }
 
 /* ✅ Slide tickers-wrapper up when all tickers are shown */
@@ -178,7 +159,7 @@ body:not(.show-all) #tickers-wrapper {
 /* ✅ Fix the button in the top-right corner */
 #toggle-all-tickers {
     position: fixed;
-    top: 15px;
+    bottom: 15px;
     right: 15px;
     z-index: 1000;
     background-color: rgba(34, 34, 34, 0.8);
@@ -191,6 +172,7 @@ body:not(.show-all) #tickers-wrapper {
     justify-content: center;
     border: 1px solid #595959;
     cursor: pointer;
+    color: white;
 }
 
 /* ✅ Improve visibility on hover */
@@ -228,7 +210,7 @@ body:not(.show-all) #tickers-wrapper {
     transform: translateY(-10px) rotate(-45deg);
 }
 
-/* ✅ Bonus Styles */
+/* ✅ BONUS STYLES */
 .bonus {
     font-weight: bold;
     padding: 2px 5px;
@@ -240,17 +222,15 @@ body:not(.show-all) #tickers-wrapper {
 
 /* 🎯 Different Bonus Colors */
 .bonus.news {
-    color:deeppink;
-    
+    color: deeppink;
 } /* 🟡 Yellow for News */
 .bonus.high {
     color: gold;
-    
 } /* 🔴 Red for High of Day */
 .bonus.volume {
     /* color: #ff4444; */
-    color:rgb(128, 128, 128);
-} 
+    color: rgb(128, 128, 128);
+}
 .bonus.spread {
     color: #8e44ad;
 } /* 🟣 Purple for Wide Spread */
@@ -266,11 +246,16 @@ body:not(.show-all) #tickers-wrapper {
 .bonus.high-float {
     color: rgb(255, 0, 0);
 }
-
 .bonus.low-volume {
     color: rgb(255, 0, 0);
 }
+.bonus.cn {
+    color: rgb(255, 0, 0);
+}
 .bonus.high-volume {
+    color: #28a745;
+}
+.bonus.bio {
     color: #28a745;
 }
 /* .bonus.spread { }   */
@@ -281,27 +266,18 @@ body:not(.show-all) #tickers-wrapper {
     display: inline-block;
 }
 
-.bonus-container:hover::after {
-    content: attr(title);
-    white-space: pre; /* Allows multiline tooltip */
-    background-color: rgba(0, 0, 0, 0.85);
-    color: #ffffff;
-    padding: 5px 8px;
-    border-radius: 4px;
-    position: absolute;
-    top: 120%;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-    z-index: 10;
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-}
-
+/* NEWS STYLING */
 
 #news-container {
     padding: 5px;
-    border-top: 1px solid #444; /* ✅ Subtle separator */
-    height: 427px
+    height: 57px;
+    color: white;
+    width: 88vw;
+    border-radius: 2px;
+}
+
+.no-news {
+    opacity: 0.5;
 }
 
 /* ✅ Hide scrollbar for Webkit browsers (Chrome, Safari) */
@@ -325,12 +301,11 @@ body:not(.show-all) #tickers-wrapper {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    
 }
 
 /* ✅ Ensure news headlines are clickable */
 #news-list li a {
-    color: #e0e0e0 ;
+    color: #e0e0e0;
     text-decoration: none;
     font-weight: bold;
     display: block;
@@ -340,7 +315,6 @@ body:not(.show-all) #tickers-wrapper {
     text-decoration: underline;
     color: #76ff76; /* ✅ Lighter green on hover */
 }
-
 
 /* ✅ Bullish news - Highlight in green */
 .bullish-news {
@@ -353,3 +327,17 @@ body:not(.show-all) #tickers-wrapper {
     color: #f44336 !important; /* Red */
     font-weight: bold !important;
 }
+
+/* ✅ Overview Section Styling */
+#ticker-overview {
+    position: absolute;
+    top: 163px;
+    background: #1e1f26;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    font-size: 14px;
+    width: 93vw;
+    left: 0;
+}
+

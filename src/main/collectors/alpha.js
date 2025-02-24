@@ -146,7 +146,7 @@ async function fetchAlphaVantageData(ticker) {
                 cache[ticker] = data;
                 saveCache();
                 const store = require("../store");
-                store.updateOverview(ticker, { overview: data });
+                store.updateMeta(ticker, { overview: data });
             }
 
            
@@ -179,7 +179,7 @@ function searchCache(ticker) {
 
     if (cache[ticker]) {
         log.log(`[CACHE] Found cached data for ${ticker}. Updating store.`);
-        store.updateOverview(ticker, { overview: cache[ticker] });
+        store.updateMeta(ticker, { meta: cache[ticker] });
     } else {
         log.log(`[CACHE] No cached data found for ${ticker}.`);
     }

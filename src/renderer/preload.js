@@ -16,6 +16,15 @@ contextBridge.exposeInMainWorld("topAPI", {
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
 });
 
+contextBridge.exposeInMainWorld("activeAPI", {
+    toggle: () => ipcRenderer.send("toggle-active"),
+    setActiveTicker: (ticker) => ipcRenderer.send("set-active-ticker", ticker),
+    onActiveTickerUpdate: (callback) => {
+        ipcRenderer.on("update-active-ticker", (event, ticker) => {
+            callback(ticker);
+        });
+    },
+});
 
 contextBridge.exposeInMainWorld("newsAPI", {
     get: () => ipcRenderer.invoke("get-all-news"),
@@ -36,5 +45,3 @@ contextBridge.exposeInMainWorld("settingsAPI", {
         }),
     onUpdate: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
 });
-
-

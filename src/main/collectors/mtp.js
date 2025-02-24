@@ -30,10 +30,10 @@ const connectMTP = () => {
 // connectMTP();
 
 // Function to fetch symbol data from the API using vanilla JavaScript's fetch
-const getSymbolOverview = async (symbol) => {
+const getSymbolMeta = async (symbol) => {
     try {
-        log.log(`Sending GET request for symbol overview of ${symbol}`);
-        const response = await fetch(`http://127.0.0.1:8080/overview/${symbol}`, {
+        log.log(`Sending GET request for symbol eta of ${symbol}`);
+        const response = await fetch(`http://127.0.0.1:8080/meta/${symbol}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -50,7 +50,7 @@ const getSymbolOverview = async (symbol) => {
         const rawText = await response.text();
         log.log(`Raw response received with length ${rawText.length} characters`);
 
-        // Try parsing the JSON response
+        // Parse the JSON response
         const data = JSON.parse(rawText);
         if (Array.isArray(data)) {
             log.log(`Received an array with ${data.length} objects`);
@@ -62,6 +62,15 @@ const getSymbolOverview = async (symbol) => {
         }
 
         log.log(`Fetched data for symbol ${symbol}:`, data);
+
+        // Lazy require of store to avoid circular dependency issues.
+        const store = require("../store");
+        if (store && typeof store.updateMeta === "function") {
+            store.updateMeta(symbol, { meta: data });
+        } else {
+            log.warn("[mtp] Store updateMeta function not available.");
+        }
+        
         return data;
     } catch (error) {
         log.error(`Error fetching data for symbol ${symbol}: ${error.message}`);
@@ -69,6 +78,4 @@ const getSymbolOverview = async (symbol) => {
     }
 };
 
-// Since socket logic is not required for now, we remove it.
-
-module.exports = { getSymbolOverview };
+module.exports = { getSymbolMeta, connectMTP };

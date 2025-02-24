@@ -7,7 +7,14 @@ let tickersAll = [];
 let prevTickersSessions = {};
 let prevTickersDaily = {};
 
-let currentActiveTicker = null; // ✅ Ensure the variable exists globally
+// define floats
+const floatOneMillionHigh = 2_000_000;
+const floatFiveMillion = 7_500_000;
+const floatTenMillion = 13_000_000;
+const floatFiftyMillion = 65_000_000;
+const floatHundredMillion = 125_000_000;
+const floatTwoHundredMillion = 250_000_000;
+const floatFiveHundredMillion = 600_000_000;
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
@@ -15,7 +22,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     await applySavedFilters(); // ✅ Apply saved settings before fetching data
     await fetchAndUpdateTickers(); // ✅ Fetch tickers immediately on load
 
-    addClearSessionButton();
+    const btn = document.createElement("button");
+    btn.id = "clear-session-btn";
+    btn.textContent = "New Session 🧹";
+    btn.className = "no-drag";
+    btn.addEventListener("click", clearSessionList);
+
+    // ✅ Insert the button before session tickers table
+    const sessionTable = document.getElementById("tickers-session");
+    sessionTable.parentNode.insertBefore(btn, sessionTable);
 
     // ✅ Listen for ticker updates
     window.topAPI.onTickerUpdate(() => {
@@ -40,11 +55,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         await applySavedFilters();
         await fetchAndUpdateTickers();
 
-        // ✅ Refresh the active ticker UI
-        if (currentActiveTicker) {
-            updateActiveTicker(currentActiveTicker);
-        }
     });
+
 });
 
 async function fetchAndUpdateTickers() {
@@ -225,7 +237,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
-                    updateActiveTicker(ticker); // ✅ UPDATED: Set clicked ticker as active
+                    console.log("setting active ticker:", ticker.Symbol)
+                    window.activeAPI.setActiveTicker(ticker.Symbol);
                 });
             } else if (key === "Score") {
                 const ScoreBreakdown = getScoreBreakdown(ticker);
@@ -268,8 +281,6 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     console.log(`✅ Finished updating table: ${tableId}`);
 }
 
-
-// Clear session
 function clearSessionList() {
     console.log("🧹 Clear session button clicked! ✅ SENDING CLEAR EVENT...");
 
@@ -286,19 +297,6 @@ function clearSessionList() {
     }, 1000);
 }
 
-function addClearSessionButton() {
-    const btn = document.createElement("button");
-    btn.id = "clear-session-btn";
-    btn.textContent = "New Session 🧹";
-    btn.className = "no-drag";
-    btn.addEventListener("click", clearSessionList);
-
-    // ✅ Insert the button before session tickers table
-    const sessionTable = document.getElementById("tickers-session");
-    sessionTable.parentNode.insertBefore(btn, sessionTable);
-}
-
-// Scoring System
 function parseFloatValue(floatStr) {
     if (floatStr == null) return 0; // ✅ Ensure null/undefined returns 0
     let str = String(floatStr).trim(); // ✅ Convert to string and remove spaces
@@ -325,105 +323,21 @@ function parseVolumeValue(floatStr) {
     return value;
 }
 
-// ✅ Find the ticker from tickersDaily only (ensures all attributes exist)
-function findTickerBySymbol(symbol) {
-    const foundTicker = tickersDaily.find((ticker) => ticker.Symbol === symbol);
-
-    if (!foundTicker) {
-        console.warn(`❌ Ticker ${symbol} not found in tickersDaily!`);
+function truncateString(str, maxLength) {
+    if (str.length > maxLength) {
+        return str.slice(0, maxLength) + "..."; // Adds ellipsis at the end
     }
-
-    return foundTicker;
+    return str;
 }
 
-function updateActiveTicker(ticker) {
-    const row = document.getElementById("active-ticker-row");
-    const newsList = document.getElementById("news-list");
-
-    if (!row || !newsList) return;
-
-    console.log(`🔄 Updating Active Ticker: ${ticker.Symbol}`);
-
-    // ✅ Ensure blockList, bullishList, and bearishList exist
-    let blockList = window.settings.news?.blockList || [];
-    let bullishList = window.settings.news?.bullishList || [];
-    let bearishList = window.settings.news?.bearishList || [];
-
-    row.innerHTML = `
-        <td>${ticker.Symbol}</td>
-        <td>${ticker.Price}</td>
-        <td>${ticker.ChangePercent}</td>
-        <td>${ticker.FiveM}</td>
-        <td>${ticker.Float}</td>
-        <td>${ticker.Volume}</td>
-        <td>${ticker.SprPercent}</td>
-        <td>${ticker.HighOfDay}</td>
-        <td>${ticker.Count}</td>
-        <td>${Array.isArray(ticker.News) ? ticker.News.length : 0}</td>
-        <td>${ticker.Score}</td>
-    `;
-
-    // ✅ Clear and re-render news list
-    newsList.innerHTML = "";
-
-    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
-        ticker.News.forEach((article) => {
-            const headline = decodeHtmlEntities(article.headline || "");
-            const articleURL = article.url || "#";
-
-            function decodeHtmlEntities(text) {
-                const txt = document.createElement("textarea");
-                txt.innerHTML = text;
-                return txt.value;
-            }
-
-            // ✅ Check if the headline contains blocklisted words/phrases
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
-
-            if (!isBlocked) {
-                const li = document.createElement("li");
-
-                const link = document.createElement("a");
-                link.href = articleURL;
-                link.textContent = headline;
-                link.target = "_blank"; // ✅ Open in new tab
-                link.rel = "noopener noreferrer"; // ✅ Security best practice
-                link.title = `Published: ${new Date(article.created_at).toLocaleString()}`;
-
-                // ✅ Apply CSS classes based on bullishList and bearishList
-                if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
-                    link.classList.add("bullish-news");
-                }
-                if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
-                    link.classList.add("bearish-news");
-                }
-
-                li.appendChild(link);
-                newsList.appendChild(li);
-            }
-        });
-    }
-
-    if (newsList.innerHTML.trim() === "") {
-        newsList.innerHTML = "<li style='opacity: 0.5'>No relevant news available</li>";
-    }
-
-    // ✅ Highlight ticker change
-    row.style.background = "rgba(34, 139, 34, 0.4)";
-    setTimeout(() => {
-        row.style.background = "rgba(34, 139, 34, 0.2)";
-    }, 1000);
-
-    console.log("✅ Active ticker updated successfully!");
+function formatLargeNumber(value) {
+    if (!value || isNaN(value)) return "-";
+    const num = Number(value);
+    if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
+    return num.toLocaleString();
 }
-
-const floatOneMillionHigh = 2_000_000;
-const floatFiveMillion = 7_500_000;
-const floatTenMillion = 13_000_000;
-const floatFiftyMillion = 65_000_000;
-const floatHundredMillion = 125_000_000;
-const floatTwoHundredMillion = 250_000_000;
-const floatFiveHundredMillion = 600_000_000;
 
 function calculateScore(ticker) {
     let Score = ticker.Count || 0; // ✅ Ensure Count is always a number
@@ -463,7 +377,7 @@ function calculateScore(ticker) {
     } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
         Score -= 30;
     } else if (floatValue >= floatFiveHundredMillion) {
-        Score -= 50; // 🚨 Heavy penalty for massive float
+        Score -= 100; // 🚨 Heavy penalty for massive float
     }
 
     // ✅ Volume Adjustment
@@ -538,8 +452,8 @@ function getScoreBreakdown(ticker) {
         Score -= 30;
         breakdown.push(`Float 250M-600M: -30`);
     } else if (floatValue >= floatFiveHundredMillion) {
-        Score -= 50;
-        breakdown.push(`Float 600M+: -50`);
+        Score -= 100;
+        breakdown.push(`Float 600M+: -100`);
     }
 
     breakdown.push(`---------------------`);
@@ -548,6 +462,42 @@ function getScoreBreakdown(ticker) {
     return breakdown.join("\n");
 }
 
+/** Generates HTML bonus indicators and tooltips for a stock ticker based on various criteria.
+ *
+ * @param {Object} ticker - The stock ticker object containing financial/metadata properties
+ * @param {string} ticker.Float - Market float (e.g., "2.5M")
+ * @param {number|string} ticker.Volume - Trading volume
+ * @param {Array} ticker.News - Array of news items
+ * @param {boolean} ticker.HighOfDay - Indicates if at daily high
+ * @param {Object} [ticker.meta] - Optional metadata object
+ * @returns {string} HTML string containing bonus indicators or "-" if no bonuses
+ *
+ * @example
+ * // Returns HTML with HOD and BIO badges
+ * getBonusesHTML({
+ *   Float: "1.8M",
+ *   Volume: "450000",
+ *   HighOfDay: true,
+ *   meta: { Industry: "Biotechnology" }
+ * });
+ *
+ * Key Features:
+ * - News Filtering: Excludes blocked headlines from settings.news.blockList
+ * - Float Bonuses: Categorizes by market float size (1M-500M+)
+ * - Volume Indicators: Low volume (<300K) and volume-based bonuses
+ * - Special Categories: Biotech industry and Chinese stock markers
+ * - Real-time Signals: High-of-day indicator
+ *
+ * Visual Elements:
+ * - Color-coded badges (gold-float, silver-float, bio, cn, etc.)
+ * - Multi-line tooltips explaining badge meanings
+ * - Non-draggable elements for better UX
+ *
+ * Dependencies:
+ * - parseFloatValue() - Converts formatted strings to numeric values
+ * - parseVolumeValue() - Normalizes volume input
+ * - window.settings.news.blockList - User-configured news filters
+ */
 function getBonusesHTML(ticker) {
     let bonuses = [];
     let tooltipText = [];
@@ -598,14 +548,6 @@ function getBonusesHTML(ticker) {
         tooltipText.push("500M: Float more than 500M");
     }
 
-    if (floatValue > 0 && floatValue < 2_000_000) {
-    } else if (floatValue >= 2_000_000 && floatValue < 7_500_000) {
-    } else if (floatValue >= 7_500_000 && floatValue < 10_000_000) {
-    } else if (floatValue >= 50_000_000 && floatValue < 100_000_000) {
-    } else if (floatValue >= 100_000_000 && floatValue < 200_000_000) {
-    } else if (floatValue >= 500_000_000) {
-    }
-
     if (volumeValue < 300_000) {
         bonuses.push('<span class="bonus low-volume no-drag">V-</span>');
         tooltipText.push("V: Low Volume (<300K)");
@@ -615,6 +557,17 @@ function getBonusesHTML(ticker) {
     if (volumeBonus > 0) {
         bonuses.push(`<span class="bonus high-volume no-drag">V${Math.floor(volumeValue / 1_000_000)}</span>`);
         tooltipText.push(`V${Math.floor(volumeValue / 1_000_000)}: Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M)`);
+    }
+
+    if (ticker.meta) {
+        if (ticker.meta.Industry === "Biotechnology") {
+            bonuses.push('<span class="bonus bio no-drag">BIO</span>');
+            tooltipText.push("BIO: Biotechnology stock");
+        }
+        if (ticker.meta.Country === "China" || ticker.meta.Country === "CN") {
+            bonuses.push('<span class="bonus cn no-drag">CN</span>');
+            tooltipText.push("CN: Chinese Stock");
+        }
     }
 
     if (bonuses.length === 0) {

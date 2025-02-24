@@ -4,12 +4,12 @@
     "description": "Moms Traders Monitor is a tool designed to track high-potential stocks in real-time, using automated web scraping and scoring to identify actionable trade opportunities.",
     "main": "src/main/main.js",
     "scripts": {
-        "start": "cross-env NODE_ENV=development DEBUG=true DATA=false forceUpdate=false electron .",
-        "package": "cross-env NODE_ENV=production DEBUG=false DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --platform=win32 --arch=x64 --out=dist --overwrite",
-        "package-all": "cross-env NODE_ENV=production DEBUG=false DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --all --out=dist --overwrite",
-        "package-mac": "cross-env NODE_ENV=production DEBUG=false DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --platform=darwin --arch=x64 --out=dist --overwrite",
-        "package-linux": "cross-env NODE_ENV=production DEBUG=false DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --platform=linux --arch=x64 --out=dist --overwrite",
-        "publish": "cross-env NODE_ENV=production DEBUG=false DATA=false forceUpdate=false electron-builder -p always"
+        "start": "cross-env NODE_ENV=development DEBUG=true DATA=false BOUNCE=true forceUpdate=false electron .",
+        "package": "cross-env NODE_ENV=production DEBUG=false DATA=false BOUNCE=true forceUpdate=false electron-packager . Moms_Trader_Tools --platform=win32 --arch=x64 --out=dist --overwrite",
+        "package-all": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --all --out=dist --overwrite",
+        "package-mac": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --platform=darwin --arch=x64 --out=dist --overwrite",
+        "package-linux": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --platform=linux --arch=x64 --out=dist --overwrite",
+        "publish": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-builder -p always"
     },
     "author": "Morgan A Ray",
     "license": "MIT",
