@@ -46,7 +46,6 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "WAFU",
-      "BREA",
       "MBRX"
     ],
     "blockList": [
