@@ -45,8 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "FMTO",
       "WAFU",
+      "FMTO",
       "MBRX",
       "SOPA",
       "OSRH",
