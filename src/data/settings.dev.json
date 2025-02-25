@@ -7,7 +7,7 @@
     "maxFloat": 0,
     "minScore": 1,
     "maxScore": 0,
-    "minVolume": 100000,
+    "minVolume": 0,
     "maxVolume": 0,
     "lists": {
       "session": {
