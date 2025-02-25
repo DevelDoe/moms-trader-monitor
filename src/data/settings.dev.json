@@ -5,7 +5,7 @@
     "maxPrice": 20,
     "minFloat": 0,
     "maxFloat": 200000000,
-    "minScore": 0,
+    "minScore": 1,
     "maxScore": 0,
     "minVolume": 100000,
     "maxVolume": 0,
@@ -45,8 +45,7 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "BREA",
-      "MLGO"
+      "BREA"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
