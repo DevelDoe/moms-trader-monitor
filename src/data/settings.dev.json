@@ -44,13 +44,7 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [
-      "PEPG",
-      "WAFU",
-      "ISPC",
-      "BTDR",
-      "AGL"
-    ],
+    "filteredTickers": [],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
