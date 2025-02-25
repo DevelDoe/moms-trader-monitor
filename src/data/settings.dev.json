@@ -46,8 +46,8 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "WAFU",
-      "MBRX",
       "SOPA",
+      "MBRX",
       "FMTO"
     ],
     "blockList": [
