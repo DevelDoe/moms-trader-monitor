@@ -1,0 +1,175 @@
+<!-- ./renderer/docker/top.html  -->
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-hashes';" />
+        <title>Active</title>
+        <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="./active.css" />
+    </head>
+    <body class="draggable">
+        <!-- ✅ Active Ticker Section -->
+        <section id="active-ticker" class="no-drag">
+            <h2>Active Ticker</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Price</th>
+                        <th>Float</th>
+                        <th>Volume</th>
+                        <th>Change</th>
+                        <th>PM</th>
+                        <th>High</th>
+                        <th>Low</th>
+                        <th>Beta</th>
+                        <th>Industry</th>
+                        <th>Country</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr id="active-ticker-row">
+                        <td colspan="11">No ticker selected</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div id="active-ticker-description">
+                <p id="compay-desc"></p>
+            </div>
+
+            <!-- ✅ Scrollable News Section -->
+
+            <!-- ✅ Active Ticker Overview Section -->
+
+            <section id="ticker-overview" class="no-drag">
+                <h2>Overview</h2>
+                <div class="accordion">
+                    <!-- Overview Information -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Latest News</div>
+                        <div class="accordion-content">
+                            <div id="news-container">
+                                <ul id="news-list" class="no-drag"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- General Information -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">General Information</div>
+                        <div class="accordion-content">
+                            <p><strong>Symbol:</strong> <span id="general-symbol">-</span></p>
+                            <p><strong>Company Name:</strong> <span id="general-name">-</span></p>
+                            <p><strong>Country:</strong> <span id="general-country">-</span></p>
+                            <p><strong>Address:</strong> <span id="general-address">-</span></p>
+                            <p><strong>Industry:</strong> <span id="general-industry">-</span></p>
+                            <p><strong>Sector:</strong> <span id="general-sector">-</span></p>
+                            <p><strong>Exchange:</strong> <span id="general-exchange">-</span></p>
+                            <p><strong>Website:</strong> <span id="general-website">-</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Analyst Ratings -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Analyst Ratings</div>
+                        <div class="accordion-content">
+                            <p><strong>Target Price:</strong> <span id="analyst-targetprice">-</span></p>
+                            <p><strong>Strong Buy:</strong> <span id="analyst-strongbuy">-</span></p>
+                            <p><strong>Buy:</strong> <span id="analyst-buy">-</span></p>
+                            <p><strong>Hold:</strong> <span id="analyst-hold">-</span></p>
+                            <p><strong>Sell:</strong> <span id="analyst-sell">-</span></p>
+                            <p><strong>Strong Sell:</strong> <span id="analyst-strongsell">-</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Valuation Metrics -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Financial Metrics</div>
+                        <div class="accordion-content">
+                            <p>
+                                <strong>EPS:</strong>
+                                <span id="finansial-eps" title="Earnings Per Share: Indicates the company’s profitability. A higher EPS generally means more profitability.">-</span>
+                            </p>
+                            <p>
+                                <strong>Market Cap:</strong>
+                                <span
+                                    id="finansial-marketcap"
+                                    title="Market Capitalization: The total value of a company’s shares in the market. Calculated as share price times the number of shares outstanding."
+                                    >-</span
+                                >
+                            </p>
+                            <p>
+                                <strong>Book Value:</strong>
+                                <span
+                                    id="finansial-bookvalue"
+                                    title="Book Value: Represents the company’s net asset value (assets - liabilities), often used to determine whether a stock is undervalued."
+                                    >-</span
+                                >
+                            </p>
+                            <p>
+                                <strong>Revenue TTM:</strong>
+                                <span id="finansial-revenue-ttm" title="Revenue TTM (Trailing Twelve Months): The total sales or income generated by the company over the past 12 months.">-</span>
+                            </p>
+                            <p>
+                                <strong>EBITDA:</strong>
+                                <span
+                                    id="finansial-ebitda"
+                                    title="EBITDA (Earnings Before Interest, Taxes, Depreciation, and Amortization): A measure of the company’s overall financial performance and profitability."
+                                    >-</span
+                                >
+                            </p>
+                            <p>
+                                <strong>Profit Margin:</strong>
+                                <span
+                                    id="finansial-profitmargin"
+                                    title="Profit Margin: The percentage of revenue that exceeds the costs of production. It shows how well a company can turn revenue into profit."
+                                    >-</span
+                                >
+                            </p>
+                            <p>
+                                <strong>Trailing PE:</strong>
+                                <span
+                                    id="finansial-trailingpe"
+                                    title="Trailing PE (Price to Earnings ratio): A ratio that compares the company’s share price to its earnings per share over the past 12 months."
+                                    >-</span
+                                >
+                            </p>
+                            <p>
+                                <strong>Forward PE:</strong>
+                                <span id="finansial-forwardpe" title="Forward PE: A variation of the PE ratio that uses projected future earnings rather than past earnings.">-</span>
+                            </p>
+                            <p>
+                                <strong>Price/Sales Ratio:</strong>
+                                <span
+                                    id="finansial-psr"
+                                    title="Price/Sales Ratio: A valuation ratio that compares a company’s stock price to its revenues. A higher PSR may indicate the stock is overvalued."
+                                    >-</span
+                                >
+                            </p>
+                            <p>
+                                <strong>Price/Book Ratio:</strong>
+                                <span id="finansial-pbr" title="Price/Book Ratio: A ratio comparing a company’s market value to its book value. A lower P/B ratio may suggest undervaluation.">-</span>
+                            </p>
+                            <p>
+                                <strong>EV/Revenue:</strong>
+                                <span id="finansial-evrevenue" title="EV/Revenue (Enterprise Value to Revenue): A ratio that compares a company’s enterprise value (EV) to its total revenue.">-</span>
+                            </p>
+                            <p>
+                                <strong>EV/EBITDA:</strong>
+                                <span
+                                    id="finansial-evebitda"
+                                    title="EV/EBITDA (Enterprise Value to EBITDA): A measure of a company’s valuation that compares its total value to its earnings before interest, taxes, depreciation, and amortization."
+                                    >-</span
+                                >
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+        <script src="./active.js"></script>
+    </body>
+</html>
