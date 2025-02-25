@@ -1,13 +1,13 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1,
-    "maxPrice": 0,
+    "minPrice": 1.75,
+    "maxPrice": 20,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 1,
     "maxScore": 0,
-    "minVolume": 0,
+    "minVolume": 100000,
     "maxVolume": 0,
     "lists": {
       "session": {
