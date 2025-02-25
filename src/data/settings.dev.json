@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.8,
+    "minPrice": 0,
     "maxPrice": 20,
     "minFloat": 0,
     "maxFloat": 0,
@@ -44,7 +44,9 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [],
+    "filteredTickers": [
+      "BREA"
+    ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
