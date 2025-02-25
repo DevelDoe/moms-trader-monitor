@@ -45,8 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "BREA",
       "WAFU",
+      "BREA",
       "MBRX"
     ],
     "blockList": [
