@@ -45,11 +45,12 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "WAFU",
       "FMTO",
+      "WAFU",
       "MBRX",
       "SOPA",
       "OSRH",
+      "RDHL",
       "MLGO"
     ],
     "blockList": [
