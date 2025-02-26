@@ -12,15 +12,17 @@
                 color: #e0e0e0;
                 padding: 5px;
                 font-size: 11px;
+                display: flex;
+                gap: 10px;
             }
             #log {
                 overflow-y: auto;
                 padding: 5px;
                 border-radius: 5px;
                 display: flex;
-                flex-direction: column-reverse; /* Ensures latest messages are at the bottom */
+                flex-direction: column-reverse; /* Newest messages at bottom */
                 list-style-type: none;
-                float: left;
+                width: 70%;
             }
             .alert {
                 padding: 5px;
@@ -45,15 +47,68 @@
                 from { opacity: 0; }
                 to { opacity: 1; }
             }
+
+            /* Symbol Summary */
+            #symbol-summary {
+                width: 30%;
+                border-radius: 5px;
+                padding: 10px;
+                background: #26272e;
+                font-size: 12px;
+            }
+            .symbol-item {
+                padding: 3px;
+                border-radius: 3px;
+                display: flex;
+                justify-content: space-between;
+                font-weight: bold;
+                margin-bottom: 2px;
+            }
         </style>
     </head>
     <body class="draggable">
         <ul id="log"></ul>
+        <div id="symbol-summary">
+            <h3>Symbol Summary</h3>
+            <ul id="symbol-list"></ul>
+        </div>
 
         <script>
             const ws = new WebSocket("ws://192.168.1.17:8000/ws");
             const logElement = document.getElementById("log");
+            const symbolListElement = document.getElementById("symbol-list");
             const maxAlerts = 20;
+
+            // Symbol tracking
+            const symbolCounts = {}; // Tracks symbol frequency
+            const symbolColors = {}; // Stores a fixed background color for each symbol
+
+            // Generate a color for each symbol (HSL to ensure good contrast)
+            function getSymbolColor(symbol) {
+                if (!symbolColors[symbol]) {
+                    const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                    const hue = hash % 360;
+                    symbolColors[symbol] = `hsl(${hue}, 60%, 30%)`;
+                }
+                return symbolColors[symbol];
+            }
+
+            function updateSymbolSummary() {
+                // Convert object to sorted array (highest count first)
+                const sortedSymbols = Object.entries(symbolCounts).sort((a, b) => b[1] - a[1]);
+
+                // Clear the list
+                symbolListElement.innerHTML = "";
+
+                // Append updated symbol summary
+                sortedSymbols.forEach(([symbol, count]) => {
+                    const li = document.createElement("li");
+                    li.className = "symbol-item";
+                    li.style.backgroundColor = getSymbolColor(symbol);
+                    li.innerHTML = `<span>${symbol}</span><span>${count}</span>`;
+                    symbolListElement.appendChild(li);
+                });
+            }
 
             ws.onopen = function () {
                 console.log("[CLIENT] Connected to WebSocket server");
@@ -72,8 +127,13 @@
                         return;
                     }
 
+                    // Update symbol count
+                    symbolCounts[alertData.symbol] = (symbolCounts[alertData.symbol] || 0) + 1;
+                    updateSymbolSummary();
+
                     const alertDiv = document.createElement("li");
                     alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
+                    alertDiv.style.backgroundColor = getSymbolColor(alertData.symbol); // Set color
 
                     alertDiv.innerHTML = `<strong>${alertData.symbol}</strong> - 
                     ${alertData.direction} <span>(${alertData.change_percent.toFixed(2)}%)</span> | 
