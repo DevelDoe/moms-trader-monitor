@@ -453,7 +453,7 @@ ipcMain.on("toggle-active", () => {
 });
 
 ipcMain.on("set-active-ticker", (event, ticker) => {
-    console.log("Received ticker:", ticker, "Type:", typeof ticker);
+    log.log("Received ticker:", ticker, "Type:", typeof ticker);
 
     if (typeof ticker !== "string") {
         console.error("Invalid ticker type! Converting to string...");
