@@ -169,18 +169,15 @@
                 console.log("[CLIENT] Received:", event.data);
                 try {
                     const alertData = JSON.parse(event.data);
-                    // Check for the expected fields (using updated names)
+                    // Validate the incoming data
                     if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.price === undefined || alertData.volume === undefined) {
                         console.warn("[CLIENT] Received malformed alert:", alertData);
                         return;
                     }
 
                     const symbol = alertData.symbol;
-                    const isUpTick = alertData.direction.toLowerCase() === "up";
-
-                    // For UP ticks, update the symbol percentage
+                    // Update the symbol's latest percentage (for summary display)
                     symbolPercents[symbol] = alertData.change_percent;
-                    updateSymbolSummary();
 
                     // Create alert element
                     const alertDiv = document.createElement("li");
@@ -188,11 +185,11 @@
 
                     // Create symbol element with background color
                     const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)}; 
-            padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
+      padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
 
                     alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data">
-              <span>${alertData.change_percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)}
-              V${alertData.volume}</span>`;
+      <span>${alertData.change_percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)}
+      V${alertData.volume}</span>`;
 
                     // Append new alert at the bottom
                     logElement.appendChild(alertDiv);
@@ -201,6 +198,9 @@
                     while (logElement.children.length > maxAlerts) {
                         logElement.removeChild(logElement.firstChild);
                     }
+
+                    // Now update the summary (after the log is updated)
+                    updateSymbolSummary();
                 } catch (error) {
                     console.error("[CLIENT] Error parsing message:", error);
                 }
