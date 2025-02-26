@@ -45,8 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "ENVB",
       "QVCGB",
+      "ENVB",
       "GTBP",
       "CNSP",
       "JTAI",
