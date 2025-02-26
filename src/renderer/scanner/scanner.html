@@ -41,8 +41,12 @@
                 border-left: 5px solid #dc3545;
             }
             @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
             }
 
             /* Symbol Summary */
@@ -77,11 +81,15 @@
             const symbolColors = {}; // Stores a fixed background color for each symbol
 
             // Generate a color for each symbol (HSL to ensure good contrast)
+            // Generate a distinct background color for each symbol with 50% transparency
             function getSymbolColor(symbol) {
                 if (!symbolColors[symbol]) {
                     const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                    const hue = hash % 360;
-                    symbolColors[symbol] = `hsl(${hue}, 60%, 30%)`;
+                    const hue = (hash * 37) % 360; // Multiply to spread out colors more evenly
+                    const saturation = 80; // Higher saturation for stronger colors
+                    const lightness = 50; // Balanced brightness for contrast
+                    const alpha = 0.5; // 50% transparency
+                    symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
                 }
                 return symbolColors[symbol];
             }
@@ -114,8 +122,7 @@
                     const alertData = JSON.parse(event.data);
 
                     // Ensure all necessary fields exist
-                    if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || 
-                        alertData.current_price === undefined || alertData.trade_volume === undefined) {
+                    if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.current_price === undefined || alertData.trade_volume === undefined) {
                         console.warn("[CLIENT] Received malformed alert:", alertData);
                         return;
                     }
