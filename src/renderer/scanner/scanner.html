@@ -100,7 +100,7 @@
             const ws = new WebSocket("ws://192.168.1.17:8000/ws");
             const logElement = document.getElementById("log");
             const symbolListElement = document.getElementById("symbol-list");
-            const maxAlerts = 16;
+            const maxAlerts = 3;
 
             // Instead of tracking counts, track the latest percentage for each symbol.
             const symbolPercents = {};
@@ -121,47 +121,44 @@
 
             // Update the symbol summary to display a progress bar (10 segments) based on the change percentage.
             function updateSymbolSummary() {
-  // Get the symbols from the current log entries (deduplicated)
-  const symbolsInLog = new Set();
-  logElement.querySelectorAll(".alert-symbol").forEach((span) => {
-    symbolsInLog.add(span.textContent.trim());
-  });
+                // Get the symbols from the current log entries (deduplicated)
+                const symbolsInLog = new Set();
+                logElement.querySelectorAll(".alert-symbol").forEach((span) => {
+                    symbolsInLog.add(span.textContent.trim());
+                });
 
-  // Build an array of entries from symbolPercents for only those symbols in the log
-  const entries = [];
-  symbolsInLog.forEach((symbol) => {
-    if (symbolPercents[symbol] !== undefined) {
-      entries.push([symbol, symbolPercents[symbol]]);
-    }
-  });
+                // Build an array of entries from symbolPercents for only those symbols in the log
+                const entries = [];
+                symbolsInLog.forEach((symbol) => {
+                    if (symbolPercents[symbol] !== undefined) {
+                        entries.push([symbol, symbolPercents[symbol]]);
+                    }
+                });
 
-  // (Optional) Sort the entries, e.g., by percentage descending
-  const sortedSymbols = entries.sort(([, a], [, b]) => b - a);
+                // (Optional) Sort the entries, e.g., by percentage descending
+                const sortedSymbols = entries.sort(([, a], [, b]) => b - a);
 
-  // Clear the current summary list
-  symbolListElement.innerHTML = "";
+                // Clear the current summary list
+                symbolListElement.innerHTML = "";
 
-  // Build and append each symbol's progress bar
-  sortedSymbols.forEach(([symbol, percent]) => {
-    // Determine the number of filled segments (capped at 10)
-    const filledSegments = Math.min(10, Math.round(Math.abs(percent)));
-    let segmentsHtml = "";
-    for (let i = 0; i < 10; i++) {
-      segmentsHtml += i < filledSegments
-        ? '<span class="segment filled"></span>'
-        : '<span class="segment"></span>';
-    }
-    const li = document.createElement("li");
-    li.className = "symbol-item";
-    li.innerHTML = `
+                // Build and append each symbol's progress bar
+                sortedSymbols.forEach(([symbol, percent]) => {
+                    // Determine the number of filled segments (capped at 10)
+                    const filledSegments = Math.min(10, Math.round(Math.abs(percent)));
+                    let segmentsHtml = "";
+                    for (let i = 0; i < 10; i++) {
+                        segmentsHtml += i < filledSegments ? '<span class="segment filled"></span>' : '<span class="segment"></span>';
+                    }
+                    const li = document.createElement("li");
+                    li.className = "symbol-item";
+                    li.innerHTML = `
       <span style="background-color: ${getSymbolColor(symbol)}; padding: 2px 5px; border-radius: 3px;">${symbol}</span>
       <span class="progress-bar">${segmentsHtml}</span>
       <span>${percent.toFixed(2)}%</span>
     `;
-    symbolListElement.appendChild(li);
-  });
-}
-
+                    symbolListElement.appendChild(li);
+                });
+            }
 
             ws.onopen = function () {
                 console.log("[CLIENT] Connected to WebSocket server");
