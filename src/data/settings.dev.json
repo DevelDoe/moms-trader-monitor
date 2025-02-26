@@ -45,8 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "TRNR",
       "ENVB",
+      "TRNR",
       "QVCGB",
       "MULN",
       "SYTA",
