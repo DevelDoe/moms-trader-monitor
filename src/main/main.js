@@ -456,15 +456,15 @@ ipcMain.on("set-active-ticker", (event, ticker) => {
     log.log("Received ticker:", ticker, "Type:", typeof ticker);
 
     if (typeof ticker !== "string") {
-        console.error("Invalid ticker type! Converting to string...");
+        log.error("Invalid ticker type! Converting to string...");
         ticker = String(ticker);
     }
 
     if (windows.active) {
-        console.log(`Sending Active Ticker to Renderer: ${ticker}`);
+        log.log(`Sending Active Ticker to Renderer: ${ticker}`);
         windows.active.webContents.send("update-active-ticker", ticker);
     } else {
-        console.warn("Active ticker window not found.");
+        log.warn("Active ticker window not found.");
     }
 });
 
