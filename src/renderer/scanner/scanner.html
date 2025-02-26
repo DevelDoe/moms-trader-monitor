@@ -126,64 +126,62 @@
             };
 
             ws.onmessage = function (event) {
-    console.log("[CLIENT] Received:", event.data);
-    try {
-        const alertData = JSON.parse(event.data);
+                console.log("[CLIENT] Received:", event.data);
+                try {
+                    const alertData = JSON.parse(event.data);
 
-        // Ensure all necessary fields exist
-        if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || 
-            alertData.current_price === undefined || alertData.trade_volume === undefined) {
-            console.warn("[CLIENT] Received malformed alert:", alertData);
-            return;
-        }
+                    // Ensure all necessary fields exist
+                    if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.current_price === undefined || alertData.trade_volume === undefined) {
+                        console.warn("[CLIENT] Received malformed alert:", alertData);
+                        return;
+                    }
 
-        // Add the new symbol to the list of recent symbols
-        const recentSymbols = [];
-        logElement.querySelectorAll(".alert-symbol").forEach(span => {
-            recentSymbols.push(span.textContent);
-        });
+                    // Add the new symbol to the list of recent symbols
+                    const recentSymbols = [];
+                    logElement.querySelectorAll(".alert-symbol").forEach((span) => {
+                        recentSymbols.push(span.textContent);
+                    });
 
-        // Limit the recent symbols to 18 max
-        if (recentSymbols.length >= maxAlerts) {
-            recentSymbols.shift(); // Remove the oldest symbol
-        }
-        recentSymbols.push(alertData.symbol);
+                    // Limit the recent symbols to 18 max
+                    if (recentSymbols.length >= maxAlerts) {
+                        recentSymbols.shift(); // Remove the oldest symbol
+                    }
+                    recentSymbols.push(alertData.symbol);
 
-        // Update symbol counts based only on the last 18 alerts
-        const tempSymbolCounts = {};
-        recentSymbols.forEach(symbol => {
-            tempSymbolCounts[symbol] = (tempSymbolCounts[symbol] || 0) + 1;
-        });
+                    // Update symbol counts based only on the last 18 alerts
+                    const tempSymbolCounts = {};
+                    recentSymbols.forEach((symbol) => {
+                        tempSymbolCounts[symbol] = (tempSymbolCounts[symbol] || 0) + 1;
+                    });
 
-        // Update the global symbolCounts object with the limited data
-        Object.keys(symbolCounts).forEach(symbol => delete symbolCounts[symbol]);
-        Object.assign(symbolCounts, tempSymbolCounts);
+                    // Update the global symbolCounts object with the limited data
+                    Object.keys(symbolCounts).forEach((symbol) => delete symbolCounts[symbol]);
+                    Object.assign(symbolCounts, tempSymbolCounts);
 
-        updateSymbolSummary();
+                    updateSymbolSummary();
 
-        const alertDiv = document.createElement("li");
-        alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
+                    const alertDiv = document.createElement("li");
+                    alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
 
-        // Wrap the symbol in a span with background color
-        const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(alertData.symbol)}; 
+                    // Wrap the symbol in a span with background color
+                    const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(alertData.symbol)}; 
             padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${alertData.symbol}</span>`;
 
-        alertDiv.innerHTML = `${coloredSymbol} - 
+                    alertDiv.innerHTML = `${coloredSymbol} - 
             ${alertData.direction} <span>(${alertData.change_percent.toFixed(2)}%)</span> | 
             Price: $${alertData.current_price.toFixed(2)} | Volume: ${alertData.trade_volume}`;
 
-        // ✅ Add new alerts at the bottom (because flex-direction is column-reverse)
-        logElement.appendChild(alertDiv);
+                    // ✅ Add new alerts at the bottom (because flex-direction is column-reverse)
+                    logElement.appendChild(alertDiv);
 
-        // ✅ Remove oldest if we exceed maxAlerts
-        while (logElement.children.length > maxAlerts) {
-            logElement.removeChild(logElement.firstChild);
-        }
-    } catch (error) {
-        console.error("[CLIENT] Error parsing message:", error);
-    }
-};
-
+                    // ✅ Remove oldest if we exceed maxAlerts
+                    while (logElement.children.length > maxAlerts) {
+                        logElement.removeChild(logElement.firstChild);
+                    }
+                } catch (error) {
+                    console.error("[CLIENT] Error parsing message:", error);
+                }
+            };
 
             ws.onerror = function (error) {
                 console.error("[CLIENT] WebSocket error:", error);
