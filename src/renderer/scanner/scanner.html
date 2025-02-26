@@ -121,32 +121,47 @@
 
             // Update the symbol summary to display a progress bar (10 segments) based on the change percentage.
             function updateSymbolSummary() {
-                // Sort symbols by their change percentage in descending order and take only the top 10
-                const sortedSymbols = Object.entries(symbolPercents)
-                    .sort(([, percentA], [, percentB]) => percentB - percentA)
-                    .slice(0, 10);
+  // Get the symbols from the current log entries (deduplicated)
+  const symbolsInLog = new Set();
+  logElement.querySelectorAll(".alert-symbol").forEach((span) => {
+    symbolsInLog.add(span.textContent.trim());
+  });
 
-                // Clear the current list
-                symbolListElement.innerHTML = "";
+  // Build an array of entries from symbolPercents for only those symbols in the log
+  const entries = [];
+  symbolsInLog.forEach((symbol) => {
+    if (symbolPercents[symbol] !== undefined) {
+      entries.push([symbol, symbolPercents[symbol]]);
+    }
+  });
 
-                // Build and append each symbol's progress bar
-                sortedSymbols.forEach(([symbol, percent]) => {
-                    // Determine the number of filled segments (capped at 10)
-                    const filledSegments = Math.min(10, Math.round(percent));
-                    let segmentsHtml = "";
-                    for (let i = 0; i < 10; i++) {
-                        segmentsHtml += i < filledSegments ? '<span class="segment filled"></span>' : '<span class="segment"></span>';
-                    }
-                    const li = document.createElement("li");
-                    li.className = "symbol-item";
-                    li.innerHTML = `
+  // (Optional) Sort the entries, e.g., by percentage descending
+  const sortedSymbols = entries.sort(([, a], [, b]) => b - a);
+
+  // Clear the current summary list
+  symbolListElement.innerHTML = "";
+
+  // Build and append each symbol's progress bar
+  sortedSymbols.forEach(([symbol, percent]) => {
+    // Determine the number of filled segments (capped at 10)
+    const filledSegments = Math.min(10, Math.round(Math.abs(percent)));
+    let segmentsHtml = "";
+    for (let i = 0; i < 10; i++) {
+      segmentsHtml += i < filledSegments
+        ? '<span class="segment filled"></span>'
+        : '<span class="segment"></span>';
+    }
+    const li = document.createElement("li");
+    li.className = "symbol-item";
+    li.innerHTML = `
       <span style="background-color: ${getSymbolColor(symbol)}; padding: 2px 5px; border-radius: 3px;">${symbol}</span>
       <span class="progress-bar">${segmentsHtml}</span>
       <span>${percent.toFixed(2)}%</span>
     `;
-                    symbolListElement.appendChild(li);
-                });
-            }
+    symbolListElement.appendChild(li);
+  });
+}
+
 
             ws.onopen = function () {
                 console.log("[CLIENT] Connected to WebSocket server");
