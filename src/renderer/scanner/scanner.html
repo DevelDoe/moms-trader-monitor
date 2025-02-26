@@ -182,8 +182,8 @@
                     const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)}; 
             padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
 
-                    alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data"> <span> ${alertData.change_percent.toFixed(2)}%</span> $${alertData.current_price.toFixed(2)} ${
-                        alertData.trade_volume
+                    alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data"> <span> ${alertData.change_percent.toFixed(2)}%</span> $${alertData.current_price.toFixed(2)} 
+                    V${alertData.trade_volume
                     }</span>`;
 
                     // ✅ Add new alerts at the bottom
