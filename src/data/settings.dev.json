@@ -46,6 +46,7 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "ENVB",
+      "TRNR",
       "QVCGB",
       "MULN",
       "SYTA",
@@ -59,8 +60,8 @@
       "RR",
       "SAG",
       "RZLV",
-      "DOMH",
       "NVTS",
+      "DOMH",
       "AGH",
       "ABSI",
       "BBAI",
