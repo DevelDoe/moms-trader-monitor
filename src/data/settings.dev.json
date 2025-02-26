@@ -45,8 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "GTBP",
       "ENVB",
+      "GTBP",
       "QVCGB",
       "JTAI",
       "DOMH"
