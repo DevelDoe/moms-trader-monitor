@@ -5,6 +5,7 @@ body {
     height: 100vw;
     overflow: hidden; /* Disable scrolling for the entire body */
     height: 100vh;
+    font-size: 14px;
 }
 
 body::-webkit-scrollbar {
