@@ -141,7 +141,7 @@
                     alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
 
                     // Wrap the symbol in a span with background color
-                    const coloredSymbol = `<span style=background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px; color="#1c1d23"; ">${alertData.symbol}</span>`;
+                    const coloredSymbol = `<span style=background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px; color=#1c1d23; ">${alertData.symbol}</span>`;
 
                     alertDiv.innerHTML = `${coloredSymbol} - 
         ${alertData.direction} <span>(${alertData.change_percent.toFixed(2)}%)</span> | 
