@@ -178,7 +178,7 @@
             padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
 
         alertDiv.innerHTML = `${coloredSymbol}<span> ${alertData.change_percent.toFixed(2)}%</span> | 
-            Price: $${alertData.current_price.toFixed(2)} | V: ${alertData.trade_volume}`;
+            P: $${alertData.current_price.toFixed(2)} | V: ${alertData.trade_volume}`;
 
         // ✅ Add new alerts at the bottom
         logElement.appendChild(alertDiv);
