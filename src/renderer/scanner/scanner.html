@@ -169,10 +169,8 @@
           const isUpTick = alertData.direction.toLowerCase() === "up";
 
           // For UP ticks, update the symbol percentage
-          if (isUpTick) {
-            symbolPercents[symbol] = alertData.change_percent;
-            updateSymbolSummary();
-          }
+          symbolPercents[symbol] = alertData.change_percent;
+          updateSymbolSummary();
 
           // Create alert element
           const alertDiv = document.createElement("li");
