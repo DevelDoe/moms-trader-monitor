@@ -46,9 +46,9 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "GTBP",
+      "QVCGB",
       "JTAI",
       "ENVB",
-      "QVCGB",
       "DOMH"
     ],
     "blockList": [
