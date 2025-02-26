@@ -138,11 +138,13 @@
 
                     const alertDiv = document.createElement("li");
                     alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
-                    alertDiv.style.backgroundColor = getSymbolColor(alertData.symbol); // Set color
 
-                    alertDiv.innerHTML = `<strong>${alertData.symbol}</strong> - 
-                    ${alertData.direction} <span>(${alertData.change_percent.toFixed(2)}%)</span> | 
-                    Price: $${alertData.current_price.toFixed(2)} | Volume: ${alertData.trade_volume}`;
+                    // Wrap the symbol in a span with background color
+                    const coloredSymbol = `<span style="background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px;">${alertData.symbol}</span>`;
+
+                    alertDiv.innerHTML = `${coloredSymbol} - 
+        ${alertData.direction} <span>(${alertData.change_percent.toFixed(2)}%)</span> | 
+        Price: $${alertData.current_price.toFixed(2)} | Volume: ${alertData.trade_volume}`;
 
                     // ✅ Add new alerts at the bottom (because flex-direction is column-reverse)
                     logElement.appendChild(alertDiv);
