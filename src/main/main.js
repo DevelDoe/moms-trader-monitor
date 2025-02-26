@@ -40,6 +40,7 @@ const { createSettingsWindow } = require("./windows/settings");
 const { createTopWindow } = require("./windows/top");
 const { createActiveWindow } = require("./windows/active");
 const { createNewsWindow } = require("./windows/news");
+const { createScannerWindow } = require("./windows/scanner");
 
 let windows = {};
 
@@ -484,6 +485,14 @@ ipcMain.on("set-window-bounds", (event, bounds) => {
     }
 });
 
+// scanner
+ipcMain.on("toggle-scanner", () => {
+    if (windows.scanner) {
+        log.log("Toggle Scanner Window");
+        windows.scanner.isVisible() ? windows.scanner.hide() : windows.scanner.show();
+    }
+});
+
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
 
@@ -503,6 +512,7 @@ app.on("ready", () => {
         windows.top = createWindow("top", () => createTopWindow(isDevelopment));
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
         windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
+        windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
 
         Object.values(windows).forEach((window) => window?.hide());
         windows.docker.show();

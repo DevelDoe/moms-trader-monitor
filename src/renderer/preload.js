@@ -33,6 +33,11 @@ contextBridge.exposeInMainWorld("newsAPI", {
     setBounds: (bounds) => ipcRenderer.send("set-window-bounds", bounds),
 });
 
+contextBridge.exposeInMainWorld("scannerAPI", {
+    toggle: () => ipcRenderer.send("toggle-scanner"),
+});
+
+
 contextBridge.exposeInMainWorld("settingsAPI", {
     toggle: () => ipcRenderer.send("toggle-settings"),
     get: () => ipcRenderer.invoke("get-settings"),

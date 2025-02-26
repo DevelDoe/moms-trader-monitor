@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MTP Alerts</title>
+        <style>
+            body {
+                background-color: #1c1d23;
+                color: #e0e0e0;
+                padding: 5px;
+                font-size: 11px;
+                font-family: Arial, sans-serif;
+            }
+            #log {
+                max-height: 400px;
+                overflow-y: auto;
+                padding: 5px;
+                border-radius: 5px;
+                display: flex;
+                flex-direction: column-reverse; /* Ensures latest messages are at the bottom */
+            }
+            .alert {
+                padding: 5px;
+                margin: 5px 0;
+                border-radius: 5px;
+                font-weight: bold;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                opacity: 0;
+                animation: fadeIn 0.3s forwards;
+            }
+            .up {
+                color: #28a745;
+                border-left: 5px solid #28a745;
+            }
+            .down {
+                color: #dc3545;
+                border-left: 5px solid #dc3545;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="log"></div>
+
+        <script>
+            const ws = new WebSocket("ws://192.168.1.17:8000/ws");
+            const logElement = document.getElementById("log");
+            const maxAlerts = 20;
+
+            ws.onopen = function () {
+                console.log("[CLIENT] Connected to WebSocket server");
+                ws.send(JSON.stringify({ client_id: "web-client" }));
+            };
+
+            ws.onmessage = function (event) {
+                console.log("[CLIENT] Received:", event.data);
+                try {
+                    const alertData = JSON.parse(event.data);
+
+                    // Ensure all necessary fields exist
+                    if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || 
+                        alertData.current_price === undefined || alertData.trade_volume === undefined) {
+                        console.warn("[CLIENT] Received malformed alert:", alertData);
+                        return;
+                    }
+
+                    const alertDiv = document.createElement("div");
+                    alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
+
+                    alertDiv.innerHTML = `<strong>${alertData.symbol}</strong> - 
+                    ${alertData.direction} <span>(${alertData.change_percent.toFixed(2)}%)</span> | 
+                    Price: $${alertData.current_price.toFixed(2)} | Volume: ${alertData.trade_volume}`;
+
+                    // ✅ Add new alerts at the bottom (because flex-direction is column-reverse)
+                    logElement.appendChild(alertDiv);
+
+                    // ✅ Remove oldest if we exceed maxAlerts
+                    while (logElement.children.length > maxAlerts) {
+                        logElement.removeChild(logElement.firstChild);
+                    }
+                } catch (error) {
+                    console.error("[CLIENT] Error parsing message:", error);
+                }
+            };
+
+            ws.onerror = function (error) {
+                console.error("[CLIENT] WebSocket error:", error);
+            };
+
+            ws.onclose = function () {
+                console.log("[CLIENT] Disconnected from WebSocket server");
+            };
+        </script>
+    </body>
+</html>

@@ -45,18 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "FMTO",
-      "WAFU",
-      "GTBP",
-      "SOPA",
-      "RDHL",
-      "BRTX",
-      "OSRH",
-      "PEPG",
-      "NIXX",
-      "MLGO",
-      "NLSP",
-      "DOMH"
+      "ENVB",
+      "STAI"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
