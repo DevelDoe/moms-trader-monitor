@@ -179,7 +179,7 @@
 
         alertDiv.innerHTML = `${coloredSymbol} - 
             ${alertData.direction} <span>(${alertData.change_percent.toFixed(2)}%)</span> | 
-            Price: $${alertData.current_price.toFixed(2)} | Volume: ${alertData.trade_volume}`;
+            Price: $${alertData.current_price.toFixed(2)} | V: ${alertData.trade_volume}`;
 
         // ✅ Add new alerts at the bottom
         logElement.appendChild(alertDiv);
