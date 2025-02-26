@@ -78,6 +78,15 @@ function truncateString(str, maxLength) {
     return str;
 }
 
+function formatLargeNumber(value) {
+    if (!value || isNaN(value)) return "-";
+    const num = Number(value);
+    if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
+    return num.toLocaleString();
+}
+
 /** Updates the UI with real-time ticker data and metadata across multiple dashboard sections
  *
  * @param {Object} ticker - The active ticker object containing financial data and metadata
