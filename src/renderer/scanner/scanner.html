@@ -135,68 +135,73 @@
             };
 
             ws.onmessage = function (event) {
-                console.log("[CLIENT] Received:", event.data);
-                try {
-                    const alertData = JSON.parse(event.data);
+    console.log("[CLIENT] Received:", event.data);
+    try {
+        const alertData = JSON.parse(event.data);
 
-                    // Ensure all necessary fields exist
-                    if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.current_price === undefined || alertData.trade_volume === undefined) {
-                        console.warn("[CLIENT] Received malformed alert:", alertData);
-                        return;
-                    }
+        // Check for necessary fields based on the updated structure
+        if (!alertData.symbol || 
+            !alertData.direction || 
+            alertData.change_percent === undefined || 
+            alertData.price === undefined || 
+            alertData.volume === undefined) {
+            console.warn("[CLIENT] Received malformed alert:", alertData);
+            return;
+        }
 
-                    const symbol = alertData.symbol;
-                    const isUpTick = alertData.direction.toLowerCase() === "up";
+        const symbol = alertData.symbol;
+        const isUpTick = alertData.direction.toLowerCase() === "up";
 
-                    // Track only "UP" ticks in symbol summary
-                    if (isUpTick) {
-                        // Maintain a limited list of the last `maxAlerts` UP symbols
-                        const recentSymbols = [];
-                        logElement.querySelectorAll(".alert-symbol").forEach((span) => {
-                            recentSymbols.push(span.textContent);
-                        });
+        // Track only "UP" ticks in symbol summary
+        if (isUpTick) {
+            // Maintain a limited list of the last `maxAlerts` UP symbols
+            const recentSymbols = [];
+            logElement.querySelectorAll(".alert-symbol").forEach((span) => {
+                recentSymbols.push(span.textContent);
+            });
 
-                        if (recentSymbols.length >= maxAlerts) {
-                            recentSymbols.shift(); // Remove oldest
-                        }
-                        recentSymbols.push(symbol);
+            if (recentSymbols.length >= maxAlerts) {
+                recentSymbols.shift(); // Remove oldest
+            }
+            recentSymbols.push(symbol);
 
-                        // Recalculate symbol counts based only on "UP" alerts
-                        const tempSymbolCounts = {};
-                        recentSymbols.forEach((sym) => {
-                            tempSymbolCounts[sym] = (tempSymbolCounts[sym] || 0) + 1;
-                        });
+            // Recalculate symbol counts based only on "UP" alerts
+            const tempSymbolCounts = {};
+            recentSymbols.forEach((sym) => {
+                tempSymbolCounts[sym] = (tempSymbolCounts[sym] || 0) + 1;
+            });
 
-                        // Update global symbolCounts
-                        Object.keys(symbolCounts).forEach((sym) => delete symbolCounts[sym]);
-                        Object.assign(symbolCounts, tempSymbolCounts);
+            // Update global symbolCounts
+            Object.keys(symbolCounts).forEach((sym) => delete symbolCounts[sym]);
+            Object.assign(symbolCounts, tempSymbolCounts);
 
-                        updateSymbolSummary();
-                    }
+            updateSymbolSummary();
+        }
 
-                    // Create alert element
-                    const alertDiv = document.createElement("li");
-                    alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
+        // Create alert element with updated field names
+        const alertDiv = document.createElement("li");
+        alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
 
-                    // Symbol with background color
-                    const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)}; 
+        // Symbol with background color
+        const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)}; 
             padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
 
-                    alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data"> <span> ${alertData.change_percent.toFixed(2)}%</span> $${alertData.current_price.toFixed(2)} 
-                    V${alertData.trade_volume
-                    }</span>`;
+        alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data">
+            <span>${alertData.change_percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)} 
+            V${alertData.volume}</span>`;
 
-                    // ✅ Add new alerts at the bottom
-                    logElement.appendChild(alertDiv);
+        // Add new alerts at the bottom
+        logElement.appendChild(alertDiv);
 
-                    // ✅ Remove oldest if exceeding `maxAlerts`
-                    while (logElement.children.length > maxAlerts) {
-                        logElement.removeChild(logElement.firstChild);
-                    }
-                } catch (error) {
-                    console.error("[CLIENT] Error parsing message:", error);
-                }
-            };
+        // Remove oldest if exceeding `maxAlerts`
+        while (logElement.children.length > maxAlerts) {
+            logElement.removeChild(logElement.firstChild);
+        }
+    } catch (error) {
+        console.error("[CLIENT] Error parsing message:", error);
+    }
+};
+
 
             ws.onerror = function (error) {
                 console.error("[CLIENT] WebSocket error:", error);
