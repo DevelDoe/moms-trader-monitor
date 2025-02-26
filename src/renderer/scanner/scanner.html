@@ -50,7 +50,7 @@
         </style>
     </head>
     <body class="draggable">
-        <div id="log"></div>
+        <ul id="log"></ul>
 
         <script>
             const ws = new WebSocket("ws://192.168.1.17:8000/ws");
@@ -74,7 +74,7 @@
                         return;
                     }
 
-                    const alertDiv = document.createElement("div");
+                    const alertDiv = document.createElement("li");
                     alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
 
                     alertDiv.innerHTML = `<strong>${alertData.symbol}</strong> - 
