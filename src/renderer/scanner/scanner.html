@@ -105,8 +105,13 @@
                 sortedSymbols.forEach(([symbol, count]) => {
                     const li = document.createElement("li");
                     li.className = "symbol-item";
-                    li.style.backgroundColor = getSymbolColor(symbol);
-                    li.innerHTML = `<span>${symbol}</span><span>${count}</span>`;
+
+                    // Wrap the symbol in a span with background color
+                    li.innerHTML = `
+        <span style="background-color: ${getSymbolColor(symbol)}; padding: 2px 5px; border-radius: 3px;">${symbol}</span>
+        <span>${count}</span>
+    `;
+
                     symbolListElement.appendChild(li);
                 });
             }
