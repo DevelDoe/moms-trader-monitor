@@ -43,10 +43,10 @@
     }
   },
   "news": {
-    "showTrackedTickers": false,
+    "showTrackedTickers": true,
     "filteredTickers": [
-      "ICCT",
       "VMAR",
+      "ICCT",
       "CPOP",
       "NIXX",
       "SAG",
