@@ -241,6 +241,8 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                     console.log("setting active ticker:", ticker.Symbol)
                     window.activeAPI.setActiveTicker(ticker.Symbol);
                 });
+            } else if (key === "count") {
+                cell.textContent = ticker[key];
             } else if (key === "Score") {
                 const ScoreBreakdown = getScoreBreakdown(ticker);
                 cell.textContent = ticker[key];
