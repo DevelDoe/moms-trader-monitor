@@ -168,7 +168,7 @@
 
             function playFlash() {
                 const now = Date.now();
-                if (now - lastJingleTime < 1000) {
+                if (now - lastJFlashTime < 1000) {
                     console.log("Jingle call debounced.");
                     return;
                 }
