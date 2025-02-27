@@ -45,7 +45,6 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "TRNR",
       "XNET",
       "NIXX",
       "AMST",
