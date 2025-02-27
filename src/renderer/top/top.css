@@ -145,7 +145,7 @@ tr:nth-child(even) {
     padding: 2px 5px;
     border-radius: 3px;
     margin-right: 3px;
-    font-size: 14px;
+    font-size: 12px;
     cursor: help; /* 🖱️ Shows tooltip cursor */
 }
 
