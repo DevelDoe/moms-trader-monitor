@@ -116,8 +116,9 @@
                     const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
                     if (!uniqueNews.has(key)) {
                         uniqueNews.set(key, newsItem);
+                        playFlash();
                     }
-                    playFlash();
+                    
                 });
 
                 let sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
