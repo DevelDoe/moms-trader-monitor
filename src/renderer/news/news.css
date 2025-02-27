@@ -46,6 +46,7 @@ li.bullish-news {
 li.bearish-news {
     background-color: #f44336 !important; /* Red */
     font-weight: bold !important;
+    color: white
 }
 
 ul {
