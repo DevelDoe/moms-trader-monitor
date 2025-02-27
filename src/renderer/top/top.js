@@ -241,7 +241,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                     console.log("setting active ticker:", ticker.Symbol)
                     window.activeAPI.setActiveTicker(ticker.Symbol);
                 });
-            } else if (key === "count") {
+            } else if (key === "Count") {
                 cell.textContent = ticker[key];
                 cell.title = "Counting the number of times the application has come across this ticker";
             } else if (key === "Score") {
