@@ -170,12 +170,12 @@
                     symbolCount[symbol] = (symbolCount[symbol] || 0) + 1;
                 });
 
-                const entries = Array.from(logElement.querySelectorAll(".alert-symbol"))
-    .map(span => span.textContent.trim())
-    .filter(symbol => symbolPercents[symbol] !== undefined)
-    .map(symbol => [symbol, symbolPercents[symbol]])
-    .slice(-MAX_SYMBOLS); // Get last MAX_SYMBOLS
-
+                const entries = [];
+                for (const symbol in symbolCount) {
+                    if (symbolCount[symbol] > 1 && symbolPercents[symbol] !== undefined) {
+                        entries.push([symbol, symbolPercents[symbol]]);
+                    }
+                }
 
                 const sortedSymbols = entries
                     .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)) // Sort by absolute value
