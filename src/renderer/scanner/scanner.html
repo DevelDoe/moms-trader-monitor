@@ -208,7 +208,7 @@
                         }
 
                         // Filter out alerts with price below $2.
-                        if (alertData.price < 2) {
+                        if (alertData.price < 1.75) {
                             console.log(`[CLIENT] Alert with price $${alertData.price.toFixed(2)} filtered out.`);
                             return;
                         }
