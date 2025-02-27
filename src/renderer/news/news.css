@@ -15,11 +15,10 @@ body {
 .menu--collapsed {
     height: 50px;
 }
-body {
-    /* transition: height 0.3s ease; */
+/* body {
     overflow: hidden;
-    height: 50px; /* Default height */
-}
+    height: 50px; 
+} */
 
 body:hover {
     height: 100vw; /* Expanded height on hover */
