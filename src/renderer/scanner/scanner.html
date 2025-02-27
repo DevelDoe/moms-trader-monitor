@@ -123,12 +123,6 @@
             }
 
             function play() {
-                const now = Date.now();
-                if (now - lastJFlashTime < 1000) {
-                    console.log("Jingle call debounced.");
-                    return;
-                }
-                lastJFlashTime = now;
 
                 // Create a new AudioContext
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
