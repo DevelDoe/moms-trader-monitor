@@ -45,7 +45,6 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "XNET",
       "NIXX",
       "SAG",
       "MULN",
