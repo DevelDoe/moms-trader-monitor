@@ -153,7 +153,11 @@
                             link.classList.add("bearish-news");
                         }
 
-                        row.innerHTML = `<td class='draggable'>${article.symbols}</td>`;
+                        row.innerHTML = `
+                <td class='draggable'>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
+                <td class="no-drag"></td> 
+                <td>${article.created_at ? new Date(article.created_at).toLocaleString() : "N/A"}</td>
+            `;
 
             // row.innerHTML = `
             //     <td class='draggable'>${article.symbols ? article.symbols.join(", ") : "N/A"}</td>
