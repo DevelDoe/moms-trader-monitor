@@ -54,9 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // ✅ Re-apply filters & update UI
         await applySavedFilters();
         await fetchAndUpdateTickers();
-
     });
-
 });
 
 async function fetchAndUpdateTickers() {
@@ -203,10 +201,12 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     const listType = tableId.includes("session") ? "session" : "daily";
     const enabledColumns = window.settings.top.lists?.[listType] || {};
 
-    const allColumns =
-        tableId === "tickers-all"
-            ? [...new Set(tickers.flatMap((t) => Object.keys(t)))].filter((key) => key !== "Bonuses" && key !== "Time")
-            : [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
+    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
+
+            // const allColumns =
+    //     tableId === "tickers-all"
+    //         ? [...new Set(tickers.flatMap((t) => Object.keys(t)))].filter((key) => key !== "Bonuses" && key !== "Time")
+    //         : [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
 
     // ✅ Generate the header dynamically
     // tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
@@ -229,7 +229,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
         allColumns.forEach((key) => {
             const cell = document.createElement("td");
-            cell.className = "no-drag"
+            cell.className = "no-drag";
 
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
@@ -239,7 +239,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
-                    console.log("setting active ticker:", ticker.Symbol)
+                    console.log("setting active ticker:", ticker.Symbol);
                     window.activeAPI.setActiveTicker(ticker.Symbol);
                 });
             } else if (key === "Count") {
