@@ -144,7 +144,7 @@
                         link.textContent = headline.length > 100 ? headline.substring(0, 100) + "..." : headline;
                         link.target = "_blank";
                         link.rel = "noopener noreferrer";
-                        link.title = `Published: ${new Date(article.created_at).toLocaleString()}`;
+                        link.title = `Published: ${headline}`;
 
                         if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
                             link.classList.add("bullish-news");
