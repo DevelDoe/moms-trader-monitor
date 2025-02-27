@@ -149,7 +149,7 @@
                 sortedSymbols.forEach(([symbol, percent]) => {
                     // Determine the number of filled segments (capped at 10).
                     const filledSegments = Math.min(10, Math.round(Math.abs(percent)));
-                    let segmentsHtml = "";
+
                     for (let i = 0; i < 10; i++) {
                         segmentsHtml += i < filledSegments ? '<span class="segment filled"></span>' : '<span class="segment"></span>';
                     }
