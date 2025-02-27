@@ -89,13 +89,22 @@
                 background-color: #555;
                 margin-right: 1px;
             }
-            .segment.filled.up {
-                background-color: #28a745; /* Green for up */
-            }
+            .segment {
+    display: inline-block;
+    width: 8px;
+    height: 10px;
+    background-color: #555; /* Neutral */
+    margin-right: 1px;
+}
 
-            .segment.filled.down {
-                background-color: #dc3545; /* Red for down */
-            }
+.segment.filled.up {
+    background-color: #28a745; /* Green for positive change */
+}
+
+.segment.filled.down {
+    background-color: #dc3545; /* Red for negative change */
+}
+
         </style>
     </head>
     <body class="draggable">
