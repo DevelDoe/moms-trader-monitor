@@ -161,15 +161,15 @@
                 gainNode.gain.setValueAtTime(1, startTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + beepDuration);
             }
+           
+            
             function updateSymbolSummary() {
-    // Count occurrences of each symbol in the log.
     const symbolCount = {};
     logElement.querySelectorAll(".alert-symbol").forEach((span) => {
         const symbol = span.textContent.trim();
         symbolCount[symbol] = (symbolCount[symbol] || 0) + 1;
     });
 
-    // Build an array of entries for symbols that appear more than once.
     const entries = [];
     for (const symbol in symbolCount) {
         if (symbolCount[symbol] > 1 && symbolPercents[symbol] !== undefined) {
@@ -177,34 +177,30 @@
         }
     }
 
-    // Sort entries by percentage change, descending.
     const sortedSymbols = entries.sort(([, a], [, b]) => b - a);
-
-    // Clear the current summary list.
     symbolListElement.innerHTML = "";
 
     sortedSymbols.forEach(([symbol, percent]) => {
-        const totalSegments = 10; // Total segments (5 left, 5 right)
+        const totalSegments = 10;
         const midPoint = Math.floor(totalSegments / 2);
         let segmentsHtml = "";
 
-        // Normalize percent value to fit into the 5 available slots
+        // Normalize to 5 max segments left/right
         const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2));
 
         for (let i = 0; i < totalSegments; i++) {
             if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
-                // Positive: Fill to the right (green)
+                // Positive (Right Side - Green)
                 segmentsHtml += '<span class="segment filled up"></span>';
             } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
-                // Negative: Fill to the left (red)
+                // Negative (Left Side - Red)
                 segmentsHtml += '<span class="segment filled down"></span>';
             } else {
-                // Neutral: Empty slot
+                // Neutral / Empty
                 segmentsHtml += '<span class="segment"></span>';
             }
         }
 
-        // Create a clickable symbol element.
         const symbolSpan = document.createElement("span");
         symbolSpan.textContent = symbol;
         symbolSpan.style.backgroundColor = getSymbolColor(symbol);
@@ -218,16 +214,13 @@
                 .catch((err) => console.error("Copy failed:", err));
         });
 
-        // Build the progress bar container.
         const progressBar = document.createElement("span");
         progressBar.className = "progress-bar";
         progressBar.innerHTML = segmentsHtml;
 
-        // Create the percentage span.
         const percentSpan = document.createElement("span");
         percentSpan.textContent = `${percent.toFixed(2)}%`;
 
-        // Create list item and append all elements.
         const li = document.createElement("li");
         li.className = "symbol-item";
         li.appendChild(symbolSpan);
@@ -236,6 +229,7 @@
         symbolListElement.appendChild(li);
     });
 }
+
 
             // Function to create and manage the WebSocket connection.
             function connect() {
