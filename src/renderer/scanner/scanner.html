@@ -162,7 +162,9 @@
             }
 
             function updateSymbolSummary() {
+                const MAX_SYMBOLS = 5; // Set the maximum number of symbols to display
                 const symbolCount = {};
+
                 logElement.querySelectorAll(".alert-symbol").forEach((span) => {
                     const symbol = span.textContent.trim();
                     symbolCount[symbol] = (symbolCount[symbol] || 0) + 1;
@@ -175,7 +177,10 @@
                     }
                 }
 
-                const sortedSymbols = entries.sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)); // Sort by absolute value
+                const sortedSymbols = entries
+                    .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)) // Sort by absolute value
+                    .slice(0, MAX_SYMBOLS); // Limit the number of symbols
+
                 symbolListElement.innerHTML = "";
 
                 sortedSymbols.forEach(([symbol, percent]) => {
@@ -188,14 +193,11 @@
 
                     for (let i = 0; i < totalSegments; i++) {
                         if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
-                            // Positive (Right Side - Green)
-                            segmentsHtml += '<span class="segment filled up"></span>';
+                            segmentsHtml += '<span class="segment filled up"></span>'; // Positive (Right Side - Green)
                         } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
-                            // Negative (Left Side - Red)
-                            segmentsHtml += '<span class="segment filled down"></span>';
+                            segmentsHtml += '<span class="segment filled down"></span>'; // Negative (Left Side - Red)
                         } else {
-                            // Neutral / Empty
-                            segmentsHtml += '<span class="segment"></span>';
+                            segmentsHtml += '<span class="segment"></span>'; // Neutral / Empty
                         }
                     }
 
