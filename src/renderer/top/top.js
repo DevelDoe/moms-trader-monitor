@@ -229,6 +229,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
 
         allColumns.forEach((key) => {
             const cell = document.createElement("td");
+            cell.className = "no-drag"
 
             if (key === "Symbol") {
                 cell.textContent = ticker[key];
