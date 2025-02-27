@@ -6,8 +6,6 @@ require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 
-const fs = require("fs-extra");
-
 const CACHE_DIR = path.join(app.getPath("userData"), "data"); // Store cache in user data
 const CACHE_FILE = path.join(CACHE_DIR, "alpha_data.json");
 
