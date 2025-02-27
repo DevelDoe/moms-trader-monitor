@@ -41,7 +41,7 @@
     }
   },
   "news": {
-    "showTrackedTickers": true,
+    "showTrackedTickers": false,
     "filteredTickers": [
       "TRNR",
       "XNET",
