@@ -88,106 +88,99 @@
             }
 
             function updateNewsTable() {
-    console.log("📢 Updating news table...");
+                console.log("📢 Updating news table...");
 
-    const showOnlyTracked = window.settings.news.showTrackedTickers ?? false;
-    const allowMultiSymbols = window.settings.news.allowMultiSymbols ?? true;
-    const tableBody = document.querySelector("#news-table tbody");
-    tableBody.innerHTML = "";
+                const showOnlyTracked = window.settings.news.showTrackedTickers ?? false;
+                const allowMultiSymbols = window.settings.news.allowMultiSymbols ?? true;
+                const tableBody = document.querySelector("#news-table tbody");
+                tableBody.innerHTML = "";
 
-    const blockList = window.settings.news?.blockList || [];
-    const bullishList = window.settings.news?.bullishList || [];
-    const bearishList = window.settings.news?.bearishList || [];
+                const blockList = window.settings.news?.blockList || [];
+                const bullishList = window.settings.news?.bullishList || [];
+                const bearishList = window.settings.news?.bearishList || [];
 
-    let filteredNews = allNews;
+                let filteredNews = allNews;
 
-    if (showOnlyTracked) {
-        filteredNews = filteredNews.filter((newsItem) =>
-            newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()))
-        );
-    }
+                if (showOnlyTracked) {
+                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase())));
+                }
 
-    if (!allowMultiSymbols) {
-        filteredNews = filteredNews.filter((newsItem) => newsItem.symbols.length <= 1);
-    }
+                if (!allowMultiSymbols) {
+                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols.length <= 1);
+                }
 
-    console.log("📊 Filtered News:", filteredNews);
+                console.log("📊 Filtered News:", filteredNews);
 
-    if (filteredNews.length === 0) {
-        tableBody.innerHTML =
-            "<tr><td colspan='4' class='info draggable'>No news available.</td></tr>";
-        return;
-    }
+                if (filteredNews.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='4' class='info draggable'>No news available.</td></tr>";
+                    return;
+                }
 
-    const uniqueNews = new Map();
-    filteredNews.forEach((newsItem) => {
-        const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
-        if (!uniqueNews.has(key)) {
-            uniqueNews.set(key, newsItem);
-        }
-    });
+                const uniqueNews = new Map();
+                filteredNews.forEach((newsItem) => {
+                    const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
+                    if (!uniqueNews.has(key)) {
+                        uniqueNews.set(key, newsItem);
+                    }
+                });
 
-    let sortedNews = Array.from(uniqueNews.values()).sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
-    );
+                let sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    console.log("📊 Sorted News Ready for Table:", sortedNews);
+                console.log("📊 Sorted News Ready for Table:", sortedNews);
 
-    const now = new Date();
+                const now = new Date();
 
-    sortedNews.forEach((article) => {
-        const headline = decodeHTMLEntities(article.headline || "");
-        const articleURL = article.url || "#";
+                sortedNews.forEach((article) => {
+                    const headline = decodeHTMLEntities(article.headline || "");
+                    const articleURL = article.url || "#";
 
-        const isBlocked = blockList.some((blockedWord) =>
-            headline.toLowerCase().includes(blockedWord.toLowerCase())
-        );
+                    const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
-        if (!isBlocked) {
-            // Create a new table row
-            const row = document.createElement("tr");
+                    if (!isBlocked) {
+                        // Create a new table row
+                        const row = document.createElement("tr");
 
-            // Create a single cell that shows only the symbol
-            const symbolCell = document.createElement("td");
-            symbolCell.className = "draggable";
-            const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
-            symbolCell.textContent = symbolText;
+                        // Create a single cell that shows only the symbol
+                        const symbolCell = document.createElement("td");
+                        symbolCell.className = "draggable";
+                        const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
+                        symbolCell.textContent = symbolText;
 
-            // Set the tooltip to display the headline
-            symbolCell.title = `Headline: ${headline}`;
+                        // Set the tooltip to display the headline
+                        symbolCell.title = `Headline: ${headline}`;
 
-            // Optionally, add bullish or bearish styling based on the headline
-            if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
-                symbolCell.classList.add("bullish-news");
+                        // Optionally, add bullish or bearish styling based on the headline
+                        if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
+                            symbolCell.classList.add("bullish-news");
+                        }
+                        if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
+                            symbolCell.classList.add("bearish-news");
+                        }
+
+                        row.appendChild(symbolCell);
+
+                        // Optionally, if you want the cell to be clickable to go to the article, you can wrap the symbol in an anchor element.
+                        // For example:
+                        // const link = document.createElement("a");
+                        // link.href = articleURL;
+                        // link.textContent = symbolText;
+                        // link.target = "_blank";
+                        // link.rel = "noopener noreferrer";
+                        // link.title = `Headline: ${headline}`;
+                        // symbolCell.innerHTML = "";
+                        // symbolCell.appendChild(link);
+
+                        const newsAge = (now - new Date(article.created_at)) / 1000;
+                        if (newsAge >= 300) {
+                            row.classList.add("fade-out");
+                        }
+
+                        tableBody.appendChild(row);
+                    }
+                });
+
+                console.log("✅ News table updated!");
             }
-            if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
-                symbolCell.classList.add("bearish-news");
-            }
-
-            row.appendChild(symbolCell);
-
-            // Optionally, if you want the cell to be clickable to go to the article, you can wrap the symbol in an anchor element.
-            // For example:
-            // const link = document.createElement("a");
-            // link.href = articleURL;
-            // link.textContent = symbolText;
-            // link.target = "_blank";
-            // link.rel = "noopener noreferrer";
-            // link.title = `Headline: ${headline}`;
-            // symbolCell.innerHTML = "";
-            // symbolCell.appendChild(link);
-
-            const newsAge = (now - new Date(article.created_at)) / 1000;
-            if (newsAge >= 300) {
-                row.classList.add("fade-out");
-            }
-
-            tableBody.appendChild(row);
-        }
-    });
-
-    console.log("✅ News table updated!");
-}
 
             /**
              * ✅ Helper Function: Decodes HTML Entities (Fixes &amp; issue)
