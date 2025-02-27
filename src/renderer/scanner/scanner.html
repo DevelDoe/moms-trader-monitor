@@ -176,17 +176,28 @@
                 symbolListElement.innerHTML = "";
 
                 sortedSymbols.forEach(([symbol, percent]) => {
-                    const totalSegments = 10;
+                    const totalSegments = 10; // Total segments (5 left, 5 right)
                     const midPoint = Math.floor(totalSegments / 2);
                     let segmentsHtml = "";
 
                     for (let i = 0; i < totalSegments; i++) {
-                        if (percent > 0 && i >= midPoint && i < midPoint + Math.round(percent / 2)) {
-                            segmentsHtml += '<span class="segment filled up"></span>'; // Right side (green for up)
-                        } else if (percent < 0 && i < midPoint && i >= midPoint - Math.round(Math.abs(percent) / 2)) {
-                            segmentsHtml += '<span class="segment filled down"></span>'; // Left side (red for down)
+                        if (percent > 0 && i >= midPoint) {
+                            // Right side (green for up)
+                            if (i < midPoint + Math.round(percent / 2)) {
+                                segmentsHtml += '<span class="segment filled up"></span>';
+                            } else {
+                                segmentsHtml += '<span class="segment"></span>';
+                            }
+                        } else if (percent < 0 && i < midPoint) {
+                            // Left side (red for down)
+                            if (i >= midPoint - Math.round(Math.abs(percent) / 2)) {
+                                segmentsHtml += '<span class="segment filled down"></span>';
+                            } else {
+                                segmentsHtml += '<span class="segment"></span>';
+                            }
                         } else {
-                            segmentsHtml += '<span class="segment"></span>'; // Neutral (gray)
+                            // Empty segment for neutral (gray)
+                            segmentsHtml += '<span class="segment"></span>';
                         }
                     }
 
@@ -220,8 +231,8 @@
                     li.appendChild(progressBar);
                     li.appendChild(percentSpan);
                     symbolListElement.appendChild(li);
+                    play();
                 });
-                play();
             }
 
             // Function to create and manage the WebSocket connection.
