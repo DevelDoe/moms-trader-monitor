@@ -18,7 +18,8 @@ ul {
 li {
     border-radius: 5px;
     background-color: #f44336;
-    width: 100%;
+    width: 40px;
+    text-align: center;
 }
 
 a {
