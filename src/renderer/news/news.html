@@ -144,7 +144,7 @@
           if (!isBlocked) {
             // Create a list item for the symbol.
             const li = document.createElement("li");
-            li.className = "draggable";
+            li.className = "no-drag";
 
             const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
             li.textContent = symbolText;
