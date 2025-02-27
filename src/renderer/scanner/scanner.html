@@ -189,18 +189,18 @@
         const midPoint = Math.floor(totalSegments / 2);
         let segmentsHtml = "";
 
-        // Normalize the percent value for display purposes
-        const normalizedPercent = Math.min(5, Math.round(Math.abs(percent) / 2));
+        // Normalize percent value to fit into the 5 available slots
+        const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2));
 
         for (let i = 0; i < totalSegments; i++) {
-            if (percent > 0 && i >= midPoint && i < midPoint + normalizedPercent) {
-                // Right side (green for up)
+            if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
+                // Positive: Fill to the right (green)
                 segmentsHtml += '<span class="segment filled up"></span>';
-            } else if (percent < 0 && i < midPoint && i >= midPoint - normalizedPercent) {
-                // Left side (red for down)
+            } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
+                // Negative: Fill to the left (red)
                 segmentsHtml += '<span class="segment filled down"></span>';
             } else {
-                // Neutral (gray)
+                // Neutral: Empty slot
                 segmentsHtml += '<span class="segment"></span>';
             }
         }
