@@ -33,9 +33,6 @@
         "nodemon": "^3.0.0"
     },
     "build": {
-        "asarUnpack": [
-            "data/**"
-        ],
         "appId": "com.moms.traders.monitor",
         "productName": "Moms Traders Monitor",
         "directories": {
