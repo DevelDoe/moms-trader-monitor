@@ -29,16 +29,7 @@ table {
     color: #e0e0e0; /* Light text for readability */
 }
 
-/* Style even rows */
-td:nth-child(even) {
-    background-color: rgba(28, 29, 35, 1);
-  }
-  
-  /* Style odd rows */
-  td:nth-child(odd) {
-    background-color: rgba(28, 29, 35, 0.1);
-  }
-  
+
 th,
 td {
     padding: 0px 0px 0px 4px;
