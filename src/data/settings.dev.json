@@ -25,7 +25,7 @@
         "Bonuses": true
       },
       "daily": {
-        "Price": true,
+        "Price": false,
         "ChangePercent": true,
         "FiveM": false,
         "Float": false,
