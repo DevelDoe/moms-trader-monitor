@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 2.05,
+    "minPrice": 1.95,
     "maxPrice": 5,
     "minFloat": 0,
     "maxFloat": 200000000,
