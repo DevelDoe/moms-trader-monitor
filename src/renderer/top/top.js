@@ -234,7 +234,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
                 cell.className = "symbol no-drag";
-                cell.title = "A ticker symbol is a short, unique identifier for a publicly traded company (e.g., AAPL for Apple Inc.).";
+                cell.title = "A ticker symbol is a short, unique identifier for a publicly traded company.";
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
