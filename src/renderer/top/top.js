@@ -243,6 +243,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 });
             } else if (key === "count") {
                 cell.textContent = ticker[key];
+                cell.title = "Counting the number of times the application has come across this ticker";
             } else if (key === "Score") {
                 const ScoreBreakdown = getScoreBreakdown(ticker);
                 cell.textContent = ticker[key];
