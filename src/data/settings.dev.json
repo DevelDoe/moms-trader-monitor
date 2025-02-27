@@ -46,6 +46,7 @@
     "showTrackedTickers": false,
     "filteredTickers": [
       "ENVB",
+      "ICCT",
       "NIXX"
     ],
     "blockList": [
