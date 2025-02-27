@@ -5,6 +5,7 @@ const async = require("async");
 require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
+const { app } = require("electron");
 
 // Determine the cache directory
 const CACHE_DIR = app ? path.join(app.getPath("userData"), "data") : path.join(__dirname, "../../data");
