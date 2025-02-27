@@ -245,6 +245,9 @@ function updateTickersTable(tickers, tableId, prevTickers) {
             } else if (key === "Count") {
                 cell.textContent = ticker[key];
                 cell.title = "Counting the number of times the application has come across this ticker";
+            } else if (key === "ChangePercent") {
+                cell.textContent = ticker[key];
+                cell.title = "The change in % from yesterdays close";
             } else if (key === "Score") {
                 const ScoreBreakdown = getScoreBreakdown(ticker);
                 cell.textContent = ticker[key];
