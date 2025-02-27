@@ -209,7 +209,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
             : [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
 
     // ✅ Generate the header dynamically
-    tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
+    // tableHead.innerHTML = "<tr>" + allColumns.map((col) => `<th>${col}</th>`).join("") + "</tr>";
 
     // ✅ Populate table rows
     tickers.forEach((ticker) => {
