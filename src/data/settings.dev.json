@@ -46,6 +46,7 @@
     "showTrackedTickers": false,
     "filteredTickers": [
       "ICCT",
+      "VMAR",
       "CPOP",
       "NIXX",
       "SAG",
