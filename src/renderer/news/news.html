@@ -96,8 +96,7 @@
                 let filteredNews = allNews;
 
                 if (showOnlyTracked) {
-                    // Use every() if you want all symbols in the news to be tracked
-                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.every((symbol) => trackedTickers.has(symbol.toUpperCase())));
+                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase())));
                 }
 
                 if (!allowMultiSymbols) {
@@ -117,42 +116,52 @@
                     const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
                     if (!uniqueNews.has(key)) {
                         uniqueNews.set(key, newsItem);
+                        playFlash();
                     }
                 });
 
-                const sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                let sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                console.log("📊 Sorted News Ready for List:", sortedNews);
 
                 const now = new Date();
-                let isJinglePlayed = false;
 
-                sortedNews.forEach((article, index) => {
+                sortedNews.forEach((article) => {
                     const headline = decodeHTMLEntities(article.headline || "");
-                    const li = document.createElement("li");
-                    li.className = "no-drag";
+                    const articleURL = article.url || "#";
 
-                    const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
-                    li.textContent = symbolText;
-                    li.title = `Headline: ${headline}`;
+                    const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
 
-                    if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
-                        li.classList.add("bullish-news");
-                    }
-                    if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
-                        li.classList.add("bearish-news");
-                    }
+                    if (!isBlocked) {
+                        // Create a list item for the symbol.
+                        const li = document.createElement("li");
+                        li.className = "no-drag";
 
-                    const newsAge = (now - new Date(article.created_at)) / 1000;
-                    if (newsAge >= 300) {
-                        li.classList.add("fade-out");
-                    }
+                        const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
+                        li.textContent = symbolText;
 
-                    listContainer.appendChild(li);
+                        // Set the tooltip to display the full headline.
+                        li.title = `Headline: ${headline}`;
 
-                    // Play the jingle only for the first news item being displayed.
-                    // You can further refine this condition if you want to check viewport visibility.
-                    if (!isJinglePlayed && index === 0) {
-                        playFlash();
-                        isJinglePlayed = true;
+                        // Optionally add bullish or bearish styling based on headline content.
+                        if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
+                            li.classList.add("bullish-news");
+                        }
+                        if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
+                            li.classList.add("bearish-news");
+                        }
+
+                        // Optionally mark older news (e.g., older than 5 minutes).
+                        const newsAge = (now - new Date(article.created_at)) / 1000;
+                        if (newsAge >= 300) {
+                            li.classList.add("fade-out");
+                        }
+
+                        listContainer.appendChild(li);
+                        // Play the flash jingle only for the first appended (displayed) item.
+                        if (index === 0) {
+                            playFlash();
+                        }
                     }
                 });
 
