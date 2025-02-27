@@ -23,7 +23,7 @@ setInterval(() => {
   const minute = now.getMinutes();
 
   // If it's the 25th or 55th minute and we haven't triggered it yet
-  if ((minute === 25 || minute === 55) && !sessionClearTriggered) {
+  if ((minute === 33 || minute === 55) && !sessionClearTriggered) {
     clearSessionList();
     sessionClearTriggered = true;
   } 
