@@ -5,6 +5,7 @@ body {
 
 #news-wrapper {
     background-color: rgba(28, 29, 35, 0.5); /* 50% opacity */
+    background-color: white;
 }
 
 ul {
