@@ -1,7 +1,7 @@
 {
   "top": {
     "transparent": false,
-    "minPrice": 1.8,
+    "minPrice": 1.95,
     "maxPrice": 5,
     "minFloat": 0,
     "maxFloat": 200000000,
@@ -43,13 +43,9 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "TRNR",
-      "ICCT",
       "NIXX",
       "XNET",
-      "ACET",
-      "SAG",
-      "MBRX"
+      "SAG"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
