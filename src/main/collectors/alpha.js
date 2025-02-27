@@ -6,10 +6,12 @@ require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 
-const CACHE_FILE = path.join(__dirname, "../../data/alpha_data.json");
+const fs = require("fs-extra");
 
-// ✅ Ensure cache directory exists
-fs.ensureDirSync(path.dirname(CACHE_FILE));
+const CACHE_DIR = path.join(app.getPath("userData"), "data"); // Store cache in user data
+const CACHE_FILE = path.join(CACHE_DIR, "alpha_data.json");
+
+fs.ensureDirSync(CACHE_DIR); // Ensure data folder exists
 
 // ✅ Load cache if it exists
 let cache = {};
@@ -17,10 +19,11 @@ if (fs.existsSync(CACHE_FILE)) {
     try {
         cache = fs.readJsonSync(CACHE_FILE);
     } catch (error) {
-        log.error("Error reading Alpha Vantage cache:", error);
+        console.error("Error reading Alpha Vantage cache:", error);
         cache = {}; // Reset cache if corrupted
     }
 }
+
 
 // ✅ Extract and validate API keys
 const API_KEYS = (() => {
