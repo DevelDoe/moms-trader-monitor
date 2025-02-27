@@ -163,72 +163,56 @@
             }
            
             
-            function updateSymbolSummary() {
-    const symbolCount = {};
-    logElement.querySelectorAll(".alert-symbol").forEach((span) => {
-        const symbol = span.textContent.trim();
-        symbolCount[symbol] = (symbolCount[symbol] || 0) + 1;
-    });
-
-    const entries = [];
-    for (const symbol in symbolCount) {
-        if (symbolCount[symbol] > 1 && symbolPercents[symbol] !== undefined) {
-            entries.push([symbol, symbolPercents[symbol]]);
+            ws.onmessage = function (event) {
+    console.log("[CLIENT] Received:", event.data);
+    try {
+        const alertData = JSON.parse(event.data);
+        // Validate the incoming data.
+        if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.price === undefined || alertData.volume === undefined) {
+            console.warn("[CLIENT] Received malformed alert:", alertData);
+            return;
         }
+
+        // Filter out alerts with price below $2.
+        if (alertData.price < 1.75) {
+            console.log(`[CLIENT] Alert with price $${alertData.price.toFixed(2)} filtered out.`);
+            return;
+        }
+
+        const symbol = alertData.symbol;
+
+        // Apply the negative sign if direction is "DOWN".
+        const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
+
+        // Update the symbol's latest percentage.
+        symbolPercents[symbol] = percent;
+
+        // Create the alert element.
+        const alertDiv = document.createElement("li");
+        alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
+
+        // Create the symbol element with its background color.
+        const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)}; 
+              padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
+
+        alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data">
+              <span>${percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)}
+              V${alertData.volume}</span>`;
+
+        // Append the new alert.
+        logElement.appendChild(alertDiv);
+
+        // Remove oldest alerts if exceeding maxAlerts.
+        while (logElement.children.length > maxAlerts) {
+            logElement.removeChild(logElement.firstChild);
+        }
+
+        // Update the symbol summary.
+        updateSymbolSummary();
+    } catch (error) {
+        console.error("[CLIENT] Error parsing message:", error);
     }
-
-    const sortedSymbols = entries.sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)); // Sort by absolute value
-    symbolListElement.innerHTML = "";
-
-    sortedSymbols.forEach(([symbol, percent]) => {
-        const totalSegments = 10;
-        const midPoint = Math.floor(totalSegments / 2);
-        let segmentsHtml = "";
-
-        // Normalize to 5 max segments left/right
-        const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2));
-
-        for (let i = 0; i < totalSegments; i++) {
-            if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
-                // Positive (Right Side - Green)
-                segmentsHtml += '<span class="segment filled up"></span>';
-            } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
-                // Negative (Left Side - Red)
-                segmentsHtml += '<span class="segment filled down"></span>';
-            } else {
-                // Neutral / Empty
-                segmentsHtml += '<span class="segment"></span>';
-            }
-        }
-
-        const symbolSpan = document.createElement("span");
-        symbolSpan.textContent = symbol;
-        symbolSpan.style.backgroundColor = getSymbolColor(symbol);
-        symbolSpan.style.padding = "2px 5px";
-        symbolSpan.style.borderRadius = "3px";
-        symbolSpan.style.cursor = "pointer";
-        symbolSpan.addEventListener("click", () => {
-            navigator.clipboard
-                .writeText(symbol)
-                .then(() => console.log(`Copied ${symbol} to clipboard`))
-                .catch((err) => console.error("Copy failed:", err));
-        });
-
-        const progressBar = document.createElement("span");
-        progressBar.className = "progress-bar";
-        progressBar.innerHTML = segmentsHtml;
-
-        const percentSpan = document.createElement("span");
-        percentSpan.textContent = `${percent.toFixed(2)}%`;
-
-        const li = document.createElement("li");
-        li.className = "symbol-item";
-        li.appendChild(symbolSpan);
-        li.appendChild(progressBar);
-        li.appendChild(percentSpan);
-        symbolListElement.appendChild(li);
-    });
-}
+};
 
 
             // Function to create and manage the WebSocket connection.
