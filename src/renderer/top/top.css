@@ -141,7 +141,7 @@ tr:nth-child(even) {
 
 /* ✅ BONUS STYLES */
 .bonus {
-    font-weight: bold;
+    /* font-weight: bold; */
     padding: 2px 5px;
     border-radius: 3px;
     margin-right: 3px;
