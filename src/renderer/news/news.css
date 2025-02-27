@@ -48,3 +48,16 @@ li.bearish-news {
     background-color: #f44336 !important; /* Red */
     font-weight: bold !important;
 }
+
+ul {
+    width: 300px; /* Adjust as needed */
+    height: 200px; /* Set the height */
+    overflow-y: scroll; /* Enable vertical scrolling */
+    scrollbar-width: none; /* Firefox: Hide scrollbar */
+    -ms-overflow-style: none; /* IE/Edge: Hide scrollbar */
+}
+
+/* Hide scrollbar in WebKit browsers (Chrome, Safari) */
+ul::-webkit-scrollbar {
+    display: none;
+}
