@@ -92,7 +92,7 @@
             }
             .segment {
                 display: inline-block;
-                width: 8px;
+                width: 4px;
                 height: 10px;
                 background-color: #555; /* Neutral */
                 margin-right: 1px;
@@ -185,7 +185,7 @@
                 symbolListElement.innerHTML = "";
 
                 sortedSymbols.forEach(([symbol, percent]) => {
-                    const totalSegments = 10;
+                    const totalSegments = 20;
                     const midPoint = Math.floor(totalSegments / 2);
                     let segmentsHtml = "";
 
