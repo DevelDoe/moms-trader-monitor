@@ -10,6 +10,10 @@ body {
     transition: height 200ms ease;
 }
 
+ul {
+    list-style-type: none;
+}
+
 a {
     color: #66b3ff; /* Soft blue for links */
     text-decoration: none;
