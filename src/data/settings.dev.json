@@ -2,7 +2,7 @@
   "top": {
     "transparent": false,
     "minPrice": 1,
-    "maxPrice": 20,
+    "maxPrice": 6,
     "minFloat": 0,
     "maxFloat": 200000000,
     "minScore": 1,
@@ -45,9 +45,14 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
+      "TRNR",
       "ENVB",
+      "ICCT",
+      "VMAR",
       "NIXX",
       "SAG",
+      "MBRX",
+      "CPOP",
       "XNET"
     ],
     "blockList": [
