@@ -24,6 +24,9 @@ thead {
     color: darkgoldenrod;
     text-transform: lowercase;
 }
+tr {
+    height: 10px;
+}
 th,
 td {
     padding: 0px 10px 0px 0px;
