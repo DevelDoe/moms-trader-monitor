@@ -207,6 +207,12 @@
                             return;
                         }
 
+                        // Filter out alerts with price below $2.
+                        if (alertData.price < 2) {
+                            console.log(`[CLIENT] Alert with price $${alertData.price.toFixed(2)} filtered out.`);
+                            return;
+                        }
+
                         const symbol = alertData.symbol;
                         // Update the symbol's latest percentage.
                         symbolPercents[symbol] = alertData.change_percent;
