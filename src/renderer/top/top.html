@@ -25,11 +25,6 @@
                 </table>
             </div>
         </section>
-
-        
-
-
-        
         <script>
             document.addEventListener("DOMContentLoaded", async () => {
                 // Fetch and store settings globally
@@ -49,38 +44,6 @@
                     document.body.style.backgroundColor = isTransparent ? "transparent" : "#1c1d23";
                     console.log(`🎨 Updated background color: ${isTransparent ? "Transparent" : "#1c1d23"}`);
                 }
-            });
-        </script>
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                const toggleButton = document.getElementById("toggle-all-tickers");
-                const tickersWrapper = document.getElementById("tickers-wrapper");
-                const tickersAllSection = document.getElementById("tickers-all");
-                let isExpanded = false;
-
-                // ✅ Default icon
-                // toggleButton.innerHTML = "🔽"; // Down icon
-
-                toggleButton.addEventListener("click", () => {
-                    // Toggle the isExpanded state
-                    isExpanded = !isExpanded;
-
-                    // Toggle the "show-all" class on the body element
-                    document.body.classList.toggle("show-all", isExpanded);
-                    tickersWrapper.classList.toggle("open");
-
-                    // Use a slight delay to ensure the class toggle has taken effect
-                    setTimeout(() => {
-                        if (isExpanded) {
-                            // Scroll to the tickersAllSection if expanded
-                            tickersAllSection.scrollIntoView({ behavior: "smooth", block: "start" });
-                        } else {
-                            // Scroll to the tickersWrapper if not expanded
-                            tickersWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
-                            window.scrollTo(0, 0); // Force scroll to top after the animation
-                        }
-                    }, 50); // 50ms delay to ensure smooth transitions
-                });
             });
         </script>
         <script src="./top.js"></script>
