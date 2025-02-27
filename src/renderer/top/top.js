@@ -159,7 +159,7 @@ async function fetchAndUpdateTickers() {
         // ✅ Update UI
         updateTickersTable(tickersSessions, "tickers-session", oldTickersSessions);
         updateTickersTable(tickersDaily, "tickers-daily", oldTickersDaily);
-        updateTickersTable(filteredAll, "tickers-all", {}); // ✅ No need to compare previous state
+        // updateTickersTable(filteredAll, "tickers-all", {}); // ✅ No need to compare previous state
 
         console.log("✅ UI Updated Successfully!");
     } catch (error) {
