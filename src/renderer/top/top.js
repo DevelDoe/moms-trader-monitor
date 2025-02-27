@@ -306,6 +306,10 @@ function clearSessionList() {
     setTimeout(() => {
         fetchAndUpdateTickers();
     }, 1000);
+    setInterval(() => {
+        console.log("Clearing session list automatically every 30 minutes");
+        clearSessionList();
+      }, 30 * 60 * 1000); // 30 minutes in milliseconds
 }
 
 function parseFloatValue(floatStr) {
