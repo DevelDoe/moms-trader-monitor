@@ -1,225 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>News Viewer</title>
-    <link rel="stylesheet" href="../styles.css" />
-    <link rel="stylesheet" href="./news.css" />
-  </head>
-  <body class="draggable">
-    <div id="news-wrapper" class="draggable">
-      <!-- Changed from a table to an unordered list -->
-      <ul id="news-list">
-        <li>Loading news...</li>
-      </ul>
-    </div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>News Viewer</title>
+        <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="./news.css" />
+    </head>
+    <body class="draggable">
+        <div id="news-wrapper" class="draggable">
+            <!-- Changed from a table to an unordered list -->
+            <ul id="news-list">
+                <li>Loading news...</li>
+            </ul>
+        </div>
 
-    <script>
-      let allNews = [];
-      let trackedTickers = new Set();
+        <script>
+            let allNews = [];
+            let trackedTickers = new Set();
 
-      async function fetchTrackedTickers() {
-        try {
-          console.log("📢 Fetching filtered tickers from settings...");
+            async function fetchTrackedTickers() {
+                try {
+                    console.log("📢 Fetching filtered tickers from settings...");
 
-          const settings = await window.settingsAPI.get();
+                    const settings = await window.settingsAPI.get();
 
-          // Ensure `filteredTickers` exists before using it.
-          if (!settings.news?.filteredTickers) {
-            console.warn("⚠️ No filtered tickers found in settings! Defaulting to an empty set.");
-            settings.news.filteredTickers = [];
-          }
+                    // Ensure `filteredTickers` exists before using it.
+                    if (!settings.news?.filteredTickers) {
+                        console.warn("⚠️ No filtered tickers found in settings! Defaulting to an empty set.");
+                        settings.news.filteredTickers = [];
+                    }
 
-          // Update the global settings object.
-          window.settings = settings;
+                    // Update the global settings object.
+                    window.settings = settings;
 
-          trackedTickers = new Set(settings.news.filteredTickers);
-          console.log("✅ Tracked Tickers (Filtered):", trackedTickers);
+                    trackedTickers = new Set(settings.news.filteredTickers);
+                    console.log("✅ Tracked Tickers (Filtered):", trackedTickers);
 
-          updateNewsList(); // Refresh list after updating tickers.
-        } catch (error) {
-          console.error("⚠️ Error fetching filtered tickers:", error);
-        }
-      }
-
-      async function fetchNews() {
-        try {
-          console.log("📢 Fetching news...");
-
-          const newsData = await window.newsAPI.get();
-          console.log("📰 Received news:", newsData);
-
-          if (!Array.isArray(newsData)) {
-            console.error("⚠️ Expected an array but got:", newsData);
-            return;
-          }
-
-          allNews = newsData;
-          updateNewsList();
-        } catch (error) {
-          console.error("⚠️ Error fetching news:", error);
-          const listContainer = document.getElementById("news-list");
-          listContainer.innerHTML = `<li class='info draggable'>Error fetching news: ${error.message}</li>`;
-        }
-      }
-
-      async function loadSettings() {
-        try {
-          console.log("📢 Fetching settings...");
-          window.settings = await window.settingsAPI.get();
-
-          if (!window.settings.news) {
-            console.log("⚠️ `settings.news` is missing, initializing...");
-            window.settings.news = {};
-          }
-
-          console.log("✅ Loaded settings:", window.settings);
-        } catch (error) {
-          console.error("⚠️ Error loading settings:", error);
-          window.settings = { news: {} }; // Fallback
-        }
-      }
-
-      function updateNewsList() {
-        console.log("📢 Updating news list...");
-
-        const showOnlyTracked = window.settings.news.showTrackedTickers ?? false;
-        const allowMultiSymbols = window.settings.news.allowMultiSymbols ?? true;
-        const listContainer = document.getElementById("news-list");
-        listContainer.innerHTML = "";
-
-        const blockList = window.settings.news?.blockList || [];
-        const bullishList = window.settings.news?.bullishList || [];
-        const bearishList = window.settings.news?.bearishList || [];
-
-        let filteredNews = allNews;
-
-        if (showOnlyTracked) {
-          filteredNews = filteredNews.filter(
-            (newsItem) =>
-              newsItem.symbols &&
-              newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase()))
-          );
-        }
-
-        if (!allowMultiSymbols) {
-          filteredNews = filteredNews.filter((newsItem) => newsItem.symbols.length <= 1);
-        }
-
-        console.log("📊 Filtered News:", filteredNews);
-
-        if (filteredNews.length === 0) {
-          listContainer.innerHTML = "<li class='info draggable'>No news available.</li>";
-          return;
-        }
-
-        // Remove duplicates using a unique key.
-        const uniqueNews = new Map();
-        filteredNews.forEach((newsItem) => {
-          const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
-          if (!uniqueNews.has(key)) {
-            uniqueNews.set(key, newsItem);
-          }
-        });
-
-        
-
-        let sortedNews = Array.from(uniqueNews.values()).sort(
-          (a, b) => new Date(b.created_at) - new Date(a.created_at)
-        );
-
-        console.log("📊 Sorted News Ready for List:", sortedNews);
-
-        const now = new Date();
-
-        sortedNews.forEach((article) => {
-          const headline = decodeHTMLEntities(article.headline || "");
-          const articleURL = article.url || "#";
-
-          const isBlocked = blockList.some((blockedWord) =>
-            headline.toLowerCase().includes(blockedWord.toLowerCase())
-          );
-
-          if (!isBlocked) {
-            // Create a list item for the symbol.
-            const li = document.createElement("li");
-            li.className = "no-drag";
-
-            const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
-            li.textContent = symbolText;
-
-            // Set the tooltip to display the full headline.
-            li.title = `Headline: ${headline}`;
-
-            // Optionally add bullish or bearish styling based on headline content.
-            if (
-              bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))
-            ) {
-              li.classList.add("bullish-news");
-            }
-            if (
-              bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))
-            ) {
-              li.classList.add("bearish-news");
+                    updateNewsList(); // Refresh list after updating tickers.
+                } catch (error) {
+                    console.error("⚠️ Error fetching filtered tickers:", error);
+                }
             }
 
-            // Optionally mark older news (e.g., older than 5 minutes).
-            const newsAge = (now - new Date(article.created_at)) / 1000;
-            if (newsAge >= 300) {
-              li.classList.add("fade-out");
+            async function fetchNews() {
+                try {
+                    console.log("📢 Fetching news...");
+
+                    const newsData = await window.newsAPI.get();
+                    console.log("📰 Received news:", newsData);
+
+                    if (!Array.isArray(newsData)) {
+                        console.error("⚠️ Expected an array but got:", newsData);
+                        return;
+                    }
+
+                    allNews = newsData;
+                    updateNewsList();
+                } catch (error) {
+                    console.error("⚠️ Error fetching news:", error);
+                    const listContainer = document.getElementById("news-list");
+                    listContainer.innerHTML = `<li class='info draggable'>Error fetching news: ${error.message}</li>`;
+                }
             }
 
-            listContainer.appendChild(li);
-          }
-        });
+            async function loadSettings() {
+                try {
+                    console.log("📢 Fetching settings...");
+                    window.settings = await window.settingsAPI.get();
 
-        console.log("✅ News list updated!");
-      }
+                    if (!window.settings.news) {
+                        console.log("⚠️ `settings.news` is missing, initializing...");
+                        window.settings.news = {};
+                    }
 
-      /**
-       * ✅ Helper Function: Decodes HTML Entities (Fixes &amp; issue)
-       */
-      function decodeHTMLEntities(text) {
-        const parser = new DOMParser();
-        const decodedString = parser.parseFromString(text, "text/html").body.textContent;
-        return decodedString || text;
-      }
+                    console.log("✅ Loaded settings:", window.settings);
+                } catch (error) {
+                    console.error("⚠️ Error loading settings:", error);
+                    window.settings = { news: {} }; // Fallback
+                }
+            }
 
-      // Listen for global settings updates and refresh news dynamically.
-      window.settingsAPI.onUpdate(async (updatedSettings) => {
-        console.log("🔄 Received 'settings-updated' event. Checking changes...");
+            function updateNewsList() {
+                console.log("📢 Updating news list...");
 
-        const prevSettings = JSON.stringify(window.settings.news);
-        window.settings = updatedSettings;
+                const showOnlyTracked = window.settings.news.showTrackedTickers ?? false;
+                const allowMultiSymbols = window.settings.news.allowMultiSymbols ?? true;
+                const listContainer = document.getElementById("news-list");
+                listContainer.innerHTML = "";
 
-        const newSettings = JSON.stringify(updatedSettings.news);
+                const blockList = window.settings.news?.blockList || [];
+                const bullishList = window.settings.news?.bullishList || [];
+                const bearishList = window.settings.news?.bearishList || [];
 
-        // If any settings changed, update news.
-        if (prevSettings !== newSettings) {
-          console.log("✅ Detected news settings change, refreshing news list...");
-          updateNewsList();
-        } else {
-          console.log("⚠️ No relevant news settings changed. Ignoring update.");
-        }
-      });
+                let filteredNews = allNews;
 
-      // Listen for ticker updates.
-      window.topAPI.onTickerUpdate(() => {
-        console.log("🔄 Received tickers-updated event. Refreshing tickers...");
-        fetchTrackedTickers();
-      });
+                if (showOnlyTracked) {
+                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase())));
+                }
 
-      // Listen for news updates.
-      window.newsAPI.onUpdate(() => {
-        console.log("🔄 Received news update. Fetching fresh news...");
-        fetchNews();
-      });
+                if (!allowMultiSymbols) {
+                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols.length <= 1);
+                }
 
-      // Initial fetch.
-      loadSettings().then(() => {
-        fetchTrackedTickers().then(fetchNews);
-      });
-    </script>
-  </body>
+                console.log("📊 Filtered News:", filteredNews);
+
+                if (filteredNews.length === 0) {
+                    listContainer.innerHTML = "<li class='info draggable'>No news available.</li>";
+                    return;
+                }
+
+                // Remove duplicates using a unique key.
+                const uniqueNews = new Map();
+                filteredNews.forEach((newsItem) => {
+                    const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
+                    if (!uniqueNews.has(key)) {
+                        uniqueNews.set(key, newsItem);
+                    }
+                });
+
+                let sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                console.log("📊 Sorted News Ready for List:", sortedNews);
+
+                const now = new Date();
+
+                sortedNews.forEach((article) => {
+                    const headline = decodeHTMLEntities(article.headline || "");
+                    const articleURL = article.url || "#";
+
+                    const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+
+                    if (!isBlocked) {
+                        // Create a list item for the symbol.
+                        const li = document.createElement("li");
+                        li.className = "no-drag";
+
+                        const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
+                        li.textContent = symbolText;
+
+                        // Set the tooltip to display the full headline.
+                        li.title = `Headline: ${headline}`;
+
+                        // Optionally add bullish or bearish styling based on headline content.
+                        if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
+                            li.classList.add("bullish-news");
+                        }
+                        if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
+                            li.classList.add("bearish-news");
+                        }
+
+                        // Optionally mark older news (e.g., older than 5 minutes).
+                        const newsAge = (now - new Date(article.created_at)) / 1000;
+                        if (newsAge >= 300) {
+                            li.classList.add("fade-out");
+                        }
+
+                        listContainer.appendChild(li);
+                        playFlash();
+                    }
+                });
+
+                console.log("✅ News list updated!");
+            }
+            
+            function playNewsJingle() {
+                // Create a new AudioContext
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+
+                // Define the frequencies for each beep (adjust as desired)
+                const frequencies = [700, 600, 500, 400]; // descending pitches for a classic feel
+                const beepDuration = 0.15; // duration of each beep in seconds
+                const gap = 0.05; // gap between beeps in seconds
+
+                frequencies.forEach((freq, i) => {
+                    // Create an oscillator for the tone and a gain node for volume control.
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    // Connect the oscillator to the gain node, and then to the speakers.
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    // Set the oscillator frequency and waveform type.
+                    oscillator.frequency.value = freq;
+                    oscillator.type = "sine"; // Try "square" or "sawtooth" for different timbres.
+
+                    // Calculate the start time for this beep.
+                    const startTime = now + i * (beepDuration + gap);
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + beepDuration);
+
+                    // Apply a quick fade-out to smooth out the sound and avoid clicks.
+                    gainNode.gain.setValueAtTime(1, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + beepDuration);
+                });
+            }
+
+            /**
+             * ✅ Helper Function: Decodes HTML Entities (Fixes &amp; issue)
+             */
+            function decodeHTMLEntities(text) {
+                const parser = new DOMParser();
+                const decodedString = parser.parseFromString(text, "text/html").body.textContent;
+                return decodedString || text;
+            }
+
+            // Listen for global settings updates and refresh news dynamically.
+            window.settingsAPI.onUpdate(async (updatedSettings) => {
+                console.log("🔄 Received 'settings-updated' event. Checking changes...");
+
+                const prevSettings = JSON.stringify(window.settings.news);
+                window.settings = updatedSettings;
+
+                const newSettings = JSON.stringify(updatedSettings.news);
+
+                // If any settings changed, update news.
+                if (prevSettings !== newSettings) {
+                    console.log("✅ Detected news settings change, refreshing news list...");
+                    updateNewsList();
+                } else {
+                    console.log("⚠️ No relevant news settings changed. Ignoring update.");
+                }
+            });
+
+            // Listen for ticker updates.
+            window.topAPI.onTickerUpdate(() => {
+                console.log("🔄 Received tickers-updated event. Refreshing tickers...");
+                fetchTrackedTickers();
+            });
+
+            // Listen for news updates.
+            window.newsAPI.onUpdate(() => {
+                console.log("🔄 Received news update. Fetching fresh news...");
+                fetchNews();
+            });
+
+            // Initial fetch.
+            loadSettings().then(() => {
+                fetchTrackedTickers().then(fetchNews);
+            });
+        </script>
+    </body>
 </html>
