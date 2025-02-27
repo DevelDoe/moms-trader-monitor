@@ -30,12 +30,12 @@ table {
 }
 
 /* Style even rows */
-tr:nth-child(even) {
+td:nth-child(even) {
     background-color: rgba(28, 29, 35, 1);
   }
   
   /* Style odd rows */
-  tr:nth-child(odd) {
+  td:nth-child(odd) {
     background-color: rgba(28, 29, 35, 0.1);
   }
   
