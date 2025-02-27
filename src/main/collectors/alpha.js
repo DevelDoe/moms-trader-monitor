@@ -7,17 +7,20 @@ const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 const { app } = require("electron");
 
-// Determine the cache directory
-const CACHE_DIR = path.join(__dirname, "../../data");
+// ✅ Use `userData` for installed versions (outside `asar`)
+const isPackaged = __dirname.includes("app.asar");
+const CACHE_DIR = isPackaged
+    ? path.join(app.getPath("userData"), "data")  // Writable location in installed app
+    : path.join(__dirname, "../../data");         // Keep the same path in dev mode
+
 const CACHE_FILE = path.join(CACHE_DIR, "alpha_data.json");
 
-console.log(`[DEBUG] Cache directory: ${CACHE_DIR}`);
-console.log(`[DEBUG] Cache file location: ${CACHE_FILE}`);
-
-// Ensure directory exists
+// ✅ Ensure cache directory exists
 fs.ensureDirSync(CACHE_DIR);
 
-// Load cache if it exists
+console.log("[DEBUG] Using cache at:", CACHE_FILE);
+
+// ✅ Load cache
 let cache = {};
 if (fs.existsSync(CACHE_FILE)) {
     try {
@@ -25,11 +28,13 @@ if (fs.existsSync(CACHE_FILE)) {
         console.log("[DEBUG] Cache loaded successfully!");
     } catch (error) {
         console.error("Error reading Alpha Vantage cache:", error);
-        cache = {}; // Reset cache if corrupted
+        cache = {};
     }
 } else {
-    console.warn("[DEBUG] Cache file does not exist!");
+    console.warn("[DEBUG] Cache file not found, creating new one...");
+    fs.writeJsonSync(CACHE_FILE, {}, { spaces: 2 });
 }
+
 
 
 // ✅ Extract and validate API keys
