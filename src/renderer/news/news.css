@@ -63,3 +63,7 @@ ul {
 ul::-webkit-scrollbar {
     display: none;
 }
+
+.info {
+    background-color:#1c1d23 ;
+}
