@@ -1,0 +1,73 @@
+/* ALL TICKERS */
+#tickers-all-section {
+    height: 530px;
+    overflow: auto;
+    display: inline-block;
+}
+/* ✅ Initially hide the all tickers section */
+#tickers-all,
+#tickers-all h2 {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
+    float: left;
+}
+
+#tickers-all {
+    max-height: 100vh; /* Full viewport height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+}
+
+#tickers-all::-webkit-scrollbar,
+#tickers-all-section::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari */
+}
+
+/* ✅ Show all tickers when toggled */
+.show-all #tickers-all {
+    max-height: calc(100vh); /* Expand to fit within viewport minus button */
+    opacity: 1;
+    overflow: hidden;
+}
+
+#tickers-wrapper.open {
+    min-height: 1000px;
+}
+
+/* ✅ Slide tickers-wrapper up when all tickers are shown */
+.show-all #tickers-wrapper {
+    transform: translateY(calc(-100vh));
+    transition: transform 1.1s ease-in-out;
+}
+
+body:not(.show-all) #tickers-wrapper {
+    transform: translateY(0); /* Ensure it resets back to top */
+    transition: transform 0.1s ease-in-out; /* Smooth transition */
+}
+
+/* ✅ Fix the button in the top-right corner */
+#toggle-all-tickers {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    z-index: 1000;
+    background-color: rgba(34, 34, 34, 0.8);
+    border-radius: 5px;
+    padding: 10px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #595959;
+    cursor: pointer;
+    color: white;
+}
+
+/* ✅ Improve visibility on hover */
+#toggle-all-tickers:hover {
+    background-color: rgba(90, 90, 90, 0.9);
+}
