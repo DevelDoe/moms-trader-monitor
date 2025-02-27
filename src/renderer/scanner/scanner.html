@@ -123,37 +123,32 @@
             }
 
             function play() {
+  // Create a new AudioContext
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const startTime = audioCtx.currentTime;
+  const beepDuration = 0.01; // duration of the beep in seconds
 
-                // Create a new AudioContext
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const startTime = audioCtx.currentTime;
+  // Create an oscillator and gain node
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
 
-                // Define the frequencies for each beep (adjust as desired)
-                const frequencies = [963]; // descending pitches for a classic feel
-                const beepDuration = 0.01; // duration of each beep in seconds
-                const gap = 0.5; // gap between beeps in seconds
+  // Connect the oscillator to the gain node, then to the destination (speakers)
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
 
-                // Create an oscillator for the tone and a gain node for volume control.
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
+  // Set the oscillator frequency and waveform type
+  oscillator.frequency.value = 963;
+  oscillator.type = "sine";
 
-                // Connect the oscillator to the gain node, and then to the speakers.
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
+  // Start and stop the oscillator to play the sound
+  oscillator.start(startTime);
+  oscillator.stop(startTime + beepDuration);
 
-                // Set the oscillator frequency and waveform type.
-                oscillator.frequency.value = 963;
-                oscillator.type = "sine"; // Try "square" or "sawtooth" for different timbres.
+  // Apply a quick fade-out to smooth out the sound and avoid clicks
+  gainNode.gain.setValueAtTime(1, startTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + beepDuration);
+}
 
-                // Calculate the start time for this beep.
-                const toneStart = startTime + i * (beepDuration + gap);
-                oscillator.start(toneStart);
-                oscillator.stop(toneStart + beepDuration);
-
-                // Apply a quick fade-out to smooth out the sound and avoid clicks.
-                gainNode.gain.setValueAtTime(1, toneStart);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, toneStart + beepDuration);
-            }
 
             // Update the symbol summary to display a progress bar (10 segments)
             // but only for symbols that appear more than once in the log.
