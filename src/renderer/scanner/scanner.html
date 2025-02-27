@@ -139,30 +139,27 @@
                 const beepDuration = 0.01; // duration of each beep in seconds
                 const gap = 0.05; // gap between beeps in seconds
 
-                frequencies.forEach((freq, i) => {
-                    // Create an oscillator for the tone and a gain node for volume control.
-                    const oscillator = audioCtx.createOscillator();
-                    const gainNode = audioCtx.createGain();
+                // Create an oscillator for the tone and a gain node for volume control.
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
 
-                    // Connect the oscillator to the gain node, and then to the speakers.
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
+                // Connect the oscillator to the gain node, and then to the speakers.
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
 
-                    // Set the oscillator frequency and waveform type.
-                    oscillator.frequency.value = freq;
-                    oscillator.type = "sine"; // Try "square" or "sawtooth" for different timbres.
+                // Set the oscillator frequency and waveform type.
+                oscillator.frequency.value = 963;
+                oscillator.type = "sine"; // Try "square" or "sawtooth" for different timbres.
 
-                    // Calculate the start time for this beep.
-                    const toneStart = startTime + i * (beepDuration + gap);
-                    oscillator.start(toneStart);
-                    oscillator.stop(toneStart + beepDuration);
+                // Calculate the start time for this beep.
+                const toneStart = startTime + i * (beepDuration + gap);
+                oscillator.start(toneStart);
+                oscillator.stop(toneStart + beepDuration);
 
-                    // Apply a quick fade-out to smooth out the sound and avoid clicks.
-                    gainNode.gain.setValueAtTime(1, toneStart);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, toneStart + beepDuration);
-                });
+                // Apply a quick fade-out to smooth out the sound and avoid clicks.
+                gainNode.gain.setValueAtTime(1, toneStart);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, toneStart + beepDuration);
             }
-
 
             // Update the symbol summary to display a progress bar (10 segments)
             // but only for symbols that appear more than once in the log.
@@ -227,7 +224,7 @@
                     li.appendChild(progressBar);
                     li.appendChild(percentSpan);
                     symbolListElement.appendChild(li);
-                    play()
+                    play();
                 });
             }
 
