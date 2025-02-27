@@ -6,10 +6,21 @@ require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 
-const CACHE_DIR = path.join(app.getPath("userData"), "data"); // Store cache in user data
+// ✅ Determine the correct storage directory
+let CACHE_DIR;
+if (process.type === "browser") {
+    // Running in the main process
+    const { app } = require("electron");
+    CACHE_DIR = path.join(app.getPath("userData"), "data"); 
+} else {
+    // Running in a renderer process or Node.js environment (fallback)
+    CACHE_DIR = path.join(__dirname, "../../data");
+}
+
 const CACHE_FILE = path.join(CACHE_DIR, "alpha_data.json");
 
-fs.ensureDirSync(CACHE_DIR); // Ensure data folder exists
+// ✅ Ensure directory exists
+fs.ensureDirSync(CACHE_DIR);
 
 // ✅ Load cache if it exists
 let cache = {};
