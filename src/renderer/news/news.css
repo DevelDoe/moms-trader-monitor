@@ -37,13 +37,13 @@ a:hover {
 
 
 /* ✅ bullish news - Highlight in green */
-.bullish-news {
+li.bullish-news {
     background-color: #4caf50 !important; /* Green */
     font-weight: bold !important;
 }
 
 /* ❌ Bearish news - Highlight in red */
-.bearish-news {
+li.bearish-news {
     background-color: #f44336 !important; /* Red */
     font-weight: bold !important;
 }
