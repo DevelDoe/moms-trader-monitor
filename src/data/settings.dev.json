@@ -46,6 +46,7 @@
     "showTrackedTickers": false,
     "filteredTickers": [
       "ICCT",
+      "CPOP",
       "NIXX",
       "SAG",
       "XNET"
