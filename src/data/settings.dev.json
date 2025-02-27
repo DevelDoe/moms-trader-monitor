@@ -44,20 +44,7 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [
-      "XNET",
-      "NIXX",
-      "AMST",
-      "MULN",
-      "BRTX",
-      "SAG",
-      "HRTX",
-      "LAES",
-      "BYND",
-      "EDIT",
-      "WAFU",
-      "ESGL"
-    ],
+    "filteredTickers": [],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
