@@ -46,8 +46,8 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "NIXX",
-      "SAG",
       "MULN",
+      "SAG",
       "HRTX"
     ],
     "blockList": [
