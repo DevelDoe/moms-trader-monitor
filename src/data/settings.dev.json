@@ -46,8 +46,8 @@
     "showTrackedTickers": false,
     "filteredTickers": [
       "ENVB",
-      "SAG",
       "NIXX",
+      "SAG",
       "XNET"
     ],
     "blockList": [
