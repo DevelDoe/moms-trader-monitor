@@ -306,6 +306,7 @@ function clearSessionList() {
     setTimeout(() => {
         fetchAndUpdateTickers();
     }, 1000);
+    
     setInterval(() => {
         console.log("Clearing session list automatically every 30 minutes");
         clearSessionList();
