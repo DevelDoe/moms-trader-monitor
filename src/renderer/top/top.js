@@ -16,6 +16,24 @@ const floatHundredMillion = 125_000_000;
 const floatTwoHundredMillion = 250_000_000;
 const floatFiveHundredMillion = 600_000_000;
 
+let sessionClearTriggered = false;
+
+setInterval(() => {
+  const now = new Date();
+  const minute = now.getMinutes();
+
+  // If it's the 25th or 55th minute and we haven't triggered it yet
+  if ((minute === 25 || minute === 55) && !sessionClearTriggered) {
+    clearSessionList();
+    sessionClearTriggered = true;
+  } 
+  // Reset the flag once we leave the 25th or 55th minute
+  else if (minute !== 25 && minute !== 55) {
+    sessionClearTriggered = false;
+  }
+}, 1000);
+
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
 
