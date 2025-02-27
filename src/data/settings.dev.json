@@ -45,6 +45,7 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
+      "TRNR",
       "NIXX",
       "MULN",
       "SAG",
