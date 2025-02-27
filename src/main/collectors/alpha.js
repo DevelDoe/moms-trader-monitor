@@ -6,21 +6,10 @@ require("dotenv").config(); // Load .env variables
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 
-// ✅ Determine the correct storage directory
-let CACHE_DIR;
-if (process.type === "browser") {
-    // Running in the main process
-    const { app } = require("electron");
-    CACHE_DIR = path.join(app.getPath("userData"), "data"); 
-} else {
-    // Running in a renderer process or Node.js environment (fallback)
-    CACHE_DIR = path.join(__dirname, "../../data");
-}
+const CACHE_FILE = path.join(__dirname, "../../data/alpha_data.json");
 
-const CACHE_FILE = path.join(CACHE_DIR, "alpha_data.json");
-
-// ✅ Ensure directory exists
-fs.ensureDirSync(CACHE_DIR);
+// ✅ Ensure cache directory exists
+fs.ensureDirSync(path.dirname(CACHE_FILE));
 
 // ✅ Load cache if it exists
 let cache = {};
@@ -28,11 +17,10 @@ if (fs.existsSync(CACHE_FILE)) {
     try {
         cache = fs.readJsonSync(CACHE_FILE);
     } catch (error) {
-        console.error("Error reading Alpha Vantage cache:", error);
+        log.error("Error reading Alpha Vantage cache:", error);
         cache = {}; // Reset cache if corrupted
     }
 }
-
 
 // ✅ Extract and validate API keys
 const API_KEYS = (() => {
