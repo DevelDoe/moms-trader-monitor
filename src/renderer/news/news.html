@@ -81,6 +81,9 @@
                 }
             }
 
+            // Global variable to record which news items already triggered the flash.
+            let flashedNewsKeys = new Set();
+
             function updateNewsList() {
                 console.log("📢 Updating news list...");
 
@@ -96,7 +99,8 @@
                 let filteredNews = allNews;
 
                 if (showOnlyTracked) {
-                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.some((symbol) => trackedTickers.has(symbol.toUpperCase())));
+                    // Only include articles where every symbol is tracked.
+                    filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.every((symbol) => trackedTickers.has(symbol.toUpperCase())));
                 }
 
                 if (!allowMultiSymbols) {
@@ -116,58 +120,50 @@
                     const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
                     if (!uniqueNews.has(key)) {
                         uniqueNews.set(key, newsItem);
-                        playFlash();
                     }
                 });
 
-                let sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                // Sort the unique news items by creation time (most recent first).
+                const sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-                console.log("📊 Sorted News Ready for List:", sortedNews);
+                // Determine the key for the top (first) news item.
+                const topNewsItem = sortedNews[0];
+                if (topNewsItem) {
+                    const topKey = `${topNewsItem.symbols?.join(",") || "N/A"}|${topNewsItem.headline}`;
+                    // Only play the flash if this top item is new.
+                    if (!flashedNewsKeys.has(topKey)) {
+                        playFlash();
+                        flashedNewsKeys.add(topKey);
+                    }
+                }
 
                 const now = new Date();
-
                 sortedNews.forEach((article) => {
                     const headline = decodeHTMLEntities(article.headline || "");
-                    const articleURL = article.url || "#";
+                    const li = document.createElement("li");
+                    li.className = "no-drag";
 
-                    const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+                    const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
+                    li.textContent = symbolText;
+                    li.title = `Headline: ${headline}`;
 
-                    if (!isBlocked) {
-                        // Create a list item for the symbol.
-                        const li = document.createElement("li");
-                        li.className = "no-drag";
-
-                        const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
-                        li.textContent = symbolText;
-
-                        // Set the tooltip to display the full headline.
-                        li.title = `Headline: ${headline}`;
-
-                        // Optionally add bullish or bearish styling based on headline content.
-                        if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
-                            li.classList.add("bullish-news");
-                        }
-                        if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
-                            li.classList.add("bearish-news");
-                        }
-
-                        // Optionally mark older news (e.g., older than 5 minutes).
-                        const newsAge = (now - new Date(article.created_at)) / 1000;
-                        if (newsAge >= 300) {
-                            li.classList.add("fade-out");
-                        }
-
-                        listContainer.appendChild(li);
-                        // Play the flash jingle only for the first appended (displayed) item.
-                        if (index === 0) {
-                            playFlash();
-                        }
+                    if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
+                        li.classList.add("bullish-news");
                     }
+                    if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
+                        li.classList.add("bearish-news");
+                    }
+
+                    const newsAge = (now - new Date(article.created_at)) / 1000;
+                    if (newsAge >= 300) {
+                        li.classList.add("fade-out");
+                    }
+
+                    listContainer.appendChild(li);
                 });
 
                 console.log("✅ News list updated!");
             }
-
             let lastJFlashTime = 0;
 
             function playFlash() {
