@@ -46,11 +46,12 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "TRNR",
+      "XNET",
       "NIXX",
-      "SAG",
       "MULN",
-      "LAES",
+      "SAG",
       "AMST",
+      "LAES",
       "HRTX"
     ],
     "blockList": [
