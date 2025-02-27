@@ -55,6 +55,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         await applySavedFilters();
         await fetchAndUpdateTickers();
     });
+
+    setInterval(() => {
+        console.log("Clearing session list automatically every 30 minutes");
+        clearSessionList();
+      }, 30 * 60 * 1000); // 30 minutes in milliseconds
+      
 });
 
 async function fetchAndUpdateTickers() {
