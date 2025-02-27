@@ -52,11 +52,11 @@ li.bearish-news {
 }
 
 ul {
-    width: 300px; /* Adjust as needed */
-    height: 200px; /* Set the height */
-    overflow-y: scroll; /* Enable vertical scrolling */
-    scrollbar-width: none; /* Firefox: Hide scrollbar */
-    -ms-overflow-style: none; /* IE/Edge: Hide scrollbar */
+    width: 300px;
+    height: 94px;
+    overflow-y: scroll;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
 }
 
 /* Hide scrollbar in WebKit browsers (Chrome, Safari) */
