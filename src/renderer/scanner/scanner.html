@@ -185,21 +185,20 @@
         const midPoint = Math.floor(totalSegments / 2);
         let segmentsHtml = "";
 
-        // Normalize to 5 max segments left/right
-        const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2));
+        const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2);
 
-        for (let i = 0; i < totalSegments; i++) {
-            if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
-                // Positive (Right Side - Green)
-                segmentsHtml += '<span class="segment filled up"></span>';
-            } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
-                // Negative (Left Side - Red)
-                segmentsHtml += '<span class="segment filled down"></span>';
-            } else {
-                // Neutral / Empty
-                segmentsHtml += '<span class="segment"></span>';
-            }
-        }
+for (let i = 0; i < totalSegments; i++) {
+    if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
+        // Positive (Right Side - Green)
+        segmentsHtml += '<span class="segment filled up"></span>';
+    } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
+        // Negative (Left Side - Red)
+        segmentsHtml += '<span class="segment filled down"></span>';
+    } else {
+        // Neutral / Empty
+        segmentsHtml += '<span class="segment"></span>';
+    }
+}
 
         const symbolSpan = document.createElement("span");
         symbolSpan.textContent = symbol;
