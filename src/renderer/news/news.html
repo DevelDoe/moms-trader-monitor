@@ -164,10 +164,19 @@
                 console.log("✅ News list updated!");
             }
 
+            let lastJFlashTime = 0;
+
             function playFlash() {
+                const now = Date.now();
+                if (now - lastJingleTime < 1000) {
+                    console.log("Jingle call debounced.");
+                    return;
+                }
+                lastJingleTime = now;
+
                 // Create a new AudioContext
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const now = audioCtx.currentTime;
+                const startTime = audioCtx.currentTime;
 
                 // Define the frequencies for each beep (adjust as desired)
                 const frequencies = [700, 600, 500, 400]; // descending pitches for a classic feel
@@ -188,13 +197,13 @@
                     oscillator.type = "sine"; // Try "square" or "sawtooth" for different timbres.
 
                     // Calculate the start time for this beep.
-                    const startTime = now + i * (beepDuration + gap);
-                    oscillator.start(startTime);
-                    oscillator.stop(startTime + beepDuration);
+                    const toneStart = startTime + i * (beepDuration + gap);
+                    oscillator.start(toneStart);
+                    oscillator.stop(toneStart + beepDuration);
 
                     // Apply a quick fade-out to smooth out the sound and avoid clicks.
-                    gainNode.gain.setValueAtTime(1, startTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + beepDuration);
+                    gainNode.gain.setValueAtTime(1, toneStart);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, toneStart + beepDuration);
                 });
             }
 
