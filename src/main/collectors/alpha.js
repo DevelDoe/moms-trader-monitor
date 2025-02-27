@@ -8,7 +8,7 @@ const log = createLogger(__filename);
 const { app } = require("electron");
 
 // Determine the cache directory
-const CACHE_DIR = app ? path.join(app.getPath("userData"), "data") : path.join(__dirname, "../../data");
+const CACHE_DIR = path.join(__dirname, "../../data");
 const CACHE_FILE = path.join(CACHE_DIR, "alpha_data.json");
 
 console.log(`[DEBUG] Cache directory: ${CACHE_DIR}`);
