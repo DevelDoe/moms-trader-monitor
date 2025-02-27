@@ -10,48 +10,6 @@ body {
     transition: height 200ms ease;
 }
 
-.menu--collapsed {
-    height: 50px;
-}
-/* body {
-    overflow: hidden;
-    height: 50px; 
-} */
-
-body:hover {
-    height: 100vw; /* Expanded height on hover */
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #2a2b32;
-    color: #e0e0e0; /* Light text for readability */
-}
-
-/* Style even rows */
-td:nth-child(even) {
-    background-color: rgba(28, 29, 35, 1);
-  }
-  
-  /* Style odd rows */
-  td:nth-child(odd) {
-    background-color: rgba(28, 29, 35, 0.1);
-  }
-  
-th,
-td {
-    padding: 0px 0px 0px 4px;
-    text-align: left;
-}
-tr {
-    height: 22px;
-}
-th {
-    background: #3a3b41; /* Slightly lighter dark header */
-    color: #ffffff; /* White text for contrast */
-}
-
 a {
     color: #66b3ff; /* Soft blue for links */
     text-decoration: none;
@@ -65,18 +23,6 @@ a:hover {
     color: #595959;
 }
 
-
-td.no-drag a {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
-    max-width: 630px; /* Adjust as needed */
-}
-
-td.no-drag a:hover {
-    text-decoration: underline;
-}
 
 /* ✅ bullish news - Highlight in green */
 .bullish-news {
