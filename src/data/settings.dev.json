@@ -2,7 +2,7 @@
   "top": {
     "transparent": false,
     "minPrice": 1.75,
-    "maxPrice": 5,
+    "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 200000000,
     "minScore": 1,
@@ -47,7 +47,8 @@
     "filteredTickers": [
       "BCG",
       "XNET",
-      "PEPG"
+      "PEPG",
+      "GO"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
