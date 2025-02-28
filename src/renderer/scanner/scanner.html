@@ -137,7 +137,7 @@
                 // Create a new AudioContext
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const startTime = audioCtx.currentTime;
-                const beepDuration = 0.5; // duration of the beep in seconds
+                const beepDuration = 0.01; // duration of the beep in seconds
 
                 // Create an oscillator and gain node
                 const oscillator = audioCtx.createOscillator();
