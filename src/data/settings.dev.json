@@ -45,8 +45,8 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "BCG",
       "TRNR",
+      "BCG",
       "BTAI",
       "RPID",
       "MLGO",
