@@ -5,7 +5,7 @@ const path = require("path");
 
 function createScannerWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 850,
+        width: 273,
         height: 660,
         frame: false,
         alwaysOnTop: false,
