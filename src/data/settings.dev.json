@@ -2,7 +2,7 @@
   "top": {
     "transparent": false,
     "minPrice": 1.75,
-    "maxPrice": 6,
+    "maxPrice": 10,
     "minFloat": 0,
     "maxFloat": 200000000,
     "minScore": 1,
@@ -44,19 +44,7 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [
-      "TRNR",
-      "NVVE",
-      "BCG",
-      "BTAI",
-      "ENVB",
-      "RPID",
-      "ORGO",
-      "MLGO",
-      "OCFT",
-      "PEPG",
-      "NIXX"
-    ],
+    "filteredTickers": [],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
@@ -68,7 +56,8 @@
       "US Stocks",
       "Shares are trading higher",
       "Trading Halt",
-      "Earnings Schedule"
+      "Earnings Schedule",
+      "Stock Rocketing"
     ],
     "bullishList": [
       "FDA Approves",
@@ -127,7 +116,8 @@
       "Exclusive Deal",
       "Secures",
       "beats",
-      "Purchase"
+      "Purchase",
+      "Signs Commercial Deal"
     ],
     "bearishList": [
       "Sell Alert",

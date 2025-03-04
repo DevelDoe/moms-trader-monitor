@@ -16,6 +16,8 @@ body::-webkit-scrollbar {
 table {
     border-collapse: collapse;
     margin-bottom: 20px;
+    border-collapse:separate; 
+    border-spacing: 3px 5px;
 }
 .table {
     float: left;
@@ -30,10 +32,9 @@ tr {
 th,
 td {
     padding: 0px 10px 0px 0px;
-    text-align: left;
-}
-tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.1); /* Alternating row color */
+    text-align: center;
+    margin-bottom: 10px;
+    
 }
 
 #tickers-session {
@@ -66,6 +67,11 @@ tr:nth-child(even) {
     background-color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
 }
+.symbol{
+    border-radius: 5px;
+    padding: 3px;
+}
+
 .symbol:hover {
     color: #90ee90;
 }
@@ -150,6 +156,8 @@ tr:nth-child(even) {
     margin-right: 3px;
     font-size: 12px;
     cursor: help; /* 🖱️ Shows tooltip cursor */
+    float: left !important;
+    text-align: left !important;
 }
 
 /* 🎯 Different Bonus Colors */

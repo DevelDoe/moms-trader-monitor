@@ -98,7 +98,7 @@
             .segment.filled.down {
                 background-color: #dc3545; /* Red for negative change */
             }
-            #drag-area{
+            #drag-area {
                 height: 50px;
                 width: 100vw;
             }
@@ -107,17 +107,18 @@
     <body class="draggable">
         <div id="drag-area" class="draggable"></div>
         <ul id="log" class="draggable"></ul>
-        <div id="symbol-summary" >
+        <div id="symbol-summary">
             <ul id="symbol-list" class="no-drag"></ul>
         </div>
 
         <script>
             const logElement = document.getElementById("log");
             const symbolListElement = document.getElementById("symbol-list");
-            const maxAlerts = 24;
+            const maxAlerts = 100;
 
             // Track the latest percentage for each symbol.
             const symbolPercents = {};
+            const symbolPrices = {}; // Stores latest prices
             const symbolColors = {}; // For fixed background colors
 
             // Generate a distinct color for each symbol.
@@ -137,7 +138,7 @@
                 // Create a new AudioContext
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const startTime = audioCtx.currentTime;
-                const beepDuration = 0.01; // duration of the beep in seconds
+                const beepDuration = 0.15; // duration of the beep in seconds
 
                 // Create an oscillator and gain node
                 const oscillator = audioCtx.createOscillator();
@@ -148,15 +149,15 @@
                 gainNode.connect(audioCtx.destination);
 
                 // Set the oscillator frequency and waveform type
-                oscillator.frequency.value = 369;
-                oscillator.type = "saw";
+                oscillator.frequency.value = 443;
+                oscillator.type = "square";
 
                 // Start and stop the oscillator to play the sound
                 oscillator.start(startTime);
                 oscillator.stop(startTime + beepDuration);
 
                 // Apply a quick fade-out to smooth out the sound and avoid clicks
-                gainNode.gain.setValueAtTime(1, startTime);
+                gainNode.gain.setValueAtTime(0.2, startTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + beepDuration);
             }
 
@@ -171,15 +172,19 @@
 
                 const entries = [];
                 for (const symbol in symbolCount) {
-                    if (symbolCount[symbol] > 1 && symbolPercents[symbol] !== undefined) {
+                    // ✅ Allow all symbols (no filtering)
+                    if (symbolPercents[symbol] !== undefined) {
                         entries.push([symbol, symbolPercents[symbol]]);
                     }
                 }
 
-                const sortedSymbols = entries
-                    .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)) // Sort by absolute value
-                    .slice(0, MAX_SYMBOLS); // Limit the number of symbols
+                // ✅ Sort by absolute percentage change
+                let sortedSymbols = entries.sort(([, a], [, b]) => Math.abs(b) - Math.abs(a));
 
+                // ✅ Keep only the top `MAX_SYMBOLS`
+                // sortedSymbols = sortedSymbols.slice(0, MAX_SYMBOLS);
+
+                // ✅ Display all remaining symbols without filtering
                 symbolListElement.innerHTML = "";
 
                 sortedSymbols.forEach(([symbol, percent]) => {
@@ -187,16 +192,15 @@
                     const midPoint = Math.floor(totalSegments / 2);
                     let segmentsHtml = "";
 
-                    // Normalize to 5 max segments left/right
                     const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2));
 
                     for (let i = 0; i < totalSegments; i++) {
                         if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
-                            segmentsHtml += '<span class="segment filled up"></span>'; // Positive (Right Side - Green)
+                            segmentsHtml += '<span class="segment filled up"></span>';
                         } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
-                            segmentsHtml += '<span class="segment filled down"></span>'; // Negative (Left Side - Red)
+                            segmentsHtml += '<span class="segment filled down"></span>';
                         } else {
-                            segmentsHtml += '<span class="segment"></span>'; // Neutral / Empty
+                            segmentsHtml += '<span class="segment"></span>';
                         }
                     }
 
@@ -239,51 +243,57 @@
                     ws.send(JSON.stringify({ client_id: "web-client" }));
                 };
 
+                // Filtering criteria (set to `null` to disable a filter)
+                const filterDirection = null; // Example: "UP" or "DOWN"
+                const filterChangePercent = 1; // Example: 3 (filters for ≥3% change)
+                const filterPrice = 1.75; // Example: 2 (filters for price ≥2)
+                const filterVolume = null; // Example: 1000 (filters for volume ≥1000)
+
                 ws.onmessage = function (event) {
                     console.log("[CLIENT] Received:", event.data);
                     try {
                         const alertData = JSON.parse(event.data);
-                        // Validate the incoming data.
+
+                        // Validate the incoming data
                         if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.price === undefined || alertData.volume === undefined) {
                             console.warn("[CLIENT] Received malformed alert:", alertData);
                             return;
                         }
 
-                        // Filter out alerts with price below $2.
-                        if (alertData.price < 1.75) {
-                            console.log(`[CLIENT] Alert with price $${alertData.price.toFixed(2)} filtered out.`);
-                            return;
-                        }
-
                         const symbol = alertData.symbol;
-
-                        // Apply the negative sign if direction is "DOWN".
                         const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
 
-                        // Update the symbol's latest percentage.
-                        symbolPercents[symbol] = percent;
+                        // ✅ Filtering logic (only filter if the variable is NOT `null`)
+                        if (filterDirection !== null && alertData.direction !== filterDirection) return;
+                        if (filterChangePercent !== null && Math.abs(percent) < filterChangePercent) return;
+                        if (filterPrice !== null && alertData.price < filterPrice) return;
+                        if (filterVolume !== null && alertData.volume < filterVolume) return;
 
-                        // Create the alert element.
+                        // Update the symbol's latest percentage
+                        symbolPercents[symbol] = percent;
+                        symbolPrices[symbol] = alertData.price;
+
+                        // Create the alert element
                         const alertDiv = document.createElement("li");
                         alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
 
-                        // Create the symbol element with its background color.
+                        // Create the symbol element with its background color
                         const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)}; 
-              padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
+          padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
 
                         alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data">
-              <span>${percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)}
-              V${alertData.volume}</span>`;
+          <span>${percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)}
+          V${alertData.volume}</span>`;
 
-                        // Append the new alert.
+                        // Append the new alert
                         logElement.appendChild(alertDiv);
 
-                        // Remove oldest alerts if exceeding maxAlerts.
+                        // Remove oldest alerts if exceeding maxAlerts
                         while (logElement.children.length > maxAlerts) {
                             logElement.removeChild(logElement.firstChild);
                         }
 
-                        // Update the symbol summary.
+                        // Update the symbol summary
                         updateSymbolSummary();
                     } catch (error) {
                         console.error("[CLIENT] Error parsing message:", error);

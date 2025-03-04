@@ -256,6 +256,7 @@ function updateTickersTable(tickers, tableId, prevTickers) {
                 cell.textContent = ticker[key];
                 cell.style.cursor = "pointer";
                 cell.className = "symbol no-drag";
+                cell.style.backgroundColor = getSymbolColor(ticker[key]);
                 cell.title = "A ticker symbol is a short, unique identifier for a publicly traded company.";
                 cell.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
@@ -308,6 +309,21 @@ function updateTickersTable(tickers, tableId, prevTickers) {
     });
 
     console.log(`✅ Finished updating table: ${tableId}`);
+}
+
+const symbolColors = {};
+
+// Generate a distinct color for each symbol.
+function getSymbolColor(symbol) {
+    if (!symbolColors[symbol]) {
+        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hue = (hash * 37) % 360;
+        const saturation = 80;
+        const lightness = 50;
+        const alpha = 0.5;
+        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    }
+    return symbolColors[symbol];
 }
 
 function clearSessionList() {
