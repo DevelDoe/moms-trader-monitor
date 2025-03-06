@@ -3,18 +3,48 @@ const WebSocket = require("ws");
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
 
+const dotenv = require("dotenv");
+const path = require("path");
+dotenv.config({ path: path.join(__dirname, "../../config/.env") });
+
+// struct
+// {
+//     "client_id": "scanner123",
+//     "data": {
+//       "symbol": "AAPL",
+//       "direction": "UP",
+//       "change_percent": 1.25,
+//       "price": 150.75,
+//       "volume": 50000
+//     }
+//   }
+
 const connectMTP = () => {
     // Create a WebSocket connection to the server
-    const ws = new WebSocket("ws://127.0.0.1:9090");
+    const ws = new WebSocket(process.env.MTP_WS);
 
     // Handle WebSocket connection open
-    ws.on("open", () => {
-        log.log("Connected to WebSocket server.");
-    });
+    ws.onopen = function () {
+        log.log("Connected to WebSocket server");
+        ws.send(JSON.stringify({ client_id: "MTM-Collector" }));
+    };
 
     // Handle incoming messages
-    ws.on("message", (data) => {
-        log.log(`Received message: ${data}`);
+    ws.on("message", (event) => {
+        try {
+            const message = event.toString(); // Ensure the message is a string
+            log.log("[mtp.js] Received:", message);
+
+            const tickerStore = require("../store");
+
+            if (tickerStore && typeof tickerStore.addMtpAlerts === "function") {
+                tickerStore.addMtpAlerts(message);
+            } else {
+                log.warn("[mtp] tickerStore.addMtpAlerts is not available due to circular dependency.");
+            }
+        } catch (error) {
+            log.error("[mtp.js] Error processing WebSocket message:", error);
+        }
     });
 
     // Handle connection close
@@ -27,7 +57,7 @@ const connectMTP = () => {
         log.error(`WebSocket error: ${err.message}`);
     });
 };
-// connectMTP();
+connectMTP();
 
 // Function to fetch symbol data from the API using vanilla JavaScript's fetch
 const getSymbolMeta = async (symbol) => {
@@ -70,7 +100,7 @@ const getSymbolMeta = async (symbol) => {
         } else {
             log.warn("[mtp] Store updateMeta function not available.");
         }
-        
+
         return data;
     } catch (error) {
         log.error(`Error fetching data for symbol ${symbol}: ${error.message}`);

@@ -18,32 +18,22 @@ function openTab(evt, tabId) {
 
 const HARDCODED_ATTRIBUTES = {
     session: {
-        Price: true,
-        ChangePercent: false,
-        FiveM: false,
-        Float: true,
-        Volume: true,
-        SprPercent: false,
-        Time: false,
-        HighOfDay: false,
-        News: false,
-        Count: true,
-        Score: true,
-        Bonuses: true,
+        Price: false,
+        alertChangePercent: false,
+        cumulativeUpChange: false,
+        cumulativeDownChange: false,
+        fiveMinVolume: false,
+        Score: false,
+        Bonuses: false,
     },
     daily: {
         Price: false,
-        ChangePercent: false,
-        FiveM: false,
-        Float: false,
-        Volume: false,
-        SprPercent: false,
-        Time: false,
-        HighOfDay: false,
-        News: false,
-        Count: false,
-        Score: true,
-        Bonuses: true,
+        alertChangePercent: false,
+        cumulativeUpChange: false,
+        cumulativeDownChange: false,
+        fiveMinVolume: false,
+        Score: false,
+        Bonuses: false,
     },
 };
 
@@ -140,7 +130,7 @@ function initializeTopSection() {
     const maxFloatInput = document.getElementById("max-float");
     const minScoreInput = document.getElementById("min-score");
     const maxScoreInput = document.getElementById("max-score");
-    const topTransparentToggle = document.getElementById("top-transparent-toggle");
+    // const topTransparentToggle = document.getElementById("top-transparent-toggle");
     const sessionLengthInput = document.getElementById("session-length");
     const dailyLengthInput = document.getElementById("daily-length");
 
@@ -153,7 +143,7 @@ function initializeTopSection() {
         !maxScoreInput ||
         !minVolumeInput ||
         !maxVolumeInput ||
-        !topTransparentToggle ||
+        // !topTransparentToggle ||
         !sessionLengthInput ||
         !dailyLengthInput
     ) {
@@ -184,7 +174,7 @@ function initializeTopSection() {
     if (window.settings.top.minVolume !== undefined) minVolumeInput.value = window.settings.top.minVolume;
     if (window.settings.top.maxVolume !== undefined) maxVolumeInput.value = window.settings.top.maxVolume;
 
-    if (window.settings.top.transparent !== undefined) topTransparentToggle.checked = window.settings.top.transparent;
+    // if (window.settings.top.transparent !== undefined) topTransparentToggle.checked = window.settings.top.transparent;
 
     // ✅ Load saved length settings
     sessionLengthInput.value = window.settings.top.lists?.session?.length ?? 10;
@@ -199,7 +189,7 @@ function initializeTopSection() {
         maxFloat: maxFloatInput.value,
         minScore: minScoreInput.value,
         maxScore: maxScoreInput.value,
-        transparent: topTransparentToggle.checked,
+        // transparent: topTransparentToggle.checked,
         sessionLength: sessionLengthInput.value,
         dailyLength: dailyLengthInput.value,
     });
@@ -309,29 +299,29 @@ function initializeTopSection() {
         }
     }
 
-    async function updateTransparency() {
-        try {
-            const latestSettings = await window.settingsAPI.get();
-            if (!latestSettings || !latestSettings.top) {
-                console.error("❌ Failed to fetch latest settings.");
-                return;
-            }
+    // async function updateTransparency() {
+    //     try {
+    //         const latestSettings = await window.settingsAPI.get();
+    //         if (!latestSettings || !latestSettings.top) {
+    //             console.error("❌ Failed to fetch latest settings.");
+    //             return;
+    //         }
 
-            const newSettings = {
-                ...latestSettings, // ✅ Spread entire settings
-                top: {
-                    ...latestSettings.top, // ✅ Preserve other top settings
-                    transparent: topTransparentToggle.checked, // ✅ Update only transparency
-                },
-            };
+    //         const newSettings = {
+    //             ...latestSettings, // ✅ Spread entire settings
+    //             top: {
+    //                 ...latestSettings.top, // ✅ Preserve other top settings
+    //                 transparent: topTransparentToggle.checked, // ✅ Update only transparency
+    //             },
+    //         };
 
-            await window.settingsAPI.update(newSettings);
-            console.log("✅ Updated transparency setting:", newSettings.top);
-            window.topAPI.refresh(); // ✅ Refresh UI
-        } catch (error) {
-            console.error("❌ Error updating transparency:", error);
-        }
-    }
+    //         await window.settingsAPI.update(newSettings);
+    //         console.log("✅ Updated transparency setting:", newSettings.top);
+    //         window.topAPI.refresh(); // ✅ Refresh UI
+    //     } catch (error) {
+    //         console.error("❌ Error updating transparency:", error);
+    //     }
+    // }
 
     async function updateListLength(type, input) {
         const newLength = parseInt(input.value, 10) || 10;
@@ -379,7 +369,7 @@ function initializeTopSection() {
     minScoreInput.addEventListener("input", updateScoreFilter);
     maxScoreInput.addEventListener("input", updateScoreFilter);
 
-    topTransparentToggle.addEventListener("change", updateTransparency);
+    // topTransparentToggle.addEventListener("change", updateTransparency);
     sessionLengthInput.addEventListener("input", () => updateListLength("session", sessionLengthInput));
     dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
 }

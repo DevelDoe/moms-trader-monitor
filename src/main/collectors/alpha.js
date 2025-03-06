@@ -36,7 +36,6 @@ if (fs.existsSync(CACHE_FILE)) {
 }
 
 
-
 // ✅ Extract and validate API keys
 const API_KEYS = (() => {
     try {
@@ -163,10 +162,6 @@ async function fetchAlphaVantageData(ticker) {
                 const store = require("../store");
                 store.updateMeta(ticker, { overview: data });
             }
-
-           
-
-            
 
             return latestData;
         } catch (error) {

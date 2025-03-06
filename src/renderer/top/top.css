@@ -1,12 +1,8 @@
 body {
     background-color: #1c1d23; /* Dark mode background */
     color: #e0e0e0; /* Light text for contrast */
-    /* position: relative; */
-    height: 100vw;
-    overflow: hidden; /* Disable scrolling for the entire body */
-    height: 100vh;
-    font-size: 12px;
-    padding: 3px 5px;
+    font-size: 14px;
+    padding: 10px 9px;
     margin: 0 auto;
 }
 
@@ -55,7 +51,7 @@ td {
 }
 
 #clear-session-btn {
-    position: fixed;
+    /* position: fixed; */
     bottom: 10px;
     right: -0;
     background-color: rgba(255, 255, 255, 0.1);
@@ -70,6 +66,9 @@ td {
 .symbol{
     border-radius: 5px;
     padding: 3px;
+    color: #1c1d23;
+    font-weight: bold;
+    width: 50px;
 }
 
 .symbol:hover {
@@ -110,43 +109,13 @@ td {
 
 /* Apply animations */
 .highlight-new {
-    animation: fadeOut 3s ease-in forwards;
+    animation: fadeOut 0.2s ease-in forwards;
 }
 .highlight-updated {
-    animation: fadeOutUpdated 3s ease-in forwards;
+    animation: fadeOutUpdated 0.2s ease-in forwards;
 }
 
 
-
-/* ✅ Style the burger menu inside the button */
-.burger-menu {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    width: 30px;
-    height: 25px;
-}
-
-.burger-menu span {
-    display: block;
-    width: 100%;
-    height: 4px;
-    background-color: #e0e0e0;
-    transition: 0.3s;
-}
-
-/* ✅ Animate burger into 'X' when expanded */
-.show-all .burger-menu span:nth-child(1) {
-    transform: translateY(10px) rotate(45deg);
-}
-
-.show-all .burger-menu span:nth-child(2) {
-    opacity: 0;
-}
-
-.show-all .burger-menu span:nth-child(3) {
-    transform: translateY(-10px) rotate(-45deg);
-}
 
 /* ✅ BONUS STYLES */
 .bonus {

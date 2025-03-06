@@ -365,6 +365,7 @@ section#min-max-filters {
     display: flex;
     flex-wrap: wrap;
     gap: 10px; /* Adjust spacing between pairs */
+    margin-bottom: 10px;
   }
 
   section#min-max-filters label {

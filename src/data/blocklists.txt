@@ -1,48 +1,4 @@
-{
-  "top": {
-    "minPrice": 0,
-    "maxPrice": 0,
-    "minFloat": 0,
-    "maxFloat": 0,
-    "minScore": 0,
-    "maxScore": 0,
-    "minVolume": 0,
-    "maxVolume": 0,
-    "lists": {
-      "session": {
-        "Price": true,
-        "Float": false,
-        "Volume": false,
-        "alertChangePercent": false,
-        "cumulativeUpChange": true,
-        "cumulativeDownChange": false,
-        "Score": true,
-        "Bonuses": true,
-        "length": 6,
-        "fiveMinVolume": false
-      },
-      "daily": {
-        "Price": false,
-        "Float": false,
-        "Volume": false,
-        "alertChangePercent": false,
-        "cumulativeUpChange": true,
-        "cumulativeDownChange": false,
-        "Score": true,
-        "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": false
-      }
-    },
-    "transparent": false
-  },
-  "news": {
-    "showTrackedTickers": true,
-    "filteredTickers": [
-      "GV",
-      "HOLO"
-    ],
-    "blockList": [
+"blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
       "What's Going On",
@@ -56,8 +12,7 @@
       "Earnings Schedule",
       "Stock Rocketing",
       "Shares are",
-      "Looking in to",
-      "Rocketing"
+      "Looking in to"
     ],
     "bullishList": [
       "FDA Approves",
@@ -118,8 +73,7 @@
       "beats",
       "Purchase",
       "Signs Commercial Deal",
-      "Positivity",
-      "Reaches Financing"
+      "Positivity"
     ],
     "bearishList": [
       "Sell Alert",
@@ -146,5 +100,3 @@
       "Non-Binding"
     ],
     "allowMultiSymbols": false
-  }
-}

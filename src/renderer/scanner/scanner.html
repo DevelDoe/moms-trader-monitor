@@ -67,7 +67,7 @@
                 font-size: 14px;
                 background-color: #1c1d23;
                 position: fixed;
-                bottom: 0;
+                bottom: -4px;
             }
             ul {
                 padding: 0;
@@ -77,30 +77,45 @@
                 list-style-type: none;
                 font-weight: bold;
                 margin-bottom: 2px;
+                color: #1c1d23;
             }
             /* Progress bar styling */
             .progress-bar {
                 display: inline-block;
                 margin: 0 5px;
             }
+
             .segment {
                 display: inline-block;
-                width: 8px;
+                width: 8px; /* Adjust size */
                 height: 10px;
-                background-color: #555; /* Neutral */
-                margin-right: 1px;
+                margin: 1px;
+                background-color: gray;
+                box-sizing: border-box; /* Ensures consistent sizing */
             }
 
             .segment.filled.up {
-                background-color: #28a745; /* Green for positive change */
+                background-color: #28a745;
             }
 
             .segment.filled.down {
-                background-color: #dc3545; /* Red for negative change */
+                background-color: #dc3545;
             }
+
             #drag-area {
                 height: 50px;
                 width: 100vw;
+            }
+            .symbol {
+                display: inline-block;
+                padding: 2px 5px;
+                width: 40px;
+                border-radius: 3px;
+                cursor: pointer;
+                text-align: center;
+            }
+            .symbol:hover {
+                color: #90ee90;
             }
         </style>
     </head>
@@ -114,7 +129,7 @@
         <script>
             const logElement = document.getElementById("log");
             const symbolListElement = document.getElementById("symbol-list");
-            const maxAlerts = 100;
+            const maxAlerts = 50;
 
             // Track the latest percentage for each symbol.
             const symbolPercents = {};
@@ -134,7 +149,12 @@
                 return symbolColors[symbol];
             }
 
+            let isPlaying = false; // Debounce flag
+
             function play() {
+                if (isPlaying) return; // Prevent multiple sounds from playing at once
+                isPlaying = true;
+
                 // Create a new AudioContext
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const startTime = audioCtx.currentTime;
@@ -159,67 +179,69 @@
                 // Apply a quick fade-out to smooth out the sound and avoid clicks
                 gainNode.gain.setValueAtTime(0.2, startTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + beepDuration);
+
+                // Reset the flag after the sound finishes playing
+                setTimeout(() => {
+                    isPlaying = false;
+                }, beepDuration * 1000); // Convert seconds to milliseconds
             }
 
             function updateSymbolSummary() {
-                const MAX_SYMBOLS = 5; // Set the maximum number of symbols to display
-                const symbolCount = {};
+                const MAX_SYMBOLS = 5;
+                const alerts = [...logElement.querySelectorAll(".alert")]; // Get all alert elements
 
-                logElement.querySelectorAll(".alert-symbol").forEach((span) => {
-                    const symbol = span.textContent.trim();
-                    symbolCount[symbol] = (symbolCount[symbol] || 0) + 1;
-                });
+                const recentSymbols = alerts
+                    .slice(-MAX_SYMBOLS)
+                    .map((alert) => {
+                        const symbolSpan = alert.querySelector(".alert-symbol");
+                        if (!symbolSpan) return null;
 
-                const entries = [];
-                for (const symbol in symbolCount) {
-                    // ✅ Allow all symbols (no filtering)
-                    if (symbolPercents[symbol] !== undefined) {
-                        entries.push([symbol, symbolPercents[symbol]]);
-                    }
-                }
+                        const symbol = symbolSpan.textContent.trim();
+                        const percentText = alert.querySelector(".symbol-data span:first-child")?.textContent.trim() ?? "0%";
+                        const percent = parseFloat(percentText.replace("%", "")) || 0;
 
-                // ✅ Sort by absolute percentage change
-                let sortedSymbols = entries.sort(([, a], [, b]) => Math.abs(b) - Math.abs(a));
+                        return [symbol, percent]; // Store the symbol and its actual percentage
+                    })
+                    .filter(Boolean);
 
-                // ✅ Keep only the top `MAX_SYMBOLS`
-                // sortedSymbols = sortedSymbols.slice(0, MAX_SYMBOLS);
-
-                // ✅ Display all remaining symbols without filtering
                 symbolListElement.innerHTML = "";
 
-                sortedSymbols.forEach(([symbol, percent]) => {
+                recentSymbols.forEach(([symbol, percent]) => {
                     const totalSegments = 10;
                     const midPoint = Math.floor(totalSegments / 2);
-                    let segmentsHtml = "";
+                    let segmentsHtml = Array(totalSegments).fill('<span class="segment"></span>');
 
                     const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2));
 
-                    for (let i = 0; i < totalSegments; i++) {
-                        if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
-                            segmentsHtml += '<span class="segment filled up"></span>';
-                        } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
-                            segmentsHtml += '<span class="segment filled down"></span>';
-                        } else {
-                            segmentsHtml += '<span class="segment"></span>';
+                    if (percent > 0) {
+                        // Fill positive segments (right side)
+                        for (let i = midPoint; i < midPoint + filledSegments && i < totalSegments; i++) {
+                            segmentsHtml[i] = '<span class="segment filled up"></span>';
+                        }
+                    } else if (percent < 0) {
+                        // Fill negative segments (left side)
+                        for (let i = midPoint - 1; i >= midPoint - filledSegments && i >= 0; i--) {
+                            segmentsHtml[i] = '<span class="segment filled down"></span>';
                         }
                     }
 
                     const symbolSpan = document.createElement("span");
                     symbolSpan.textContent = symbol;
                     symbolSpan.style.backgroundColor = getSymbolColor(symbol);
-                    symbolSpan.style.padding = "2px 5px";
-                    symbolSpan.style.borderRadius = "3px";
-                    symbolSpan.style.cursor = "pointer";
+                    symbolSpan.className = "symbol";
                     symbolSpan.addEventListener("click", () => {
+                        console.log("setting active ticker:", symbol);
+                        window.activeAPI.setActiveTicker(symbol);
                         navigator.clipboard
                             .writeText(symbol)
                             .then(() => console.log(`Copied ${symbol} to clipboard`))
                             .catch((err) => console.error("Copy failed:", err));
+                        
                     });
 
                     const progressBar = document.createElement("span");
                     progressBar.className = "progress-bar";
-                    progressBar.innerHTML = segmentsHtml;
+                    progressBar.innerHTML = segmentsHtml.join(""); // Convert array to string
 
                     const percentSpan = document.createElement("span");
                     percentSpan.textContent = `${percent.toFixed(2)}%`;
@@ -228,10 +250,18 @@
                     li.className = "symbol-item";
                     li.appendChild(symbolSpan);
                     li.appendChild(progressBar);
-                    li.appendChild(percentSpan);
+                    // li.appendChild(percentSpan);
                     symbolListElement.appendChild(li);
                     play();
                 });
+            }
+
+            // Helper function to replace a specific index in an HTML string
+            function replaceAt(str, index, replacement) {
+                let segments = str.match(/<span class="segment.*?<\/span>/g); // Extract all segment spans
+                if (!segments || index >= segments.length) return str;
+                segments[index] = replacement; // Replace at the given index
+                return segments.join(""); // Rebuild the string
             }
 
             // Function to create and manage the WebSocket connection.
@@ -246,7 +276,7 @@
                 // Filtering criteria (set to `null` to disable a filter)
                 const filterDirection = null; // Example: "UP" or "DOWN"
                 const filterChangePercent = 1; // Example: 3 (filters for ≥3% change)
-                const filterPrice = 1.75; // Example: 2 (filters for price ≥2)
+                const filterPrice = 1.5; // Example: 2 (filters for price ≥2)
                 const filterVolume = null; // Example: 1000 (filters for volume ≥1000)
 
                 ws.onmessage = function (event) {

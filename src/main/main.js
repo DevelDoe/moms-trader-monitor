@@ -51,7 +51,8 @@ function createWindow(name, createFn) {
 
 ////////////////////////////////////////////////////////////////////////////////////
 // COLLECTORS
-const { collectTickers } = require("./collectors/tickers.js");
+// const { collectTickers } = require("./collectors/tickers.js");
+const { connectMTP } = require("./collectors/mtp");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -64,7 +65,6 @@ const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock"); // 
 // Default settings for fresh installs
 const DEFAULT_SETTINGS = {
     top: {
-        transparent: false,
         minPrice: 0,
         maxPrice: 100,
         minFloat: 0,
@@ -75,34 +75,26 @@ const DEFAULT_SETTINGS = {
         maxVolume: 0,
         lists: {
             session: {
-                Price: true,
-                ChangePercent: true,
-                FiveM: true,
-                Float: true,
-                Volume: true,
-                SprPercent: true,
-                Time: true,
-                HighOfDay: true,
-                News: true,
-                Count: true,
+                Price: false,
+                Float: false,
+                Volume: false,
+                alertChangePercent: false,
+                cumulativeUpChange: true,
+                cumulativeDownChange: false,
                 Score: true,
                 Bonuses: true,
-                length: 10,
+                length: 5,
             },
             daily: {
                 Price: false,
-                ChangePercent: false,
-                FiveM: false,
                 Float: false,
                 Volume: false,
-                SprPercent: false,
-                Time: false,
-                HighOfDay: false,
-                News: false,
-                Count: false,
+                alertChangePercent: false,
+                cumulativeUpChange: true,
+                cumulativeDownChange: false,
                 Score: true,
                 Bonuses: true,
-                length: 4,
+                length: 5,
             },
         },
     },
@@ -341,10 +333,21 @@ ipcMain.on("toggle-settings", () => {
     }
 });
 
+let lastSettingsFetch = 0;
+const SETTINGS_DEBOUNCE_TIME = 1000; // 1 second
+
 ipcMain.handle("get-settings", () => {
-    log.log("Returning settings");
+    const now = Date.now();
+
+    if (now - lastSettingsFetch < SETTINGS_DEBOUNCE_TIME) {
+        return appSettings; // Prevent logging repeated calls
+    }
+
+    lastSettingsFetch = now;
+    log.log("Returning settings"); // ✅ Only logs once per second
     return appSettings;
 });
+
 
 ipcMain.on("update-settings", (event, newSettings) => {
     log.log("Updating Settings...");
@@ -504,8 +507,8 @@ app.on("ready", () => {
     windows.splash.once("closed", () => {
         log.log("Splash screen closed. Loading main app...");
 
-        log.log("Starting ticker collection...");
-        collectTickers(); // ✅ Start ticker collection
+        // log.log("Starting ticker collection...");
+        // collectTickers(); // ✅ Start ticker collection
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));

@@ -11,7 +11,7 @@
         <link rel="stylesheet" href="./top.css" />
     </head>
     <body class="draggable">
-        <section id="tickers-wrapper" class="open">
+        <section id="tickers-wrapper" >
             <div class="table">
                 <table id="tickers-session">
                     <thead></thead>
@@ -25,27 +25,7 @@
                 </table>
             </div>
         </section>
-        <script>
-            document.addEventListener("DOMContentLoaded", async () => {
-                // Fetch and store settings globally
-                window.settings = await window.settingsAPI.get();
 
-                setTransparency(window.settings.top.transparent);
-
-                window.settingsAPI.onUpdate((updatedSettings) => {
-                    console.log("Received updated settings:", updatedSettings);
-                    window.settings = updatedSettings; // ✅ Update global settings
-                    if (updatedSettings.top.transparent !== undefined) {
-                        setTransparency(updatedSettings.top.transparent);
-                    }
-                });
-
-                function setTransparency(isTransparent) {
-                    document.body.style.backgroundColor = isTransparent ? "transparent" : "#1c1d23";
-                    console.log(`🎨 Updated background color: ${isTransparent ? "Transparent" : "#1c1d23"}`);
-                }
-            });
-        </script>
         <script src="./top.js"></script>
     </body>
 </html>

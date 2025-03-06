@@ -12,7 +12,7 @@ let alpacaSocket = null;
 
 const connectAlpacaNews = () => {
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
-        log.log("WebSocket already connected, skipping duplicate connection.");
+        log.log("✅ WebSocket already connected. Skipping duplicate connection.");
         return;
     }
 
@@ -38,13 +38,20 @@ const connectAlpacaNews = () => {
             const data = JSON.parse(event.data);
 
             if (!Array.isArray(data) || data.length === 0) {
-                log.warn("Received empty or invalid news data.");
+                log.warn("Received empty or invalid data from WebSocket.");
                 return;
             }
 
-            log.log(`Received ${data.length} news entries. Processing now...`);
+            // ✅ Strictly Ignore Non-News Messages
+            const newsItems = data.filter((item) => item.T === "news");
+
+            if (newsItems.length === 0) {
+                return; 
+            }
+
+            log.log(`📰 Processing ${newsItems.length} news entries.`);
             setImmediate(() => {
-                data.forEach(handleNewsData);
+                newsItems.forEach(handleNewsData);
             });
         } catch (error) {
             log.error("Error processing WebSocket message:", error.message);
@@ -61,25 +68,36 @@ const connectAlpacaNews = () => {
     };
 };
 
-// ✅ Lazy Load `tickerStore` only when needed
+// ✅ Handle News Items Only
 const handleNewsData = (newsItem) => {
-    const tickerStore = require("../store"); // 🔥 Require here to avoid circular dependency
-    log.log(`Processing news item with headline: ${JSON.stringify(newsItem.headline)}`); // ✅ Log full news data
+    const tickerStore = require("../store");
 
-    const newsArray = Array.isArray(newsItem) ? newsItem : [newsItem];
+    if (!newsItem || typeof newsItem !== "object") {
+        log.warn("Received malformed news item:", JSON.stringify(newsItem));
+        return;
+    }
 
-    newsArray.forEach((news) => {
-        if (!Array.isArray(news.symbols) || news.symbols.length === 0) {
-            log.warn(`Skipping news with no symbols: "${news.headline}" `);
-            return;
-        }
+    const { headline, symbols } = newsItem;
+    log.log(`📰 Processing news item: ${JSON.stringify(newsItem)}`);
 
-        log.log(`Storing news for tickers: ${news.symbols.join(", ")}`);
-        tickerStore.addNews(newsArray);
+    // ✅ Check for missing headline
+    if (!headline) {
+        log.warn("News item missing headline. Skipping...");
+        return;
+    }
 
-        BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send("news-updated", { newsItems: newsArray });
-        });
+    // ✅ Check for missing or invalid symbols
+    if (!Array.isArray(symbols) || symbols.length === 0) {
+        log.warn(`Skipping news with no symbols: "${headline}"`);
+        return;
+    }
+
+    log.log(`Storing news for tickers: ${symbols.join(", ")}`);
+    tickerStore.addNews([newsItem]);
+
+    // ✅ Send update to all open windows
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("news-updated", { newsItems: [newsItem] });
     });
 };
 
@@ -93,7 +111,7 @@ const fetchHistoricalNews = async (ticker) => {
 
     const ALPACA_NEWS_URL = `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
 
-    log.log(`🔍 Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
+    log.log(`Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
 
     try {
         const response = await fetch(ALPACA_NEWS_URL, {
