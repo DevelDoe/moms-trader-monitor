@@ -334,7 +334,7 @@ ipcMain.on("toggle-settings", () => {
 });
 
 let lastSettingsFetch = 0;
-const SETTINGS_DEBOUNCE_TIME = 1000; // 1 second
+const SETTINGS_DEBOUNCE_TIME = 100; // 1 second
 
 ipcMain.handle("get-settings", () => {
     const now = Date.now();
@@ -348,8 +348,10 @@ ipcMain.handle("get-settings", () => {
     return appSettings;
 });
 
-
+let lastFilterBroadcast = 0;
 ipcMain.on("update-settings", (event, newSettings) => {
+    const now = Date.now();
+
     log.log("Updating Settings...");
 
     // ✅ Ensure `appSettings` exists
@@ -371,8 +373,13 @@ ipcMain.on("update-settings", (event, newSettings) => {
 
     saveSettings(); // ✅ Save settings after updates
 
+    if (now - lastFilterBroadcast < SETTINGS_DEBOUNCE_TIME) {
+        return appSettings; // Prevent logging repeated calls
+    }
+
     // ✅ Broadcast updated settings to all windows
     log.log("Broadcasting 'filter-updated' event...");
+    lastFilterBroadcast = now;
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("settings-updated", appSettings);
     });
@@ -470,8 +477,6 @@ ipcMain.on("set-active-ticker", (event, ticker) => {
         log.warn("Active ticker window not found.");
     }
 });
-
-
 
 // news
 ipcMain.on("toggle-news", () => {

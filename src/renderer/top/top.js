@@ -31,14 +31,13 @@ setInterval(() => {
         clearSessionList();
         sessionClearTriggered = true;
         lastTriggeredHour = hour; // Prevent retriggers within the same hour
-    } 
-    
+    }
+
     // Reset flag after leaving the 28th or 58th minute
     if (minute !== 28 && minute !== 58) {
         sessionClearTriggered = false;
     }
 }, 1000);
-
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Top Window...");
@@ -69,9 +68,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         await applySavedFilters();
         await fetchAndUpdateTickers();
     });
-
-    
-      
 });
 
 async function fetchAndUpdateTickers() {
@@ -108,10 +104,10 @@ async function fetchAndUpdateTickers() {
         // ✅ Apply filters to each dataset
         const applyFilters = (data) =>
             data
-                .map((ticker) => ({ 
-                    ...ticker, 
+                .map((ticker) => ({
+                    ...ticker,
                     Score: calculateScore(ticker),
-                    Float: ticker.Float !== undefined ? parseFloatValue(ticker.Float) : null, // ✅ Ensure Float is handled
+                    Float: ticker.Float !== undefined ? parseHumanNumber(ticker.Float) : null, // ✅ Ensure Float is handled
                     Volume: ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : null, // ✅ Ensure Volume is handled
                 }))
                 .filter(
@@ -126,7 +122,6 @@ async function fetchAndUpdateTickers() {
                         (maxVolume === 0 || (ticker.Volume !== null && ticker.Volume <= maxVolume)) // ✅ Only check if Volume exists
                 )
                 .sort((a, b) => b.Score - a.Score);
-        
 
         const filteredSession = applyFilters(sessionData);
         const filteredDaily = applyFilters(dailyData);
@@ -178,9 +173,9 @@ async function fetchAndUpdateTickers() {
         }
 
         // ✅ Update UI
-        updateTickersTable(tickersSessions, "tickers-session", oldTickersSessions);
-        updateTickersTable(tickersDaily, "tickers-daily", oldTickersDaily);
-        // updateTickersTable(filteredAll, "tickers-all", {}); // ✅ No need to compare previous state
+        updateTickersList(tickersSessions, "tickers-session", oldTickersSessions);
+        updateTickersList(tickersDaily, "tickers-daily", oldTickersDaily);
+        // updateTickersList(filteredAll, "tickers-all", {}); // ✅ No need to compare previous state
 
         console.log("✅ UI Updated Successfully!");
     } catch (error) {
@@ -202,84 +197,98 @@ async function applySavedFilters() {
     tickersDaily = [];
 }
 
-function updateTickersTable(tickers, tableId, prevTickers) {
-    const table = document.getElementById(tableId);
-    const tableHead = table.querySelector("thead");
-    const tableBody = table.querySelector("tbody");
+function updateTickersList(tickers, listId, prevTickers) {
+    const ul = document.getElementById(listId);
 
     // ✅ Ensure tickers array is not empty before calling Object.keys
-    if (tickers.length === 0) {
-        console.warn(`⚠️ No tickers available for ${tableId}`);
-
-        // tableHead.innerHTML = "<tr><th>No Data Available</th></tr>";
-        tableBody.innerHTML = ""; // ✅ Clear existing rows
-
+    if (!tickers.length) {
+        console.warn(`⚠️ No tickers available for ${listId}`);
+        ul.innerHTML = "<li>No tickers available</li>"; // ✅ Clear existing list and show message
         return;
     }
 
-    // 🔄 **Clear table before updating**
-    tableBody.innerHTML = ""; // ✅ Prevent duplicates when filtering
+    // 🔄 **Clear list before updating**
+    ul.innerHTML = ""; // ✅ Prevent duplicates
 
     // ✅ Determine which columns should be displayed
-    const listType = tableId.includes("session") ? "session" : "daily";
+    const listType = listId.includes("session") ? "session" : "daily";
     const enabledColumns = window.settings.top.lists?.[listType] || {};
 
     const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
 
-    // ✅ Populate table rows
+    // ✅ Populate list items
     tickers.forEach((ticker) => {
-        const row = document.createElement("tr");
+        const li = document.createElement("li");
+        li.classList.add("ticker-item");
 
         // 🔍 **Detect new or updated tickers**
         const prevTicker = prevTickers[ticker.Symbol];
 
-        let isNew = !prevTicker; // Not found in previous state
+        let isNew = !prevTicker;
         let isUpdated = prevTicker && (prevTicker.Price !== ticker.Price || prevTicker.Count !== ticker.Count || prevTicker.Score !== ticker.Score);
 
         if (isNew) {
-            row.classList.add("highlight-new"); // 🟢 Apply new ticker highlight
+            li.classList.add("highlight-new"); // 🟢 Apply new ticker highlight
         } else if (isUpdated) {
-            row.classList.add("highlight-updated"); // 🟠 Apply update highlight
+            li.classList.add("highlight-updated"); // 🟠 Apply update highlight
         }
 
+        // ✅ Construct ticker row
         allColumns.forEach((key) => {
-            const cell = document.createElement("td");
-            cell.className = "no-drag";
+            const span = document.createElement("span");
+            span.className = "ticker-data";
 
             if (key === "Symbol") {
-                cell.textContent = ticker[key];
-                cell.style.cursor = "pointer";
-                cell.className = "symbol no-drag";
-                cell.style.backgroundColor = getSymbolColor(ticker[key]);
-                cell.title = "A ticker symbol is a short, unique identifier for a publicly traded company.";
-                cell.addEventListener("click", () => {
+                span.textContent = ticker[key];
+                span.classList.add("symbol");
+                span.style.cursor = "pointer";
+                span.style.backgroundColor = getSymbolColor(ticker[key]);
+                span.title = "A ticker symbol is a short, unique identifier for a publicly traded company.";
+                span.addEventListener("click", () => {
                     navigator.clipboard.writeText(ticker[key]);
                     console.log(`📋 Copied ${ticker[key]} to clipboard!`);
-                    console.log("setting active ticker:", ticker.Symbol);
                     window.activeAPI.setActiveTicker(ticker.Symbol);
                 });
-            } else if (key === "ChangePercent") {
-                cell.textContent = ticker[key]+"%";
-                cell.title = "The change percentage from yesterdays close";
+            } else if (key === "Price") {
+                span.textContent = formatPrice(ticker[key]);
+                span.title = "Last price update";
+            } 
+            else if (key === "alertChangePercent") {
+                span.textContent = ticker[key] + "%";
+                span.title = "Last change update";
+                if (ticker.Direction === "UP") {
+                    span.classList.add("up");
+                } else if (ticker.Direction === "DOWN") {
+                    span.classList.add("down");
+                }
+            } else if (key === "cumulativeUpChange") {
+                span.textContent = ticker[key] + "%";
+                span.title = "Cumulative up change";
+                span.classList.add("up");
+            } else if (key === "cumulativeDownChange") {
+                span.textContent = ticker[key] + "%";
+                span.title = "Cumulative down change";
+                span.classList.add("down");
+            } else if (key === "fiveMinVolume") {
+                span.textContent = formatVolume(ticker[key]);
+                span.title = "Cumulative down change";
             } else if (key === "Score") {
-                const ScoreBreakdown = getScoreBreakdown(ticker);
-                cell.textContent = ticker[key];
-                cell.className = "Score-tooltip no-drag";
-                cell.setAttribute("title", ScoreBreakdown);
+                span.textContent = ticker[key];
+                span.classList.add("Score-tooltip");
+                span.title = getScoreBreakdown(ticker);
             } else if (key === "Bonuses") {
-                // ✅ Insert dynamically styled bonus symbols
-                cell.innerHTML = getBonusesHTML(ticker);
+                span.innerHTML = getBonusesHTML(ticker);
             } else {
-                cell.textContent = ticker[key];
+                span.textContent = ticker[key];
             }
 
-            row.appendChild(cell);
+            li.appendChild(span);
         });
 
-        tableBody.appendChild(row);
+        ul.appendChild(li);
     });
 
-    console.log(`✅ Finished updating table: ${tableId}`);
+    console.log(`✅ Finished updating list: ${listId}`);
 }
 
 function getSymbolColor(symbol) {
@@ -299,7 +308,7 @@ function clearSessionList() {
 
     // ✅ Ensure tickersSessions is an empty array instead of undefined
     tickersSessions = [];
-    updateTickersTable(tickersSessions ?? [], "tickers-session"); // ✅ Prevent null/undefined
+    updateTickersList(tickersSessions ?? [], "tickers-session"); // ✅ Prevent null/undefined
 
     // ✅ Ask main process to clear session data
     window.topAPI.clearSession();
@@ -310,15 +319,32 @@ function clearSessionList() {
     }, 1000);
 }
 
-function parseFloatValue(floatStr) {
-    if (floatStr == null) return 0; // ✅ Ensure null/undefined returns 0
-    let str = String(floatStr).trim(); // ✅ Convert to string and remove spaces
-    let sanitized = str.replace(/[^0-9.]/g, ""); // ✅ Remove all non-numeric characters
+function formatPrice(price) {
+    if (typeof price !== "number" || isNaN(price)) return "$0.00";
+    return `$${price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+}
+
+function formatVolume(volume) {
+    if (volume >= 1_000_000_000) {
+        return (volume / 1_000_000_000).toFixed(1) + "B"; // Billions
+    } else if (volume >= 1_000_000) {
+        return (volume / 1_000_000).toFixed(1) + "M"; // Millions
+    } else if (volume >= 1_000) {
+        return (volume / 1_000).toFixed(1) + "K"; // Thousands
+    }
+    return volume.toString(); // If less than 1K, return as is
+}
+
+function parseHumanNumber(str) {
+    if (!str) return 0; // ✅ Ensure null/undefined returns 0
+    let sanitized = String(str)
+        .trim()
+        .replace(/[^0-9.]/g, ""); // ✅ Remove non-numeric characters
     let value = parseFloat(sanitized) || 0;
 
-    if (str.toUpperCase().includes("B")) value *= 1_000_000_000; // ✅ Convert "B" to billions
-    if (str.toUpperCase().includes("M")) value *= 1_000_000; // ✅ Convert "M" to millions
-    if (str.toUpperCase().includes("K")) value *= 1_000; // ✅ Convert "K" to thousands
+    if (/B/i.test(str)) value *= 1_000_000_000; // ✅ Convert "B" to billions
+    if (/M/i.test(str)) value *= 1_000_000; // ✅ Convert "M" to millions
+    if (/K/i.test(str)) value *= 1_000; // ✅ Convert "K" to thousands
 
     return value;
 }
@@ -355,8 +381,9 @@ function formatLargeNumber(value) {
 function calculateScore(ticker) {
     // ✅ Use cumulativeUpChange instead of Count (default to 0 if missing)
     let Score = Math.floor(ticker.cumulativeUpChange || 0);
+    Score -= Math.floor(ticker.cumulativeDownChange || 0);
 
-    const floatValue = parseFloatValue(ticker.Float); // ✅ Convert Float to a real number
+    const floatValue = parseHumanNumber(ticker.Float); // ✅ Convert Float to a real number
     const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0; // ✅ Ensure safe parsing
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
@@ -374,7 +401,7 @@ function calculateScore(ticker) {
 
     // ✅ Add score only if there are valid (non-blocked) news items
     if (filteredNews.length > 0) {
-        Score += 40;
+        Score += 50;
     }
 
     // ✅ Float Size Bonuses & Penalties
@@ -396,9 +423,11 @@ function calculateScore(ticker) {
         Score -= 200; // 🚨 Heavy penalty for massive float
     }
 
-    // ✅ Volume Adjustment
-    if (fiveMinVolume < 50_000) {
-        Score -= 20; // 🛑 Low volume is a bad sign
+    if (fiveMinVolume < 100_000) {
+        Score -= 50;
+    }
+    else if (fiveMinVolume > 300_000) {
+        Score += 50;
     }
 
     // ✅ Bonus: 5 points per million in volume
@@ -409,15 +438,17 @@ function calculateScore(ticker) {
     return Score;
 }
 
-
 function getScoreBreakdown(ticker) {
     let breakdown = [];
     let Score = Math.floor(ticker.cumulativeUpChange || 0); // ✅ Using cumulativeUpChange
-    const floatValue = parseFloatValue(ticker.Float);
+    Score -= Math.floor(ticker.cumulativeDownChange || 0);
+
+    const floatValue = parseHumanNumber(ticker.Float);
     const volumeValue = parseVolumeValue(ticker.Volume);
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
-    breakdown.push(`Base UpChange: ${ticker.cumulativeUpChange || 0}`);
+    breakdown.push(`Base Up Change: ${ticker.cumulativeUpChange || 0}`);
+    breakdown.push(`Base Down Change: ${ticker.cumulativeDownChange || 0}`);
     breakdown.push(`---------------------`);
 
     if (ticker.HighOfDay) {
@@ -436,8 +467,8 @@ function getScoreBreakdown(ticker) {
     }
 
     if (filteredNews.length > 0) {
-        Score += 40;
-        breakdown.push(`Has News: +40`);
+        Score += 50;
+        breakdown.push(`Has News: +50`);
     }
 
     if (fiveMinVolume < 50_000) {
@@ -446,7 +477,7 @@ function getScoreBreakdown(ticker) {
     }
 
     // ✅ Bonus: 5 points per million in volume
-     if (volumeValue > 0) {
+    if (volumeValue > 0) {
         const volumeBonus = Math.floor(volumeValue / 1_000_000) * 2;
         Score += volumeBonus;
         breakdown.push(`Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M): +${volumeBonus}`);
@@ -476,6 +507,15 @@ function getScoreBreakdown(ticker) {
         breakdown.push(`Float 600M+: -200`);
     }
 
+    if (fiveMinVolume < 100_000) {
+        Score -= 50;
+        breakdown.push(`Low volume: -50`);
+    }
+    else if (fiveMinVolume > 300_000) {
+        Score += 50;
+        breakdown.push(`High volume: +50`);
+    }
+
     breakdown.push(`---------------------`);
     breakdown.push(`Final Score: ${Score}`);
 
@@ -486,8 +526,8 @@ function getBonusesHTML(ticker) {
     let bonuses = [];
     let tooltipText = [];
 
-    const floatValue = parseFloatValue(ticker.Float); 
-    const volumeValue = parseVolumeValue(ticker.Volume); 
+    const floatValue = parseHumanNumber(ticker.Float);
+    const volumeValue = parseVolumeValue(ticker.Volume);
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
     let blockList = window.settings.news?.blockList || [];
@@ -501,8 +541,8 @@ function getBonusesHTML(ticker) {
     }
 
     if (filteredNews.length > 0) {
-        bonuses.push(`<span class="bonus news no-drag">CAT</span>`);
-        tooltipText.push(`CAT: Has News`);
+        bonuses.push(`<span class="bonus news no-drag">📡</span>`);
+        tooltipText.push(`📡: Has News`);
     }
 
     if (ticker.HighOfDay) {
@@ -533,32 +573,33 @@ function getBonusesHTML(ticker) {
         tooltipText.push("500M: Float more than 500M");
     }
 
-    if (fiveMinVolume < 50_000) {
-        bonuses.push('<span class="bonus low-volume no-drag">V-</span>');
-        tooltipText.push("V: Low Volume");
+    if (fiveMinVolume < 100_000) {
+        bonuses.push('<span class="bonus low-volume no-drag">💤</span>');
+        tooltipText.push("💤: Low Volume");
+    }
+    else if (fiveMinVolume > 300_000) {
+        bonuses.push(`<span class="bonus high-volume no-drag">🔥</span>`);
+        tooltipText.push("🔥: High Volume");
     }
 
-    // ✅ Bonus: 5 points per million in volume
-    if (volumeValue > 0) {
-        const volumeBonus = Math.floor(volumeValue / 1_000_000) * 2;
-        bonuses.push(`<span class="bonus high-volume no-drag">V${Math.floor(volumeValue / 1_000_000)}</span>`);
-        tooltipText.push(`V${Math.floor(volumeValue / 1_000_000)}: Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M)`);
-    }
-
-    if (ticker.Industry === "Biotechnology") {
+    if (ticker.Industry && ticker.Industry === "Biotechnology") {
         bonuses.push('<span class="bonus bio no-drag">BIO</span>');
         tooltipText.push("BIO: Biotechnology stock");
     }
-    if (ticker.Country === "China" || ticker.Country === "CN") {
+    else if (ticker.About && ticker.About.toLowerCase().includes("cannabis")) {
+        bonuses.push('<span class="bonus cannabis no-drag">CAN</span>');
+        tooltipText.push("CAN: Cannabis stock");
+    }
+    
+
+    if (ticker.Country && ticker.Country === "China" || ticker.Country === "CN") {
         bonuses.push('<span class="bonus cn no-drag">CN</span>');
         tooltipText.push("CN: Chinese Stock");
     }
 
     if (bonuses.length === 0) {
-        return "-"; // No bonuses
+        return ""; // No bonuses
     }
 
-    return `<span class="bonus-container" title="${tooltipText.join("\n")}">
-                ${bonuses.join(" ")}
-            </span>`;
+    return `<span class="bonus-container" title="${tooltipText.join("\n")}">${bonuses.join(" ")}</span>`;
 }

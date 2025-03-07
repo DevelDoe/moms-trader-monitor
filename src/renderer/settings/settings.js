@@ -73,30 +73,30 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("Settings Syncing", updatedSettings);
         });
 
-        window.settingsAPI.onAttributesUpdate(async () => {
-            console.log("🔔 New attributes detected! Refreshing settings...");
+        // window.settingsAPI.onAttributesUpdate(async () => {
+        //     console.log("🔔 New attributes detected! Refreshing settings...");
 
-            // 🔄 Reload the latest settings before updating the UI
-            window.settings = await window.settingsAPI.get();
-            console.log("🔄 Updated global settings:", window.settings);
+        //     // 🔄 Reload the latest settings before updating the UI
+        //     window.settings = await window.settingsAPI.get();
+        //     console.log("🔄 Updated global settings:", window.settings);
 
-            // ✅ Reload and apply attribute filters
-            await loadAttributeFilters("session", "session-filters");
-            await loadAttributeFilters("daily", "daily-filters");
+        //     // ✅ Reload and apply attribute filters
+        //     await loadAttributeFilters("session", "session-filters");
+        //     await loadAttributeFilters("daily", "daily-filters");
 
-            // ✅ Ensure settings apply correctly in UI
-            initializeTopSection();
-            initializeNewsSection();
+        //     // ✅ Ensure settings apply correctly in UI
+        //     initializeTopSection();
+        //     initializeNewsSection();
 
-            // ✅ If there are UI elements that need a manual refresh, re-render them here
-            document.getElementById("session-filters").innerHTML = ""; // Clear old checkboxes
-            document.getElementById("daily-filters").innerHTML = ""; // Clear old checkboxes
+        //     // ✅ If there are UI elements that need a manual refresh, re-render them here
+        //     document.getElementById("session-filters").innerHTML = ""; // Clear old checkboxes
+        //     document.getElementById("daily-filters").innerHTML = ""; // Clear old checkboxes
 
-            await loadAttributeFilters("session", "session-filters");
-            await loadAttributeFilters("daily", "daily-filters");
+        //     await loadAttributeFilters("session", "session-filters");
+        //     await loadAttributeFilters("daily", "daily-filters");
 
-            console.log("✅ UI Updated after attributes change!");
-        });
+        //     console.log("✅ UI Updated after attributes change!");
+        // });
 
         const defaultTab = document.querySelector(".tablinks.active");
         if (defaultTab) {

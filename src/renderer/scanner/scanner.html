@@ -214,7 +214,8 @@
                     const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2));
 
                     if (percent > 0) {
-                        // Fill positive segments (right side)
+                        // Fill positive segments (right side) & play sound
+                        play();
                         for (let i = midPoint; i < midPoint + filledSegments && i < totalSegments; i++) {
                             segmentsHtml[i] = '<span class="segment filled up"></span>';
                         }
@@ -252,7 +253,7 @@
                     li.appendChild(progressBar);
                     // li.appendChild(percentSpan);
                     symbolListElement.appendChild(li);
-                    play();
+                    
                 });
             }
 

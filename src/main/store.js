@@ -35,23 +35,19 @@ class Store extends EventEmitter {
                 return;
             }
 
-            log.log(`[addMtpAlerts] Processing MTP alert for ${symbol}`);
-
-            const formattedVolume = formatVolume(volume); // Convert to human-readable format
-            const formattedChangePercent = direction === "DOWN" ? `-${Math.abs(change_percent).toFixed(2)}%` : `${change_percent.toFixed(2)}%`;
+            log.log(`[addMtpAlerts] Adding MTP alert for ${symbol}`);
 
             // === Handle dailyData ===
             if (!this.dailyData.has(symbol)) {
                 log.log(`[addMtpAlerts] Adding new ticker to dailyData: ${symbol}`);
                 this.dailyData.set(symbol, {
                     Symbol: symbol,
+                    Price: price,
                     Direction: direction || "UNKNOWN",
-                    alertChangePercent: formattedChangePercent,
+                    alertChangePercent: Math.abs(change_percent).toFixed(2),
                     cumulativeUpChange: direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0,
                     cumulativeDownChange: direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0,
-                    Price: price,
                     fiveMinVolume: volume,
-                    formattedVolume: formattedVolume,
                 });
                 // Fetch Meta Data
                 getSymbolMeta(symbol)
@@ -100,12 +96,11 @@ class Store extends EventEmitter {
                 // ✅ Limit to 2 decimal places
                 existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
                 existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
-                existingTicker.alertChangePercent = formattedChangePercent; // ✅ Updated formatting
+                existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2); // ✅ Updated formatting
 
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
                 existingTicker.fiveMinVolume = volume;
-                existingTicker.formattedVolume = formattedVolume;
 
                 this.dailyData.set(symbol, existingTicker);
                 log.log(`[addMtpAlerts] Updated ${symbol} in dailyData. UpChange: ${existingTicker.cumulativeUpChange}%, DownChange: ${existingTicker.cumulativeDownChange}%`);
@@ -116,13 +111,12 @@ class Store extends EventEmitter {
                 log.log(`[addMtpAlerts] Adding new ticker to sessionData: ${symbol}`);
                 this.sessionData.set(symbol, {
                     Symbol: symbol,
+                    Price: price,
                     Direction: direction || "UNKNOWN",
-                    alertChangePercent: formattedChangePercent,
+                    alertChangePercent: Math.abs(change_percent).toFixed(2),
                     cumulativeUpChange: direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0,
                     cumulativeDownChange: direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0,
-                    Price: price,
                     fiveMinVolume: volume,
-                    formattedVolume: formattedVolume,
                 });
             } else {
                 let existingTicker = this.sessionData.get(symbol);
@@ -140,12 +134,11 @@ class Store extends EventEmitter {
                 // ✅ Limit to 2 decimal places
                 existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
                 existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
-                existingTicker.alertChangePercent = formattedChangePercent; // ✅ Updated formatting
+                existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2); // ✅ Updated formatting
 
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
                 existingTicker.fiveMinVolume = volume;
-                existingTicker.formattedVolume = formattedVolume;
 
                 this.sessionData.set(symbol, existingTicker);
                 log.log(`[addMtpAlerts] Updated ${symbol} in sessionData. UpChange: ${existingTicker.cumulativeUpChange}%, DownChange: ${existingTicker.cumulativeDownChange}%`);
@@ -297,23 +290,6 @@ class Store extends EventEmitter {
             log.log(`Cleaned up old news from global list. Before: ${beforeCleanup}, After: ${afterCleanup}`);
         }
     }
-}
-
-/**
- * Converts a large volume number into a human-readable format.
- * Example: 1234 -> "1.2K", 5678900 -> "5.7M", 1234567890 -> "1.2B"
- * @param {number} volume - The 5-minute volume to convert.
- * @returns {string} - Formatted volume string.
- */
-function formatVolume(volume) {
-    if (volume >= 1_000_000_000) {
-        return (volume / 1_000_000_000).toFixed(1) + "B"; // Billions
-    } else if (volume >= 1_000_000) {
-        return (volume / 1_000_000).toFixed(1) + "M"; // Millions
-    } else if (volume >= 1_000) {
-        return (volume / 1_000).toFixed(1) + "K"; // Thousands
-    }
-    return volume.toString(); // If less than 1K, return as is
 }
 
 // Singleton instance

@@ -1,7 +1,7 @@
 {
   "top": {
-    "minPrice": 0,
-    "maxPrice": 0,
+    "minPrice": 1.5,
+    "maxPrice": 10,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -10,28 +10,24 @@
     "maxVolume": 0,
     "lists": {
       "session": {
-        "Price": true,
-        "Float": false,
-        "Volume": false,
+        "Price": false,
         "alertChangePercent": false,
         "cumulativeUpChange": true,
-        "cumulativeDownChange": false,
-        "Score": true,
+        "cumulativeDownChange": true,
+        "fiveMinVolume": false,
+        "Score": false,
         "Bonuses": true,
-        "length": 6,
-        "fiveMinVolume": false
+        "length": 4
       },
       "daily": {
         "Price": false,
-        "Float": false,
-        "Volume": false,
         "alertChangePercent": false,
         "cumulativeUpChange": true,
-        "cumulativeDownChange": false,
-        "Score": true,
+        "cumulativeDownChange": true,
+        "fiveMinVolume": false,
+        "Score": false,
         "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": false
+        "length": 3
       }
     },
     "transparent": false
@@ -39,8 +35,19 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "GV",
-      "HOLO"
+      "ACON",
+      "PSTV",
+      "TRNR",
+      "TCBP",
+      "MULN",
+      "SCNX",
+      "RNAZ",
+      "CNSP",
+      "SIDU",
+      "QTTB",
+      "BTAI",
+      "FRGT",
+      "GV"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
@@ -119,7 +126,9 @@
       "Purchase",
       "Signs Commercial Deal",
       "Positivity",
-      "Reaches Financing"
+      "Reaches Financing",
+      "Letter of intent",
+      "Revenue Boost"
     ],
     "bearishList": [
       "Sell Alert",
