@@ -14,18 +14,20 @@
         "alertChangePercent": false,
         "cumulativeUpChange": true,
         "cumulativeDownChange": true,
-        "fiveMinVolume": false,
+        "fiveMinVolume": true,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 3
       },
       "daily": {
         "Price": false,
         "alertChangePercent": false,
         "cumulativeUpChange": true,
-        "cumulativeDownChange": false,
+        "cumulativeDownChange": true,
         "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 3
       }
     },
     "transparent": false
@@ -33,7 +35,17 @@
   "news": {
     "showTrackedTickers": true,
     "filteredTickers": [
-      "PSTV"
+      "GV",
+      "BTAI",
+      "DWTX",
+      "LKCO",
+      "TRNR",
+      "ALBT",
+      "NIXX",
+      "BFRG",
+      "GOVX",
+      "WKEY",
+      "SCNX"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
@@ -50,7 +62,8 @@
       "Stock Rocketing",
       "Shares are",
       "Looking in to",
-      "Rocketing"
+      "Rocketing",
+      "Shares Halted"
     ],
     "bullishList": [
       "FDA Approves",
@@ -114,7 +127,8 @@
       "Positivity",
       "Reaches Financing",
       "Letter of intent",
-      "Revenue Boost"
+      "Revenue Boost",
+      "Phase 3 Safety"
     ],
     "bearishList": [
       "Sell Alert",
