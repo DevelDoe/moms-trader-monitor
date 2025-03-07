@@ -76,25 +76,21 @@ const DEFAULT_SETTINGS = {
         lists: {
             session: {
                 Price: false,
-                Float: false,
-                Volume: false,
                 alertChangePercent: false,
                 cumulativeUpChange: true,
                 cumulativeDownChange: false,
                 Score: true,
                 Bonuses: true,
-                length: 5,
+                length: 3,
             },
             daily: {
                 Price: false,
-                Float: false,
-                Volume: false,
                 alertChangePercent: false,
                 cumulativeUpChange: true,
                 cumulativeDownChange: false,
                 Score: true,
                 Bonuses: true,
-                length: 5,
+                length: 3,
             },
         },
     },
@@ -333,22 +329,11 @@ ipcMain.on("toggle-settings", () => {
     }
 });
 
-let lastSettingsFetch = 0;
-const SETTINGS_DEBOUNCE_TIME = 100; // 1 second
-
 ipcMain.handle("get-settings", () => {
-    const now = Date.now();
-
-    if (now - lastSettingsFetch < SETTINGS_DEBOUNCE_TIME) {
-        return appSettings; // Prevent logging repeated calls
-    }
-
-    lastSettingsFetch = now;
     log.log("Returning settings"); // ✅ Only logs once per second
     return appSettings;
 });
 
-let lastFilterBroadcast = 0;
 ipcMain.on("update-settings", (event, newSettings) => {
     const now = Date.now();
 
@@ -373,13 +358,9 @@ ipcMain.on("update-settings", (event, newSettings) => {
 
     saveSettings(); // ✅ Save settings after updates
 
-    if (now - lastFilterBroadcast < SETTINGS_DEBOUNCE_TIME) {
-        return appSettings; // Prevent logging repeated calls
-    }
-
     // ✅ Broadcast updated settings to all windows
     log.log("Broadcasting 'filter-updated' event...");
-    lastFilterBroadcast = now;
+
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("settings-updated", appSettings);
     });
