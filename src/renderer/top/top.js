@@ -271,7 +271,7 @@ function updateTickersList(tickers, listId, prevTickers) {
                 span.classList.add("down");
             } else if (key === "fiveMinVolume") {
                 span.textContent = formatVolume(ticker[key]);
-                span.title = "Cumulative down change";
+                span.title = "Volume last 5 minutes";
             } else if (key === "Score") {
                 span.textContent = ticker[key];
                 span.classList.add("Score-tooltip");
@@ -469,11 +469,6 @@ function getScoreBreakdown(ticker) {
     if (filteredNews.length > 0) {
         Score += 50;
         breakdown.push(`Has News: +50`);
-    }
-
-    if (fiveMinVolume < 50_000) {
-        Score -= 20;
-        breakdown.push(`Low volume: -20`);
     }
 
     // ✅ Bonus: 5 points per million in volume

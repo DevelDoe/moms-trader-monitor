@@ -14,10 +14,9 @@
         "alertChangePercent": false,
         "cumulativeUpChange": true,
         "cumulativeDownChange": true,
-        "fiveMinVolume": true,
+        "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true,
-        "length": 3
+        "Bonuses": true
       },
       "daily": {
         "Price": false,
@@ -26,8 +25,7 @@
         "cumulativeDownChange": true,
         "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true,
-        "length": 3
+        "Bonuses": true
       }
     },
     "transparent": false
@@ -36,16 +34,9 @@
     "showTrackedTickers": true,
     "filteredTickers": [
       "GV",
-      "BTAI",
       "DWTX",
-      "LKCO",
-      "TRNR",
-      "ALBT",
-      "NIXX",
-      "BFRG",
       "GOVX",
-      "WKEY",
-      "SCNX"
+      "TRNR"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
