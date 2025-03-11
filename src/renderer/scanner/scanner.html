@@ -237,7 +237,6 @@
                             .writeText(symbol)
                             .then(() => console.log(`Copied ${symbol} to clipboard`))
                             .catch((err) => console.error("Copy failed:", err));
-                        
                     });
 
                     const progressBar = document.createElement("span");
@@ -253,7 +252,6 @@
                     li.appendChild(progressBar);
                     // li.appendChild(percentSpan);
                     symbolListElement.appendChild(li);
-                    
                 });
             }
 
@@ -265,84 +263,132 @@
                 return segments.join(""); // Rebuild the string
             }
 
-            // Function to create and manage the WebSocket connection.
-            function connect() {
-                const ws = new WebSocket("ws://172.232.155.62:8000/ws");
+            window.scannerAPI.onAlert((alertData) => {
+                console.log("[CLIENT] Received via IPC:", alertData);
 
-                ws.onopen = function () {
-                    console.log("[CLIENT] Connected to WebSocket server");
-                    ws.send(JSON.stringify({ client_id: "web-client" }));
-                };
-
-                // Filtering criteria (set to `null` to disable a filter)
-                const filterDirection = null; // Example: "UP" or "DOWN"
-                const filterChangePercent = 1; // Example: 3 (filters for ≥3% change)
-                const filterPrice = 1.5; // Example: 2 (filters for price ≥2)
-                const filterVolume = null; // Example: 1000 (filters for volume ≥1000)
-
-                ws.onmessage = function (event) {
-                    console.log("[CLIENT] Received:", event.data);
-                    try {
-                        const alertData = JSON.parse(event.data);
-
-                        // Validate the incoming data
-                        if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.price === undefined || alertData.volume === undefined) {
-                            console.warn("[CLIENT] Received malformed alert:", alertData);
-                            return;
-                        }
-
-                        const symbol = alertData.symbol;
-                        const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
-
-                        // ✅ Filtering logic (only filter if the variable is NOT `null`)
-                        if (filterDirection !== null && alertData.direction !== filterDirection) return;
-                        if (filterChangePercent !== null && Math.abs(percent) < filterChangePercent) return;
-                        if (filterPrice !== null && alertData.price < filterPrice) return;
-                        if (filterVolume !== null && alertData.volume < filterVolume) return;
-
-                        // Update the symbol's latest percentage
-                        symbolPercents[symbol] = percent;
-                        symbolPrices[symbol] = alertData.price;
-
-                        // Create the alert element
-                        const alertDiv = document.createElement("li");
-                        alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
-
-                        // Create the symbol element with its background color
-                        const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)}; 
-          padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
-
-                        alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data">
-          <span>${percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)}
-          V${alertData.volume}</span>`;
-
-                        // Append the new alert
-                        logElement.appendChild(alertDiv);
-
-                        // Remove oldest alerts if exceeding maxAlerts
-                        while (logElement.children.length > maxAlerts) {
-                            logElement.removeChild(logElement.firstChild);
-                        }
-
-                        // Update the symbol summary
-                        updateSymbolSummary();
-                    } catch (error) {
-                        console.error("[CLIENT] Error parsing message:", error);
+                try {
+                    // Validate incoming data
+                    if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.price === undefined || alertData.volume === undefined) {
+                        console.warn("[CLIENT] Malformed alert received:", alertData);
+                        return;
                     }
-                };
 
-                ws.onerror = function (error) {
-                    console.error("[CLIENT] WebSocket error:", error);
-                };
+                    const symbol = alertData.symbol;
+                    const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
 
-                ws.onclose = function () {
-                    console.log("[CLIENT] Disconnected from WebSocket server. Retrying in 5 seconds...");
-                    setTimeout(connect, 5000); // Retry after 5 seconds.
-                };
-            }
+                    // Filtering criteria
+                    const filterDirection = null; // "UP" or "DOWN"
+                    const filterChangePercent = null;
+                    const filterPrice = null;
+                    const filterVolume = null;
+
+                    if (filterDirection !== null && alertData.direction !== filterDirection) return;
+                    if (filterChangePercent !== null && Math.abs(percent) < filterChangePercent) return;
+                    if (filterPrice !== null && alertData.price < filterPrice) return;
+                    if (filterVolume !== null && alertData.volume < filterVolume) return;
+
+                    // Update internal state
+                    symbolPercents[alertData.symbol] = percent;
+                    symbolPrices[alertData.symbol] = alertData.price;
+
+                    const alertDiv = document.createElement("li");
+                    alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
+
+                    const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)}; padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${alertData.symbol}</span>`;
+
+                    alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data"><span>${percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)} V${alertData.volume} </span>`;
+
+                    logElement.appendChild(alertDiv);
+
+                    // Limit number of alerts
+                    while (logElement.children.length > maxAlerts) {
+                        logElement.removeChild(logElement.firstChild);
+                    }
+
+                    updateSymbolSummary();
+                } catch (error) {
+                    console.error("[CLIENT] Error handling alert:", error);
+                }
+            });
+
+            //     // Function to create and manage the WebSocket connection.
+            //     function connect() {
+            //         const ws = new WebSocket("ws://172.232.155.62:8000/ws");
+
+            //         ws.onopen = function () {
+            //             console.log("[CLIENT] Connected to WebSocket server");
+            //             ws.send(JSON.stringify({ client_id: "web-client" }));
+            //         };
+
+            //         // Filtering criteria (set to `null` to disable a filter)
+            //         const filterDirection = null; // Example: "UP" or "DOWN"
+            //         const filterChangePercent = 1; // Example: 3 (filters for ≥3% change)
+            //         const filterPrice = 1.5; // Example: 2 (filters for price ≥2)
+            //         const filterVolume = null; // Example: 1000 (filters for volume ≥1000)
+
+            //         ws.onmessage = function (event) {
+            //             console.log("[CLIENT] Received:", event.data);
+            //             try {
+            //                 const alertData = JSON.parse(event.data);
+
+            //                 // Validate the incoming data
+            //                 if (!alertData.symbol || !alertData.direction || alertData.change_percent === undefined || alertData.price === undefined || alertData.volume === undefined) {
+            //                     console.warn("[CLIENT] Received malformed alert:", alertData);
+            //                     return;
+            //                 }
+
+            //                 const symbol = alertData.symbol;
+            //                 const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
+
+            //                 // ✅ Filtering logic (only filter if the variable is NOT `null`)
+            //                 if (filterDirection !== null && alertData.direction !== filterDirection) return;
+            //                 if (filterChangePercent !== null && Math.abs(percent) < filterChangePercent) return;
+            //                 if (filterPrice !== null && alertData.price < filterPrice) return;
+            //                 if (filterVolume !== null && alertData.volume < filterVolume) return;
+
+            //                 // Update the symbol's latest percentage
+            //                 symbolPercents[symbol] = percent;
+            //                 symbolPrices[symbol] = alertData.price;
+
+            //                 // Create the alert element
+            //                 const alertDiv = document.createElement("li");
+            //                 alertDiv.className = `alert ${alertData.direction.toLowerCase()}`;
+
+            //                 // Create the symbol element with its background color
+            //                 const coloredSymbol = `<span class="alert-symbol" style="background-color: ${getSymbolColor(symbol)};
+            //   padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${symbol}</span>`;
+
+            //                 alertDiv.innerHTML = `${coloredSymbol}<span class="symbol-data">
+            //   <span>${percent.toFixed(2)}%</span> $${alertData.price.toFixed(2)}
+            //   V${alertData.volume}</span>`;
+
+            //                 // Append the new alert
+            //                 logElement.appendChild(alertDiv);
+
+            //                 // Remove oldest alerts if exceeding maxAlerts
+            //                 while (logElement.children.length > maxAlerts) {
+            //                     logElement.removeChild(logElement.firstChild);
+            //                 }
+
+            //                 // Update the symbol summary
+            //                 updateSymbolSummary();
+            //             } catch (error) {
+            //                 console.error("[CLIENT] Error parsing message:", error);
+            //             }
+            //         };
+
+            //         ws.onerror = function (error) {
+            //             console.error("[CLIENT] WebSocket error:", error);
+            //         };
+
+            //         ws.onclose = function () {
+            //             console.log("[CLIENT] Disconnected from WebSocket server. Retrying in 5 seconds...");
+            //             setTimeout(connect, 5000); // Retry after 5 seconds.
+            //         };
+            //     }
 
             // Establish the initial connection.
-            connect();
+            // connect();
         </script>
     </body>
 </html>

@@ -183,6 +183,8 @@ async function fetchAndUpdateTickers() {
     }
 }
 
+
+
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
     window.settings = settings; // ✅ Ensure settings are globally updated
@@ -381,13 +383,11 @@ function formatLargeNumber(value) {
 function calculateScore(ticker) {
     // ✅ Use cumulativeUpChange instead of Count (default to 0 if missing)
     let Score = Math.floor(ticker.cumulativeUpChange || 0);
-    Score -= Math.floor(ticker.cumulativeDownChange || 0);
+    // Score -= Math.floor(ticker.cumulativeDownChange || 0); // TODO: RE-ANABLE FOR DAILY
 
     const floatValue = parseHumanNumber(ticker.Float); // ✅ Convert Float to a real number
     const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0; // ✅ Ensure safe parsing
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
-
-    if (ticker.HighOfDay) Score += 20;
 
     let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
@@ -403,6 +403,10 @@ function calculateScore(ticker) {
     if (filteredNews.length > 0) {
         Score += 50;
     }
+
+    if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
+        Score += 50;
+    }   
 
     // ✅ Float Size Bonuses & Penalties
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
@@ -441,7 +445,7 @@ function calculateScore(ticker) {
 function getScoreBreakdown(ticker) {
     let breakdown = [];
     let Score = Math.floor(ticker.cumulativeUpChange || 0); // ✅ Using cumulativeUpChange
-    Score -= Math.floor(ticker.cumulativeDownChange || 0);
+    // Score -= Math.floor(ticker.cumulativeDownChange || 0);
 
     const floatValue = parseHumanNumber(ticker.Float);
     const volumeValue = parseVolumeValue(ticker.Volume);
@@ -450,11 +454,6 @@ function getScoreBreakdown(ticker) {
     breakdown.push(`Base Up Change: ${ticker.cumulativeUpChange || 0}`);
     breakdown.push(`Base Down Change: ${ticker.cumulativeDownChange || 0}`);
     breakdown.push(`---------------------`);
-
-    if (ticker.HighOfDay) {
-        Score += 20;
-        breakdown.push(`High of Day: +20`);
-    }
 
     let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
@@ -471,12 +470,10 @@ function getScoreBreakdown(ticker) {
         breakdown.push(`Has News: +50`);
     }
 
-    // ✅ Bonus: 5 points per million in volume
-    if (volumeValue > 0) {
-        const volumeBonus = Math.floor(volumeValue / 1_000_000) * 2;
-        Score += volumeBonus;
-        breakdown.push(`Volume Bonus (${Math.floor(volumeValue / 1_000_000)}M): +${volumeBonus}`);
-    }
+    if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
+        Score += 50;
+        breakdown.push("HOD: High of Day +50");
+    }    
 
     // ✅ Float Size Bonuses & Penalties
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
@@ -540,10 +537,10 @@ function getBonusesHTML(ticker) {
         tooltipText.push(`📡: Has News`);
     }
 
-    if (ticker.HighOfDay) {
-        bonuses.push('<span class="bonus high no-drag">HOD</span>');
+    if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
+        bonuses.push('<span class="bonus high no-drag">📈</span>');
         tooltipText.push("HOD: High of Day");
-    }
+    }    
 
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
         bonuses.push('<span class="bonus gold-float no-drag">1M</span>');
@@ -598,3 +595,4 @@ function getBonusesHTML(ticker) {
 
     return `<span class="bonus-container" title="${tooltipText.join("\n")}">${bonuses.join(" ")}</span>`;
 }
+

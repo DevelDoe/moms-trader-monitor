@@ -37,12 +37,14 @@ class Store extends EventEmitter {
 
             log.log(`[addMtpAlerts] Adding MTP alert for ${symbol}`);
 
+            
             // === Handle dailyData ===
             if (!this.dailyData.has(symbol)) {
                 log.log(`[addMtpAlerts] Adding new ticker to dailyData: ${symbol}`);
                 this.dailyData.set(symbol, {
                     Symbol: symbol,
                     Price: price,
+                    highestPrice: price, // Initialize highestPrice with current price
                     Direction: direction || "UNKNOWN",
                     alertChangePercent: Math.abs(change_percent).toFixed(2),
                     cumulativeUpChange: direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0,
@@ -83,7 +85,7 @@ class Store extends EventEmitter {
             } else {
                 let existingTicker = this.dailyData.get(symbol);
 
-                // ✅ Update cumulativeUpChange & cumulativeDownChange
+                // Update cumulative changes
                 let newCumulativeUp = existingTicker.cumulativeUpChange || 0;
                 let newCumulativeDown = existingTicker.cumulativeDownChange || 0;
 
@@ -93,13 +95,18 @@ class Store extends EventEmitter {
                     newCumulativeDown += change_percent;
                 }
 
-                // ✅ Limit to 2 decimal places
+                // Limit to 2 decimal places
                 existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
                 existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
-                existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2); // ✅ Updated formatting
+                existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2);
 
+                // Update price and direction
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
+                // Update highestPrice if the new price is greater than the recorded one
+                if (price > existingTicker.highestPrice) {
+                    existingTicker.highestPrice = price;
+                }
                 existingTicker.fiveMinVolume = volume;
 
                 this.dailyData.set(symbol, existingTicker);
@@ -112,6 +119,7 @@ class Store extends EventEmitter {
                 this.sessionData.set(symbol, {
                     Symbol: symbol,
                     Price: price,
+                    highestPrice: price, // Initialize highestPrice here as well
                     Direction: direction || "UNKNOWN",
                     alertChangePercent: Math.abs(change_percent).toFixed(2),
                     cumulativeUpChange: direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0,
@@ -121,7 +129,7 @@ class Store extends EventEmitter {
             } else {
                 let existingTicker = this.sessionData.get(symbol);
 
-                // ✅ Update cumulativeUpChange & cumulativeDownChange
+                // Update cumulative changes
                 let newCumulativeUp = existingTicker.cumulativeUpChange || 0;
                 let newCumulativeDown = existingTicker.cumulativeDownChange || 0;
 
@@ -131,13 +139,18 @@ class Store extends EventEmitter {
                     newCumulativeDown += change_percent;
                 }
 
-                // ✅ Limit to 2 decimal places
+                // Limit to 2 decimal places
                 existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
                 existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
-                existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2); // ✅ Updated formatting
+                existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2);
 
+                // Update price and direction
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
+                // Update highestPrice if the new price is greater
+                if (price > existingTicker.highestPrice) {
+                    existingTicker.highestPrice = price;
+                }
                 existingTicker.fiveMinVolume = volume;
 
                 this.sessionData.set(symbol, existingTicker);

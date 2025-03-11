@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld("newsAPI", {
 
 contextBridge.exposeInMainWorld("scannerAPI", {
     toggle: () => ipcRenderer.send("toggle-scanner"),
+    onAlert: (callback) => ipcRenderer.on('ws-alert', (_, data) => callback(data)),
 });
 
 

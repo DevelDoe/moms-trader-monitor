@@ -51,7 +51,7 @@ function createWindow(name, createFn) {
 
 ////////////////////////////////////////////////////////////////////////////////////
 // COLLECTORS
-// const { collectTickers } = require("./collectors/tickers.js");
+
 const { connectMTP } = require("./collectors/mtp");
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -502,6 +502,8 @@ app.on("ready", () => {
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
         windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
         windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
+
+        connectMTP(windows.scanner);
 
         Object.values(windows).forEach((window) => window?.hide());
         windows.docker.show();

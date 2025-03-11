@@ -19,7 +19,7 @@ dotenv.config({ path: path.join(__dirname, "../../config/.env") });
 //     }
 //   }
 
-const connectMTP = () => {
+const connectMTP = (scannerWindow) => {
     // Create a WebSocket connection to the server
     const ws = new WebSocket(process.env.MTP_WS);
 
@@ -42,6 +42,13 @@ const connectMTP = () => {
             } else {
                 log.warn("[mtp] tickerStore.addMtpAlerts is not available due to circular dependency.");
             }
+            
+            // Forward data to scanner
+            if (scannerWindow && !scannerWindow.isDestroyed()) {
+                scannerWindow.webContents.send("ws-alert", message);
+            } else {
+                log.warn("[mtp.js] Scanner window not available.");
+            }
         } catch (error) {
             log.error("[mtp.js] Error processing WebSocket message:", error);
         }
@@ -57,7 +64,6 @@ const connectMTP = () => {
         log.error(`WebSocket error: ${err.message}`);
     });
 };
-connectMTP();
 
 // Function to fetch symbol data from the API using vanilla JavaScript's fetch
 const getSymbolMeta = async (symbol) => {
