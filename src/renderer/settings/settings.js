@@ -46,6 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("Retrieved settings:", window.settings);
 
         initializeGeneralSection();
+        initializeScannerSection();
         initializeTopSection();
         initializeNewsSection();
 
@@ -73,30 +74,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("Settings Syncing", updatedSettings);
         });
 
-        // window.settingsAPI.onAttributesUpdate(async () => {
-        //     console.log("🔔 New attributes detected! Refreshing settings...");
-
-        //     // 🔄 Reload the latest settings before updating the UI
-        //     window.settings = await window.settingsAPI.get();
-        //     console.log("🔄 Updated global settings:", window.settings);
-
-        //     // ✅ Reload and apply attribute filters
-        //     await loadAttributeFilters("session", "session-filters");
-        //     await loadAttributeFilters("daily", "daily-filters");
-
-        //     // ✅ Ensure settings apply correctly in UI
-        //     initializeTopSection();
-        //     initializeNewsSection();
-
-        //     // ✅ If there are UI elements that need a manual refresh, re-render them here
-        //     document.getElementById("session-filters").innerHTML = ""; // Clear old checkboxes
-        //     document.getElementById("daily-filters").innerHTML = ""; // Clear old checkboxes
-
-        //     await loadAttributeFilters("session", "session-filters");
-        //     await loadAttributeFilters("daily", "daily-filters");
-
-        //     console.log("✅ UI Updated after attributes change!");
-        // });
 
         const defaultTab = document.querySelector(".tablinks.active");
         if (defaultTab) {
@@ -112,6 +89,74 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function initializeGeneralSection() {
     console.log("Initializing General Section");
+}
+
+function initializeScannerSection() {
+    if (!window.settings) window.settings = {};
+    if (!window.settings.scanner) window.settings.scanner = {};
+
+    const minPriceInput = document.getElementById("alerts-min-price");
+    const maxPriceInput = document.getElementById("alerts-max-price");
+    const directionSelect = document.getElementById("filter-direction");
+    const minChangePercentInput = document.getElementById("filter-change-percent");
+    const minVolumeInput = document.getElementById("filter-volume");
+    const maxAlertsInput = document.getElementById("max-alerts");
+
+    // if (!minPriceInput || !maxPriceInput || !directionSelect || !minChangePercentInput || !minVolumeInput || !maxAlertsInput) {
+    //     console.error("❌ Scanner initialization error. Missing inputs:", {
+    //         minPriceInput,
+    //         maxPriceInput,
+    //         directionSelect,
+    //         minChangePercentInput,
+    //         minVolumeInput,
+    //         maxAlertsInput,
+    //     });
+    //     return;  // Stops further execution if any input is missing
+    // }
+
+    // Load initial values safely
+    minPriceInput.value = window.settings.scanner.minPrice ?? "";
+    maxPriceInput.value = window.settings.scanner.maxPrice ?? "";
+    directionSelect.value = window.settings.scanner.direction ?? "";
+    minChangePercentInput.value = window.settings.scanner.minChangePercent ?? "";
+    minVolumeInput.value = window.settings.scanner.minVolume ?? "";
+    maxAlertsInput.value = window.settings.scanner.maxAlerts ?? 50;
+
+    async function updateScannerSettings() {
+        try {
+            const latestSettings = await window.settingsAPI.get();
+            if (!latestSettings) {
+                console.error("❌ Failed to fetch latest settings.");
+                return;
+            }
+
+            const newSettings = {
+                ...latestSettings,
+                scanner: {
+                    minPrice: parseFloat(minPriceInput.value) || 0,
+                    maxPrice: parseFloat(maxPriceInput.value) || 0,
+                    direction: directionSelect.value || null,
+                    minChangePercent: parseFloat(minChangePercentInput.value) || 0,
+                    minVolume: parseInt(minVolumeInput.value, 10) || 0,
+                    maxAlerts: parseInt(maxAlertsInput.value, 10) || 50,
+                },
+            };
+
+            await window.settingsAPI.update(newSettings);
+            window.settings = newSettings;
+
+            console.log("✅ Scanner settings updated:", newSettings.scanner);
+        } catch (error) {
+            console.error("❌ Error updating scanner settings:", error);
+        }
+    }
+
+    minPriceInput.addEventListener("input", updateScannerSettings);
+    maxPriceInput.addEventListener("input", updateScannerSettings);
+    directionSelect.addEventListener("change", updateScannerSettings);
+    minChangePercentInput.addEventListener("input", updateScannerSettings);
+    minVolumeInput.addEventListener("input", updateScannerSettings);
+    maxAlertsInput.addEventListener("input", updateScannerSettings);
 }
 
 function initializeTopSection() {
@@ -416,7 +461,6 @@ async function loadAttributeFilters(listType, containerId) {
     }
 }
 
-
 async function updateAttributeFilters() {
     try {
         console.log("🔄 Fetching latest settings before updating filters...");
@@ -453,7 +497,6 @@ async function updateAttributeFilters() {
     }
 }
 
-
 function toggleAll(listType, state) {
     if (!window.settings || !window.settings.top) {
         console.error("❌ `settings.top` is missing! Skipping toggle.");
@@ -467,9 +510,6 @@ function toggleAll(listType, state) {
     updateAttributeFilters(); // ✅ Remove argument (fetches latest settings itself)
 }
 
-/**
- * ✅ Initialize the News Section with BlockList, bullish, and bearishList
- */
 function initializeNewsSection() {
     if (!window.settings.news) {
         window.settings.news = { blockList: [], bullish: [], bearishList: [], allowMultiSymbols: true };
@@ -540,12 +580,6 @@ function initializeNewsSection() {
     setupKeywordManagement();
 }
 
-/**
- * ✅ Handles adding and removing keywords for BlockList, bullish, and bearishList
- */
-/**
- * ✅ Handles adding and removing keywords for BlockList, bullish, and bearishList
- */
 function setupKeywordManagement() {
     const keywordType = document.getElementById("keyword-type");
     const keywordInput = document.getElementById("keyword-input");

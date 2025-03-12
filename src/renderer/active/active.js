@@ -1,85 +1,97 @@
-let currentActiveTicker = {}
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("⚡ Loading Active Window...");
+    console.log("⚡ DOMContentLoaded event fired!");
 
+    try {
+        // Listen for active ticker updates and update UI accordingly
+        window.activeAPI.onActiveTickerUpdate(async (symbol) => {
+            console.log(`🔄 Active ticker updated: ${symbol}`);
+            const symbolData = await window.activeAPI.getSymbol(symbol);
 
-    // ✅ Listen for settings updates globally
-    window.settingsAPI.onUpdate(async (updatedSettings) => {
-        console.log("🎯 Settings updated, applying changes...", updatedSettings);
+            if (symbolData) {
+                updateUI(symbolData);
+            } else {
+                console.warn(`[active.js] No data found for symbol: ${symbol}`);
+            }
+        });
 
-        // ✅ Sync new settings globally
-        window.settings = updatedSettings;
-
-        // ✅ Refresh the active ticker UI
-        if (currentActiveTicker) {
-            updateActiveTicker(currentActiveTicker);
+        // Set initial UI with default active ticker if available
+        const defaultTab = document.querySelector(".tablinks.active");
+        if (defaultTab) {
+            openTab(null, defaultTab.getAttribute("onclick").match(/'(\w+)'/)[1]);
+        } else {
+            const firstTab = document.querySelector(".tablinks");
+            if (firstTab) openTab(null, firstTab.getAttribute("onclick").match(/'(\w+)'/)[1]);
         }
-    });
-
-    window.tickers = await window.topAPI.getTickers("all");
-    window.settings = await window.settingsAPI.get();
-
-    // ✅ Listen for ticker updates
-    window.topAPI.onTickerUpdate( async () => {
-        console.log("🔔 Ticker update received, fetching latest tickers");
-        window.tickers = await window.topAPI.getTickers("all");
-    });
-
-    initializeAccordion(); // ✅ Ensure accordion is initialized
-
-    window.activeAPI.onActiveTickerUpdate((symbol) => {
-        currentActiveTicker = tickers.find(t => t.Symbol === symbol)
-        updateActiveTicker()
-    });
-
-    // ✅ Refresh the active ticker UI
-    if (currentActiveTicker) {
-        updateActiveTicker(currentActiveTicker);
+    } catch (error) {
+        console.error("❌ Initialization error:", error);
     }
-
-    // ✅ Reinitialize accordion after active ticker updates
-    window.updateAccordion = function () {
-        initializeAccordion();
-    };
 });
 
-// ✅ Function to initialize or reinitialize the accordion event listeners
-function initializeAccordion() {
-    const accordionItems = document.querySelectorAll(".accordion-item");
-
-    accordionItems.forEach((item) => {
-        const header = item.querySelector(".accordion-header");
-
-        header.removeEventListener("click", toggleAccordion); // Remove existing to prevent duplicate events
-        header.addEventListener("click", toggleAccordion);
-    });
-}
-
-// ✅ Function to toggle the accordion and close others
-function toggleAccordion(event) {
-    const item = event.currentTarget.parentNode;
-    const accordionItems = document.querySelectorAll(".accordion-item");
-
-    // Close all other accordions
-    accordionItems.forEach((accordion) => {
-        if (accordion !== item) {
-            accordion.classList.remove("active");
-        }
-    });
-
-    // Toggle the clicked accordion
-    item.classList.toggle("active");
-}
-
-function truncateString(str, maxLength) {
-    if (str.length > maxLength) {
-        return str.slice(0, maxLength) + "..."; // Adds ellipsis at the end
+/**
+ * Updates UI with symbol data.
+ * @param {Object} symbolData - Symbol data object
+ */
+function updateUI(symbolData) {
+    if (!symbolData) {
+        console.warn("[active.js] No data provided for UI update.");
+        return;
     }
-    return str;
+
+    console.log(`[active.js] Updating UI for symbol: ${symbolData.symbol}`);
+
+    // Summary
+    setText("symbol", symbolData.symbol);
+    setText("companyName", symbolData.profile?.companyName);
+    setText("sector", symbolData.profile?.sector);
+    setText("industry", symbolData.profile?.industry);
+    setText("marketCap", formatLargeNumber(symbolData.statistics?.marketCap));
+    setText("lastPrice", symbolData.historical?.price?.[0]?.value);
+    setText("lastVolume", symbolData.historical?.volume?.[0]?.value);
+
+    // Profile
+    setText("profile-companyName", symbolData.profile?.companyName);
+    setText("profile-sector", symbolData.profile?.sector);
+    setText("profile-industry", symbolData.profile?.industry);
+    setText("profile-exchange", symbolData.profile?.exchange);
+    setText("profile-exchangeShortName", symbolData.profile?.exchangeShortName);
+    setText("profile-country", symbolData.profile?.country);
+    setText("profile-isEtf", symbolData.profile?.isEtf ? "Yes" : "No");
+    setText("profile-isFund", symbolData.profile?.isFund ? "Yes" : "No");
+    setText("profile-isActivelyTrading", symbolData.profile?.isActivelyTrading ? "Yes" : "No");
+
+    // Statistics
+    setText("statistics-marketCap", formatLargeNumber(symbolData.statistics?.marketCap));
+    setText("statistics-beta", symbolData.statistics?.beta);
+
+    // Financials
+    setText("financials-lastAnnualDividend", symbolData.financials?.lastAnnualDividend);
+
+    // Historical
+    setText("historical-price-date", formatDate(symbolData.historical?.price?.[0]?.date));
+    setText("historical-price-value", symbolData.historical?.price?.[0]?.value);
+    setText("historical-volume-date", formatDate(symbolData.historical?.volume?.[0]?.date));
+    setText("historical-volume-value", symbolData.historical?.volume?.[0]?.value);
 }
 
+/**
+ * Updates the text content of an element by ID.
+ * @param {string} id - The ID of the element to update.
+ * @param {string|number} value - The value to set.
+ */
+function setText(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = value !== undefined && value !== null ? value : "N/A";
+    }
+}
+
+/**
+ * Formats a large number with abbreviations (K, M, B).
+ * @param {number} value - The number to format.
+ * @returns {string} - Formatted number.
+ */
 function formatLargeNumber(value) {
-    if (!value || isNaN(value)) return "-";
+    if (!value || isNaN(value)) return "N/A";
     const num = Number(value);
     if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
     if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
@@ -87,197 +99,33 @@ function formatLargeNumber(value) {
     return num.toLocaleString();
 }
 
-/** Updates the UI with real-time ticker data and metadata across multiple dashboard sections
- *
- * @param {Object} ticker - The active ticker object containing financial data and metadata
- * @param {string} ticker.Symbol - Stock symbol (e.g., "AAPL")
- * @param {number} ticker.Price - Current price
- * @param {string} ticker.Float - Formatted float value
- * @param {number} ticker.Volume - Trading volume
- * @param {number} ticker.ChangePercent - Percentage price change
- * @param {Object} ticker.meta - Detailed metadata object
- * @param {Object[]} ticker.News - Array of news articles
- *
- * @returns {void} Updates DOM elements directly
- *
- * @example
- * updateActiveTicker({
- *   Symbol: "TSLA",
- *   Price: 250.50,
- *   Float: "1.2B",
- *   News: [{ headline: "Tesla launches new model", url: "...", created_at: "..." }],
- *   meta: {
- *     Industry: "Automotive",
- *     AnalystTargetPrice: 300,
- *     EBITDA: 1500000000
- *   }
- * });
- *
- * Key Functionality:
- * - Updates main ticker row with core statistics
- * - Filters and displays news articles with sentiment highlighting
- * - Populates detailed company overview accordion
- * - Updates analyst ratings and valuation metrics
- * - Handles data formatting/fallbacks for missing values
- * - Applies visual feedback on updates
- *
- * DOM Dependencies:
- * - #active-ticker-row: Main summary row
- * - #news-list: Container for filtered news
- * - Various overview elements (#overview-sector, #analyst-strongbuy, etc.)
- * - .accordion-item: Container for expandable sections
- *
- * External Dependencies:
- * - truncateString(): Utility for shortening long text
- * - decodeHtmlEntities(): Cleans HTML-encoded text
- * - formatLargeNumber(): Formats numeric values (e.g., 1.5M)
- * - window.settings.news: User-defined filter lists
- * - window.updateAccordion(): Manages accordion state
- *
- * Visual Features:
- * - Animated row highlight on update
- * - News sentiment coloring (bullish/bearish classes)
- * - Auto-expanded first accordion section
- * - Tooltips on news links
- * - Fallback "no data" displays
+/**
+ * Formats a date string into a readable format.
+ * @param {string} dateStr - The date string to format.
+ * @returns {string} - Formatted date or "N/A".
  */
-function updateActiveTicker() {
-    const row = document.getElementById("active-ticker-row");
-    const newsList = document.getElementById("news-list");
+function formatDate(dateStr) {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
 
-    if (!row || !newsList) return;
+/**
+ * Handles tab switching logic.
+ * @param {Event} evt - The event triggering the tab switch.
+ * @param {string} tabId - The ID of the tab to show.
+ */
+function openTab(evt, tabId) {
+    document.querySelectorAll(".tabcontent").forEach((tab) => {
+        tab.style.display = "none";
+        tab.classList.remove("active");
+    });
 
-    console.log(`🔄 Updating Active Ticker: ${currentActiveTicker.Symbol}`);
+    document.querySelectorAll(".tablinks").forEach((tabLink) => {
+        tabLink.classList.remove("active");
+    });
 
-    let blockList = window.settings.news?.blockList || [];
-    let bullishList = window.settings.news?.bullishList || [];
-    let bearishList = window.settings.news?.bearishList || [];
-
-    const industry = currentActiveTicker.meta?.Industry || "-";
-    const truncatedIndustry = truncateString(industry, 19);
-
-    row.innerHTML = `
-        <td>${currentActiveTicker.Symbol}</td>
-        <td>${currentActiveTicker.Price}</td>
-        <td>${currentActiveTicker.Float}</td>
-        <td>${currentActiveTicker.Volume}</td>
-        <td>${currentActiveTicker.ChangePercent}%</td>
-        <td>${(currentActiveTicker.meta?.ProfitMargin * 100).toFixed(2)}%</td>
-        <td>${currentActiveTicker.meta?.["52WeekHigh"] || "-"}</td>
-        <td>${currentActiveTicker.meta?.["52WeekLow"] || "-"}</td>
-        <td>${currentActiveTicker.meta?.Beta || "-"}%</td>
-        <td>${truncatedIndustry}</td>
-        <td>${currentActiveTicker.meta?.Country || "-"}</td>
-    `;
-
-    if (document.getElementById("compay-desc")) document.getElementById("compay-desc").textContent = currentActiveTicker.meta?.Description || "-";
-
-    newsList.innerHTML = "";
-    if (Array.isArray(currentActiveTicker.News) && currentActiveTicker.News.length > 0) {
-        currentActiveTicker.News.forEach((article) => {
-            const headline = decodeHtmlEntities(article.headline || "");
-            const articleURL = article.url || "#";
-
-            function decodeHtmlEntities(text) {
-                const txt = document.createElement("textarea");
-                txt.innerHTML = text;
-                return txt.value;
-            }
-
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
-
-            if (!isBlocked) {
-                const li = document.createElement("li");
-                const link = document.createElement("a");
-
-                link.href = articleURL;
-                link.textContent = headline;
-                link.target = "_blank";
-                link.rel = "noopener noreferrer";
-                link.title = `Published: ${new Date(article.created_at).toLocaleString()}`;
-
-                if (bullishList.some((goodWord) => headline.toLowerCase().includes(goodWord.toLowerCase()))) {
-                    link.classList.add("bullish-news");
-                }
-                if (bearishList.some((badWord) => headline.toLowerCase().includes(badWord.toLowerCase()))) {
-                    link.classList.add("bearish-news");
-                }
-
-                li.appendChild(link);
-                newsList.appendChild(li);
-            }
-        });
-    }
-
-    if (newsList.innerHTML.trim() === "") {
-        const listItem = document.createElement("li");
-        listItem.textContent = "No relevant news available";
-        listItem.classList.add("no-news");
-        newsList.appendChild(listItem);
-    }
-    row.style.background = "rgba(34, 139, 34, 0.4)";
-    setTimeout(() => {
-        row.style.background = "rgba(34, 139, 34, 0.2)";
-    }, 1000);
-
-    console.log("✅ Active ticker updated successfully!");
-
-    if (currentActiveTicker.meta) {
-        const meta = currentActiveTicker.meta;
-
-        // ✅ Update Company Overview (Accordion)
-        if (document.getElementById("overview-symbol")) document.getElementById("overview-symbol").textContent = currentActiveTicker.Symbol || "-";
-        if (document.getElementById("overview-industry")) document.getElementById("overview-industry").textContent = meta.Industry || "-";
-        if (document.getElementById("overview-sector")) document.getElementById("overview-sector").textContent = meta.Sector || "-";
-        if (document.getElementById("overview-country")) document.getElementById("overview-country").textContent = meta.Country || "-";
-        if (document.getElementById("overview-profitmargin")) document.getElementById("overview-profitmargin").textContent = meta.ProfitMargin ? `${(meta.ProfitMargin * 100).toFixed(2)}%` : "-";
-        if (document.getElementById("overview-52high")) document.getElementById("overview-52high").textContent = meta["52WeekHigh"] || "-";
-        if (document.getElementById("overview-52low")) document.getElementById("overview-52low").textContent = meta["52WeekLow"] || "-";
-        if (document.getElementById("overview-beta")) document.getElementById("overview-beta").textContent = meta.Beta || "-";
-
-        // ✅ Update General Information
-        if (document.getElementById("general-symbol")) document.getElementById("general-symbol").textContent = currentActiveTicker.Symbol || "-";
-        if (document.getElementById("general-name")) document.getElementById("general-name").textContent = meta.Name || "-";
-        if (document.getElementById("general-country")) document.getElementById("general-country").textContent = meta.Country || "-";
-        if (document.getElementById("general-address")) document.getElementById("general-address").textContent = meta.Address || "-";
-        if (document.getElementById("general-industry")) document.getElementById("general-industry").textContent = meta.Industry || "-";
-        if (document.getElementById("general-sector")) document.getElementById("general-sector").textContent = meta.Sector || "-";
-        if (document.getElementById("general-exchange")) document.getElementById("general-exchange").textContent = meta.Exchange || "-";
-        if (document.getElementById("general-website"))
-            document.getElementById("general-website").innerHTML = meta.OfficialSite ? `<a href="${meta.OfficialSite}" target="_blank" rel="noopener noreferrer">${meta.OfficialSite}</a>` : "-";
-
-        // ✅ Update Analyst Ratings
-        if (document.getElementById("analyst-targetprice")) document.getElementById("analyst-targetprice").textContent = meta.AnalystTargetPrice || "-";
-        if (document.getElementById("analyst-strongbuy")) document.getElementById("analyst-strongbuy").textContent = meta.AnalystRatingStrongBuy || "-";
-        if (document.getElementById("analyst-buy")) document.getElementById("analyst-buy").textContent = meta.AnalystRatingBuy || "-";
-        if (document.getElementById("analyst-hold")) document.getElementById("analyst-hold").textContent = meta.AnalystRatingHold || "-";
-        if (document.getElementById("analyst-sell")) document.getElementById("analyst-sell").textContent = meta.AnalystRatingSell || "-";
-        if (document.getElementById("analyst-strongsell")) document.getElementById("analyst-strongsell").textContent = meta.AnalystRatingStrongSell || "-";
-
-        // ✅ Update Valuation Metrics
-        if (document.getElementById("finansial-eps")) document.getElementById("finansial-eps").textContent = meta.EPS || "-";
-        if (document.getElementById("finansial-marketcap")) document.getElementById("finansial-marketcap").textContent = formatLargeNumber(meta.MarketCapitalization);
-        if (document.getElementById("finansial-bookvalue")) document.getElementById("finansial-bookvalue").textContent = meta.BookValue || "-";
-        if (document.getElementById("finansial-revenue-ttm")) document.getElementById("finansial-revenue-ttm").textContent = formatLargeNumber(meta.RevenueTTM);
-        if (document.getElementById("finansial-ebitda")) document.getElementById("finansial-ebitda").textContent = formatLargeNumber(meta.EBITDA);
-        if (document.getElementById("finansial-profitmargin")) document.getElementById("finansial-profitmargin").textContent = meta.ProfitMargin ? `${(meta.ProfitMargin * 100).toFixed(2)}%` : "-";
-        if (document.getElementById("finansial-trailingpe")) document.getElementById("finansial-trailingpe").textContent = meta.TrailingPE || "-";
-        if (document.getElementById("finansial-forwardpe")) document.getElementById("finansial-forwardpe").textContent = meta.ForwardPE || "-";
-        if (document.getElementById("finansial-psr")) document.getElementById("finansial-psr").textContent = meta.PriceToSalesRatioTTM || "-";
-        if (document.getElementById("finansial-pbr")) document.getElementById("finansial-pbr").textContent = meta.PriceToBookRatio || "-";
-        if (document.getElementById("finansial-evrevenue")) document.getElementById("finansial-evrevenue").textContent = meta.EVToRevenue || "-";
-        if (document.getElementById("finansial-evebitda")) document.getElementById("finansial-evebitda").textContent = meta.EVToEBITDA || "-";
-
-        // ✅ Make Website Clickable
-        const websiteElement = document.getElementById("overview-website");
-        if (websiteElement) {
-            websiteElement.innerHTML = meta.OfficialSite ? `<a href="${meta.OfficialSite}" target="_blank" rel="noopener noreferrer">${meta.OfficialSite}</a>` : "-";
-        }
-
-        // ✅ Open "Company Overview" Automatically
-        document.querySelector(".accordion-item:first-child")?.classList.add("active");
-
-        console.log("✅ Overview section updated successfully!");
-        window.updateAccordion();
-    }
+    document.getElementById(tabId).style.display = "block";
+    document.getElementById(tabId).classList.add("active");
+    if (evt) evt.currentTarget.classList.add("active");
 }

@@ -183,8 +183,6 @@ async function fetchAndUpdateTickers() {
     }
 }
 
-
-
 async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
     window.settings = settings; // ✅ Ensure settings are globally updated

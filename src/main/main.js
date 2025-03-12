@@ -52,7 +52,8 @@ function createWindow(name, createFn) {
 ////////////////////////////////////////////////////////////////////////////////////
 // COLLECTORS
 
-const { connectMTP } = require("./collectors/mtp");
+const { connectMTP, fetchSymbolsFromServer } = require("./collectors/mtp");
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -367,9 +368,18 @@ ipcMain.on("update-settings", (event, newSettings) => {
 });
 
 // Store
+ipcMain.handle("get-all-symbols", () => {
+    return tickerStore.getAllSymbols(); // Fetch all stored symbols
+});
+
+ipcMain.handle("get-symbol", (event, symbol) => {
+    return tickerStore.getSymbol(symbol);
+});
+
 ipcMain.handle("get-tickers", (event, listType = "daily") => {
     return tickerStore.getAllTickers(listType); // Fetch based on the requested type
 });
+
 
 ipcMain.handle("get-news", (event, ticker) => {
     return tickerStore.getTickerNews(ticker); // Fetch news for a specific ticker
@@ -482,11 +492,35 @@ ipcMain.on("toggle-scanner", () => {
     }
 });
 
+tickerStore.on('new-high-price', ({ symbol, price }) => {
+    if (windows.scanner && windows.scanner.webContents) {
+        log.log(`Sending new high price alert to scanner window: ${symbol} - ${price}`);
+        windows.scanner.webContents.send('ws-alert', { 
+            type: 'new-high-price', 
+            symbol, 
+            price 
+        });
+    } else {
+        log.warn('Scanner window not available.');
+    }
+});
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
 
-app.on("ready", () => {
+app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
+
+    try {
+        // ✅ Fetch symbols from the server before opening the splash screen
+        await fetchSymbolsFromServer();
+        log.log("Symbols fetched and stored.");
+    } catch (error) {
+        log.error("Failed to fetch symbols on startup:", error);
+    }
 
     windows.splash = createSplashWindow(isDevelopment);
 

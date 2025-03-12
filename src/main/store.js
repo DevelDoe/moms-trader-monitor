@@ -10,6 +10,7 @@ class Store extends EventEmitter {
         super();
         log.log("Store instance initialized");
 
+        this.symbols = new Map();
         this.sessionData = new Map(); // Resets on clear
         this.dailyData = new Map(); // Stores all tickers for the full day
         this.newsList = []; // Store all news in a single list
@@ -17,6 +18,16 @@ class Store extends EventEmitter {
         setInterval(() => {
             this.cleanupOldNews();
         }, 60 * 1000); // Runs every 60 seconds
+    }
+
+     /**
+     * Updates the symbol list.
+     * @param {Array} symbolList - List of symbols fetched from the server.
+     */
+     updateSymbols(symbolList) {
+        this.symbols = new Map(symbolList.map((s) => [s.symbol, s]));
+        log.log(`[store.js] Stored ${this.symbols.size} symbols.`);
+        // log.log("[store.js] First object:", JSON.stringify(symbolList[0], null, 2));
     }
 
     /**
@@ -37,7 +48,9 @@ class Store extends EventEmitter {
 
             log.log(`[addMtpAlerts] Adding MTP alert for ${symbol}`);
 
-            
+            // Track if this is a new high
+            let isNewHigh = false;
+
             // === Handle dailyData ===
             if (!this.dailyData.has(symbol)) {
                 log.log(`[addMtpAlerts] Adding new ticker to dailyData: ${symbol}`);
@@ -103,9 +116,11 @@ class Store extends EventEmitter {
                 // Update price and direction
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
+
                 // Update highestPrice if the new price is greater than the recorded one
                 if (price > existingTicker.highestPrice) {
                     existingTicker.highestPrice = price;
+                    isNewHigh = true; 
                 }
                 existingTicker.fiveMinVolume = volume;
 
@@ -147,14 +162,22 @@ class Store extends EventEmitter {
                 // Update price and direction
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
+
                 // Update highestPrice if the new price is greater
                 if (price > existingTicker.highestPrice) {
-                    existingTicker.highestPrice = price;
+                    existingTicker.highestPrice = price; // ✅ correct here
+                    // Do NOT emit here again
                 }
+
                 existingTicker.fiveMinVolume = volume;
 
                 this.sessionData.set(symbol, existingTicker);
                 log.log(`[addMtpAlerts] Updated ${symbol} in sessionData. UpChange: ${existingTicker.cumulativeUpChange}%, DownChange: ${existingTicker.cumulativeDownChange}%`);
+            }
+
+            // Now emit once, after checking both:
+            if (isNewHigh) {
+                this.emit("new-high-price", { symbol, price });
             }
 
             // === Debounced emit("update") ===
@@ -271,6 +294,17 @@ class Store extends EventEmitter {
         log.bounce("DATA", "[updateMeta] final object", JSON.stringify(dailyTicker));
         this.emit("update");
     }
+
+    getAllSymbols() {
+        log.log("[getAllSymbols] called");
+        return Array.from(this.symbols.values());
+    }
+
+    getSymbol(symbol) {
+        log.log(`[getSymbol] called for: ${symbol}`);
+        return this.symbols.get(symbol) || null;
+    }
+    
 
     getAllNews() {
         log.log("[getAllNews] called");

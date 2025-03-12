@@ -15,7 +15,7 @@
 
             <div class="tab">
                 <button class="tablinks active" onclick="openTab(event, 'general')">General</button>
-                <button class="tablinks" onclick="openTab(event, 'audio')">Audio</button>
+                <button class="tablinks" onclick="openTab(event, 'scanner')">Alerts</button>
                 <button class="tablinks" onclick="openTab(event, 'top')">Top</button>
                 <button class="tablinks" onclick="openTab(event, 'news')">News</button>
             </div>
@@ -24,9 +24,40 @@
                 <h2>General</h2>
             </div>
 
-            <div id="audio" class="tabcontent">
-                <h2>Audio</h2>
+            <div id="scanner" class="tabcontent">
+                <section id="min-max-filters" class="filter-section">
+                    <div class="filter-container">
+                        <label title="Enter 0 to disable limit">Min Price:
+                            <input type="number" id="alerts-min-price" step="0.01" placeholder="No limit">
+                        </label>
+                        <label title="Enter 0 to disable limit">Max Price:
+                            <input type="number" id="alerts-max-price" step="0.01" placeholder="No limit">
+                        </label>
+            
+                        <label for="filter-direction">Direction:
+                            <select id="filter-direction" class="form-select">
+                                <option value="">Any</option>
+                                <option value="UP">Up</option>
+                                <option value="DOWN">Down</option>
+                            </select>
+                        </label>
+            
+                        <label for="filter-change-percent">Min % Change:
+                            <input type="number" id="filter-change-percent" step="0.1" placeholder="0 = Any">
+                        </label>
+            
+                        <label for="filter-volume">Min Volume:
+                            <input type="number" id="filter-volume" step="1" placeholder="0 = Any">
+                        </label>
+            
+                        <label for="max-alerts">Max Alerts:
+                            <input type="number" id="max-alerts" step="1" placeholder="50">
+                        </label>
+                    </div>
+                </section>
             </div>
+        
+            
 
             <div id="top" class="tabcontent active">
                 <!-- <div>

@@ -1,0 +1,165 @@
+body {
+    background-color: #1c1d23; /* Dark mode background */
+    color: #e0e0e0; /* Light text for contrast */
+    position: relative;
+    height: 100vw;
+    padding: 0;
+    margin: 0 auto;
+    font-size: 12px;
+}
+
+#active-ticker {
+    padding: 10px;
+    background: rgba(0, 255, 255, 0.01);
+    border-radius: 2px;
+}
+#active-ticker h2 {
+    font-size: 10px;
+    color: #595959;
+    margin-left: 10px;
+    width: 96%;
+}
+
+
+
+/* ✅  overview */
+#ticker-overview table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#ticker-overview table tbody {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two equal columns */
+    gap: 10px;
+}
+
+#ticker-overview table tr {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+}
+
+#ticker-overview table td {
+    padding: 5px;
+    color: #ddd;
+    font-size: 14px;
+}
+
+#ticker-overview table strong {
+    color: #fff;
+}
+
+#ticker-overview table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#ticker-overview tbody {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* ✅ Creates the two-column layout */
+    gap: 10px;
+}
+
+#ticker-overview tbody tr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+#ticker-overview td {
+    padding: 6px;
+    color: #ddd;
+    font-weight: 500;
+}
+
+#ticker-overview td:first-child {
+    font-weight: 700;
+    color: #fff;
+}
+
+#ticker-overview a {
+    color: #4db8ff;
+    text-decoration: none;
+}
+
+#ticker-overview a:hover {
+    text-decoration: underline;
+}
+tr p:has(#overview-name) {
+    background-color: transparent;
+}
+#overview-name {
+    background-color: transparent;
+}
+
+
+/* ✅ Accordion Styling */
+.accordion {
+    width: 100%;
+}
+
+.accordion-item {
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 8px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.accordion-header {
+    background: #292b38;
+    color: #fff;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.accordion-header::after {
+    content: "▼"; /* Default closed */
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.accordion-item.active .accordion-header::after {
+    transform: rotate(180deg); /* Flip when open */
+}
+
+/* ✅ Ensure accordion content is hidden initially */
+.accordion-content {
+    display: none; /* ✅ Hide initially */
+    grid-template-columns: repeat(2, 1fr); /* Two equal columns */
+    gap: 10px 20px;
+    padding: 15px;
+    font-size: 14px;
+}
+
+/* ✅ Only show content when the section is active */
+.accordion-item.active .accordion-content {
+    display: grid; /* ✅ Show as grid when active */
+}
+
+/* ✅ Minor animation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.accordion-content p {
+    margin: 0;
+    padding: 5px 0;
+    color: #ddd;
+    display: flex;
+    justify-content: space-between;
+}
+
+.accordion-content strong {
+    color: #fff;
+}

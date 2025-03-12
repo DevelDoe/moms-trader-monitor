@@ -2,22 +2,9 @@ const { BrowserWindow } = require("electron");
 const WebSocket = require("ws");
 const createLogger = require("../../hlps/logger");
 const log = createLogger(__filename);
-
 const dotenv = require("dotenv");
 const path = require("path");
 dotenv.config({ path: path.join(__dirname, "../../config/.env") });
-
-// struct
-// {
-//     "client_id": "scanner123",
-//     "data": {
-//       "symbol": "AAPL",
-//       "direction": "UP",
-//       "change_percent": 1.25,
-//       "price": 150.75,
-//       "volume": 50000
-//     }
-//   }
 
 const connectMTP = (scannerWindow) => {
     // Create a WebSocket connection to the server
@@ -42,10 +29,25 @@ const connectMTP = (scannerWindow) => {
             } else {
                 log.warn("[mtp] tickerStore.addMtpAlerts is not available due to circular dependency.");
             }
-            
-            // Forward data to scanner
+
+            // Store alerts if possible
+            if (tickerStore && typeof tickerStore.addMtpAlerts === "function") {
+                tickerStore.addMtpAlerts(message);
+            } else {
+                log.warn("[mtp.js] tickerStore.addMtpAlerts unavailable (circular dependency).");
+            }
+
+            // Forward alert to scanner
             if (scannerWindow && !scannerWindow.isDestroyed()) {
-                scannerWindow.webContents.send("ws-alert", message);
+                let alertData;
+                try {
+                    alertData = JSON.parse(message);
+                } catch (error) {
+                    log.error("[SERVER] Malformed JSON received:", message, error);
+                    return;
+                }
+
+                scannerWindow.webContents.send("ws-alert", alertData);
             } else {
                 log.warn("[mtp.js] Scanner window not available.");
             }
@@ -114,4 +116,42 @@ const getSymbolMeta = async (symbol) => {
     }
 };
 
-module.exports = { getSymbolMeta, connectMTP };
+const fetchSymbolsFromServer = async () => {
+    try {
+        log.log("[mtp.js] Fetching symbol list from server...");
+
+        const response = await fetch("http://172.232.155.62:3000/clients/symbols", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": process.env.MTP_API_KEY
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+        }
+
+        const rawData = await response.text();
+        const data = JSON.parse(rawData);
+
+        if (Array.isArray(data)) {
+            log.log(`[mtp.js] Retrieved ${data.length} symbols.`);
+
+            // ✅ Lazy load `tickerStore` here
+            const tickerStore = require("../store");
+            if (typeof tickerStore.updateSymbols === "function") {
+                tickerStore.updateSymbols(data);
+            } else {
+                log.warn("[mtp.js] tickerStore.updateSymbols is not a function.");
+            }
+        } else {
+            log.warn("[mtp.js] Received invalid symbol list format.");
+        }
+    } catch (error) {
+        log.error(`[mtp.js] Failed to fetch symbols: ${error.message}`);
+    }
+};
+
+
+module.exports = { getSymbolMeta, connectMTP, fetchSymbolsFromServer };

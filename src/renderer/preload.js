@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld("topAPI", {
 
 contextBridge.exposeInMainWorld("activeAPI", {
     toggle: () => ipcRenderer.send("toggle-active"),
+    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+    getSymbol: (symbol) => ipcRenderer.invoke("get-symbol", symbol), // ✅ New function
     setActiveTicker: (ticker) => ipcRenderer.send("set-active-ticker", ticker),
     onActiveTickerUpdate: (callback) => {
         ipcRenderer.on("update-active-ticker", (event, ticker) => {
@@ -25,6 +27,7 @@ contextBridge.exposeInMainWorld("activeAPI", {
         });
     },
 });
+
 
 contextBridge.exposeInMainWorld("newsAPI", {
     get: () => ipcRenderer.invoke("get-all-news"),

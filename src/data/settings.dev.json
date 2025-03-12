@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 1.5,
+    "minPrice": 1.75,
     "maxPrice": 10,
     "minFloat": 0,
     "maxFloat": 0,
@@ -12,29 +12,29 @@
       "session": {
         "Price": false,
         "alertChangePercent": false,
-        "cumulativeUpChange": true,
-        "cumulativeDownChange": true,
+        "cumulativeUpChange": false,
+        "cumulativeDownChange": false,
+        "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": true
+        "Bonuses": true
       },
       "daily": {
         "Price": false,
         "alertChangePercent": false,
         "cumulativeUpChange": true,
         "cumulativeDownChange": true,
+        "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": false
+        "Bonuses": true
       }
     },
     "transparent": false
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [],
+    "filteredTickers": [
+      "RAY"
+    ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
@@ -143,5 +143,13 @@
       "Non-Binding"
     ],
     "allowMultiSymbols": false
+  },
+  "scanner": {
+    "minPrice": 0,
+    "maxPrice": 0,
+    "direction": null,
+    "minChangePercent": 0,
+    "minVolume": 0,
+    "maxAlerts": 50
   }
 }
