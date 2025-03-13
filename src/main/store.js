@@ -3,7 +3,6 @@ const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews } = require("./collectors/news");
 const { queueRequest, searchCache } = require("./collectors/alpha");
-const { getSymbolMeta } = require("./collectors/mtp");
 
 class Store extends EventEmitter {
     constructor() {
@@ -20,11 +19,11 @@ class Store extends EventEmitter {
         }, 60 * 1000); // Runs every 60 seconds
     }
 
-     /**
+    /**
      * Updates the symbol list.
      * @param {Array} symbolList - List of symbols fetched from the server.
      */
-     updateSymbols(symbolList) {
+    updateSymbols(symbolList) {
         this.symbols = new Map(symbolList.map((s) => [s.symbol, s]));
         log.log(`[store.js] Stored ${this.symbols.size} symbols.`);
         // log.log("[store.js] First object:", JSON.stringify(symbolList[0], null, 2));
@@ -64,19 +63,20 @@ class Store extends EventEmitter {
                     cumulativeDownChange: direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0,
                     fiveMinVolume: volume,
                 });
-                // Fetch Meta Data
-                getSymbolMeta(symbol)
-                    .then((data) => {
-                        if (data) {
-                            log.log(`[addMtpAlerts] Meta data for ${symbol} fetched!`);
-                            this.updateMeta(symbol, data);
-                        } else {
-                            log.warn(`[addMtpAlerts] No meta data found for ${symbol}.`);
-                        }
-                    })
-                    .catch((err) => {
-                        log.error(`[addMtpAlerts] Error fetching meta data for ${symbol}: ${err.message}`);
-                    });
+
+                // attach meta data to the symbol
+                if (this.symbols.has(symbol)) {
+                    const metaData = this.symbols.get(symbol);
+
+                    if (metaData) {
+                        log.log(`[addMtpAlerts] Using stored meta data for ${symbol}`);
+
+                        // Update symbol metadata inside a 'meta' subcategory
+                        this.updateMeta(symbol, { meta: metaData });
+                    } else {
+                        log.warn(`[addMtpAlerts] No stored metadata found for ${symbol}.`);
+                    }
+                }
 
                 // ✅ Restore Alpha metadata fetching (if missing)
                 searchCache(symbol);
@@ -120,7 +120,7 @@ class Store extends EventEmitter {
                 // Update highestPrice if the new price is greater than the recorded one
                 if (price > existingTicker.highestPrice) {
                     existingTicker.highestPrice = price;
-                    isNewHigh = true; 
+                    isNewHigh = true;
                 }
                 existingTicker.fiveMinVolume = volume;
 
@@ -140,6 +140,7 @@ class Store extends EventEmitter {
                     cumulativeUpChange: direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0,
                     cumulativeDownChange: direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0,
                     fiveMinVolume: volume,
+                    meta: this.symbols.get(symbol) || {} // ✅ Attach metadata from symbols directly
                 });
             } else {
                 let existingTicker = this.sessionData.get(symbol);
@@ -267,31 +268,23 @@ class Store extends EventEmitter {
 
         let dailyTicker = this.dailyData.get(symbol);
 
-        // Function to capitalize only the first letter of a key
-        const capitalizeFirstLetter = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-        // Function to capitalize keys in an object
-        const capitalizeKeys = (obj) => {
-            return Object.fromEntries(Object.entries(obj).map(([key, value]) => [capitalizeFirstLetter(key === "Price" ? "ClosePrice" : key), value]));
-        };
-
-        // ✅ Capitalize and merge all data directly at root level
-        let capitalizedUpdateData = capitalizeKeys(updateData);
-        Object.assign(dailyTicker, capitalizedUpdateData);
+        // Ensure the 'meta' field exists and update it
+        dailyTicker.meta = dailyTicker.meta || {};
+        Object.assign(dailyTicker.meta, updateData.meta);
 
         // Ensure the symbol remains correctly stored
         dailyTicker.Symbol = symbol;
-
         this.dailyData.set(symbol, dailyTicker);
 
         if (this.sessionData.has(symbol)) {
             let sessionTicker = this.sessionData.get(symbol);
-            Object.assign(sessionTicker, capitalizedUpdateData);
+            sessionTicker.meta = sessionTicker.meta || {};
+            Object.assign(sessionTicker.meta, updateData.meta);
             this.sessionData.set(symbol, sessionTicker);
         }
 
-        log.log(`[updateMeta] Updated ticker ${symbol} with new data`);
-        log.bounce("DATA", "[updateMeta] final object", JSON.stringify(dailyTicker));
+        log.log(`[updateMeta] Updated ticker ${symbol} with new metadata under 'meta' subcategory.`);
+        log.bounce("DATA", `[updateMeta] final object`, JSON.stringify(dailyTicker));
         this.emit("update");
     }
 
@@ -304,7 +297,6 @@ class Store extends EventEmitter {
         log.log(`[getSymbol] called for: ${symbol}`);
         return this.symbols.get(symbol) || null;
     }
-    
 
     getAllNews() {
         log.log("[getAllNews] called");

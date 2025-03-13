@@ -5,3 +5,10 @@ body {
     margin: 0 auto;
     font-size: 12px;
 }
+
+.tablinks{
+    font-size: 8px;
+    border: none;
+    background: transparent;
+    color: white;
+}

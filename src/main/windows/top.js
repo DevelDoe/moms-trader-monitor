@@ -9,7 +9,7 @@ function createTopWindow(isDevelopment) {
         height: 400,
         frame: false,
         alwaysOnTop: false,
-        transparent: true,
+        transparent: false,
         resizable: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),

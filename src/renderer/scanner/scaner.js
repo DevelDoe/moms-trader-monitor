@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const frequencies = { "new-high-price": 880, critical: 660, standard: 440 };
         oscillator.frequency.value = frequencies[alertType] || 440;
 
-        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
 
         oscillator.start();

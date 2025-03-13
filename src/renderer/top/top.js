@@ -252,8 +252,7 @@ function updateTickersList(tickers, listId, prevTickers) {
             } else if (key === "Price") {
                 span.textContent = formatPrice(ticker[key]);
                 span.title = "Last price update";
-            } 
-            else if (key === "alertChangePercent") {
+            } else if (key === "alertChangePercent") {
                 span.textContent = ticker[key] + "%";
                 span.title = "Last change update";
                 if (ticker.Direction === "UP") {
@@ -404,7 +403,7 @@ function calculateScore(ticker) {
 
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
         Score += 50;
-    }   
+    }
 
     // ✅ Float Size Bonuses & Penalties
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
@@ -427,8 +426,7 @@ function calculateScore(ticker) {
 
     if (fiveMinVolume < 100_000) {
         Score -= 50;
-    }
-    else if (fiveMinVolume > 300_000) {
+    } else if (fiveMinVolume > 300_000) {
         Score += 50;
     }
 
@@ -471,7 +469,7 @@ function getScoreBreakdown(ticker) {
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
         Score += 50;
         breakdown.push("HOD: High of Day +50");
-    }    
+    }
 
     // ✅ Float Size Bonuses & Penalties
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
@@ -500,8 +498,7 @@ function getScoreBreakdown(ticker) {
     if (fiveMinVolume < 100_000) {
         Score -= 50;
         breakdown.push(`Low volume: -50`);
-    }
-    else if (fiveMinVolume > 300_000) {
+    } else if (fiveMinVolume > 300_000) {
         Score += 50;
         breakdown.push(`High volume: +50`);
     }
@@ -538,7 +535,7 @@ function getBonusesHTML(ticker) {
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
         bonuses.push('<span class="bonus high no-drag">📈</span>');
         tooltipText.push("HOD: High of Day");
-    }    
+    }
 
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
         bonuses.push('<span class="bonus gold-float no-drag">1M</span>');
@@ -566,8 +563,7 @@ function getBonusesHTML(ticker) {
     if (fiveMinVolume < 100_000) {
         bonuses.push('<span class="bonus low-volume no-drag">💤</span>');
         tooltipText.push("💤: Low Volume");
-    }
-    else if (fiveMinVolume > 300_000) {
+    } else if (fiveMinVolume > 300_000) {
         bonuses.push(`<span class="bonus high-volume no-drag">🔥</span>`);
         tooltipText.push("🔥: High Volume");
     }
@@ -575,17 +571,22 @@ function getBonusesHTML(ticker) {
     if (ticker.Industry && ticker.Industry === "Biotechnology") {
         bonuses.push('<span class="bonus bio no-drag">BIO</span>');
         tooltipText.push("BIO: Biotechnology stock");
-    }
-    else if (ticker.About && ticker.About.toLowerCase().includes("cannabis")) {
+    } else if (ticker.About && ticker.About.toLowerCase().includes("cannabis")) {
         bonuses.push('<span class="bonus cannabis no-drag">CAN</span>');
         tooltipText.push("CAN: Cannabis stock");
     }
-    
 
-    if (ticker.Country && ticker.Country === "China" || ticker.Country === "CN") {
-        bonuses.push('<span class="bonus cn no-drag">CN</span>');
-        tooltipText.push("CN: Chinese Stock");
+    if (ticker.meta?.profile?.country && (ticker.meta.profile.country === "China" || ticker.meta.profile.country === "CN")) {
+        bonuses.push('<span class="bonus cn no-drag">🇨🇳</span>');
+        tooltipText.push("CN: Chinese based company");
     }
+
+    if (ticker.meta?.profile?.country && (ticker.meta.profile.country === "HK" || ticker.meta.profile.country === "hk")) {
+        bonuses.push('<span class="bonus hk no-drag">🇭🇰</span>');
+        tooltipText.push("🇭🇰: Hong Kong based company");
+    }
+
+    console.log("ticker: ",ticker)
 
     if (bonuses.length === 0) {
         return ""; // No bonuses
@@ -593,4 +594,3 @@ function getBonusesHTML(ticker) {
 
     return `<span class="bonus-container" title="${tooltipText.join("\n")}">${bonuses.join(" ")}</span>`;
 }
-

@@ -31,6 +31,17 @@ document.addEventListener("DOMContentLoaded", async () => {
  * Updates UI with symbol data.
  * @param {Object} symbolData - Symbol data object
  */
+/**
+ * The function `updateUI` updates the user interface with data related to a specific stock symbol.
+ * @param symbolData - The `updateUI` function takes in `symbolData` as a parameter, which is an object
+ * containing various data related to a financial symbol. The function updates the user interface (UI)
+ * with information extracted from the `symbolData` object.
+ * @returns The `updateUI` function is updating the user interface with data provided in the
+ * `symbolData` object. It sets various text values for different elements based on the properties of
+ * the `symbolData` object such as symbol, company name, sector, industry, market cap, last price, last
+ * volume, profile details, statistics, financials, and historical data. The function also formats
+ * large numbers and
+ */
 function updateUI(symbolData) {
     if (!symbolData) {
         console.warn("[active.js] No data provided for UI update.");
@@ -79,12 +90,9 @@ function updateUI(symbolData) {
  * @param {string|number} value - The value to set.
  */
 function setText(id, value) {
-    const element = document.getElementById(id);
-    if (element) {
-        element.textContent = value !== undefined && value !== null ? value : "N/A";
-    }
+    const elements = document.querySelectorAll(`[data-id="${id}"]`); // ✅ Selects all elements with matching `data-id`
+    elements.forEach(el => el.innerText = value ?? "N/A"); // ✅ Update all instances
 }
-
 /**
  * Formats a large number with abbreviations (K, M, B).
  * @param {number} value - The number to format.

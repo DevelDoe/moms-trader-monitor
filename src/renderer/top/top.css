@@ -159,7 +159,7 @@ li {
 .bonus.low-volume {
     color: rgb(255, 0, 0);
 }
-.bonus.cn {
+.bonus.cn, .bonus.hk {
     color: rgb(255, 0, 0);
 }
 .bonus.high-volume {
