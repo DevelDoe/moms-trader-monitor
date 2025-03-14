@@ -70,9 +70,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             toggleAll("daily", false);
         });
 
-        window.settingsAPI.onUpdate((updatedSettings) => {
-            console.log("Settings Syncing", updatedSettings);
-        });
+        // window.settingsAPI.onUpdate((updatedSettings) => {
+        //     console.log("Settings Syncing", updatedSettings);
+        // });
 
 
         const defaultTab = document.querySelector(".tablinks.active");

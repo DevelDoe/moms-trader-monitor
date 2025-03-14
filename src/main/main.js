@@ -37,7 +37,8 @@ autoUpdater.setFeedURL({
 const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
-const { createTopWindow } = require("./windows/top");
+const { createDailyWindow } = require("./windows/daily");
+const { createSessionWindow } = require("./windows/session");
 const { createActiveWindow } = require("./windows/active");
 const { createNewsWindow } = require("./windows/news");
 const { createScannerWindow } = require("./windows/scanner");
@@ -360,7 +361,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
     saveSettings(); // ✅ Save settings after updates
 
     // ✅ Broadcast updated settings to all windows
-    log.log("Broadcasting 'filter-updated' event...");
+    log.log("Broadcasting 'settings-updated' event...");
 
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("settings-updated", appSettings);
@@ -389,7 +390,7 @@ ipcMain.handle("get-all-news", () => {
     return tickerStore.getAllNews(); // Fetch all news for tickers that have news
 });
 
-tickerStore.on("newsUpdated", (update) => {
+tickerStore.on("newsUpdated", (update) => { 
     const { ticker, newsItems } = update;
 
     if (!Array.isArray(newsItems) || newsItems.length === 0) {
@@ -405,10 +406,10 @@ tickerStore.on("newsUpdated", (update) => {
     });
 });
 
-tickerStore.on("update", () => {
-    log.log("Broadcasting update");
+tickerStore.on("lists-update", () => {
+    log.log("Broadcasting store update");
     BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("tickers-updated");
+        win.webContents.send("lists-updated");
     });
 });
 
@@ -425,29 +426,49 @@ ipcMain.on("clear-session", () => {
     }, 500); // ✅ Give store time to clear session
 });
 
-// top
-ipcMain.on("toggle-top", () => {
-    if (windows.top) {
-        log.log("Toggle Top Window");
-        windows.top.isVisible() ? windows.top.hide() : windows.top.show();
+// daily
+ipcMain.on("toggle-daily", () => {
+    if (windows.daily) {
+        log.log("Toggle daily Window");
+        windows.daily.isVisible() ? windows.daily.hide() : windows.daily.show();
     }
 });
 
-ipcMain.on("refresh-top", async () => {
-    log.log("Refreshing top window.");
+ipcMain.on("refresh-daily", async () => {
+    log.log("Refreshing daily window.");
 
-    if (windows.top) {
-        windows.top.close(); // Close the old window
+    if (windows.daily) {
+        windows.daily.close(); // Close the old window
     }
 
     // ✅ Recreate the window with updated settings
-    windows.top = await createTopWindow(isDevelopment);
-    windows.top.show();
+    windows.daily = await createTopWindow(isDevelopment);
+    windows.daily.show();
+});
+
+// session
+ipcMain.on("toggle-session", () => {
+    if (windows.session) {
+        log.log("Toggle session Window");
+        windows.session.isVisible() ? windows.session.hide() : windows.session.show();
+    }
+});
+
+ipcMain.on("refresh-session", async () => {
+    log.log("Refreshing session window.");
+
+    if (windows.session) {
+        windows.session.close(); // Close the old window
+    }
+
+    // ✅ Recreate the window with updated settings
+    windows.session = await createSessionWindow(isDevelopment);
+    windows.session.show();
 });
 
 // active
 ipcMain.on("toggle-active", () => {
-    if (windows.top) {
+    if (windows.active) {
         log.log("Toggle Active Window");
         windows.active.isVisible() ? windows.active.hide() : windows.active.show();
     }
@@ -532,7 +553,8 @@ app.on("ready", async () => {
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
-        windows.top = createWindow("top", () => createTopWindow(isDevelopment));
+        windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
+        windows.session = createWindow("session", () => createSessionWindow(isDevelopment));
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
         windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
         windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));

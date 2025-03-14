@@ -5,11 +5,27 @@ contextBridge.exposeInMainWorld("electronAPI", {
     exitApp: () => ipcRenderer.send("exit-app"),
 });
 
-contextBridge.exposeInMainWorld("topAPI", {
-    toggle: () => ipcRenderer.send("toggle-top"),
-    refresh: () => ipcRenderer.send("refresh-top"),
+contextBridge.exposeInMainWorld("settingsAPI", {
+    toggle: () => ipcRenderer.send("toggle-settings"),
+    get: () => ipcRenderer.invoke("get-settings"),
+    update: (settings) => ipcRenderer.send("update-settings", settings),
+    onUpdate: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
+});
+
+contextBridge.exposeInMainWorld("dailyAPI", {
+    toggle: () => ipcRenderer.send("toggle-daily"),
+    refresh: () => ipcRenderer.send("refresh-daily"),
     getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
-    onTickerUpdate: (callback) => ipcRenderer.on("tickers-updated", callback),
+    onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
+    applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
+    onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
+});
+
+contextBridge.exposeInMainWorld("sessionAPI", {
+    toggle: () => ipcRenderer.send("toggle-session"),
+    refresh: () => ipcRenderer.send("refresh-session"),
+    getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
+    onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
     clearSession: () => ipcRenderer.send("clear-session"),
     onSessionCleared: (callback) => ipcRenderer.on("session-cleared", callback),
     applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
@@ -28,7 +44,6 @@ contextBridge.exposeInMainWorld("activeAPI", {
     },
 });
 
-
 contextBridge.exposeInMainWorld("newsAPI", {
     get: () => ipcRenderer.invoke("get-all-news"),
     toggle: () => ipcRenderer.send("toggle-news"),
@@ -42,15 +57,3 @@ contextBridge.exposeInMainWorld("scannerAPI", {
 });
 
 
-contextBridge.exposeInMainWorld("settingsAPI", {
-    toggle: () => ipcRenderer.send("toggle-settings"),
-    get: () => ipcRenderer.invoke("get-settings"),
-    update: (settings) => ipcRenderer.send("update-settings", settings),
-    getAttributes: (listType) => ipcRenderer.invoke("get-attributes", listType),
-    onAttributesUpdate: (callback) =>
-        ipcRenderer.on("tickers-updated", () => {
-            console.log("🔄 Attributes updated, refreshing settings...");
-            callback();
-        }),
-    onUpdate: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
-});

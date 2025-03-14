@@ -1,7 +1,7 @@
 {
   "top": {
-    "minPrice": 1.7,
-    "maxPrice": 10,
+    "minPrice": 0.05,
+    "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -34,7 +34,13 @@
   },
   "news": {
     "showTrackedTickers": true,
-    "filteredTickers": [],
+    "filteredTickers": [
+      "SCNX",
+      "LFWD",
+      "MIRA",
+      "CCLD",
+      "QMMM"
+    ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
       "Market-Moving News for",
@@ -51,7 +57,8 @@
       "Shares are",
       "Looking in to",
       "Rocketing",
-      "Shares Halted"
+      "trading higher",
+      "going on with"
     ],
     "bullishList": [
       "FDA Approves",
@@ -116,7 +123,10 @@
       "Reaches Financing",
       "Letter of intent",
       "Revenue Boost",
-      "Phase 3 Safety"
+      "Phase 3 Safety",
+      "FDA Clearence",
+      "fda clearance",
+      "enhances value"
     ],
     "bearishList": [
       "Sell Alert",
@@ -145,7 +155,7 @@
     "allowMultiSymbols": false
   },
   "scanner": {
-    "minPrice": 1.7,
+    "minPrice": 0,
     "maxPrice": 0,
     "direction": null,
     "minChangePercent": 0,

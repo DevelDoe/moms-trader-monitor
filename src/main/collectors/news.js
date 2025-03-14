@@ -68,6 +68,8 @@ const connectAlpacaNews = () => {
     };
 };
 
+connectAlpacaNews();
+
 // ✅ Handle News Items Only
 const handleNewsData = (newsItem) => {
     const tickerStore = require("../store");
@@ -143,6 +145,6 @@ const fetchHistoricalNews = async (ticker) => {
     }
 };
 
-connectAlpacaNews();
+
 
 module.exports = { connectAlpacaNews, fetchHistoricalNews };

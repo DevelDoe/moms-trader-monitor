@@ -1,10 +1,7 @@
 // Local arrays for UI processing
 let tickersDaily = [];
-let tickersSessions = [];
-let tickersAll = [];
 
 // Store previous tickers for comparison
-let prevTickersSessions = {};
 let prevTickersDaily = {};
 
 // define floats
@@ -18,43 +15,22 @@ const floatFiveHundredMillion = 600_000_000;
 
 const symbolColors = {};
 
-let sessionClearTriggered = false;
-let lastTriggeredHour = null;
-
-setInterval(() => {
-    const now = new Date();
-    const minute = now.getMinutes();
-    const hour = now.getHours(); // Track the hour to prevent retriggers
-
-    // If it's the 28th or 58th minute and we haven't triggered it yet this hour
-    if ((minute === 28 || minute === 58) && (!sessionClearTriggered || lastTriggeredHour !== hour)) {
-        clearSessionList();
-        sessionClearTriggered = true;
-        lastTriggeredHour = hour; // Prevent retriggers within the same hour
-    }
-
-    // Reset flag after leaving the 28th or 58th minute
-    if (minute !== 28 && minute !== 58) {
-        sessionClearTriggered = false;
-    }
-}, 1000);
-
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("⚡ Loading Top Window...");
+    console.log("⚡ Loading Daily Window...");
 
-    await applySavedFilters(); // ✅ Apply saved settings before fetching data
-    await fetchAndUpdateTickers(); // ✅ Fetch tickers immediately on load
+    await applySavedFilters();  // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
+    await fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
 
     // ✅ Listen for ticker updates
-    window.topAPI.onTickerUpdate(() => {
-        console.log("🔔 Ticker update received, fetching latest data...");
-        fetchAndUpdateTickers();
+    window.dailyAPI.onTickerUpdate(() => {
+        console.log("🔔 Lists updates received, fetching latest data...");
+        fetchAndUpdateTickers();    // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
     });
 
     // ✅ Listen for news updates (new articles)
-    window.topAPI.onNewsUpdate(({ ticker, newsItems }) => {
-        console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`);
-        fetchAndUpdateTickers(); // ✅ Refresh tickers after receiving news
+    window.dailyAPI.onNewsUpdate(({ ticker, newsItems }) => {
+        console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`); //
+        fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
     });
 
     // ✅ Listen for settings updates globally
@@ -65,8 +41,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.settings = updatedSettings;
 
         // ✅ Re-apply filters & update UI
-        await applySavedFilters();
-        await fetchAndUpdateTickers();
+        await applySavedFilters();          // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
+        await fetchAndUpdateTickers();      // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
     });
 });
 
@@ -75,16 +51,10 @@ async function fetchAndUpdateTickers() {
         console.log("Fetching updated tickers...");
 
         // ✅ Fetch tickers from API
-        const sessionData = await window.topAPI.getTickers("session");
-        const dailyData = await window.topAPI.getTickers("daily");
-        const allData = await window.topAPI.getTickers("all");
-
-        console.log("📊 Session Data:", sessionData);
+        const dailyData = await window.dailyAPI.getTickers("daily");
         console.log("📊 Daily Data:", dailyData);
-        console.log("📊 All Data:", allData);
 
         // ✅ Store previous state for comparison
-        let oldTickersSessions = { ...prevTickersSessions };
         let oldTickersDaily = { ...prevTickersDaily };
 
         // ✅ Extract filters from settings
@@ -96,10 +66,18 @@ async function fetchAndUpdateTickers() {
         const maxScore = window.settings.top?.maxScore ?? 0;
         const minVolume = window.settings.top?.minVolume ?? 0;
         const maxVolume = window.settings.top?.maxVolume ?? 0;
-        const maxSessionLength = window.settings.top?.lists?.session?.length ?? 10;
         const maxDailyLength = window.settings.top?.lists?.daily?.length ?? 10;
 
-        console.log("Applying filters:", { minPrice, maxPrice, minFloat, maxFloat, minScore, maxScore, minVolume, maxVolume });
+        console.log("Applying filters:", {
+            minPrice,
+            maxPrice,
+            minFloat,
+            maxFloat,
+            minScore,
+            maxScore,
+            minVolume,
+            maxVolume,
+        });
 
         // ✅ Apply filters to each dataset
         const applyFilters = (data) =>
@@ -123,22 +101,14 @@ async function fetchAndUpdateTickers() {
                 )
                 .sort((a, b) => b.Score - a.Score);
 
-        const filteredSession = applyFilters(sessionData);
         const filteredDaily = applyFilters(dailyData);
-        const filteredAll = applyFilters(allData);
-
-        console.log("✅ Filtered Session Data:", filteredSession);
         console.log("✅ Filtered Daily Data:", filteredDaily);
 
         // ✅ Limit number of displayed entries
-        tickersSessions = filteredSession.slice(0, maxSessionLength);
         tickersDaily = filteredDaily.slice(0, maxDailyLength);
-
-        console.log("✅ Final Session List:", tickersSessions);
-        console.log("✅ Final Daily List:", tickersDaily);
+        console.log("✅ Final Daily List after max length:", tickersDaily);
 
         // ✅ Update previous ticker states
-        prevTickersSessions = Object.fromEntries(tickersSessions.map((t) => [t.Symbol, t]));
         prevTickersDaily = Object.fromEntries(tickersDaily.map((t) => [t.Symbol, t]));
 
         // 🔄 Fetch the latest settings before updating
@@ -149,7 +119,7 @@ async function fetchAndUpdateTickers() {
         }
 
         // ✅ Extract new filtered tickers
-        const newFilteredTickers = filteredAll.map((t) => t.Symbol);
+        const newFilteredTickers = filteredDaily.map((t) => t.Symbol);
 
         // ✅ Check if filtered tickers have changed
         if (JSON.stringify(newFilteredTickers) !== JSON.stringify(latestSettings.news.filteredTickers)) {
@@ -173,9 +143,7 @@ async function fetchAndUpdateTickers() {
         }
 
         // ✅ Update UI
-        updateTickersList(tickersSessions, "tickers-session", oldTickersSessions);
         updateTickersList(tickersDaily, "tickers-daily", oldTickersDaily);
-        // updateTickersList(filteredAll, "tickers-all", {}); // ✅ No need to compare previous state
 
         console.log("✅ UI Updated Successfully!");
     } catch (error) {
@@ -193,7 +161,6 @@ async function applySavedFilters() {
     console.log("✅ Applied saved filters:", { minPrice: window.minPrice, maxPrice: window.maxPrice });
 
     // ✅ Clear existing data before applying new filters
-    tickersSessions = [];
     tickersDaily = [];
 }
 
@@ -211,10 +178,11 @@ function updateTickersList(tickers, listId, prevTickers) {
     ul.innerHTML = ""; // ✅ Prevent duplicates
 
     // ✅ Determine which columns should be displayed
-    const listType = listId.includes("session") ? "session" : "daily";
+    const listType = "daily";
     const enabledColumns = window.settings.top.lists?.[listType] || {};
 
-    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
+    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])]
+        .filter((key) => enabledColumns[key] || key === "Symbol");
 
     // ✅ Populate list items
     tickers.forEach((ticker) => {
@@ -302,22 +270,6 @@ function getSymbolColor(symbol) {
     return symbolColors[symbol];
 }
 
-function clearSessionList() {
-    console.log("🧹 Clear session button clicked! ✅ SENDING CLEAR EVENT...");
-
-    // ✅ Ensure tickersSessions is an empty array instead of undefined
-    tickersSessions = [];
-    updateTickersList(tickersSessions ?? [], "tickers-session"); // ✅ Prevent null/undefined
-
-    // ✅ Ask main process to clear session data
-    window.topAPI.clearSession();
-
-    // ✅ Delay fetch to ensure data clears before refreshing
-    setTimeout(() => {
-        fetchAndUpdateTickers();
-    }, 1000);
-}
-
 function formatPrice(price) {
     if (typeof price !== "number" || isNaN(price)) return "$0.00";
     return `$${price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
@@ -380,7 +332,6 @@ function formatLargeNumber(value) {
 function calculateScore(ticker) {
     // ✅ Use cumulativeUpChange instead of Count (default to 0 if missing)
     let Score = Math.floor(ticker.cumulativeUpChange || 0);
-    // Score -= Math.floor(ticker.cumulativeDownChange || 0); // TODO: RE-ANABLE FOR DAILY
 
     const floatValue = parseHumanNumber(ticker.Float); // ✅ Convert Float to a real number
     const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0; // ✅ Ensure safe parsing
@@ -441,14 +392,12 @@ function calculateScore(ticker) {
 function getScoreBreakdown(ticker) {
     let breakdown = [];
     let Score = Math.floor(ticker.cumulativeUpChange || 0); // ✅ Using cumulativeUpChange
-    // Score -= Math.floor(ticker.cumulativeDownChange || 0);
 
     const floatValue = parseHumanNumber(ticker.Float);
     const volumeValue = parseVolumeValue(ticker.Volume);
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
     breakdown.push(`Base Up Change: ${ticker.cumulativeUpChange || 0}`);
-    breakdown.push(`Base Down Change: ${ticker.cumulativeDownChange || 0}`);
     breakdown.push(`---------------------`);
 
     let blockList = window.settings.news?.blockList || [];
@@ -586,7 +535,7 @@ function getBonusesHTML(ticker) {
         tooltipText.push("🇭🇰: Hong Kong based company");
     }
 
-    console.log("ticker: ",ticker)
+    console.log("ticker: ", ticker);
 
     if (bonuses.length === 0) {
         return ""; // No bonuses

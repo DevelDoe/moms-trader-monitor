@@ -1,12 +1,12 @@
-// ./src/main/windows/top.js
+// ./src/main/windows/daily.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 
-function createTopWindow(isDevelopment) {
+function createDailyWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 850,
-        height: 400,
+        width: 300,
+        height: 140,
         frame: false,
         alwaysOnTop: false,
         transparent: false,
@@ -19,11 +19,11 @@ function createTopWindow(isDevelopment) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/top/top.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/daily/daily.html"));
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
     return window; // ✅ Return the window instance
 }
 
-module.exports = { createTopWindow };
+module.exports = { createDailyWindow };
