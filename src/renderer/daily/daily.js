@@ -18,13 +18,13 @@ const symbolColors = {};
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading Daily Window...");
 
-    await applySavedFilters();  // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
+    await applySavedFilters(); // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
     await fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
 
     // ✅ Listen for ticker updates
     window.dailyAPI.onTickerUpdate(() => {
         console.log("🔔 Lists updates received, fetching latest data...");
-        fetchAndUpdateTickers();    // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+        fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
     });
 
     // ✅ Listen for news updates (new articles)
@@ -41,8 +41,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.settings = updatedSettings;
 
         // ✅ Re-apply filters & update UI
-        await applySavedFilters();          // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
-        await fetchAndUpdateTickers();      // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+        await applySavedFilters(); // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
+        await fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
     });
 });
 
@@ -66,7 +66,7 @@ async function fetchAndUpdateTickers() {
         const maxScore = window.settings.top?.maxScore ?? 0;
         const minVolume = window.settings.top?.minVolume ?? 0;
         const maxVolume = window.settings.top?.maxVolume ?? 0;
-        const maxDailyLength = window.settings.top?.lists?.daily?.length ?? 10;
+        const maxDailyLength = window.settings.top.dailyListLength ?? 10;
 
         console.log("Applying filters:", {
             minPrice,
@@ -120,30 +120,19 @@ async function fetchAndUpdateTickers() {
 
         // ✅ Extract new filtered tickers
         const newFilteredTickers = filteredDaily.map((t) => t.Symbol);
+        const prevFilteredTickers = latestSettings.news.filteredTickers || [];
 
-        // ✅ Check if filtered tickers have changed
-        if (JSON.stringify(newFilteredTickers) !== JSON.stringify(latestSettings.news.filteredTickers)) {
-            console.log("🔄 Updating filtered tickers in settings...");
+        // ✅ Check if filtered tickers have changed (better comparison)
+        const hasChanges = newFilteredTickers.length !== prevFilteredTickers.length || newFilteredTickers.some((ticker, i) => ticker !== prevFilteredTickers[i]);
 
-            // ✅ Preserve other settings, only update `filteredTickers`
-            const updatedSettings = {
-                ...latestSettings,
-                news: {
-                    ...latestSettings.news,
-                    filteredTickers: newFilteredTickers,
-                },
-            };
+        if (hasChanges) {
+            console.log("🔄 Updating UI with new filtered tickers...");
 
-            // ✅ Save updated settings
-            await window.settingsAPI.update(updatedSettings);
-
-            // ✅ Keep local settings in sync
-            window.settings = updatedSettings;
-            console.log("✅ Saved filtered tickers to settings.news.filteredTickers:", updatedSettings.news.filteredTickers);
+            // ✅ Update UI only (no settings update)
+            updateTickersList(tickersDaily, "tickers-daily", prevTickersDaily);
+        } else {
+            console.log("✅ No changes in filtered tickers, skipping update.");
         }
-
-        // ✅ Update UI
-        updateTickersList(tickersDaily, "tickers-daily", oldTickersDaily);
 
         console.log("✅ UI Updated Successfully!");
     } catch (error) {
@@ -181,8 +170,7 @@ function updateTickersList(tickers, listId, prevTickers) {
     const listType = "daily";
     const enabledColumns = window.settings.top.lists?.[listType] || {};
 
-    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])]
-        .filter((key) => enabledColumns[key] || key === "Symbol");
+    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
 
     // ✅ Populate list items
     tickers.forEach((ticker) => {
@@ -330,75 +318,11 @@ function formatLargeNumber(value) {
 }
 
 function calculateScore(ticker) {
-    // ✅ Use cumulativeUpChange instead of Count (default to 0 if missing)
     let Score = Math.floor(ticker.cumulativeUpChange || 0);
 
-    const floatValue = parseHumanNumber(ticker.Float); // ✅ Convert Float to a real number
-    const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0; // ✅ Ensure safe parsing
+    const floatValue = parseHumanNumber(ticker.statistics.floatShares);
+    const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0;
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
-
-    let blockList = window.settings.news?.blockList || [];
-    let filteredNews = [];
-    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
-        filteredNews = ticker.News.filter((newsItem) => {
-            const headline = newsItem.headline || ""; // Ensure headline is a string
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
-            return !isBlocked; // Keep only non-blocked headlines
-        });
-    }
-
-    // ✅ Add score only if there are valid (non-blocked) news items
-    if (filteredNews.length > 0) {
-        Score += 50;
-    }
-
-    if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
-        Score += 50;
-    }
-
-    // ✅ Float Size Bonuses & Penalties
-    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        Score += 20; // 🔥 Strong bonus for ultra-low float
-    } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        Score += 15;
-    } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
-        Score += 10;
-    } else if (floatValue >= floatTenMillion && floatValue < floatFiftyMillion) {
-        Score += 0; // No change
-    } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
-        Score -= 20; // Small penalty for large float
-    } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
-        Score -= 40;
-    } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
-        Score -= 60;
-    } else if (floatValue >= floatFiveHundredMillion) {
-        Score -= 200; // 🚨 Heavy penalty for massive float
-    }
-
-    if (fiveMinVolume < 100_000) {
-        Score -= 50;
-    } else if (fiveMinVolume > 300_000) {
-        Score += 50;
-    }
-
-    // ✅ Bonus: 5 points per million in volume
-    if (volumeValue > 0) {
-        Score += Math.floor(volumeValue / 1_000_000) * 2;
-    }
-
-    return Score;
-}
-
-function getScoreBreakdown(ticker) {
-    let breakdown = [];
-    let Score = Math.floor(ticker.cumulativeUpChange || 0); // ✅ Using cumulativeUpChange
-
-    const floatValue = parseHumanNumber(ticker.Float);
-    const volumeValue = parseVolumeValue(ticker.Volume);
-    const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
-
-    breakdown.push(`Base Up Change: ${ticker.cumulativeUpChange || 0}`);
-    breakdown.push(`---------------------`);
 
     let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
@@ -410,48 +334,104 @@ function getScoreBreakdown(ticker) {
         });
     }
 
+    // news
     if (filteredNews.length > 0) {
-        Score += 50;
-        breakdown.push(`Has News: +50`);
+        Score = Score * 1.5;
     }
 
+    // New high
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
-        Score += 50;
-        breakdown.push("HOD: High of Day +50");
+        Score = Score * 1.5;
     }
 
-    // ✅ Float Size Bonuses & Penalties
+    // Float
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        Score += 20;
-        breakdown.push(`Float <2M: +20`);
+        Score = Score * 1.2;
     } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        Score += 15;
-        breakdown.push(`Float 2M-7.5M: +15`);
+        Score = Score * 1.15;
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
-        Score += 10;
-        breakdown.push(`Float 7.5M-13M: +10`);
+        Score = Score * 1.1;
+    } else if (floatValue >= floatTenMillion && floatValue < floatFiftyMillion) {
     } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
-        Score -= 20;
-        breakdown.push(`Float 65M-125M: -20`);
+        Score = Score * 0.8;
     } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
-        Score -= 40;
-        breakdown.push(`Float 125M-250M: -40`);
+        Score = Score * 0.6;
     } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
-        Score -= 60;
-        breakdown.push(`Float 250M-600M: -60`);
+        Score = Score * 0.4;
     } else if (floatValue >= floatFiveHundredMillion) {
-        Score -= 200;
-        breakdown.push(`Float 600M+: -200`);
+        Score = Score * 0.1;
     }
 
-    if (fiveMinVolume < 100_000) {
-        Score -= 50;
-        breakdown.push(`Low volume: -50`);
-    } else if (fiveMinVolume > 300_000) {
-        Score += 50;
-        breakdown.push(`High volume: +50`);
+    // total volume
+    if (volumeValue > 0) {
+        // Score += Math.floor(volumeValue / 1_000_000) * 2;
     }
 
+    return Math.floor(Score);
+}
+
+function getScoreBreakdown(ticker) {
+    let breakdown = [];
+    let Score = Math.floor(ticker.cumulativeUpChange || 0) - Math.floor(ticker.cumulativeDownChange || 0);
+
+    const floatValue = parseHumanNumber(ticker.statistics.floatShares);
+    const volumeValue = parseVolumeValue(ticker.Volume);
+    const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
+
+    // Add base up change to breakdown
+    breakdown.push(`Base Up Change: ${ticker.cumulativeUpChange || 0}`);
+    breakdown.push(`---------------------`);
+
+    // Apply news multiplier if there is relevant news
+    const blockList = window.settings.news?.blockList || [];
+    const filteredNews = Array.isArray(ticker.News)
+        ? ticker.News.filter((newsItem) => {
+              const headline = newsItem.headline || "";
+              return !blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+          })
+        : [];
+
+    if (filteredNews.length > 0) {
+        Score *= 1.5;
+        breakdown.push(`Has News: 1.5x multiplier`);
+    }
+
+    // Apply multiplier if the price is at the high of the day
+    if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
+        Score *= 1.5;
+        breakdown.push("HOD: High of Day 1.5x multiplier");
+    }
+
+    // Apply float-based multipliers
+    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
+        Score *= 1.2;
+        breakdown.push(`Float <2M: 1.2x multiplier`);
+    } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
+        Score *= 1.15;
+        breakdown.push(`Float 2M-7.5M: 1.15x multiplier`);
+    } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
+        Score *= 1.1;
+        breakdown.push(`Float 7.5M-13M: 1.1x multiplier`);
+    } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
+        Score *= 0.8;
+        breakdown.push(`Float 65M-125M: 0.8x multiplier`);
+    } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
+        Score *= 0.6;
+        breakdown.push(`Float 125M-250M: 0.6x multiplier`);
+    } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
+        Score *= 0.4;
+        breakdown.push(`Float 250M-600M: 0.4x multiplier`);
+    } else if (floatValue >= floatFiveHundredMillion) {
+        Score *= 0.1;
+        breakdown.push(`Float 600M+: 0.1x multiplier`);
+    }
+
+    // We must have a culmulative volume for the entire day.....
+    if (volumeValue > 0) {
+        // Score += Math.floor(volumeValue / 1_000_000) * 2;
+    }
+
+    // Add final Score to breakdown
     breakdown.push(`---------------------`);
     breakdown.push(`Final Score: ${Score}`);
 
@@ -462,7 +442,7 @@ function getBonusesHTML(ticker) {
     let bonuses = [];
     let tooltipText = [];
 
-    const floatValue = parseHumanNumber(ticker.Float);
+    const floatValue = parseHumanNumber(ticker.statistics.floatShares);
     const volumeValue = parseVolumeValue(ticker.Volume);
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 

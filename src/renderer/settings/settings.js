@@ -74,7 +74,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         //     console.log("Settings Syncing", updatedSettings);
         // });
 
-
         const defaultTab = document.querySelector(".tablinks.active");
         if (defaultTab) {
             openTab(null, defaultTab.getAttribute("onclick").match(/'(\w+)'/)[1]);
@@ -222,8 +221,8 @@ function initializeTopSection() {
     // if (window.settings.top.transparent !== undefined) topTransparentToggle.checked = window.settings.top.transparent;
 
     // ✅ Load saved length settings
-    sessionLengthInput.value = window.settings.top.lists?.session?.length ?? 10;
-    dailyLengthInput.value = window.settings.top.lists?.daily?.length ?? 10;
+    sessionLengthInput.value = window.settings.top.sessionListLength ?? 10;
+    dailyLengthInput.value = window.settings.top.dailyListLength ?? 10;
 
     console.log("✅ Applied topSettings:", {
         minPrice: minPriceInput.value,
@@ -379,18 +378,12 @@ function initializeTopSection() {
                 return;
             }
 
-            // ✅ Preserve all previous attributes while updating length
+            // ✅ Preserve all previous settings while updating the correct list length
             const newSettings = {
-                ...latestSettings, // ✅ Keep all settings
+                ...latestSettings,
                 top: {
-                    ...latestSettings.top, // ✅ Preserve all top settings
-                    lists: {
-                        ...latestSettings.top.lists, // ✅ Preserve all list types
-                        [type]: {
-                            ...latestSettings.top.lists?.[type], // ✅ Preserve existing attributes
-                            length: newLength, // ✅ Only update length
-                        },
-                    },
+                    ...latestSettings.top,
+                    [`${type}ListLength`]: newLength, // ✅ Updates sessionListLength or dailyListLength at the root
                 },
             };
 
@@ -436,7 +429,7 @@ async function loadAttributeFilters(listType, containerId) {
         container.innerHTML = ""; // Clear previous checkboxes
 
         // ✅ Ensure settings exist before using them
-        const selectedFilters = window.settings.top.lists?.[listType] || {}; 
+        const selectedFilters = window.settings.top.lists?.[listType] || {};
 
         attributes.forEach((attr) => {
             const label = document.createElement("label");
@@ -473,12 +466,8 @@ async function updateAttributeFilters() {
         // ✅ Update settings dynamically while preserving other lists
         const updatedLists = {
             ...latestSettings.top.lists,
-            session: Object.fromEntries(
-                Array.from(document.querySelectorAll("input[name='session']")).map((checkbox) => [checkbox.value, checkbox.checked])
-            ),
-            daily: Object.fromEntries(
-                Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])
-            ),
+            session: Object.fromEntries(Array.from(document.querySelectorAll("input[name='session']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+            daily: Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
         };
 
         // ✅ Spread everything and only update `lists`
@@ -695,4 +684,3 @@ function setupKeywordManagement() {
     // ✅ Initialize UI with the latest data
     updateLists();
 }
-

@@ -21,6 +21,7 @@ class Store extends EventEmitter {
     updateSymbols(symbolList) {
         this.symbols = new Map(symbolList.map((s) => [s.symbol, s]));
         log.log(`[updateSymbols] Stored ${this.symbols.size} symbols.`);
+        // log.log('DATA', 'Symbollist: ', this.symbols)
 
         // Queue fetching news for each symbol to prevent overloading the API
         (async () => {
@@ -65,10 +66,32 @@ class Store extends EventEmitter {
     
             } else {
                 let existingTicker = this.dailyData.get(symbol);
-    
-                // Update cumulative changes and price
-                // Your code for updating the price and changes here...
-                // (the rest of the update logic is the same as you already have)
+
+                // Update cumulative changes
+                let newCumulativeUp = existingTicker.cumulativeUpChange || 0;
+                let newCumulativeDown = existingTicker.cumulativeDownChange || 0;
+
+                if (direction === "UP") {
+                    newCumulativeUp += change_percent;
+                } else {
+                    newCumulativeDown += change_percent;
+                }
+
+                // Limit to 2 decimal places
+                existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
+                existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
+                existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2);
+
+                // Update price and direction
+                existingTicker.Direction = direction || existingTicker.Direction;
+                existingTicker.Price = price;
+
+                // Update highestPrice if the new price is greater than the recorded one
+                if (price > existingTicker.highestPrice) {
+                    existingTicker.highestPrice = price;
+                    isNewHigh = true;
+                }
+                existingTicker.fiveMinVolume = volume;
     
                 this.dailyData.set(symbol, existingTicker);
                 log.log(`[addMtpAlerts] Updated ${symbol} in dailyData. UpChange: ${existingTicker.cumulativeUpChange}%, DownChange: ${existingTicker.cumulativeDownChange}%`);
@@ -93,10 +116,33 @@ class Store extends EventEmitter {
     
             } else {
                 let existingTicker = this.sessionData.get(symbol);
-    
-                // Update the sessionData ticker similarly to dailyData
-                // Your sessionData update logic here...
-    
+
+                // Update cumulative changes
+                let newCumulativeUp = existingTicker.cumulativeUpChange || 0;
+                let newCumulativeDown = existingTicker.cumulativeDownChange || 0;
+
+                if (direction === "UP") {
+                    newCumulativeUp += change_percent;
+                } else {
+                    newCumulativeDown += change_percent;
+                }
+
+                // Limit to 2 decimal places
+                existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
+                existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
+                existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2);
+
+                // Update price and direction
+                existingTicker.Direction = direction || existingTicker.Direction;
+                existingTicker.Price = price;
+
+                // Update highestPrice if the new price is greater
+                if (price > existingTicker.highestPrice) {
+                    existingTicker.highestPrice = price;
+                }
+
+                existingTicker.fiveMinVolume = volume;
+
                 this.sessionData.set(symbol, existingTicker);
                 log.log(`[addMtpAlerts] Updated ${symbol} in sessionData. UpChange: ${existingTicker.cumulativeUpChange}%, DownChange: ${existingTicker.cumulativeDownChange}%`);
             }

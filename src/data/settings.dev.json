@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 0.05,
+    "minPrice": 0,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -16,7 +16,7 @@
         "cumulativeDownChange": true,
         "Score": true,
         "Bonuses": true,
-        "length": 4,
+        "length": 3,
         "fiveMinVolume": false
       },
       "daily": {
@@ -30,16 +30,17 @@
         "fiveMinVolume": false
       }
     },
-    "transparent": false
+    "transparent": false,
+    "sessionListLength": 3,
+    "dailyListLength": 3
   },
   "news": {
-    "showTrackedTickers": true,
+    "showTrackedTickers": false,
     "filteredTickers": [
-      "SCNX",
-      "LFWD",
+      "SIDU",
+      "AIFF",
       "MIRA",
-      "CCLD",
-      "QMMM"
+      "LFWD"
     ],
     "blockList": [
       "US Stocks Likely To Open Lower After Gaining For 2 Days",
@@ -150,7 +151,8 @@
       "SEC Investigation Launched",
       "Short Report Released",
       "Misses",
-      "Non-Binding"
+      "Non-Binding",
+      "Down from"
     ],
     "allowMultiSymbols": false
   },

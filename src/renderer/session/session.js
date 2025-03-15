@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // ✅ Listen for ticker updates
     window.sessionAPI.onTickerUpdate(() => {
-        console.log("🔔 Ticker update received, fetching latest data...");
+        console.log("🔔 Lists update received, fetching latest data...");
         fetchAndUpdateTickers();
     });
 
@@ -87,7 +87,7 @@ async function fetchAndUpdateTickers() {
         const maxScore = window.settings.top?.maxScore ?? 0;
         const minVolume = window.settings.top?.minVolume ?? 0;
         const maxVolume = window.settings.top?.maxVolume ?? 0;
-        const maxSessionLength = window.settings.top?.lists?.session?.length ?? 10;
+        const maxSessionLength = window.settings.top.sessionListLength ?? 10;
 
         console.log("Applying filters:", {
             minPrice,
@@ -143,27 +143,17 @@ async function fetchAndUpdateTickers() {
         const newFilteredTickers = filteredSession.map((t) => t.Symbol);
 
         // Check if filtered tickers have changed
-        if (JSON.stringify(newFilteredTickers) !== JSON.stringify(Object.keys(prevTickersSessions))) {
-            console.log("🔄 Filtered tickers have changed. Updating settings...");
+        const prevTickersArray = Object.keys(prevTickersSessions);
+        const hasChanges = newFilteredTickers.length !== prevTickersArray.length || newFilteredTickers.some((ticker, i) => ticker !== prevTickersArray[i]);
+
+        if (hasChanges) {
+            console.log("🔄 Filtered tickers have changed. Updating UI...");
 
             // Update previous tickers to reflect the new state
             prevTickersSessions = Object.fromEntries(filteredSession.map((t) => [t.Symbol, t]));
 
-            // Preserve other settings, only update `filteredTickers`
-            const updatedSettings = {
-                ...latestSettings,
-                news: {
-                    ...latestSettings.news,
-                    filteredTickers: newFilteredTickers,
-                },
-            };
-
-            // Save updated settings
-            await window.settingsAPI.update(updatedSettings);
-
-            // Keep local settings in sync
-            window.settings = updatedSettings;
-            console.log("✅ Saved filtered tickers to settings.news.filteredTickers:", updatedSettings.news.filteredTickers);
+            // Update the UI only (no settings update)
+            updateTickersList(tickersSessions, "tickers-session", prevTickersSessions);
         }
 
         // ✅ Update UI
@@ -202,11 +192,10 @@ function updateTickersList(tickers, listId, prevTickers) {
     ul.innerHTML = ""; // ✅ Prevent duplicates
 
     // ✅ Determine which columns should be displayed
-    const listType = "session" ;
+    const listType = "session";
     const enabledColumns = window.settings.top.lists?.[listType] || {};
 
-    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])]
-        .filter((key) => enabledColumns[key] || key === "Symbol");
+    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
 
     // ✅ Populate list items
     tickers.forEach((ticker) => {
@@ -370,78 +359,12 @@ function formatLargeNumber(value) {
 }
 
 function calculateScore(ticker) {
-    // ✅ Use cumulativeUpChange instead of Count (default to 0 if missing)
     let Score = Math.floor(ticker.cumulativeUpChange || 0);
     Score -= Math.floor(ticker.cumulativeDownChange || 0);
 
-    const floatValue = parseHumanNumber(ticker.Float); // ✅ Convert Float to a real number
-    const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0; // ✅ Ensure safe parsing
+    const floatValue = parseHumanNumber(ticker.statistics?.floatShares);
+    const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0;
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
-
-    let blockList = window.settings.news?.blockList || [];
-    let filteredNews = [];
-    if (Array.isArray(ticker.News) && ticker.News.length > 0) {
-        filteredNews = ticker.News.filter((newsItem) => {
-            const headline = newsItem.headline || ""; // Ensure headline is a string
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
-            return !isBlocked; // Keep only non-blocked headlines
-        });
-    }
-
-    // ✅ Add score only if there are valid (non-blocked) news items
-    if (filteredNews.length > 0) {
-        Score += 50;
-    }
-
-    if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
-        Score += 50;
-    }
-
-    // ✅ Float Size Bonuses & Penalties
-    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        Score += 20; // 🔥 Strong bonus for ultra-low float
-    } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        Score += 15;
-    } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
-        Score += 10;
-    } else if (floatValue >= floatTenMillion && floatValue < floatFiftyMillion) {
-        Score += 0; // No change
-    } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
-        Score -= 20; // Small penalty for large float
-    } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
-        Score -= 40;
-    } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
-        Score -= 60;
-    } else if (floatValue >= floatFiveHundredMillion) {
-        Score -= 200; // 🚨 Heavy penalty for massive float
-    }
-
-    if (fiveMinVolume < 100_000) {
-        Score -= 50;
-    } else if (fiveMinVolume > 300_000) {
-        Score += 50;
-    }
-
-    // ✅ Bonus: 5 points per million in volume
-    if (volumeValue > 0) {
-        Score += Math.floor(volumeValue / 1_000_000) * 2;
-    }
-
-    return Score;
-}
-
-function getScoreBreakdown(ticker) {
-    let breakdown = [];
-    let Score = Math.floor(ticker.cumulativeUpChange || 0); // ✅ Using cumulativeUpChange
-    Score -= Math.floor(ticker.cumulativeDownChange || 0);
-
-    const floatValue = parseHumanNumber(ticker.Float);
-    const volumeValue = parseVolumeValue(ticker.Volume);
-    const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
-
-    breakdown.push(`Base Up Change: ${ticker.cumulativeUpChange || 0}`);
-    breakdown.push(`Base Down Change: ${ticker.cumulativeDownChange || 0}`);
-    breakdown.push(`---------------------`);
 
     let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
@@ -453,48 +376,123 @@ function getScoreBreakdown(ticker) {
         });
     }
 
+    // news
     if (filteredNews.length > 0) {
-        Score += 50;
-        breakdown.push(`Has News: +50`);
+        Score = Score * 1.5;
     }
 
+    // New high
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
-        Score += 50;
-        breakdown.push("HOD: High of Day +50");
+        Score = Score * 1.5;
     }
 
-    // ✅ Float Size Bonuses & Penalties
+    // Float
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        Score += 20;
-        breakdown.push(`Float <2M: +20`);
+        Score = Score * 1.2;
     } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        Score += 15;
-        breakdown.push(`Float 2M-7.5M: +15`);
+        Score = Score * 1.15;
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
-        Score += 10;
-        breakdown.push(`Float 7.5M-13M: +10`);
+        Score = Score * 1.1;
+    } else if (floatValue >= floatTenMillion && floatValue < floatFiftyMillion) {
     } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
-        Score -= 20;
-        breakdown.push(`Float 65M-125M: -20`);
+        Score = Score * 0.8;
     } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
-        Score -= 40;
-        breakdown.push(`Float 125M-250M: -40`);
+        Score = Score * 0.6;
     } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
-        Score -= 60;
-        breakdown.push(`Float 250M-600M: -60`);
+        Score = Score * 0.4;
     } else if (floatValue >= floatFiveHundredMillion) {
-        Score -= 200;
-        breakdown.push(`Float 600M+: -200`);
+        Score = Score * 0.1;
     }
 
+    // 5 min vol
     if (fiveMinVolume < 100_000) {
-        Score -= 50;
-        breakdown.push(`Low volume: -50`);
+        Score = Score * 0.01;
     } else if (fiveMinVolume > 300_000) {
-        Score += 50;
-        breakdown.push(`High volume: +50`);
+        Score = Score * 1.5;
     }
 
+    // total volume
+    if (volumeValue > 0) {
+        // Score += Math.floor(volumeValue / 1_000_000) * 2;
+    }
+
+    return Math.floor(Score);
+}
+
+function getScoreBreakdown(ticker) {
+    let breakdown = [];
+    let Score = Math.floor(ticker.cumulativeUpChange || 0) - Math.floor(ticker.cumulativeDownChange || 0);
+    Score -= Math.floor(ticker.cumulativeDownChange || 0);
+
+    console.log(ticker)
+
+    const floatValue = parseHumanNumber(ticker.statistics?.floatShares);
+    const volumeValue = parseVolumeValue(ticker.Volume);
+    const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
+
+    // Add base up change to breakdown
+    breakdown.push(`Base Up Change: ${ticker.cumulativeUpChange || 0}`);
+    breakdown.push(`---------------------`);
+
+    // Apply news multiplier if there is relevant news
+    const blockList = window.settings.news?.blockList || [];
+    const filteredNews = Array.isArray(ticker.News)
+        ? ticker.News.filter((newsItem) => {
+              const headline = newsItem.headline || "";
+              return !blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
+          })
+        : [];
+
+    if (filteredNews.length > 0) {
+        Score *= 1.5;
+        breakdown.push(`Has News: 1.5x multiplier`);
+    }
+
+    // Apply multiplier if the price is at the high of the day
+    if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
+        Score *= 1.5;
+        breakdown.push("HOD: High of Day 1.5x multiplier");
+    }
+
+    // Apply float-based multipliers
+    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
+        Score *= 1.2;
+        breakdown.push(`Float <2M: 1.2x multiplier`);
+    } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
+        Score *= 1.15;
+        breakdown.push(`Float 2M-7.5M: 1.15x multiplier`);
+    } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
+        Score *= 1.1;
+        breakdown.push(`Float 7.5M-13M: 1.1x multiplier`);
+    } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
+        Score *= 0.8;
+        breakdown.push(`Float 65M-125M: 0.8x multiplier`);
+    } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
+        Score *= 0.6;
+        breakdown.push(`Float 125M-250M: 0.6x multiplier`);
+    } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
+        Score *= 0.4;
+        breakdown.push(`Float 250M-600M: 0.4x multiplier`);
+    } else if (floatValue >= floatFiveHundredMillion) {
+        Score *= 0.1;
+        breakdown.push(`Float 600M+: 0.1x multiplier`);
+    }
+
+    // Apply 5-minute volume-based multipliers
+    if (fiveMinVolume < 100_000) {
+        Score *= 0.01;
+        breakdown.push(`Low volume: 0.01x multiplier`);
+    } else if (fiveMinVolume > 300_000) {
+        Score *= 1.5;
+        breakdown.push(`High volume: 1.5x multiplier`);
+    }
+
+    // Optionally adjust Score based on total volume (currently commented out)
+    if (volumeValue > 0) {
+        // Score += Math.floor(volumeValue / 1_000_000) * 2;
+    }
+
+    // Add final Score to breakdown
     breakdown.push(`---------------------`);
     breakdown.push(`Final Score: ${Score}`);
 
@@ -505,13 +503,13 @@ function getBonusesHTML(ticker) {
     let bonuses = [];
     let tooltipText = [];
 
-    const floatValue = parseHumanNumber(ticker.Float);
+    const floatValue = parseHumanNumber(ticker.statistics.floatShares);
     const volumeValue = parseVolumeValue(ticker.Volume);
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
     let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
-    console.log("bonus checking ticke:",ticker)
+    console.log("bonus checking ticke:", ticker);
     if (Array.isArray(ticker.News) && ticker.News.length > 0) {
         filteredNews = ticker.News.filter((newsItem) => {
             const headline = newsItem.headline || ""; // Ensure headline is a string

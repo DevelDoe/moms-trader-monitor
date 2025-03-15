@@ -3,6 +3,7 @@ body {
     padding: 0px;
     font-family: Arial, sans-serif;
     font-size: 10px;
+    background-color: #1c1d23; /* Dark mode background */
 }
 
 h2 {

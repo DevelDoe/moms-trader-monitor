@@ -73,6 +73,8 @@ function updateUI(symbolData) {
     // Statistics
     setText("statistics-marketCap", formatLargeNumber(symbolData.statistics?.marketCap));
     setText("statistics-beta", symbolData.statistics?.beta);
+    setText("statistics-float", formatLargeNumber(symbolData.statistics?.floatShares));
+    console.log('symbolData:', symbolData)
 
     // Financials
     setText("financials-lastAnnualDividend", symbolData.financials?.lastAnnualDividend);

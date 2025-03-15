@@ -11,22 +11,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     await fetchTrackedTickers();
     await fetchNews();
 
+    // Handle settings updates
     window.settingsAPI.onUpdate(async (updatedSettings) => {
-        console.log("🔄 Settings changed. Fetching fresh data...");
+        console.log("🔄 Settings changed. Updating UI...");
         
-        // Only update local reference to settings, do not modify them
+        // Update local reference to settings
         window.settings = structuredClone(updatedSettings); // ✅ Read-only copy
     
+        // Update tracked tickers and refresh the UI
         await fetchTrackedTickers();
-        await fetchNews();
+        updateNewsList(); // Refresh the UI with existing news data
     });
-    
 
+    // Handle news updates
     window.newsAPI.onUpdate(() => {
         console.log("🔄 Received news update. Fetching fresh news...");
         fetchNews();
     });
 
+    // Handle ticker updates
     window.dailyAPI.onTickerUpdate(() => {
         console.log("🔄 Ticker update received. Fetching fresh tickers...");
         fetchTrackedTickers();
@@ -62,10 +65,9 @@ async function fetchTrackedTickers() {
             trackedTickers = new Set(settings.news.filteredTickers);
         }
 
-        trackedTickers = new Set(settings.news.filteredTickers);
         console.log("✅ Tracked Tickers (Filtered):", trackedTickers);
 
-        // Refetch news list with the latest filters
+        // Refresh the UI with the latest filters
         updateNewsList();
     } catch (error) {
         console.error("⚠️ Error fetching filtered tickers:", error);
@@ -98,6 +100,7 @@ function updateNewsList() {
 
     const showOnlyTracked = window.settings.news.showTrackedTickers ?? false;
     const allowMultiSymbols = window.settings.news.allowMultiSymbols ?? true;
+    const maxEntries = 6;
     const listContainer = document.getElementById("news-list");
     listContainer.innerHTML = ""; // Clear previous news
 
@@ -137,7 +140,9 @@ function updateNewsList() {
 
     const sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    const topNewsItem = sortedNews[0];
+    const slicedNews = sortedNews.slice(0, maxEntries);
+
+    const topNewsItem = slicedNews[0];
     if (topNewsItem) {
         const topKey = `${topNewsItem.symbols?.join(",") || "N/A"}|${topNewsItem.headline}`;
         if (!flashedNewsKeys.has(topKey)) {
@@ -147,14 +152,14 @@ function updateNewsList() {
     }
 
     const now = new Date();
-    sortedNews.forEach((article) => {
+    slicedNews.forEach((article) => {
         const headline = decodeHTMLEntities(article.headline || "");
         const li = document.createElement("li");
         li.className = "no-drag";
 
         const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
         li.textContent = symbolText;
-        li.title = `Headline: ${headline}`;
+        li.title = `${headline}`;
 
         // Compare against blockList using sanitized version (lowercase)
         const sanitizedHeadline = headline.toLowerCase().trim();
@@ -194,7 +199,6 @@ function updateNewsList() {
 
     console.log("✅ News list updated!");
 }
-
 
 function playFlash() {
     const now = Date.now();
