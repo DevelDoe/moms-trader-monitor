@@ -85,75 +85,69 @@ const connectMTP = (scannerWindow) => {
 
 const fetchSymbolsFromServer = async () => {
     return new Promise((resolve, reject) => {
-        try {
-            log.log("[mtp.js] Streaming symbol list from server...");
+        log.log("[mtp.js] Streaming symbol list from server...");
+        let symbolCount = 0;
 
-            fetch("http://172.232.155.62:3000/clients/symbols/stream", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": process.env.MTP_API_KEY
-                },
-            })
-            .then((res) => {
-                if (!res.ok) {
-                    reject(new Error(`Server responded with status: ${res.status}`));
+        fetch("http://172.232.155.62:3000/clients/symbols/stream", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": process.env.MTP_API_KEY,
+            },
+        })
+        .then((res) => {
+            if (!res.ok) {
+                reject(new Error(`Server responded with status: ${res.status}`));
+                return;
+            }
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let partialData = "";
+            let lastLoggedTime = Date.now();
+
+            const read = async () => {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    log.log("[mtp.js] Streaming completed.");
+                    resolve(symbolCount);
                     return;
                 }
 
-                const reader = res.body.getReader();
-                const decoder = new TextDecoder();
-                let partialData = "";
-                let lastLoggedTime = Date.now(); // ✅ Throttle log messages
+                partialData += decoder.decode(value, { stream: true });
 
-                const read = async () => {
-                    const { done, value } = await reader.read();
+                try {
+                    const jsonData = JSON.parse(partialData);
+                    partialData = "";
 
-                    if (done) {
-                        log.log("[mtp.js] Streaming completed.");
-                        resolve();
-                        return;
-                    }
+                    if (Array.isArray(jsonData)) {
+                        symbolCount += jsonData.length;
 
-                    partialData += decoder.decode(value, { stream: true });
-
-                    // ✅ Process JSON chunks safely
-                    try {
-                        const jsonData = JSON.parse(partialData);
-                        partialData = ""; // ✅ Reset partial data after successful parsing
-
-                        if (Array.isArray(jsonData)) {
-                            log.log(`[mtp.js] Received ${jsonData.length} symbols.`);
-
-                            const tickerStore = require("../store");
-                            if (typeof tickerStore.updateSymbols === "function") {
-                                tickerStore.updateSymbols(jsonData);
-                            }
-
-                            if (scannerWindow?.webContents) {
-                                scannerWindow.webContents.send("ws-symbols", jsonData);
-                            }
-                        }
-                    } catch (error) {
-                        // ✅ Only log every 2 seconds to avoid excessive spam
-                        if (Date.now() - lastLoggedTime > 2000) {
-                            log.warn("[mtp.js] Incomplete JSON chunk detected, waiting for more data...");
-                            lastLoggedTime = Date.now();
+                        const tickerStore = require("../store");
+                        if (typeof tickerStore.updateSymbols === "function") {
+                            tickerStore.updateSymbols(jsonData);
                         }
                     }
-
-                    read(); // Continue reading
-                };
+                } catch (error) {
+                    if (Date.now() - lastLoggedTime > 2000) {
+                        log.warn("[mtp.js] Incomplete JSON chunk detected...");
+                        lastLoggedTime = Date.now();
+                    }
+                }
 
                 read();
-            })
-            .catch(reject);
-        } catch (error) {
+            };
+
+            read();
+        })
+        .catch((error) => {
             log.error(`[mtp.js] Failed to fetch symbols: ${error.message}`);
             reject(error);
-        }
+        });
     });
 };
+
 
 
 

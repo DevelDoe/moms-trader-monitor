@@ -92,8 +92,8 @@ async function fetchAndUpdateTickers() {
                     (ticker) =>
                         (minPrice === 0 || ticker.Price >= minPrice) &&
                         (maxPrice === 0 || ticker.Price <= maxPrice) &&
-                        (minFloat === 0 || (ticker.Float !== null && ticker.Float >= minFloat)) && // ✅ Only check if Float exists
-                        (maxFloat === 0 || (ticker.Float !== null && ticker.Float <= maxFloat)) && // ✅ Only check if Float exists
+                        (minFloat === 0 || (ticker.statistics.floatShares !== null && ticker.statistics.floatShares >= minFloat)) && // ✅ Only check if Float exists
+                        (maxFloat === 0 || (ticker.statistics.floatShares !== null && ticker.statistics.floatShares <= maxFloat)) && // ✅ Only check if Float exists
                         (minScore === 0 || ticker.Score >= minScore) &&
                         (maxScore === 0 || ticker.Score <= maxScore) &&
                         (minVolume === 0 || (ticker.Volume !== null && ticker.Volume >= minVolume)) && // ✅ Only check if Volume exists
@@ -379,20 +379,38 @@ function calculateScore(ticker) {
     const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
     const sharesOutstanding = ticker.statistics?.sharesOutstanding || 0;
     const sharesShort = ticker.statistics?.sharesShort || 0;
-    
+
     // ✅ Calculate actual shares held
     const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
     const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
     const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
-    
-     // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
-     if ((insiderShares + institutionalShares + remainingShares) > 0.5 * sharesOutstanding) {
+
+    // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
+    if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {
         Score *= 0.5;
     }
 
     // Check if short shares exceed 10% of the total float
     if (sharesShort > 0.1 * floatShares) {
         Score *= 1.5;
+    }
+
+    // Check safely if net income is negative:
+    const netIncome = ticker.financials?.cashflowStatement?.netIncome;
+    const hasNegativeIncome = typeof netIncome === "number" && netIncome < 0;
+    const hasS3Filing = !!ticker.offReg; // Ensure it's treated as a boolean
+
+    // Clear bonuses & tooltips if both conditions are met
+    if (hasNegativeIncome && hasS3Filing) {
+        Score = Score * 0.5;
+    } else {
+        if (hasNegativeIncome) {
+            Score = Score * 0.9;
+        }
+
+        if (hasS3Filing) {
+            Score = Score * 0.9;
+        }
     }
 
     return Math.floor(Score);
@@ -456,10 +474,10 @@ function getScoreBreakdown(ticker) {
 
     if (ticker.profile.industry && ticker.profile.industry === "Biotechnology") {
         Score *= 1.4;
-        breakdo.push("Biotechnology stock: 1.4x multiplier");
+        breakdown.push("Biotechnology stock: 1.4x multiplier");
     } else if (ticker.profile.longBusinessSummary && ticker.profile.longBusinessSummary.toLowerCase().includes("cannabis")) {
         Score *= 1.2;
-        breakdo.push("Cannabis stock: 1.2x multiplier");
+        breakdown.push("Cannabis stock: 1.2x multiplier");
     }
 
     // We must have a culmulative volume for the entire day.....
@@ -473,14 +491,14 @@ function getScoreBreakdown(ticker) {
     const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
     const sharesOutstanding = ticker.statistics?.sharesOutstanding || 0;
     const sharesShort = ticker.statistics?.sharesShort || 0;
-    
+
     // ✅ Calculate actual shares held
     const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
     const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
     const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
-    
-     // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
-     if ((insiderShares + institutionalShares + remainingShares) > 0.5 * sharesOutstanding) {
+
+    // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
+    if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {
         Score = Score * 0.5;
         breakdown.push("High percentage of shares held by insiders and institutions 0.5x multiplier");
     }
@@ -489,6 +507,27 @@ function getScoreBreakdown(ticker) {
     if (sharesShort > 0.1 * floatShares) {
         Score = Score * 1.5;
         breakdown.push("High percentage of shares are shorted 1.5x multiplier");
+    }
+
+    // Check safely if net income is negative:
+    const netIncome = ticker.financials?.cashflowStatement?.netIncome;
+    const hasNegativeIncome = typeof netIncome === "number" && netIncome < 0;
+    const hasS3Filing = !!ticker.offReg; // Ensure it's treated as a boolean
+
+    // Clear bonuses & tooltips if both conditions are met
+    if (hasNegativeIncome && hasS3Filing) {
+        Score = Score * 0.5;
+        breakdown.push("Has Registered offering and running at a net loss 0.5x multiplier");
+    } else {
+        if (hasNegativeIncome) {
+            Score = Score * 0.9;
+            breakdown.push("Running at net loss 0.9x multiplier");
+        }
+
+        if (hasS3Filing) {
+            Score = Score * 0.9;
+            breakdown.push("Registered offering 0.9x multiplier");
+        }
     }
 
     // Add final Score to breakdown
@@ -558,11 +597,11 @@ function getBonusesHTML(ticker) {
     }
 
     if (ticker.profile.industry && ticker.profile.industry === "Biotechnology") {
-        bonuses.push('<span class="bonus bio no-drag">BIO</span>');
-        tooltipText.push("BIO: Biotechnology stock");
+        bonuses.push('<span class="bonus bio no-drag">🧬</span>');
+        tooltipText.push("🧬: Biotechnology stock");
     } else if (ticker.profile.longBusinessSummary && ticker.profile.longBusinessSummary.toLowerCase().includes("cannabis")) {
-        bonuses.push('<span class="bonus cannabis no-drag">CAN</span>');
-        tooltipText.push("CAN: Cannabis stock");
+        bonuses.push('<span class="bonus cannabis no-drag">🌿</span>');
+        tooltipText.push("🌿: Cannabis stock");
     }
 
     if (ticker.meta?.profile?.country && (ticker.meta.profile.country === "China" || ticker.meta.profile.country === "CN")) {
@@ -581,22 +620,44 @@ function getBonusesHTML(ticker) {
     const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
     const sharesOutstanding = ticker.statistics?.sharesOutstanding || 0;
     const sharesShort = ticker.statistics?.sharesShort || 0;
-    
+
     // ✅ Calculate actual shares held
     const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
     const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
     const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
-    
-     // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
-     if ((insiderShares + institutionalShares + remainingShares) > 0.5 * sharesOutstanding) {
+
+    // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
+    if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {
         bonuses.push('<span class="bonus owners no-drag">💼</span>');
-        tooltipText.push("High percentage of shares are held by insiders and institutions");
+        tooltipText.push("💼 High percentage of shares are held by insiders and institutions");
     }
 
     // Check if short shares exceed 10% of the total float
     if (sharesShort > 0.1 * floatShares) {
         bonuses.push('<span class="bonus shorts no-drag">🩳</span>');
-        tooltipText.push("High percentage of shares are shorted");
+        tooltipText.push("🩳 High percentage of shares are shorted");
+    }
+
+
+    // Check safely if net income is negative:
+    const netIncome = ticker.financials?.cashflowStatement?.netIncome;
+    const hasNegativeIncome = typeof netIncome === "number" && netIncome < 0;
+    const hasS3Filing = !!ticker.offReg; // Ensure it's treated as a boolean
+
+    // Clear bonuses & tooltips if both conditions are met
+    if (hasNegativeIncome && hasS3Filing) {
+        bonuses.push('<span class="bonus alert no-drag">🚨</span>');
+        tooltipText.push(`🚨 The company has both a registered S-3 filing dated ${ticker.offReg} and is running at a net loss!`);
+    } else {
+        if (hasNegativeIncome) {
+            bonuses.push('<span class="bonus net no-drag">🥅</span>');
+            tooltipText.push("🥅 Company currently operating at a net loss.");
+        }
+
+        if (hasS3Filing) {
+            bonuses.push('<span class="bonus offReg no-drag">📂</span>');
+            tooltipText.push(`📂 The company has a registered S-3 filing dated ${ticker.offReg}`);
+        }
     }
 
     console.log("ticker: ", ticker);

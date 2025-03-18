@@ -71,3 +71,7 @@ body::-webkit-scrollbar {
     pointer-events: none; /* ✅ Prevent interfering with clicks */
     white-space: nowrap;
 }
+
+.symbol{
+    font-size: 11px !important;
+}

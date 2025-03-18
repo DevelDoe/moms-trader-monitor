@@ -3,7 +3,7 @@
     "minPrice": 1.75,
     "maxPrice": 10,
     "minFloat": 0,
-    "maxFloat": 0,
+    "maxFloat": 20000000,
     "minScore": 0,
     "maxScore": 0,
     "minVolume": 0,
@@ -31,7 +31,7 @@
       }
     },
     "transparent": false,
-    "sessionListLength": 10,
+    "sessionListLength": 3,
     "dailyListLength": 3
   },
   "news": {
@@ -130,7 +130,8 @@
       "fda clearance",
       "enhances value",
       "space",
-      "biotech"
+      "biotech",
+      "Clinical study"
     ],
     "bearishList": [
       "Sell Alert",

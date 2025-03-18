@@ -26,10 +26,26 @@
                 <a href="hhttps://www.paypal.com/donate/?hosted_button_id=X9DHS7MA9SDW6" class="btn paypal" target="_blank">Donate via PayPal</a>
                 <a href="https://buymeacoffee.com/develdoe" class="btn coffee" target="_blank">Buy Me a Coffee</a>
             </div>
+
+            <div id="symbols-status">Fetching symbols, please wait...</div>
+
             <script>
                 document.addEventListener("DOMContentLoaded", () => {
+                    // Initially, symbols are not loaded, so clicking is disabled
+                    let symbolsLoaded = false;
+
+                    // Click listener
                     document.addEventListener("click", () => {
-                        window.electronAPI.closeSplash();
+                        if (symbolsLoaded) {
+                            symbolsLoaded = false; // Prevent repeated clicks
+                            window.electronAPI.closeSplash();
+                        }
+                    });
+
+                    // Listen for symbols fetched event
+                    window.electronAPI.onSymbolsFetched((event, symbolCount) => {
+                        symbolsLoaded = true;
+                        document.getElementById("symbols-status").textContent = `Fetched ${symbolCount} symbols! Click anywhere to continue.`;
                     });
                 });
             </script>

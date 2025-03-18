@@ -11,7 +11,6 @@
     </head>
     <body class="draggable">
         <div class="settings-container">
-            
             <!-- "No active symbol" placeholder -->
             <div id="no-active-symbol" class="no-active-symbol">
                 <p>No active symbol</p>
@@ -31,6 +30,7 @@
                 <p><span data-id="symbol"></span> - <span data-id="industry"></span>, <span data-id="profile-country"></span></p>
                 <p><strong>Market Cap:</strong> <span data-id="marketCap"></span></p>
 
+                <div id="data-warning" style="color: #f44336; display: none; margin-bottom: 10px">⚠️ Unable to provide accurate float data due to corrupted data source.</div>
                 <section id="section-float" class="two-column-layout">
                     <div class="data-column no-drag">
                         <p><strong title="Total Shares Outstanding">Shares Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
@@ -38,10 +38,7 @@
                         <p><strong title="🟡 Held by Insiders">🟡 Insiders:</strong> <span data-id="statistics-insidersHeld"></span></p>
                         <p><strong title="🟠 Held by Institutions">🟠 Institutions:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
                         <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remaining:</strong> <span data-id="statistics-remainingShares"></span></p>
-                        <p>
-                            <strong title="🔴 Total Shorted Shares">🔴 Shorted:</strong>
-                            <span data-id="statistics-sharesShort"></span>
-                        </p>
+                        <p><strong title="🔴 Total Shorted Shares">🔴 Shorted:</strong><span data-id="statistics-sharesShort"></span></p>
                     </div>
                     <div class="chart-column">
                         <div class="chart-container">
@@ -49,7 +46,6 @@
                         </div>
                     </div>
                 </section>
-                
 
                 <div data-id="profile-longBusinessSummary" class="about no-drag"></div>
             </div>
@@ -73,6 +69,7 @@
                     <span data-id="statistics-beta"></span>
                 </p>
 
+                <div id="data-warning" style="color: #f44336; display: none; margin-bottom: 10px">⚠️ Unable to provide accurate float data due to corrupted data source.</div>
                 <section id="section-float" class="two-column-layout">
                     <div class="data-column no-drag">
                         <p><strong title="Total Shares Outstanding">Shares Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
@@ -80,10 +77,7 @@
                         <p><strong title="🟡 Held by Insiders">🟡 Insiders:</strong> <span data-id="statistics-insidersHeld"></span></p>
                         <p><strong title="🟠 Held by Institutions">🟠 Institutions:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
                         <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remaining:</strong> <span data-id="statistics-remainingShares"></span></p>
-                        <p>
-                            <strong title="🔴 Total Shorted Shares">🔴 Shorted:</strong>
-                            <span data-id="statistics-sharesShort"></span>
-                        </p>
+                        <p><strong title="🔴 Total Shorted Shares">🔴 Shorted:</strong><span data-id="statistics-sharesShort"></span></p>
                     </div>
                     <div class="chart-column">
                         <div class="chart-container">
@@ -95,7 +89,10 @@
 
             <!-- Financials -->
             <div id="financials" class="tabcontent">
-                <p><strong>Last Annual Dividend:</strong> <span data-id="financials-insidersPercentHeld"></span></p>
+                <p>
+                    <strong title="Net income represents the profit a company makes after subtracting all expenses, taxes, interest, and other costs from its total revenue.">Net Income:</strong>
+                    <span data-id="financials-netIncome"></span>
+                </p>
             </div>
 
             <!-- Ownership -->

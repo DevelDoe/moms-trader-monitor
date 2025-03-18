@@ -27,9 +27,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const tabId = defaultTab.dataset.tabId; // Use dataset to get the tab ID
             if (tabId) {
                 openTab(null, tabId); // Open the default tab
-            } else {
-                console.error("Default tab has no data-tab-id attribute.");
-            }
+            } 
         } else {
             const firstTab = document.querySelector(".tablinks");
             if (firstTab) {
@@ -126,7 +124,7 @@ function updateUI(symbolData) {
     setText("statistics-shortPercentOfFloat", symbolData.statistics?.shortPercentOfFloat);
 
     // Financials
-    setText("financials-lastAnnualDividend", symbolData.financials?.lastAnnualDividend);
+    setText("financials-netIncome", symbolData.financials?.cashflowStatement.netIncome);
 
     // Ownership
     setText("ownership-insidersPercentHeld", formatPercentage(symbolData.ownership?.insidersPercentHeld));
@@ -139,31 +137,55 @@ function updateUI(symbolData) {
     setText("historical-volume-date", formatDate(symbolData.historical?.volume?.[0]?.date));
     setText("historical-volume-value", symbolData.historical?.volume?.[0]?.value);
 
+    // holders Chart stats 
     const sharesOutstanding = symbolData.statistics?.sharesOutstanding || 0;
-    const floatShares = symbolData.statistics?.floatShares || 0;
-    const insidersHeld = Math.round(sharesOutstanding * (symbolData.ownership?.insidersPercentHeld || 0));
-    const institutionsHeld = Math.round(sharesOutstanding * (symbolData.ownership?.institutionsPercentHeld || 0));
+    let floatShares = symbolData.statistics?.floatShares || 0;
+    
+    // Detect data corruption clearly (floatShares should never exceed sharesOutstanding significantly)
+    const dataIsCorrupted = floatShares > sharesOutstanding * 1.1; // Allowing 10% margin
+    
+    // Toggle visibility
+    document.getElementById("data-warning").style.display = dataIsCorrupted ? "block" : "none";
+    document.getElementById("section-float").style.display = dataIsCorrupted ? "none" : "flex";
+    
+    if (dataIsCorrupted) {
+        // Log for debugging
+        console.warn("Corrupted float data detected for:", symbolData.profile?.companyName || "Unknown Company");
+        return; // Exit early, no further action
+    }
+    
+    // Continue with original calculations (when data is valid)
+    const insidersHeld = Math.round(
+        sharesOutstanding * (Number(symbolData.ownership?.insidersPercentHeld) || 0)
+    );
+    const institutionsHeld = Math.round(
+        sharesOutstanding * (Number(symbolData.ownership?.institutionsPercentHeld) || 0)
+    );
     const sharesShort = symbolData.statistics?.sharesShort || 0;
-    const remainingShares = Math.max(sharesOutstanding - (floatShares + insidersHeld + institutionsHeld), 0);
-
-    // ✅ Function to format value with percentage
+    const remainingShares = Math.max(
+        sharesOutstanding - (floatShares + insidersHeld + institutionsHeld),
+        0
+    );
+    
+    // Function to format value with percentage clearly
     const formatWithPercentage = (value, total) => {
-        if (total === 0) return `${formatLargeNumber(value)} (N/A)`;
+        if (!total || total === 0) return `${formatLargeNumber(value)} (N/A)`;
         const percentage = ((value / total) * 100).toFixed(2);
         return `${formatLargeNumber(value)} (${percentage}%)`;
     };
-
-    // ✅ Update UI with absolute + percentage values
+    
+    // Update UI with accurate and safe values
     setText("statistics-sharesOutstanding", formatLargeNumber(sharesOutstanding));
     setText("statistics-float", formatWithPercentage(floatShares, sharesOutstanding));
     setText("statistics-insidersHeld", formatWithPercentage(insidersHeld, sharesOutstanding));
     setText("statistics-floatHeldByInstitutions", formatWithPercentage(institutionsHeld, sharesOutstanding));
-    setText("statistics-sharesShort", formatWithPercentage(sharesShort, floatShares)); // Short % is based on float
+    setText("statistics-sharesShort", formatWithPercentage(sharesShort, floatShares));
     setText("statistics-remainingShares", formatWithPercentage(remainingShares, sharesOutstanding));
-
-    // Render the ownership chart
+    
+    // Render ownership chart as usual
     renderOwnershipChart(symbolData, "ownershipChart-summary");
-    renderOwnershipChart(symbolData, "ownershipChart-stats");
+    renderOwnershipChart(symbolData, "ownershipChart-stats");    
+
 }
 
 /**

@@ -52,7 +52,7 @@ li.bearish-news {
 
 ul {
     width: 300px;
-    height: 94px;
+    height: 100px;
     overflow-y: scroll;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;

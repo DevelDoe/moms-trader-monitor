@@ -535,15 +535,21 @@ tickerStore.on('new-high-price', ({ symbol, price }) => {
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
 
+    windows.splash = createSplashWindow(isDevelopment);
+
+    let symbolCount = 0;
+
     try {
-        // ✅ Fetch symbols from the server before opening the splash screen
-        await fetchSymbolsFromServer();
-        log.log("Symbols fetched and stored.");
+        symbolCount = await fetchSymbolsFromServer(); // Fetch symbols and get count
+        log.log(`Fetched ${symbolCount} symbols.`);
     } catch (error) {
         log.error("Failed to fetch symbols on startup:", error);
     }
 
-    windows.splash = createSplashWindow(isDevelopment);
+    // Send symbol count to splash window
+    if (windows.splash?.webContents) {
+        windows.splash.webContents.send("symbols-fetched", symbolCount);
+    }
 
     windows.splash.once("closed", () => {
         log.log("Splash screen closed. Loading main app...");
