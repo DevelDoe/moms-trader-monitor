@@ -1,9 +1,9 @@
 body {
-    background-color: #1c1d23; /* Dark mode background */
-    color: #e0e0e0; /* Light text for contrast */
-    padding: 0;
+    background-color: #1c1d23;
+    color: #cdcdcd;
+    padding: 12px;
     margin: 0 auto;
-    font-size: 12px;
+    font-size: 16px;
 }
 
 .tablinks{
@@ -11,4 +11,100 @@ body {
     border: none;
     background: transparent;
     color: white;
+}
+
+#ownershipChart-summary, #ownershipChart-stats {
+    width: 37vw !important;  /* ✅ Keeps it small */
+    height: 37vw !important;
+    margin-left: 10px;
+}
+
+
+/* Two-column layout using Flexbox */
+.two-column-layout {
+    display: flex;
+    gap: 20px; /* Space between columns */
+    align-items: flex-start; /* Align items to the top */
+}
+
+.data-column {
+    flex: 1; /* Takes up 50% of the available space */
+    max-width: 50%; /* Ensures it doesn't grow beyond half */
+}
+
+.chart-column {
+    flex: 1; /* Takes up 50% of the available space */
+    max-width: 50%; /* Ensures it doesn't grow beyond half */
+}
+
+/* Ensure the chart container is responsive */
+.chart-container {
+    width: 100%;
+    height: auto;
+}
+
+/* Optional: Add some spacing and alignment */
+#section-float p {
+    margin: 10px 0;
+}
+
+.about {
+    margin-top: 20px;
+    color: #696050 !important;
+    font: menu;
+    font-size: 15px;
+    
+    /* ✅ Fixed height with scrolling */
+    height: 244px; 
+    overflow-y: auto;  
+
+
+    /* ✅ Hide scrollbar in Chrome/Electron */
+    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;  /* IE/Edge */
+}
+
+/* ✅ Gradient fade effect at the bottom */
+.about {
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0));
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0));
+}
+
+.about::-webkit-scrollbar {
+    width: 0px; /* ✅ Ensures scrollbar is hidden */
+    height: 0px !important;
+    display: none !important;
+}
+
+/* ✅ Hide scrollbar for WebKit browsers (Chrome, Safari) */
+.about::-webkit-scrollbar {
+    display: none !important;
+}
+
+#section-float {
+    font-size: 15px !important;
+}
+
+/* Hide all tab content by default */
+.tabcontent {
+    display: none;
+}
+
+/* Show the active tab content */
+.tabcontent.active {
+    display: block;
+}
+
+/* Style for the "No active symbol" placeholder */
+.no-active-symbol {
+    display: none; /* Hidden by default */
+    text-align: center;
+    padding: 20px;
+    font-size: 18px;
+    color: #888;
+    height: 200vw;
+}
+
+.no-active-symbol.visible {
+    display: block; /* Show when no symbol is active */
 }

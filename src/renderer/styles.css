@@ -1,7 +1,11 @@
+html, body{
+    outline: none !important;
+    box-shadow: none !important;
+}
 body {
     margin: 0;
     padding: 0px;
-    font-family: Arial, sans-serif;
+    font: menu;
     font-size: 10px;
     background-color: #1c1d23; /* Dark mode background */
 }
@@ -54,4 +58,16 @@ img {
 
 body::-webkit-scrollbar {
     display: none;
+}
+
+.tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 14px; /* ✅ Set custom font size */
+    display: none;
+    pointer-events: none; /* ✅ Prevent interfering with clicks */
+    white-space: nowrap;
 }

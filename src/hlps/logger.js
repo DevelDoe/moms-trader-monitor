@@ -16,7 +16,7 @@ if (!fs.existsSync(logDir)) {
 }
 
 // ✅ List of scripts to allow logging from
-const ALLOWED_LOGGING_FROM = new Set(["store.js", "mtp.js"]); // Add scripts here
+const ALLOWED_LOGGING_FROM = new Set(["store.js", "news.js"]); // Add scripts here
 
 /**
  * Writes log messages to a file in production mode.

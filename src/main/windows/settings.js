@@ -11,6 +11,7 @@ function createSettingsWindow(isDevelopment) {
         alwaysOnTop: true,
         transparent: false,
         resizable: false,
+        hasShadow: false, // Disables window shadow
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,

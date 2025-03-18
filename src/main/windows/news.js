@@ -5,12 +5,13 @@ const path = require("path");
 
 function createNewsWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 80,
-        height: 150,
+        width: 60,
+        height: 110,
         frame: false,
         alwaysOnTop: true,
         transparent: true,
         resizable: true,
+        hasShadow: false, // Disables window shadow
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true, // Required for contextBridge

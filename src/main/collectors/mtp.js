@@ -83,68 +83,81 @@ const connectMTP = (scannerWindow) => {
 };
 
 
-const fetchQueue = [];
-let isFetching = false;
-const fetchCooldown = 10000; // 5 seconds between requests
-
-const processQueue = async () => {
-    if (isFetching || fetchQueue.length === 0) return;
-
-    isFetching = true;
-    const { resolve, reject } = fetchQueue.shift(); // Get the next request
-
-    try {
-        log.log("[mtp.js] Fetching symbol list from server...");
-        const response = await fetch("http://172.232.155.62:3000/clients/symbols", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": process.env.MTP_API_KEY
-            },
-        });
-
-        if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
-
-        const rawData = await response.text();
-        const data = JSON.parse(rawData);
-
-        if (Array.isArray(data)) {
-            log.log(`[mtp.js] Retrieved ${data.length} symbols.`);
-
-            // ✅ Lazy load `tickerStore` here
-            const tickerStore = require("../store");
-            if (typeof tickerStore.updateSymbols === "function") {
-                tickerStore.updateSymbols(data);
-            } else {
-                log.warn("[mtp.js] tickerStore.updateSymbols is not a function.");
-            }
-        } else {
-            log.warn("[mtp.js] Received invalid symbol list format.");
-        }
-
-        resolve(); // Mark this request as completed
-    } catch (error) {
-        log.error(`[mtp.js] Failed to fetch symbols: ${error.message}`);
-        reject(error);
-    } finally {
-        isFetching = false;
-
-        // Wait before processing the next request
-        if (fetchQueue.length > 0) {
-            setTimeout(processQueue, fetchCooldown);
-        }
-    }
-};
-
-const fetchSymbolsFromServer = () => {
+const fetchSymbolsFromServer = async () => {
     return new Promise((resolve, reject) => {
-        fetchQueue.push({ resolve, reject });
+        try {
+            log.log("[mtp.js] Streaming symbol list from server...");
 
-        if (!isFetching) {
-            processQueue(); // Start processing if idle
+            fetch("http://172.232.155.62:3000/clients/symbols/stream", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": process.env.MTP_API_KEY
+                },
+            })
+            .then((res) => {
+                if (!res.ok) {
+                    reject(new Error(`Server responded with status: ${res.status}`));
+                    return;
+                }
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let partialData = "";
+                let lastLoggedTime = Date.now(); // ✅ Throttle log messages
+
+                const read = async () => {
+                    const { done, value } = await reader.read();
+
+                    if (done) {
+                        log.log("[mtp.js] Streaming completed.");
+                        resolve();
+                        return;
+                    }
+
+                    partialData += decoder.decode(value, { stream: true });
+
+                    // ✅ Process JSON chunks safely
+                    try {
+                        const jsonData = JSON.parse(partialData);
+                        partialData = ""; // ✅ Reset partial data after successful parsing
+
+                        if (Array.isArray(jsonData)) {
+                            log.log(`[mtp.js] Received ${jsonData.length} symbols.`);
+
+                            const tickerStore = require("../store");
+                            if (typeof tickerStore.updateSymbols === "function") {
+                                tickerStore.updateSymbols(jsonData);
+                            }
+
+                            if (scannerWindow?.webContents) {
+                                scannerWindow.webContents.send("ws-symbols", jsonData);
+                            }
+                        }
+                    } catch (error) {
+                        // ✅ Only log every 2 seconds to avoid excessive spam
+                        if (Date.now() - lastLoggedTime > 2000) {
+                            log.warn("[mtp.js] Incomplete JSON chunk detected, waiting for more data...");
+                            lastLoggedTime = Date.now();
+                        }
+                    }
+
+                    read(); // Continue reading
+                };
+
+                read();
+            })
+            .catch(reject);
+        } catch (error) {
+            log.error(`[mtp.js] Failed to fetch symbols: ${error.message}`);
+            reject(error);
         }
     });
 };
+
+
+
+
 
 
 

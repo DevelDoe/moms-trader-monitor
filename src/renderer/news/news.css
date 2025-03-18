@@ -39,7 +39,6 @@ a:hover {
 /* ✅ bullish news - Highlight in green */
 li.bullish-news {
     background-color: #4caf50 !important; /* Green */
-
     color: white;
     font-weight: bold !important;
 }

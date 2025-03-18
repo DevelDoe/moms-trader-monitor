@@ -320,7 +320,7 @@ function formatLargeNumber(value) {
 function calculateScore(ticker) {
     let Score = Math.floor(ticker.cumulativeUpChange || 0);
 
-    const floatValue = parseHumanNumber(ticker.statistics.floatShares);
+    const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
     const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0;
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
@@ -336,7 +336,7 @@ function calculateScore(ticker) {
 
     // news
     if (filteredNews.length > 0) {
-        Score = Score * 1.5;
+        Score = Score * 2;
     }
 
     // New high
@@ -362,9 +362,37 @@ function calculateScore(ticker) {
         Score = Score * 0.1;
     }
 
+    if (ticker.profile.industry && ticker.profile.industry === "Biotechnology") {
+        Score *= 1.4;
+    } else if (ticker.profile.longBusinessSummary && ticker.profile.longBusinessSummary.toLowerCase().includes("cannabis")) {
+        Score *= 1.2;
+    }
+
     // total volume
     if (volumeValue > 0) {
         // Score += Math.floor(volumeValue / 1_000_000) * 2;
+    }
+
+    // Ownership
+    const floatShares = ticker.statistics?.floatShares || 0;
+    const insidersPercentHeld = ticker.ownership?.insidersPercentHeld || 0;
+    const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
+    const sharesOutstanding = ticker.statistics?.sharesOutstanding || 0;
+    const sharesShort = ticker.statistics?.sharesShort || 0;
+    
+    // ✅ Calculate actual shares held
+    const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
+    const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
+    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
+    
+     // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
+     if ((insiderShares + institutionalShares + remainingShares) > 0.5 * sharesOutstanding) {
+        Score *= 0.5;
+    }
+
+    // Check if short shares exceed 10% of the total float
+    if (sharesShort > 0.1 * floatShares) {
+        Score *= 1.5;
     }
 
     return Math.floor(Score);
@@ -374,7 +402,7 @@ function getScoreBreakdown(ticker) {
     let breakdown = [];
     let Score = Math.floor(ticker.cumulativeUpChange || 0) - Math.floor(ticker.cumulativeDownChange || 0);
 
-    const floatValue = parseHumanNumber(ticker.statistics.floatShares);
+    const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
     const volumeValue = parseVolumeValue(ticker.Volume);
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
@@ -392,8 +420,8 @@ function getScoreBreakdown(ticker) {
         : [];
 
     if (filteredNews.length > 0) {
-        Score *= 1.5;
-        breakdown.push(`Has News: 1.5x multiplier`);
+        Score *= 2;
+        breakdown.push(`Has News: 2x multiplier`);
     }
 
     // Apply multiplier if the price is at the high of the day
@@ -404,11 +432,11 @@ function getScoreBreakdown(ticker) {
 
     // Apply float-based multipliers
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        Score *= 1.2;
-        breakdown.push(`Float <2M: 1.2x multiplier`);
+        Score *= 1.5;
+        breakdown.push(`Float <2M: 1.5x multiplier`);
     } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        Score *= 1.15;
-        breakdown.push(`Float 2M-7.5M: 1.15x multiplier`);
+        Score *= 1.25;
+        breakdown.push(`Float 2M-7.5M: 1.25x multiplier`);
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
         Score *= 1.1;
         breakdown.push(`Float 7.5M-13M: 1.1x multiplier`);
@@ -426,9 +454,41 @@ function getScoreBreakdown(ticker) {
         breakdown.push(`Float 600M+: 0.1x multiplier`);
     }
 
+    if (ticker.profile.industry && ticker.profile.industry === "Biotechnology") {
+        Score *= 1.4;
+        breakdo.push("Biotechnology stock: 1.4x multiplier");
+    } else if (ticker.profile.longBusinessSummary && ticker.profile.longBusinessSummary.toLowerCase().includes("cannabis")) {
+        Score *= 1.2;
+        breakdo.push("Cannabis stock: 1.2x multiplier");
+    }
+
     // We must have a culmulative volume for the entire day.....
     if (volumeValue > 0) {
         // Score += Math.floor(volumeValue / 1_000_000) * 2;
+    }
+
+    // Ownership
+    const floatShares = ticker.statistics?.floatShares || 0;
+    const insidersPercentHeld = ticker.ownership?.insidersPercentHeld || 0;
+    const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
+    const sharesOutstanding = ticker.statistics?.sharesOutstanding || 0;
+    const sharesShort = ticker.statistics?.sharesShort || 0;
+    
+    // ✅ Calculate actual shares held
+    const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
+    const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
+    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
+    
+     // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
+     if ((insiderShares + institutionalShares + remainingShares) > 0.5 * sharesOutstanding) {
+        Score = Score * 0.5;
+        breakdown.push("High percentage of shares held by insiders and institutions 0.5x multiplier");
+    }
+
+    // Check if short shares exceed 10% of the total float
+    if (sharesShort > 0.1 * floatShares) {
+        Score = Score * 1.5;
+        breakdown.push("High percentage of shares are shorted 1.5x multiplier");
     }
 
     // Add final Score to breakdown
@@ -442,7 +502,7 @@ function getBonusesHTML(ticker) {
     let bonuses = [];
     let tooltipText = [];
 
-    const floatValue = parseHumanNumber(ticker.statistics.floatShares);
+    const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
     const volumeValue = parseVolumeValue(ticker.Volume);
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
@@ -497,10 +557,10 @@ function getBonusesHTML(ticker) {
         tooltipText.push("🔥: High Volume");
     }
 
-    if (ticker.Industry && ticker.Industry === "Biotechnology") {
+    if (ticker.profile.industry && ticker.profile.industry === "Biotechnology") {
         bonuses.push('<span class="bonus bio no-drag">BIO</span>');
         tooltipText.push("BIO: Biotechnology stock");
-    } else if (ticker.About && ticker.About.toLowerCase().includes("cannabis")) {
+    } else if (ticker.profile.longBusinessSummary && ticker.profile.longBusinessSummary.toLowerCase().includes("cannabis")) {
         bonuses.push('<span class="bonus cannabis no-drag">CAN</span>');
         tooltipText.push("CAN: Cannabis stock");
     }
@@ -513,6 +573,30 @@ function getBonusesHTML(ticker) {
     if (ticker.meta?.profile?.country && (ticker.meta.profile.country === "HK" || ticker.meta.profile.country === "hk")) {
         bonuses.push('<span class="bonus hk no-drag">🇭🇰</span>');
         tooltipText.push("🇭🇰: Hong Kong based company");
+    }
+
+    // Ownership
+    const floatShares = ticker.statistics?.floatShares || 0;
+    const insidersPercentHeld = ticker.ownership?.insidersPercentHeld || 0;
+    const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
+    const sharesOutstanding = ticker.statistics?.sharesOutstanding || 0;
+    const sharesShort = ticker.statistics?.sharesShort || 0;
+    
+    // ✅ Calculate actual shares held
+    const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
+    const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
+    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
+    
+     // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
+     if ((insiderShares + institutionalShares + remainingShares) > 0.5 * sharesOutstanding) {
+        bonuses.push('<span class="bonus owners no-drag">💼</span>');
+        tooltipText.push("High percentage of shares are held by insiders and institutions");
+    }
+
+    // Check if short shares exceed 10% of the total float
+    if (sharesShort > 0.1 * floatShares) {
+        bonuses.push('<span class="bonus shorts no-drag">🩳</span>');
+        tooltipText.push("High percentage of shares are shorted");
     }
 
     console.log("ticker: ", ticker);

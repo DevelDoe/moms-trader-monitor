@@ -11,6 +11,7 @@ function createActiveWindow(isDevelopment) {
         alwaysOnTop: false,
         transparent: false,
         resizable: true,
+        hasShadow: false, // Disables window shadow
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true, // Required for contextBridge

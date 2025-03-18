@@ -1,7 +1,7 @@
 const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
-const { fetchHistoricalNews } = require("./collectors/news");
+const { subscribeToSymbolNews, fetchHistoricalNews } = require("./collectors/news");
 
 class Store extends EventEmitter {
     constructor() {
@@ -21,15 +21,17 @@ class Store extends EventEmitter {
     updateSymbols(symbolList) {
         this.symbols = new Map(symbolList.map((s) => [s.symbol, s]));
         log.log(`[updateSymbols] Stored ${this.symbols.size} symbols.`);
-        // log.log('DATA', 'Symbollist: ', this.symbols)
-
-        // Queue fetching news for each symbol to prevent overloading the API
+    
+        subscribeToSymbolNews(Array.from(this.symbols.keys()));
+    
+        // ✅ Fetch historical news for each symbol
         (async () => {
             for (const symbol of this.symbols.keys()) {
-                await fetchHistoricalNews(symbol); // Calls queued request system
+                await fetchHistoricalNews(symbol);
             }
         })();
     }
+    
 
     addMtpAlerts(jsonString) {
         try {
@@ -45,121 +47,105 @@ class Store extends EventEmitter {
     
             let isNewHigh = false;
     
-            // Check if symbol exists in dailyData, if not, initialize it
+            // Fetch base data from this.symbols if available
+            const baseData = this.symbols.get(symbol) || {};
+            
+            // Prepare merged data
+            const mergedData = {
+                ...baseData, // Merge any existing attributes from this.symbols
+                Symbol: symbol,
+                Price: price,
+                highestPrice: baseData.highestPrice || price, // Keep highest price if already tracked
+                Direction: direction || "UNKNOWN",
+                alertChangePercent: Math.abs(change_percent).toFixed(2),
+                cumulativeUpChange: direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0,
+                cumulativeDownChange: direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0,
+                fiveMinVolume: volume,
+            };
+    
+            // **Update dailyData**
             if (!this.dailyData.has(symbol)) {
                 log.log(`[addMtpAlerts] Adding new ticker to dailyData: ${symbol}`);
-    
-                // Initialize symbol in dailyData
-                this.dailyData.set(symbol, {
-                    Symbol: symbol,
-                    Price: price,
-                    highestPrice: price,
-                    Direction: direction || "UNKNOWN",
-                    alertChangePercent: Math.abs(change_percent).toFixed(2),
-                    cumulativeUpChange: direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0,
-                    cumulativeDownChange: direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0,
-                    fiveMinVolume: volume,
-                });
-    
-                // After adding the symbol, check for news related to this symbol
+                this.dailyData.set(symbol, mergedData);
                 this.attachNews(symbol);
-    
             } else {
                 let existingTicker = this.dailyData.get(symbol);
-
+    
                 // Update cumulative changes
                 let newCumulativeUp = existingTicker.cumulativeUpChange || 0;
                 let newCumulativeDown = existingTicker.cumulativeDownChange || 0;
-
+    
                 if (direction === "UP") {
                     newCumulativeUp += change_percent;
                 } else {
                     newCumulativeDown += change_percent;
                 }
-
-                // Limit to 2 decimal places
+    
                 existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
                 existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
                 existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2);
-
-                // Update price and direction
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
-
-                // Update highestPrice if the new price is greater than the recorded one
+    
                 if (price > existingTicker.highestPrice) {
                     existingTicker.highestPrice = price;
                     isNewHigh = true;
                 }
-                existingTicker.fiveMinVolume = volume;
     
+                existingTicker.fiveMinVolume = volume;
                 this.dailyData.set(symbol, existingTicker);
-                log.log(`[addMtpAlerts] Updated ${symbol} in dailyData. UpChange: ${existingTicker.cumulativeUpChange}%, DownChange: ${existingTicker.cumulativeDownChange}%`);
+                log.log(`[addMtpAlerts] Updated ${symbol} in dailyData.`);
             }
     
-            // Handle sessionData similarly:
+            // **Update sessionData**
             if (!this.sessionData.has(symbol)) {
                 log.log(`[addMtpAlerts] Adding new ticker to sessionData: ${symbol}`);
-                this.sessionData.set(symbol, {
-                    Symbol: symbol,
-                    Price: price,
-                    highestPrice: price,
-                    Direction: direction || "UNKNOWN",
-                    alertChangePercent: Math.abs(change_percent).toFixed(2),
-                    cumulativeUpChange: direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0,
-                    cumulativeDownChange: direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0,
-                    fiveMinVolume: volume,
-                });
-    
-                // After adding the symbol, check for news related to this symbol
+                this.sessionData.set(symbol, mergedData);
                 this.attachNews(symbol);
-    
             } else {
                 let existingTicker = this.sessionData.get(symbol);
-
-                // Update cumulative changes
+    
                 let newCumulativeUp = existingTicker.cumulativeUpChange || 0;
                 let newCumulativeDown = existingTicker.cumulativeDownChange || 0;
-
+    
                 if (direction === "UP") {
                     newCumulativeUp += change_percent;
                 } else {
                     newCumulativeDown += change_percent;
                 }
-
-                // Limit to 2 decimal places
+    
                 existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
                 existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
                 existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2);
-
-                // Update price and direction
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
-
-                // Update highestPrice if the new price is greater
+    
                 if (price > existingTicker.highestPrice) {
                     existingTicker.highestPrice = price;
                 }
-
+    
                 existingTicker.fiveMinVolume = volume;
-
                 this.sessionData.set(symbol, existingTicker);
-                log.log(`[addMtpAlerts] Updated ${symbol} in sessionData. UpChange: ${existingTicker.cumulativeUpChange}%, DownChange: ${existingTicker.cumulativeDownChange}%`);
+                log.log(`[addMtpAlerts] Updated ${symbol} in sessionData.`);
             }
     
             // Emit update event for new high
             if (isNewHigh) {
                 this.emit("new-high-price", { symbol, price });
             }
-
-            // Emit store update event separately (no feedback loop)
+    
+            // Emit store update event
             log.log("[addMtpAlerts] store update!");
             this.emit("lists-update");
+    
+            // **Trigger metadata update**
+            // this.updateMeta(symbol, { meta: baseData.meta || {} });
     
         } catch (error) {
             log.error(`[addMtpAlerts] Failed to process MTP alert: ${error.message}`);
         }
     }
+    
     
     // This function checks and attaches any news for the symbol in dailyData and sessionData
     attachNews(symbol) {
@@ -227,36 +213,6 @@ class Store extends EventEmitter {
 
         // Emit event after adding news
         this.emit("newsUpdated", { newsItems: timestampedNews });
-    }
-
-    updateMeta(symbol, updateData) {
-        log.log(`[updateMeta] called for ${symbol} with updateData:`);
-
-        if (!this.dailyData.has(symbol)) {
-            log.warn(`[updateMeta] Attempted to update non-existing ticker: ${symbol}`);
-            return;
-        }
-
-        let dailyTicker = this.dailyData.get(symbol);
-
-        // Ensure the 'meta' field exists and update it
-        dailyTicker.meta = dailyTicker.meta || {};
-        Object.assign(dailyTicker.meta, updateData.meta);
-
-        // Ensure the symbol remains correctly stored
-        dailyTicker.Symbol = symbol;
-        this.dailyData.set(symbol, dailyTicker);
-
-        if (this.sessionData.has(symbol)) {
-            let sessionTicker = this.sessionData.get(symbol);
-            sessionTicker.meta = sessionTicker.meta || {};
-            Object.assign(sessionTicker.meta, updateData.meta);
-            this.sessionData.set(symbol, sessionTicker);
-        }
-
-        log.log(`[updateMeta] Updated ticker ${symbol} with new metadata under 'meta' subcategory.`);
-        log.bounce("DATA", `[updateMeta] final object`, JSON.stringify(dailyTicker));
-        // this.emit("meta-update");
     }
 
     getAllNews() {

@@ -1,7 +1,7 @@
 {
   "top": {
-    "minPrice": 0,
-    "maxPrice": 0,
+    "minPrice": 1.75,
+    "maxPrice": 10,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -12,8 +12,8 @@
       "session": {
         "Price": false,
         "alertChangePercent": false,
-        "cumulativeUpChange": true,
-        "cumulativeDownChange": true,
+        "cumulativeUpChange": false,
+        "cumulativeDownChange": false,
         "Score": true,
         "Bonuses": true,
         "length": 3,
@@ -22,8 +22,8 @@
       "daily": {
         "Price": false,
         "alertChangePercent": false,
-        "cumulativeUpChange": true,
-        "cumulativeDownChange": true,
+        "cumulativeUpChange": false,
+        "cumulativeDownChange": false,
         "Score": true,
         "Bonuses": true,
         "length": 3,
@@ -31,7 +31,7 @@
       }
     },
     "transparent": false,
-    "sessionListLength": 3,
+    "sessionListLength": 10,
     "dailyListLength": 3
   },
   "news": {
@@ -59,7 +59,8 @@
       "Looking in to",
       "Rocketing",
       "trading higher",
-      "going on with"
+      "going on with",
+      "shares resumed"
     ],
     "bullishList": [
       "FDA Approves",
@@ -127,7 +128,9 @@
       "Phase 3 Safety",
       "FDA Clearence",
       "fda clearance",
-      "enhances value"
+      "enhances value",
+      "space",
+      "biotech"
     ],
     "bearishList": [
       "Sell Alert",
@@ -152,13 +155,14 @@
       "Short Report Released",
       "Misses",
       "Non-Binding",
-      "Down from"
+      "Down from",
+      "Offering"
     ],
     "allowMultiSymbols": false
   },
   "scanner": {
-    "minPrice": 0,
-    "maxPrice": 0,
+    "minPrice": 1.75,
+    "maxPrice": 10,
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,

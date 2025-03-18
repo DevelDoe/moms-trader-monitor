@@ -13,6 +13,7 @@ function createSplashWindow(isDevelopment) {
         transparent: false, 
         resizable: true,
         show: false,
+        hasShadow: false, // Disables window shadow
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             nodeIntegration: false,
