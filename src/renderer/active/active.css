@@ -6,19 +6,19 @@ body {
     font-size: 16px;
 }
 
-.tablinks{
+.tablinks {
     font-size: 8px;
     border: none;
     background: transparent;
     color: white;
 }
 
-#ownershipChart-summary, #ownershipChart-stats {
-    width: 37vw !important;  /* ✅ Keeps it small */
+#ownershipChart-summary,
+#ownershipChart-stats {
+    width: 37vw !important; /* ✅ Keeps it small */
     height: 37vw !important;
     margin-left: 10px;
 }
-
 
 /* Two-column layout using Flexbox */
 .two-column-layout {
@@ -53,15 +53,17 @@ body {
     color: #696050 !important;
     font: menu;
     font-size: 15px;
-    
-    /* ✅ Fixed height with scrolling */
-    height: 244px; 
-    overflow-y: auto;  
 
+    /* ✅ Fixed height with scrolling */
+    height: 170px;
+    overflow-y: auto;
 
     /* ✅ Hide scrollbar in Chrome/Electron */
-    scrollbar-width: none;  /* Firefox */
-    -ms-overflow-style: none;  /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+
+    padding-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 /* ✅ Gradient fade effect at the bottom */

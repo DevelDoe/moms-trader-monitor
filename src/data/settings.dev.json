@@ -14,20 +14,18 @@
         "alertChangePercent": false,
         "cumulativeUpChange": false,
         "cumulativeDownChange": false,
+        "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": false
+        "Bonuses": true
       },
       "daily": {
         "Price": false,
         "alertChangePercent": false,
         "cumulativeUpChange": false,
         "cumulativeDownChange": false,
+        "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": false
+        "Bonuses": true
       }
     },
     "transparent": false,

@@ -162,14 +162,25 @@ function updateUI(symbolData) {
         sharesOutstanding * (Number(symbolData.ownership?.institutionsPercentHeld) || 0)
     );
     const sharesShort = symbolData.statistics?.sharesShort || 0;
+
     const remainingShares = Math.max(
-        sharesOutstanding - (floatShares + insidersHeld + institutionsHeld),
+        sharesOutstanding - Math.min(floatShares + insidersHeld + institutionsHeld, sharesOutstanding),
         0
-    );
+    );    
+
+    console.log("Debug Remaining Shares Calculation:", {
+        sharesOutstanding,
+        floatShares,
+        insidersHeld,
+        institutionsHeld,
+        sharesShort,
+        totalAllocated: floatShares + insidersHeld + institutionsHeld,
+    });
     
     // Function to format value with percentage clearly
     const formatWithPercentage = (value, total) => {
-        if (!total || total === 0) return `${formatLargeNumber(value)} (N/A)`;
+        if (value == null || isNaN(value)) return `N/A (0.00%)`; // Ensure NaN cases don't break it
+        if (total === 0) return `0 (0.00%)`; // Ensure zero total doesn't break it
         const percentage = ((value / total) * 100).toFixed(2);
         return `${formatLargeNumber(value)} (${percentage}%)`;
     };
@@ -203,13 +214,15 @@ function setText(id, value) {
  * @returns {string} - Formatted number.
  */
 function formatLargeNumber(value) {
-    if (!value || isNaN(value)) return "N/A";
+    if (value == null || isNaN(value)) return "N/A";  // Allow 0 but reject NaN/null
     const num = Number(value);
+    if (num === 0) return "0"; // Ensure 0 is explicitly displayed as "0"
     if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
     if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
     if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
     return num.toLocaleString();
 }
+
 
 /**
  * Formats a date string into a readable format.
@@ -231,6 +244,7 @@ function formatPercentage(value) {
     if (value == null || isNaN(value)) return "N/A";
     return (value * 100).toFixed(2) + "%";
 }
+
 
 /**
  * Handles tab switching logic.
@@ -317,7 +331,7 @@ function renderOwnershipChart(symbolData, chartId) {
         const referenceTotal = datasetIndex === 0 ? sharesOutstanding : floatShares;
         const percentage = ((value / referenceTotal) * 100).toFixed(2);
 
-        return `${tooltipItem.label}: ${formatLargeNumber(value)} (${percentage}%)`;
+        return `${tooltipItem.label}: ${percentage}%)`;
     };
 
     // ✅ Create a nested doughnut chart (Stacked Ownership)

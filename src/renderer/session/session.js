@@ -410,13 +410,6 @@ function calculateScore(ticker) {
         Score *= 1.2;
     }
 
-    // 5 min vol
-    if (fiveMinVolume < 100_000) {
-        Score = Score * 0.01;
-    } else if (fiveMinVolume > 300_000) {
-        Score = Score * 1.5;
-    }
-
     // total volume
     if (volumeValue > 0) {
         // Score += Math.floor(volumeValue / 1_000_000) * 2;
@@ -440,7 +433,7 @@ function calculateScore(ticker) {
     }
 
     // Check if short shares exceed 10% of the total float
-    if (sharesShort > 0.1 * floatShares) {
+    if (sharesShort > 0.2 * floatShares) {
         Score *= 1.5;
     }
 
@@ -451,15 +444,22 @@ function calculateScore(ticker) {
 
     // Clear bonuses & tooltips if both conditions are met
     if (hasNegativeIncome && hasS3Filing) {
-        Score = Score * 0.5;
+        Score = Score * 0.7;
     } else {
         if (hasNegativeIncome) {
-            Score = Score * 0.9;
+            // Score = Score * 0.9;
         }
 
         if (hasS3Filing) {
-            Score = Score * 0.9;
+            // Score = Score * 0.9;
         }
+    }
+
+    // 5 min vol
+    if (fiveMinVolume < 100_000) {
+        Score = Score * 0.1;
+    } else if (fiveMinVolume > 300_000) {
+        Score = Score * 2;
     }
 
     return Math.floor(Score);
@@ -473,14 +473,13 @@ function getScoreBreakdown(ticker) {
     console.log(ticker);
 
     const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
-    const volumeValue = parseVolumeValue(ticker.Volume);
     const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
 
     // Add base up change to breakdown
-    breakdown.push(`Base Up Change: ${ticker.cumulativeUpChange || 0}`);
+    breakdown.push(`Up: ${ticker.cumulativeUpChange || 0}% - down change: ${ticker.cumulativeDownChange || 0}%`);
     breakdown.push(`---------------------`);
 
-    // Apply news multiplier if there is relevant news
+    // News
     const blockList = window.settings.news?.blockList || [];
     const filteredNews = Array.isArray(ticker.News)
         ? ticker.News.filter((newsItem) => {
@@ -490,60 +489,55 @@ function getScoreBreakdown(ticker) {
         : [];
 
     if (filteredNews.length > 0) {
-        Score *= 2;
-        breakdown.push(`Has News: 2x multiplier`);
+        Score *= 1.9;
+        breakdown.push(`📰 Has News: 1.9x multiplier`);
     }
 
-    // Apply multiplier if the price is at the high of the day
+    // New High
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
         Score *= 1.5;
-        breakdown.push("HOD: High of Day 1.5x multiplier");
+        breakdown.push("📈 New High: 1.5x multiplier");
     }
 
-    // Apply float-based multipliers
+    // Float
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
         Score *= 1.5;
-        breakdown.push(`<2M Float: 1.5x multiplier`);
+        breakdown.push(`🥇 Float less than 2M: 1.5x multiplier`);
     } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
         Score *= 1.25;
-        breakdown.push(`2M-7.5M Float: 1.25x multiplier`);
+        breakdown.push(`🥈 Float 2M-7.5M: 1.25x multiplier`);
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
         Score *= 1.1;
-        breakdown.push(`7.5M-13M Float: 1.1x multiplier`);
+        breakdown.push(`🥉 Float 7.5M-13M: 1.1x multiplier`);
     } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
         Score *= 0.8;
-        breakdown.push(`65M-125M Float: 0.8x multiplier`);
+        breakdown.push(`Float 65M-125M: 0.8x multiplier`);
     } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
         Score *= 0.6;
-        breakdown.push(`125M-250M Float: 0.6x multiplier`);
+        breakdown.push(`Float 125M-250M: 0.6x multiplier`);
     } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
         Score *= 0.4;
-        breakdown.push(`250M-600M Float: 0.4x multiplier`);
+        breakdown.push(`Float 250M-600M: 0.4x multiplier`);
     } else if (floatValue >= floatFiveHundredMillion) {
         Score *= 0.1;
-        breakdown.push(`600M+ Float: 0.1x multiplier`);
+        breakdown.push(`Float 600M+: 0.1x multiplier`);
     }
 
-    if (ticker.profile.industry && ticker.profile.industry === "Biotechnology") {
-        Score *= 1.4;
-        breakdown.push("Biotechnology stock: 1.4x multiplier");
-    } else if (ticker.profile.longBusinessSummary && ticker.profile.longBusinessSummary.toLowerCase().includes("cannabis")) {
-        Score *= 1.2;
-        breakdown.push("Cannabis stock: 1.2x multiplier");
-    }
+    // Industry & keywords
+    const summary = ticker.profile.longBusinessSummary?.toLowerCase() || "";
+    const isBiotech = ticker.profile.industry === "Biotechnology" || summary.includes("biotech") || summary.includes("biotechnology");
+    const isCannabis = summary.includes("cannabis");
+    const isSpace = summary.includes("space");
 
-    // Apply 5-minute volume-based multipliers
-    if (fiveMinVolume < 100_000) {
-        Score *= 0.01;
-        breakdown.push(`Low volume: 0.01x multiplier`);
-    } else if (fiveMinVolume > 300_000) {
+    if (isBiotech) {
         Score *= 1.5;
-        breakdown.push(`High volume: 1.5x multiplier`);
-    }
-
-    // Optionally adjust Score based on total volume (currently commented out)
-    if (volumeValue > 0) {
-        // Score += Math.floor(volumeValue / 1_000_000) * 2;
+        breakdown.push("🧬 Biotechnology stock: 1.5x multiplier");
+    } else if (isCannabis) {
+        Score *= 0.8;
+        breakdown.push("🌿 Cannabis: 0.8x multiplier");
+    } else if (isSpace) {
+        Score *= 1.2;
+        breakdown.push("🌌 Space: 1.2x multiplier");
     }
 
     // Ownership
@@ -561,39 +555,48 @@ function getScoreBreakdown(ticker) {
     // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
     if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {
         Score = Score * 0.5;
-        breakdown.push("High percentage of shares held by insiders and institutions 0.5x multiplier");
+        breakdown.push("💼 High percentage of shares held by insiders and institutions: 0.5x multiplier");
     }
 
-    // Check if short shares exceed 10% of the total float
-    if (sharesShort > 0.1 * floatShares) {
+    // Check if short shares exceed 20% of the total float
+    if (sharesShort > 0.2 * floatShares) {
         Score = Score * 1.5;
-        breakdown.push("High percentage of shares are shorted 1.5x multiplier");
+        breakdown.push("🩳 High percentage of shares are shorted: 1.5x multiplier");
     }
-    
-    // Check safely if net income is negative:
+
+    // Finances
     const netIncome = ticker.financials?.cashflowStatement?.netIncome;
     const hasNegativeIncome = typeof netIncome === "number" && netIncome < 0;
-    const hasS3Filing = !!ticker.offReg; // Ensure it's treated as a boolean
+    const hasS3Filing = !!ticker.offReg;
 
     // Clear bonuses & tooltips if both conditions are met
     if (hasNegativeIncome && hasS3Filing) {
-        Score = Score * 0.5;
-        breakdown.push("Has Registered offering and running at a loss 0.5x multiplier");
+        Score = Score * 0.7;
+        breakdown.push(`🚨 Registered S-3 & Net loss: 0.7x multiplier`);
     } else {
         if (hasNegativeIncome) {
-            Score = Score * 0.9;
-            breakdown.push("Running at net loss 0.9x multiplier");
+            // Score = Score * 0.9;
+            // breakdown.push("Running at net loss 0.9x multiplier");
         }
 
         if (hasS3Filing) {
-            Score = Score * 0.9;
-            breakdown.push("Registered offering 0.9x multiplier");
+            // Score = Score * 0.9;
+            // breakdown.push("Registered offering 0.9x multiplier");
         }
+    }
+
+    // 5-min Volume
+    if (fiveMinVolume < 100_000) {
+        Score *= 0.1;
+        breakdown.push(`💤 Low volume: 0.01x multiplier`);
+    } else if (fiveMinVolume > 300_000) {
+        Score *= 2;
+        breakdown.push(`🔥 High volume: 2x multiplier`);
     }
 
     // Add final Score to breakdown
     breakdown.push(`---------------------`);
-    breakdown.push(`Final Score: ${Score}`);
+    breakdown.push(`Final Score: ${Math.floor(Score)}`);
 
     return breakdown.join("\n");
 }
@@ -618,24 +621,24 @@ function getBonusesHTML(ticker) {
     }
 
     if (filteredNews.length > 0) {
-        bonuses.push(`<span class="bonus news no-drag">📡</span>`);
-        tooltipText.push(`📡: Has News`);
+        bonuses.push(`<span class="bonus news no-drag">📰</span>`);
+        tooltipText.push(`📰 Has News`);
     }
 
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
         bonuses.push('<span class="bonus high no-drag">📈</span>');
-        tooltipText.push("HOD: High of Day");
+        tooltipText.push("📈 New High");
     }
 
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        bonuses.push('<span class="bonus gold-float no-drag">1M</span>');
-        tooltipText.push("2M: Float less than 2M");
+        bonuses.push('<span class="bonus gold-float no-drag">🥇</span>');
+        tooltipText.push("🥇 Float less than 2M");
     } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        bonuses.push('<span class="bonus silver-float no-drag">5M</span>');
-        tooltipText.push("5M: Float between 2M-7.5M");
+        bonuses.push('<span class="bonus silver-float no-drag">🥈</span>');
+        tooltipText.push("🥈 Float between 2M-7.5M");
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
-        bonuses.push('<span class="bonus bronze-float no-drag">10M</span>');
-        tooltipText.push("10M: Float between 7.5M-13M");
+        bonuses.push('<span class="bonus bronze-float no-drag">🥉</span>');
+        tooltipText.push("🥉 Float between 7.5M-13M");
     } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
         bonuses.push('<span class="bonus high-float no-drag">100M</span>');
         tooltipText.push("100M: Float between 65M-125M");
@@ -650,28 +653,35 @@ function getBonusesHTML(ticker) {
         tooltipText.push("500M: Float more than 500M");
     }
 
-    if (fiveMinVolume < 100_000) {
-        bonuses.push('<span class="bonus low-volume no-drag">💤</span>');
-        tooltipText.push("💤: Low Volume");
-    } else if (fiveMinVolume > 300_000) {
-        bonuses.push(`<span class="bonus high-volume no-drag">🔥</span>`);
-        tooltipText.push("🔥: High Volume");
+    // Industry & keywords
+    const summary = ticker.profile.longBusinessSummary?.toLowerCase() || "";
+    const isBiotech = ticker.profile.industry === "Biotechnology" || summary.includes("biotech") || summary.includes("biotechnology");
+    const isCannabis = summary.includes("cannabis");
+    const isSpace = summary.includes("space");
+
+    if (isBiotech) {
+        bonuses.push('<span class="bonus bio no-drag">🧬</span>');
+        tooltipText.push("🧬 Biotechnology stock");
+    } else if (isCannabis) {
+        bonuses.push('<span class="bonus cannabis no-drag">🌿</span>');
+        tooltipText.push("🌿 Cannabis stock");
+    } else if (isSpace) {
+        bonuses.push('<span class="bonus space no-drag">🌌</span>');
+        tooltipText.push("🌌 Cannabis stock");
     }
 
     if (ticker.profile.industry && ticker.profile.industry === "Biotechnology") {
-        bonuses.push('<span class="bonus bio no-drag">🧬</span>');
-        tooltipText.push("🧬: Biotechnology stock");
+        
     } else if (ticker.profile.longBusinessSummary && ticker.profile.longBusinessSummary.toLowerCase().includes("cannabis")) {
-        bonuses.push('<span class="bonus cannabis no-drag">🌿</span>');
-        tooltipText.push("🌿: Cannabis stock");
+        
     }
 
-    if (ticker.meta?.profile?.country && (ticker.meta.profile.country === "China" || ticker.meta.profile.country === "CN")) {
+    if (ticker.profile?.country && (ticker.profile.country === "China" || ticker.profile.country === "CN")) {
         bonuses.push('<span class="bonus cn no-drag">🇨🇳</span>');
         tooltipText.push("🇨🇳: Chinese based company");
     }
 
-    if (ticker.meta?.profile?.country && (ticker.meta.profile.country === "HK" || ticker.meta.profile.country === "hk")) {
+    if (ticker.profile?.country && (ticker.profile.country === "HK" || ticker.profile.country === "hk")) {
         bonuses.push('<span class="bonus hk no-drag">🇭🇰</span>');
         tooltipText.push("🇭🇰: Hong Kong based company");
     }
@@ -708,11 +718,11 @@ function getBonusesHTML(ticker) {
     // Clear bonuses & tooltips if both conditions are met
     if (hasNegativeIncome && hasS3Filing) {
         bonuses.push('<span class="bonus alert no-drag">🚨</span>');
-        tooltipText.push(`🚨 The company has both a registered S-3 filing dated ${ticker.offReg} and is running at a net loss!`);
+        tooltipText.push(`🚨 Registered S-3 filing dated ${ticker.offReg} & Running at net loss`);
     } else {
         if (hasNegativeIncome) {
             bonuses.push('<span class="bonus net no-drag">🥅</span>');
-            tooltipText.push("🥅 Company currently operating at a net loss.");
+            tooltipText.push("🥅 Company currently operating at a net loss");
         }
 
         if (hasS3Filing) {
@@ -721,7 +731,13 @@ function getBonusesHTML(ticker) {
         }
     }
 
-    console.log("ticker: ", ticker);
+    if (fiveMinVolume < 100_000) {
+        bonuses.push('<span class="bonus low-volume no-drag">💤</span>');
+        tooltipText.push("💤 Low Volume");
+    } else if (fiveMinVolume > 300_000) {
+        bonuses.push(`<span class="bonus high-volume no-drag">🔥</span>`);
+        tooltipText.push("🔥 High Volume");
+    }
 
     if (bonuses.length === 0) {
         return ""; // No bonuses

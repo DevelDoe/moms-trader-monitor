@@ -50,8 +50,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         symbolListElement.innerHTML = "";
     
         alerts.forEach((alert) => {
-            const symbol = alert.querySelector(".alert-symbol").textContent.trim();
-            const percentText = alert.querySelector(".symbol-data span:first-child")?.textContent.trim() ?? "0%";
+            const symbol = alert.querySelector(".alert-symbol")?.textContent.trim();
+            if (!symbol) return; // Skip invalid alerts
+    
+            const percentText = alert.querySelector(".symbol-data span:first-child")?.textContent.trim() || "0%";
             const percent = parseFloat(percentText.replace("%", "")) || 0;
     
             const symbolSpan = document.createElement("span");
@@ -68,19 +70,23 @@ document.addEventListener("DOMContentLoaded", async () => {
                 window.activeAPI.setActiveTicker(symbol);
             });
     
+            // ✅ Fix: Ensure progress bar fills correctly
             const progressBar = document.createElement("span");
             progressBar.className = "progress-bar";
     
             const totalSegments = 10;
-            const midPoint = totalSegments / 2;
+            const midPoint = Math.floor(totalSegments / 2);
             const filledSegments = Math.min(5, Math.round(Math.abs(percent) / 2));
     
             for (let i = 0; i < totalSegments; i++) {
                 const segment = document.createElement("span");
                 segment.className = "segment";
     
-                if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) segment.classList.add("filled", "up");
-                if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) segment.classList.add("filled", "down");
+                if (percent > 0 && i >= midPoint && i < midPoint + filledSegments) {
+                    segment.classList.add("filled", "up");
+                } else if (percent < 0 && i < midPoint && i >= midPoint - filledSegments) {
+                    segment.classList.add("filled", "down");
+                }
     
                 progressBar.appendChild(segment);
             }
@@ -90,6 +96,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             li.append(symbolSpan, progressBar);
             symbolListElement.appendChild(li);
         });
+    }
+    
+
+    function formatLargeNumber(value) {
+        if (!value || isNaN(value)) return "-";
+        const num = Number(value);
+        if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
+        if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
+        if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
+        return num.toLocaleString();
     }
 
     window.scannerAPI.onAlert((alertData) => {
@@ -140,9 +156,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             alertDiv.className = `alert ${alertType === "new-high-price" ? "new-high-price" : alertData.direction.toLowerCase()}`;
 
             if (alertType === "new-high-price") {
-                alertDiv.innerHTML = `<span class="alert-symbol" style="background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${alertData.symbol}</span><span class="symbol-data">New High Price: $${alertPrice.toFixed(2)}</span>`;
+                alertDiv.innerHTML = `
+                    <div class="alert-header">
+                        <span class="alert-symbol" style="background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${alertData.symbol}</span>
+                        <span class="symbol-data">New High 🚀 (${percent.toFixed(2)}%)</span>
+                    </div>`;
             } else {
-                alertDiv.innerHTML = `<div class="alert-header"><span class="alert-symbol" style="background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${alertData.symbol}</span><span class="symbol-data"><span>${percent.toFixed(2)}%</span> $${alertPrice.toFixed(2)} V${alertData.volume}</span></div>`;
+                alertDiv.innerHTML = `
+                    <div class="alert-header">
+                        <span class="alert-symbol" style="background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${alertData.symbol}</span>
+                        <span class="symbol-data">$${alertPrice.toFixed(2)}</span>
+                        <span class="symbol-data">${percent.toFixed(2)}%</span>
+                    </div>`; // ✅ Closing </div> was missing
             }
 
             logElement.appendChild(alertDiv);
