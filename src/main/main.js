@@ -506,12 +506,34 @@ ipcMain.on("set-window-bounds", (event, bounds) => {
 });
 
 // scanner
-ipcMain.on("toggle-scanner", () => {
+ipcMain.on("toggle-scanner", async () => {
     if (windows.scanner) {
         log.log("Toggle Scanner Window");
         windows.scanner.isVisible() ? windows.scanner.hide() : windows.scanner.show();
+
+        try {
+            // ✅ Load current settings
+            const settings = loadSettings();
+
+            // ✅ Toggle scanner volume (0 <-> 0.7)
+            settings.scanner.scannerVolume = settings.scanner.scannerVolume === 0 ? 0.7 : 0;
+
+            // ✅ Save and apply new settings
+            saveSettings(settings);
+
+            // ✅ Notify renderer process about volume change
+            if (windows.scanner.webContents) {
+                windows.scanner.webContents.send("settings-updated", settings);
+            }
+
+            log.log(`🔊 Scanner volume toggled to: ${settings.scanner.scannerVolume}`);
+        } catch (error) {
+            log.error("❌ Failed to toggle scanner volume:", error);
+        }
     }
 });
+
+
 
 tickerStore.on('new-high-price', ({ symbol, price }) => {
     if (windows.scanner && windows.scanner.webContents) {
@@ -551,11 +573,22 @@ app.on("ready", async () => {
         windows.splash.webContents.send("symbols-fetched", symbolCount);
     }
 
-    windows.splash.once("closed", () => {
-        log.log("Splash screen closed. Loading main app...");
+    // ✅ Set scannerVolume to 0 before creating windows
+    try {
+        log.log("🔄 Loading settings...");
+        let settings = loadSettings();
 
-        // log.log("Starting ticker collection...");
-        // collectTickers(); // ✅ Start ticker collection
+        if (!settings.scanner) settings.scanner = {};
+        settings.scanner.scannerVolume = 0; // ✅ Ensure volume starts muted
+        saveSettings(settings); // ✅ Persist the settings before windows load
+
+        log.log("🔇 Scanner volume initialized to 0 (muted)");
+    } catch (error) {
+        log.error("❌ Failed to initialize scanner volume:", error);
+    }
+
+    windows.splash.once("closed", async () => {
+        log.log("Splash screen closed. Loading main app...");
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
@@ -573,11 +606,14 @@ app.on("ready", async () => {
         // 🟢 Sync settings across windows
         Object.values(windows).forEach((window) => {
             if (window?.webContents) {
-                window.webContents.send("settings-updated", appSettings);
+                window.webContents.send("settings-updated", loadSettings()); // ✅ Ensure all windows get the correct settings
             }
         });
     });
 });
+
+
+
 
 // Quit the app when all windows are closed
 app.on("window-all-closed", () => {

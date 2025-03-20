@@ -100,18 +100,16 @@ function initializeScannerSection() {
     const minChangePercentInput = document.getElementById("filter-change-percent");
     const minVolumeInput = document.getElementById("filter-volume");
     const maxAlertsInput = document.getElementById("max-alerts");
+    const volumeSlider = document.getElementById("scanner-volume");
+    const volumeValueDisplay = document.getElementById("scanner-volume-value");
 
-    // if (!minPriceInput || !maxPriceInput || !directionSelect || !minChangePercentInput || !minVolumeInput || !maxAlertsInput) {
-    //     console.error("❌ Scanner initialization error. Missing inputs:", {
-    //         minPriceInput,
-    //         maxPriceInput,
-    //         directionSelect,
-    //         minChangePercentInput,
-    //         minVolumeInput,
-    //         maxAlertsInput,
-    //     });
-    //     return;  // Stops further execution if any input is missing
-    // }
+    // Ensure all elements exist
+    if (!minPriceInput || !maxPriceInput || !directionSelect || !minChangePercentInput || !minVolumeInput || !maxAlertsInput || !volumeSlider || !volumeValueDisplay) {
+        console.error("❌ Scanner initialization error. Missing inputs:", {
+            minPriceInput, maxPriceInput, directionSelect, minChangePercentInput, minVolumeInput, maxAlertsInput, volumeSlider, volumeValueDisplay
+        });
+        return;
+    }
 
     // Load initial values safely
     minPriceInput.value = window.settings.scanner.minPrice ?? "";
@@ -120,6 +118,8 @@ function initializeScannerSection() {
     minChangePercentInput.value = window.settings.scanner.minChangePercent ?? "";
     minVolumeInput.value = window.settings.scanner.minVolume ?? "";
     maxAlertsInput.value = window.settings.scanner.maxAlerts ?? 50;
+    volumeSlider.value = window.settings.scanner.scannerVolume ?? 0.5;
+    volumeValueDisplay.textContent = `${Math.round((window.settings.scanner.scannerVolume ?? 0.5) * 100)}%`;
 
     async function updateScannerSettings() {
         try {
@@ -138,6 +138,7 @@ function initializeScannerSection() {
                     minChangePercent: parseFloat(minChangePercentInput.value) || 0,
                     minVolume: parseInt(minVolumeInput.value, 10) || 0,
                     maxAlerts: parseInt(maxAlertsInput.value, 10) || 50,
+                    scannerVolume: parseFloat(volumeSlider.value) || 0.5, // ✅ Volume setting added
                 },
             };
 
@@ -150,13 +151,19 @@ function initializeScannerSection() {
         }
     }
 
+    // ✅ Event listeners for all scanner settings
     minPriceInput.addEventListener("input", updateScannerSettings);
     maxPriceInput.addEventListener("input", updateScannerSettings);
     directionSelect.addEventListener("change", updateScannerSettings);
     minChangePercentInput.addEventListener("input", updateScannerSettings);
     minVolumeInput.addEventListener("input", updateScannerSettings);
     maxAlertsInput.addEventListener("input", updateScannerSettings);
+    volumeSlider.addEventListener("input", (event) => {
+        volumeValueDisplay.textContent = `${Math.round(event.target.value * 100)}%`;
+        updateScannerSettings();
+    });
 }
+
 
 function initializeTopSection() {
     if (!window.settings || !window.settings.top) {

@@ -531,7 +531,7 @@ function getBonusesHTML(ticker) {
     let tooltipText = [];
 
     const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
-    const fiveMinVolume = parseVolumeValue(ticker.fiveMinVolume);
+    const fiveMinVolume = formatLargeNumber(ticker.fiveMinVolume);
     
     // News
     let blockList = window.settings.news?.blockList || [];
@@ -556,15 +556,15 @@ function getBonusesHTML(ticker) {
     const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
     const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
 
-    if (fiveMinVolume < 100_000) {
+    if (ticker.fiveMinVolume < 100_000) {
         bonuses.push('<span class="bonus low-volume no-drag">💤</span>');
-        tooltipText.push("💤 Low Volume");
-    } else if (fiveMinVolume > 300_000) {
+        tooltipText.push(`💤 Low Volume: ${fiveMinVolume}`);
+    } else if (ticker.fiveMinVolume > 300_000) {
         bonuses.push(`<span class="bonus high-volume no-drag">🔥</span>`);
-        tooltipText.push("🔥 High Volume");
+        tooltipText.push(`🔥 High Volume: ${fiveMinVolume}`);
     } else {
         bonuses.push(`<span class="bonus normal-volume no-drag">🚛</span>`);
-        tooltipText.push("🚛 Medium Volume");
+        tooltipText.push(`🚛 Medium Volume: ${fiveMinVolume}`);
     }
 
     // FLOAT
@@ -609,7 +609,7 @@ function getBonusesHTML(ticker) {
         tooltipText.push("🌿 Cannabis stock");
     } else if (isSpace) {
         bonuses.push('<span class="bonus space no-drag">🌌</span>');
-        tooltipText.push("🌌 Cannabis stock");
+        tooltipText.push("🌌 Space stock");
     }
 
     if (ticker.profile?.country && (ticker.profile.country === "China" || ticker.profile.country === "CN")) {
@@ -623,7 +623,7 @@ function getBonusesHTML(ticker) {
     }
 
     // Check if short shares exceed 10% of the total float
-    if (sharesShort > 0.1 * floatShares) {
+    if (sharesShort > 0.2 * floatShares) {
         bonuses.push('<span class="bonus shorts no-drag">🩳</span>');
         tooltipText.push("🩳 High percentage of shares are shorted");
     }

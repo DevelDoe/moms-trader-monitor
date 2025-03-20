@@ -167,6 +167,7 @@
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 25
+    "maxAlerts": 25,
+    "scannerVolume": 0.05
   }
 }

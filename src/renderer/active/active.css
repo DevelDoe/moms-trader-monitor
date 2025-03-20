@@ -3,7 +3,7 @@ body {
     color: #cdcdcd;
     padding: 12px;
     margin: 0 auto;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .tablinks {
@@ -55,7 +55,7 @@ body {
     font-size: 15px;
 
     /* ✅ Fixed height with scrolling */
-    height: 160px;
+    height: 20vw;
     overflow-y: auto;
 
     /* ✅ Hide scrollbar in Chrome/Electron */

@@ -69,62 +69,50 @@ function updateUI(symbolData) {
         return;
     }
 
-    // Check if symbolData is null, undefined, or an empty object
+    // Check if symbolData is missing or empty
     if (!symbolData || Object.keys(symbolData).length === 0) {
-        console.log("No symbol data found. Showing placeholder."); // Debugging line
+        console.log("No symbol data found. Showing placeholder.");
         noActiveSymbolElement.classList.add("visible");
 
-        // Hide all tabs and content
-        tabs.forEach((el) => {
-            el.style.display = "none";
-        });
+        tabs.forEach((el) => el.style.display = "none");
         return;
     }
 
-    // Hide "No active symbol" message and show tabs/content
+    // Hide placeholder & show tabs
     noActiveSymbolElement.classList.remove("visible");
-    tabs.forEach((el) => {
-        el.style.display = "";
-    });
+    tabs.forEach((el) => el.style.display = "");
 
-    // Update UI with symbol data
     console.log(`[active.js] Updating UI for symbol: ${symbolData.symbol}`);
     console.log("symbolData:", symbolData);
 
     // Summary
     setText("symbol", symbolData.symbol);
-    setText("companyName", symbolData.profile?.companyName);
-    setText("sector", symbolData.profile?.sector);
-    setText("industry", symbolData.profile?.industry);
-    setText("marketCap", formatLargeNumber(symbolData.statistics?.marketCap));
-    setText("lastPrice", symbolData.historical?.price?.[0]?.value);
-    setText("lastVolume", symbolData.historical?.volume?.[0]?.value);
+    setText("companyName", symbolData.profile?.companyName || "N/A");
+    setText("sector", symbolData.profile?.sector || "N/A");
+    setText("industry", symbolData.profile?.industry || "N/A");
+    setText("marketCap", formatLargeNumber(symbolData.statistics?.marketCap || 0));
+    setText("lastPrice", symbolData.historical?.price?.[0]?.value || "N/A");
+    setText("lastVolume", symbolData.historical?.volume?.[0]?.value || "N/A");
 
     // Profile
-    setText("profile-companyName", symbolData.profile?.companyName);
-    setText("profile-longBusinessSummary", symbolData.profile?.longBusinessSummary);
-    setText("profile-website", symbolData.profile?.website);
-    setText("profile-sector", symbolData.profile?.sector);
-    setText("profile-industry", symbolData.profile?.industry);
-    setText("profile-exchange", symbolData.profile?.exchange);
-    setText("profile-country", symbolData.profile?.country);
+    setText("profile-companyName", symbolData.profile?.companyName || "N/A");
+    setText("profile-longBusinessSummary", symbolData.profile?.longBusinessSummary || "N/A");
+    setText("profile-website", symbolData.profile?.website || "N/A");
+    setText("profile-sector", symbolData.profile?.sector || "N/A");
+    setText("profile-industry", symbolData.profile?.industry || "N/A");
+    setText("profile-exchange", symbolData.profile?.exchange || "N/A");
+    setText("profile-country", symbolData.profile?.country || "N/A");
     setText("profile-isEtf", symbolData.profile?.isEtf ? "Yes" : "No");
     setText("profile-isFund", symbolData.profile?.isFund ? "Yes" : "No");
     setText("profile-isActivelyTrading", symbolData.profile?.isActivelyTrading ? "Yes" : "No");
 
     // Statistics
-    setText("statistics-marketCap", formatLargeNumber(symbolData.statistics?.marketCap));
-    setText("statistics-beta", symbolData.statistics?.beta);
-    // setText("statistics-sharesOutstanding", formatLargeNumber(symbolData.statistics?.sharesOutstanding));
-    // setText("statistics-float", formatLargeNumber(symbolData.statistics?.floatShares));
-    // let indidersHeld = symbolData.statistics?.floatShares * symbolData.ownership?.insidersPercentHeld;
-    // setText("statistics-insidersHeld", formatLargeNumber(indidersHeld));
-    // setText("statistics-floatHeldByInstitutions", formatLargeNumber(symbolData.statistics?.floatHeldByInstitutions));
-    // setText("statistics-sharesShort", formatLargeNumber(symbolData.statistics?.sharesShort));
-    setText("statistics-shortPercentOfFloat", symbolData.statistics?.shortPercentOfFloat);
+    setText("statistics-marketCap", formatLargeNumber(symbolData.statistics?.marketCap || 0));
+    setText("statistics-beta", symbolData.statistics?.beta || "N/A");
+    setText("statistics-shortPercentOfFloat", symbolData.statistics?.shortPercentOfFloat || "N/A");
 
     // Financials
-    setText("financials-netIncome", symbolData.financials?.cashflowStatement?.netIncome || "N/A");
+    setText("financials-netIncome", symbolData.financials?.netIncome || "N/A");
 
     // Ownership
     setText("ownership-insidersPercentHeld", formatPercentage(symbolData.ownership?.insidersPercentHeld));
@@ -133,71 +121,49 @@ function updateUI(symbolData) {
 
     // Historical
     setText("historical-price-date", formatDate(symbolData.historical?.price?.[0]?.date));
-    setText("historical-price-value", symbolData.historical?.price?.[0]?.value);
+    setText("historical-price-value", symbolData.historical?.price?.[0]?.value || "N/A");
     setText("historical-volume-date", formatDate(symbolData.historical?.volume?.[0]?.date));
-    setText("historical-volume-value", symbolData.historical?.volume?.[0]?.value);
+    setText("historical-volume-value", symbolData.historical?.volume?.[0]?.value || "N/A");
 
-    // holders Chart stats 
-    const sharesOutstanding = symbolData.statistics?.sharesOutstanding || 0;
-    let floatShares = symbolData.statistics?.floatShares || 0;
+    // Ownership & Float Check
+    const sharesOutstanding = symbolData.statistics?.sharesOutstanding ?? 0;
+    const floatShares = symbolData.statistics?.floatShares ?? 0;
     
-    // Detect data corruption clearly (floatShares should never exceed sharesOutstanding significantly)
-    const dataIsCorrupted = floatShares > sharesOutstanding * 1.1; // Allowing 10% margin
-    
-    // Toggle visibility
+    const dataIsCorrupted = floatShares > sharesOutstanding * 1.05; // Lower tolerance
+
     document.getElementById("data-warning").style.display = dataIsCorrupted ? "block" : "none";
     document.getElementById("section-float").style.display = dataIsCorrupted ? "none" : "flex";
-    
+
     if (dataIsCorrupted) {
-        // Log for debugging
         console.warn("Corrupted float data detected for:", symbolData.profile?.companyName || "Unknown Company");
-        return; // Exit early, no further action
+        return;
     }
-    
-    // Continue with original calculations (when data is valid)
-    const insidersHeld = Math.round(
-        sharesOutstanding * (Number(symbolData.ownership?.insidersPercentHeld) || 0)
-    );
-    const institutionsHeld = Math.round(
-        sharesOutstanding * (Number(symbolData.ownership?.institutionsPercentHeld) || 0)
-    );
-    const sharesShort = symbolData.statistics?.sharesShort || 0;
+
+    const insidersHeld = Math.round(sharesOutstanding * (symbolData.ownership?.insidersPercentHeld || 0));
+    const institutionsHeld = Math.round(sharesOutstanding * (symbolData.ownership?.institutionsPercentHeld || 0));
+    const sharesShort = symbolData.statistics?.sharesShort ?? 0;
 
     const remainingShares = Math.max(
         sharesOutstanding - Math.min(floatShares + insidersHeld + institutionsHeld, sharesOutstanding),
         0
-    );    
+    );
 
-    console.log("Debug Remaining Shares Calculation:", {
-        sharesOutstanding,
-        floatShares,
-        insidersHeld,
-        institutionsHeld,
-        sharesShort,
-        totalAllocated: floatShares + insidersHeld + institutionsHeld,
-    });
-    
-    // Function to format value with percentage clearly
-    const formatWithPercentage = (value, total) => {
-        if (value == null || isNaN(value)) return `N/A (0.00%)`; // Ensure NaN cases don't break it
-        if (total === 0) return `0 (0.00%)`; // Ensure zero total doesn't break it
-        const percentage = ((value / total) * 100).toFixed(2);
-        return `${formatLargeNumber(value)} (${percentage}%)`;
-    };
-    
-    // Update UI with accurate and safe values
+    const formatWithPercentage = (value, total) => 
+        !Number.isFinite(value) ? `N/A (0.00%)` :
+        total === 0 ? `0 (0.00%)` :
+        `${formatLargeNumber(value)} (${((value / total) * 100).toFixed(2)}%)`;
+
     setText("statistics-sharesOutstanding", formatLargeNumber(sharesOutstanding));
     setText("statistics-float", formatWithPercentage(floatShares, sharesOutstanding));
     setText("statistics-insidersHeld", formatWithPercentage(insidersHeld, sharesOutstanding));
     setText("statistics-floatHeldByInstitutions", formatWithPercentage(institutionsHeld, sharesOutstanding));
     setText("statistics-sharesShort", formatWithPercentage(sharesShort, floatShares));
     setText("statistics-remainingShares", formatWithPercentage(remainingShares, sharesOutstanding));
-    
-    // Render ownership chart as usual
-    renderOwnershipChart(symbolData, "ownershipChart-summary");
-    renderOwnershipChart(symbolData, "ownershipChart-stats");    
 
+    renderOwnershipChart(symbolData, "ownershipChart-summary");
+    renderOwnershipChart(symbolData, "ownershipChart-stats");
 }
+
 
 /**
  * Updates the text content of an element by ID.
@@ -348,11 +314,11 @@ function renderOwnershipChart(symbolData, chartId) {
             ],
             datasets: [
                 {
-                    // 🟣 Outer Ring (Total Outstanding Breakdown)
+                    // Outer Ring (Total Outstanding Breakdown)
                     data: totalBreakdown,
                     backgroundColor: [
                         "#1E90FF", // 🔵 Public Float (Blue)
-                        "#FFFF00", // 🟡 Insider Held (Yellow)
+                        "#FF0000", // 🔴 Insider Held
                         "#FFA500", // 🟠 Institutional Held (Orange)
                         "#404040", // ⚫ Remaining Shares (Gray)
                     ],
@@ -360,11 +326,11 @@ function renderOwnershipChart(symbolData, chartId) {
                     borderWidth: 1, // ✅ Reduced width
                 },
                 {
-                    // 🔴 Inner Ring (Short Inside Float)
+                    // Inner Ring (Short Inside Float)
                     data: floatBreakdown,
                     backgroundColor: [
                         "#1E90FF", // 🔵 Float (excluding short)
-                        "#FF0000", // 🔴 Shorted Shares (Red inside Float)
+                        "#FFFF00", // 🟡 Shorted Shares 
                     ],
                     borderColor: "#1c1d23", // ⚪ Keep borders white for better separation
                     borderWidth: 1, // ✅ Reduced width

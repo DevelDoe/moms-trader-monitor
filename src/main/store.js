@@ -18,13 +18,42 @@ class Store extends EventEmitter {
         }, 60 * 1000); // Runs every 60 seconds
     }
 
-    updateSymbols(symbolList) {
-        this.symbols = new Map(symbolList.map((s) => [s.symbol, s]));
-        log.log(`[updateSymbols] Stored ${this.symbols.size} symbols.`);
     
+
+    updateSymbols(symbolList) {
+        this.symbols = new Map(
+            symbolList.map((s) => {
+                // Extract necessary values
+                const sharesShort = s.statistics?.sharesShort ?? 0;
+                const floatShares = s.statistics?.floatShares ?? 0;
+                const institutionsFloatPercentHeld = s.ownership?.institutionsFloatPercentHeld ?? 0;
+    
+                // ✅ Compute `shortPercentOfFloat`
+                const shortPercentOfFloat = floatShares > 0 ? parseFloat(((sharesShort / floatShares) * 100).toFixed(2)) : 0.0;
+    
+                // ✅ Compute `floatHeldByInstitutions`
+                const floatHeldByInstitutions = parseFloat((floatShares * institutionsFloatPercentHeld).toFixed(2));
+    
+                // ✅ Attach computed values before storing
+                return [
+                    s.symbol,
+                    {
+                        ...s,
+                        statistics: {
+                            ...s.statistics,
+                            shortPercentOfFloat,
+                            floatHeldByInstitutions,
+                        },
+                    },
+                ];
+            })
+        );
+    
+        log.log(`[updateSymbols] Stored ${this.symbols.size} symbols.`);
+        
         subscribeToSymbolNews(Array.from(this.symbols.keys()));
     
-        // ✅ Fetch historical news for each symbol
+        // ✅ Fetch historical news for each symbol asynchronously
         (async () => {
             for (const symbol of this.symbols.keys()) {
                 await fetchHistoricalNews(symbol);
@@ -32,7 +61,7 @@ class Store extends EventEmitter {
         })();
     }
     
-
+    
     addMtpAlerts(jsonString) {
         try {
             const parsedData = JSON.parse(jsonString);

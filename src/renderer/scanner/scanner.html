@@ -11,25 +11,18 @@
                 color: #e0e0e0;
                 font-size: 10px;
                 position: relative;
-                padding: 0px 10px;
+                padding: 0px 7px;
                 margin: 0 auto;
             }
             #log {
                 overflow-y: auto;
-                padding: 5px;
-                border-radius: 5px;
-                padding-bottom: 0;
-                list-style-type: none;
-                width: 200px;
+                padding: 0px;
+                width: 90vw;
                 font-size: 14px;
                 position: fixed;
-                bottom: 150px;
-            }
-            .symbol-data {
-                font-size: 12px;
-            }
-            #log li {
-                float: left;
+                bottom: 2px;
+                list-style-type: none;
+                margin: 0 auto;
             }
             .alert {
                 padding: 5px;
@@ -37,22 +30,54 @@
                 border-radius: 5px;
                 font-weight: bold;
                 display: flex;
-                justify-content: space-between;
                 align-items: center;
+                background-color: #2a2b32;
+                border-left: 5px solid transparent;
                 opacity: 0;
-                animation: fadeIn 0.3s forwards;
+                animation: fadeIn 0.5s forwards;
             }
             .alert-symbol {
-                margin-right: 3px;
-                font-size: 10px;
+                width: 40px;
+                text-align: center;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 3px;
+                border-radius: 3px;
+                color: #1c1d23;
+                background-color: gray;
+            }
+            .alert-content {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                padding-left: 5px;
+            }
+            .alert-values {
+                display: flex;
+                justify-content: space-between;
+                font-size: 12px;
+            }
+            .progress-bar {
+                display: flex;
+                margin-top: 3px;
+            }
+            .segment {
+                width: 8px;
+                height: 10px;
+                margin: 1px;
+                background-color: gray;
+            }
+            .segment.filled.up {
+                background-color: #28a745;
+            }
+            .segment.filled.down {
+                background-color: #dc3545;
             }
             .up {
-                color: #28a745;
-                border-left: 5px solid #28a745;
+                border-left-color: #28a745;
             }
             .down {
-                color: #dc3545;
-                border-left: 5px solid #dc3545;
+                border-left-color: #dc3545;
             }
             @keyframes fadeIn {
                 from {
@@ -62,75 +87,10 @@
                     opacity: 1;
                 }
             }
-            /* Symbol Summary */
-            #symbol-summary {
-                font-size: 14px;
-                background-color: #1c1d23;
-                position: fixed;
-                bottom: -4px;
-            }
-            ul {
-                padding: 0;
-            }
-            .symbol-item {
-                padding: 3px;
-                list-style-type: none;
-                font-weight: bold;
-                margin-bottom: 2px;
-                color: #1c1d23;
-            }
-            /* Progress bar styling */
-            .progress-bar {
-                display: inline-block;
-                margin: 0 5px;
-            }
-
-            .segment {
-                display: inline-block;
-                width: 8px; /* Adjust size */
-                height: 10px;
-                margin: 1px;
-                background-color: gray;
-                box-sizing: border-box; /* Ensures consistent sizing */
-            }
-
-            .segment.filled.up {
-                background-color: #28a745;
-            }
-
-            .segment.filled.down {
-                background-color: #dc3545;
-            }
-
-            #drag-area {
-                height: 50px;
-                width: 100vw;
-            }
-            .symbol {
-                display: inline-block;
-                padding: 2px 5px;
-                width: 40px;
-                border-radius: 3px;
-                cursor: pointer;
-                text-align: center;
-            }
-            .symbol:hover {
-                color: #90ee90;
-            }
-            /* ✅ Gradient fade effect at the bottom */
-            #log {
-                -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 98%, rgba(0, 0, 0, 0));
-                mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 98%, rgba(0, 0, 0, 0));
-            }
         </style>
     </head>
-    <body class="draggable">
-        <div id="drag-area" class="draggable"></div>
+    <body>
         <ul id="log" class="draggable"></ul>
-        <div id="symbol-summary">
-            <ul id="symbol-list" class="no-drag"></ul>
-        </div>
-
-        <script src="scaner.js"></script>
+        <script src="./scaner.js"></script>
     </body>
 </html>
