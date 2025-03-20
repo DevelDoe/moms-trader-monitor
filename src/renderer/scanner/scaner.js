@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const symbol = alert.querySelector(".alert-symbol")?.textContent.trim();
             if (!symbol) return; // Skip invalid alerts
     
-            const percentText = alert.querySelector(".symbol-data span:first-child")?.textContent.trim() || "0%";
+            const percentText = alert.querySelectorAll(".symbol-data")[1]?.textContent.trim() || "0%";
             const percent = parseFloat(percentText.replace("%", "")) || 0;
     
             const symbolSpan = document.createElement("span");
@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 alertDiv.innerHTML = `
                     <div class="alert-header">
                         <span class="alert-symbol" style="background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${alertData.symbol}</span>
-                        <span class="symbol-data">New High 🚀 (${percent.toFixed(2)}%)</span>
+                        <span class="symbol-data">New High 🚀</span>
                     </div>`;
             } else {
                 alertDiv.innerHTML = `
@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <span class="alert-symbol" style="background-color: ${getSymbolColor(alertData.symbol)}; padding: 2px 5px; border-radius: 3px; color: #1c1d23;">${alertData.symbol}</span>
                         <span class="symbol-data">$${alertPrice.toFixed(2)}</span>
                         <span class="symbol-data">${percent.toFixed(2)}%</span>
-                    </div>`; // ✅ Closing </div> was missing
+                    </div>`; 
             }
 
             logElement.appendChild(alertDiv);

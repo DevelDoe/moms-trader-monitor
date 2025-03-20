@@ -55,7 +55,7 @@ body {
     font-size: 15px;
 
     /* ✅ Fixed height with scrolling */
-    height: 170px;
+    height: 160px;
     overflow-y: auto;
 
     /* ✅ Hide scrollbar in Chrome/Electron */

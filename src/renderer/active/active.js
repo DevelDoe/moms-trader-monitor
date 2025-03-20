@@ -124,7 +124,7 @@ function updateUI(symbolData) {
     setText("statistics-shortPercentOfFloat", symbolData.statistics?.shortPercentOfFloat);
 
     // Financials
-    setText("financials-netIncome", symbolData.financials?.cashflowStatement.netIncome);
+    setText("financials-netIncome", symbolData.financials?.cashflowStatement?.netIncome || "N/A");
 
     // Ownership
     setText("ownership-insidersPercentHeld", formatPercentage(symbolData.ownership?.insidersPercentHeld));

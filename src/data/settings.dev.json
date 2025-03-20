@@ -3,7 +3,7 @@
     "minPrice": 1.75,
     "maxPrice": 10,
     "minFloat": 0,
-    "maxFloat": 20000000,
+    "maxFloat": 200000000,
     "minScore": 0,
     "maxScore": 0,
     "minVolume": 0,
@@ -14,18 +14,20 @@
         "alertChangePercent": false,
         "cumulativeUpChange": false,
         "cumulativeDownChange": false,
-        "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 3,
+        "fiveMinVolume": false
       },
       "daily": {
         "Price": false,
         "alertChangePercent": false,
         "cumulativeUpChange": false,
         "cumulativeDownChange": false,
-        "fiveMinVolume": false,
         "Score": true,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 3,
+        "fiveMinVolume": false
       }
     },
     "transparent": false,
@@ -165,6 +167,6 @@
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 50
+    "maxAlerts": 25
   }
 }
