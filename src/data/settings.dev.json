@@ -77,17 +77,10 @@
       "Government Contract Secured",
       "Lawsuit Settlement Reached",
       "Initiates Coverage",
-      "Buy Rating",
-      "Strong Buy",
       "Price Target Raised",
-      "Upgrades to Buy",
       "Raises Price Target",
-      "Maintains Overweight Rating",
-      "Reiterates Buy",
       "New Wall Street Coverage",
       "Stock Upgrade",
-      "Top Pick",
-      "Bullish Call",
       "Underweight to Overweight",
       "Hedge Fund Buys",
       "Institutional Ownership Increases",
@@ -100,14 +93,12 @@
       "Revenue Surprise",
       "Raises Guidance",
       "Record Revenue",
-      "Merger Announced",
       "Strategic Partnership",
       "Joint Venture Agreement",
       "Government Contract Awarded",
       "Short Interest at Record High",
       "Short Squeeze Potential",
       "Unusual Options Activity",
-      "Massive Call Buying",
       "Dark Pool Order Detected",
       "Unusual Trading Volume",
       "Share Repurchase",
@@ -119,11 +110,8 @@
       "Exclusive Deal",
       "Secures",
       "beats",
-      "Purchase",
       "Signs Commercial Deal",
-      "Positivity",
       "Reaches Financing",
-      "Letter of intent",
       "Revenue Boost",
       "Phase 3 Safety",
       "FDA Clearence",
@@ -131,7 +119,10 @@
       "enhances value",
       "space",
       "biotech",
-      "Clinical study"
+      "Clinical study",
+      "Up from",
+      "Down from",
+      "Biotechnology"
     ],
     "bearishList": [
       "Sell Alert",
@@ -157,7 +148,8 @@
       "Misses",
       "Non-Binding",
       "Down from",
-      "Offering"
+      "Offering",
+      "Miss"
     ],
     "allowMultiSymbols": false
   },
@@ -168,6 +160,6 @@
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 25,
-    "scannerVolume": 0.05
+    "scannerVolume": 0
   }
 }

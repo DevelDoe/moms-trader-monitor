@@ -18,22 +18,23 @@ class Store extends EventEmitter {
         }, 60 * 1000); // Runs every 60 seconds
     }
 
-    
-
     updateSymbols(symbolList) {
+        // 🔥 Clear old symbols 
+        this.symbols.clear();
+
         this.symbols = new Map(
             symbolList.map((s) => {
                 // Extract necessary values
                 const sharesShort = s.statistics?.sharesShort ?? 0;
                 const floatShares = s.statistics?.floatShares ?? 0;
                 const institutionsFloatPercentHeld = s.ownership?.institutionsFloatPercentHeld ?? 0;
-    
+
                 // ✅ Compute `shortPercentOfFloat`
                 const shortPercentOfFloat = floatShares > 0 ? parseFloat(((sharesShort / floatShares) * 100).toFixed(2)) : 0.0;
-    
+
                 // ✅ Compute `floatHeldByInstitutions`
                 const floatHeldByInstitutions = parseFloat((floatShares * institutionsFloatPercentHeld).toFixed(2));
-    
+
                 // ✅ Attach computed values before storing
                 return [
                     s.symbol,
@@ -48,11 +49,11 @@ class Store extends EventEmitter {
                 ];
             })
         );
-    
-        log.log(`[updateSymbols] Stored ${this.symbols.size} symbols.`);
-        
+
+        log.log(`[updateSymbols] Symbols list updated. Total symbols:`, this.symbols.size);
+
         subscribeToSymbolNews(Array.from(this.symbols.keys()));
-    
+
         // ✅ Fetch historical news for each symbol asynchronously
         (async () => {
             for (const symbol of this.symbols.keys()) {
@@ -60,25 +61,24 @@ class Store extends EventEmitter {
             }
         })();
     }
-    
-    
+
     addMtpAlerts(jsonString) {
         try {
             const parsedData = JSON.parse(jsonString);
             const { symbol, direction, change_percent, price, volume } = parsedData;
-    
+
             if (!symbol || price === undefined || volume === undefined) {
                 log.warn(`[addMtpAlerts] Missing required fields for symbol ${symbol || "unknown"}.`);
                 return;
             }
-    
+
             log.log(`[addMtpAlerts] Adding MTP alert for ${symbol}`);
-    
+
             let isNewHigh = false;
-    
+
             // Fetch base data from this.symbols if available
             const baseData = this.symbols.get(symbol) || {};
-            
+
             // Prepare merged data
             const mergedData = {
                 ...baseData, // Merge any existing attributes from this.symbols
@@ -91,7 +91,7 @@ class Store extends EventEmitter {
                 cumulativeDownChange: direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0,
                 fiveMinVolume: volume,
             };
-    
+
             // **Update dailyData**
             if (!this.dailyData.has(symbol)) {
                 log.log(`[addMtpAlerts] Adding new ticker to dailyData: ${symbol}`);
@@ -99,33 +99,33 @@ class Store extends EventEmitter {
                 this.attachNews(symbol);
             } else {
                 let existingTicker = this.dailyData.get(symbol);
-    
+
                 // Update cumulative changes
                 let newCumulativeUp = existingTicker.cumulativeUpChange || 0;
                 let newCumulativeDown = existingTicker.cumulativeDownChange || 0;
-    
+
                 if (direction === "UP") {
                     newCumulativeUp += change_percent;
                 } else {
                     newCumulativeDown += change_percent;
                 }
-    
+
                 existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
                 existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
                 existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2);
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
-    
+
                 if (price > existingTicker.highestPrice) {
                     existingTicker.highestPrice = price;
                     isNewHigh = true;
                 }
-    
+
                 existingTicker.fiveMinVolume = volume;
                 this.dailyData.set(symbol, existingTicker);
                 log.log(`[addMtpAlerts] Updated ${symbol} in dailyData.`);
             }
-    
+
             // **Update sessionData**
             if (!this.sessionData.has(symbol)) {
                 log.log(`[addMtpAlerts] Adding new ticker to sessionData: ${symbol}`);
@@ -133,68 +133,66 @@ class Store extends EventEmitter {
                 this.attachNews(symbol);
             } else {
                 let existingTicker = this.sessionData.get(symbol);
-    
+
                 let newCumulativeUp = existingTicker.cumulativeUpChange || 0;
                 let newCumulativeDown = existingTicker.cumulativeDownChange || 0;
-    
+
                 if (direction === "UP") {
                     newCumulativeUp += change_percent;
                 } else {
                     newCumulativeDown += change_percent;
                 }
-    
+
                 existingTicker.cumulativeUpChange = parseFloat(newCumulativeUp.toFixed(2));
                 existingTicker.cumulativeDownChange = parseFloat(newCumulativeDown.toFixed(2));
                 existingTicker.alertChangePercent = Math.abs(change_percent).toFixed(2);
                 existingTicker.Direction = direction || existingTicker.Direction;
                 existingTicker.Price = price;
-    
+
                 if (price > existingTicker.highestPrice) {
                     existingTicker.highestPrice = price;
                 }
-    
+
                 existingTicker.fiveMinVolume = volume;
                 this.sessionData.set(symbol, existingTicker);
                 log.log(`[addMtpAlerts] Updated ${symbol} in sessionData.`);
             }
-    
+
             // Emit update event for new high
             if (isNewHigh) {
                 this.emit("new-high-price", { symbol, price });
             }
-    
+
             // Emit store update event
             log.log("[addMtpAlerts] store update!");
             this.emit("lists-update");
-    
+
             // **Trigger metadata update**
             // this.updateMeta(symbol, { meta: baseData.meta || {} });
-    
         } catch (error) {
             log.error(`[addMtpAlerts] Failed to process MTP alert: ${error.message}`);
         }
     }
-    
-    
+
     // This function checks and attaches any news for the symbol in dailyData and sessionData
     attachNews(symbol) {
         log.log(`[attachNews] Checking for news for symbol: ${symbol}`);
-        const newsItems = this.newsList.filter(news => news.symbols.includes(symbol));
-    
-        newsItems.forEach(newsItem => {
+        const newsItems = this.newsList.filter((news) => news.symbols.includes(symbol));
+
+        newsItems.forEach((newsItem) => {
             // Add news to dailyData if not already present
             let ticker = this.dailyData.get(symbol) || {};
             ticker.News = ticker.News || [];
-            if (!ticker.News.some(existingNews => existingNews.id === newsItem.id)) {
+            if (!ticker.News.some((existingNews) => existingNews.id === newsItem.id)) {
                 ticker.News.push(newsItem);
                 this.dailyData.set(symbol, ticker);
             }
-    
+
             // Add news to sessionData if available
             if (this.sessionData.has(symbol)) {
                 let sessionTicker = this.sessionData.get(symbol);
                 sessionTicker.News = sessionTicker.News || [];
-                if (!sessionTicker.News.some(existingNews => existingNews.id === newsItem.id)) {
+                if (!sessionTicker.News.some((existingNews) => existingNews.id === newsItem.id)) {
                     sessionTicker.News.push(newsItem);
                     this.sessionData.set(symbol, sessionTicker);
                 }

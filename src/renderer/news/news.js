@@ -14,10 +14,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Handle settings updates
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🔄 Settings changed. Updating UI...");
-        
+
         // Update local reference to settings
         window.settings = structuredClone(updatedSettings); // ✅ Read-only copy
-    
+
         // Update tracked tickers and refresh the UI
         await fetchTrackedTickers();
         updateNewsList(); // Refresh the UI with existing news data
@@ -106,7 +106,7 @@ function updateNewsList() {
 
     // ✅ Get the latest blocklist from settings and sanitize it
     const blockList = window.settings.news?.blockList || [];
-    const sanitizedBlockList = blockList.map(item => item.toLowerCase().trim()); // Sanitize blocklist items
+    const sanitizedBlockList = blockList.map((item) => item.toLowerCase().trim()); // Sanitize blocklist items
     const bullishList = window.settings.news?.bullishList || [];
     const bearishList = window.settings.news?.bearishList || [];
 
@@ -114,10 +114,8 @@ function updateNewsList() {
 
     if (showOnlyTracked) {
         // ✅ Only filter if `showTrackedTickers` is true
-        filteredNews = filteredNews.filter((newsItem) => 
-            newsItem.symbols && newsItem.symbols.every((symbol) => trackedTickers.has(symbol.toUpperCase()))
-        );
-    } 
+        filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.every((symbol) => trackedTickers.has(symbol.toUpperCase())));
+    }
 
     if (!allowMultiSymbols) {
         filteredNews = filteredNews.filter((newsItem) => newsItem.symbols.length <= 1);
@@ -178,13 +176,17 @@ function updateNewsList() {
             li.style.display = "none"; // Hide blocked news
         }
 
-        // Additional checks for bullish and bearish words
-        if (bullishList.some((goodWord) => sanitizedHeadline.includes(goodWord.toLowerCase()))) {
+        // Check if headline contains keywords from both lists
+        const hasBullish = bullishList.some((word) => sanitizedHeadline.includes(word.toLowerCase()));
+        const hasBearish = bearishList.some((word) => sanitizedHeadline.includes(word.toLowerCase()));
+
+        // Apply classes only if the headline is exclusively bullish or bearish
+        if (hasBullish && !hasBearish) {
             li.classList.add("bullish-news");
-        }
-        if (bearishList.some((badWord) => sanitizedHeadline.includes(badWord.toLowerCase()))) {
+        } else if (hasBearish && !hasBullish) {
             li.classList.add("bearish-news");
         }
+        // If both are found, no class is added (neutral)
 
         const newsAge = (now - new Date(article.created_at)) / 1000;
         if (newsAge >= 300) {
