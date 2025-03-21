@@ -122,7 +122,12 @@
       "Clinical study",
       "Up from",
       "Down from",
-      "Biotechnology"
+      "Biotechnology",
+      "Repurchased Shares",
+      "Potential Repurchases",
+      "Repurchasing",
+      "Repurchases",
+      "Repurchased"
     ],
     "bearishList": [
       "Sell Alert",
@@ -159,7 +164,7 @@
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 25,
-    "scannerVolume": 0
+    "maxAlerts": 50,
+    "scannerVolume": 1
   }
 }

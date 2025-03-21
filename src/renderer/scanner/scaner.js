@@ -103,25 +103,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.scannerAPI.onAlert((alertData) => {
         try {
             console.log("[CLIENT] Received via IPC:", alertData);
-            
+    
+            // ✅ Scanner filters from settings
+            const {
+                minPrice = 0,
+                maxPrice = Infinity,
+                minChangePercent = 0,
+                minVolume = 0,
+                direction = null
+            } = window.settings?.scanner || {};
+    
+            const passesFilters =
+                alertData.price >= minPrice &&
+                alertData.price <= maxPrice &&
+                alertData.change_percent >= minChangePercent &&
+                alertData.volume >= minVolume &&
+                (direction === null || alertData.direction === direction);
+    
+            if (!passesFilters) return; // ❌ Skip alert if it doesn't match filters
+    
+            // 🔔 Logic continues as normal
             const currentMaxAlerts = window.settings?.scanner?.maxAlerts ?? 50;
             const alertType = alertData.type || "standard";
             const symbol = alertData.symbol;
             const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
-
+    
             if (percent > 0) {
                 symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
             } else {
                 symbolUpticks[symbol] = 0;
             }
-
-            if(alertData.direction === "UP"){
+    
+            if (alertData.direction === "UP") {
                 playAudioAlert(symbol, alertType);
             }
-
+    
             const alertElement = createAlertElement(alertData);
             logElement.appendChild(alertElement);
-
+    
             while (logElement.children.length > currentMaxAlerts) {
                 logElement.removeChild(logElement.firstChild);
             }
@@ -129,4 +148,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.error("[CLIENT] Error handling alert:", error);
         }
     });
+    
+    
 });
