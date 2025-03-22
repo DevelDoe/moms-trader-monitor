@@ -1,6 +1,5 @@
 body {
     font-size: 12px;
-
 }
 
 #news-wrapper {
@@ -35,21 +34,6 @@ a:hover {
     color: #595959;
 }
 
-
-/* ✅ bullish news - Highlight in green */
-li.bullish-news {
-    background-color: #4caf50 !important; /* Green */
-    color: white;
-    font-weight: bold !important;
-}
-
-/* ❌ Bearish news - Highlight in red */
-li.bearish-news {
-    background-color: #f44336 !important; /* Red */
-    font-weight: bold !important;
-    color: white;
-}
-
 ul {
     width: 300px;
     height: 100px;
@@ -64,5 +48,38 @@ ul::-webkit-scrollbar {
 }
 
 .info {
-    background-color:#1c1d23 ;
+    background-color: #1c1d23;
+}
+
+.flashing {
+    animation: flash 500ms ease infinite alternate;
+}
+
+@keyframes flash {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* ✅ bullish news - Highlight in green when clicked (stops flashing) */
+li.bullish-news {
+    background-color: #4caf50 !important; /* Green */
+    color: white;
+    font-weight: bold !important;
+}
+
+/* ❌ Bearish news - Highlight in red when clicked (stops flashing) */
+li.bearish-news {
+    background-color: #f44336 !important; /* Red */
+    font-weight: bold !important;
+    color: white;
+}
+
+/* Neutral news - stays white when not flashing */
+li.neutral-news {
+    background-color: #ffffff; /* White */
+    color: black;
 }

@@ -1,244 +1,222 @@
+
 let allNews = [];
-let trackedTickers = new Set();
-let flashedNewsKeys = new Set();
+let flashedNewsKeys = new Set(); // Track flashed news
 let lastJFlashTime = 0;
+let clickedNews = new Set(); // Track clicked news items
+let newsQueue = []; // Queue for incoming news
+let visibleNews = []; // Currently visible news items
+let displayedNewsKeys = new Set(); // Track displayed news keys
+let blockList = []; // Blocklist from settings
+let bullishList = []; // Bullish keywords from settings
+let bearishList = []; // Bearish keywords from settings
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Page Loaded. Initializing...");
 
-    // Load settings and fetch initial tickers and news
+    // Load settings and fetch initial news
     await loadSettings();
-    await fetchTrackedTickers();
-    await fetchNews();
+    await fetchNews(); // No need to fetch tickers anymore
 
     // Handle settings updates
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🔄 Settings changed. Updating UI...");
-
-        // Update local reference to settings
         window.settings = structuredClone(updatedSettings); // ✅ Read-only copy
-
-        // Update tracked tickers and refresh the UI
-        await fetchTrackedTickers();
         updateNewsList(); // Refresh the UI with existing news data
     });
 
     // Handle news updates
     window.newsAPI.onUpdate(() => {
         console.log("🔄 Received news update. Fetching fresh news...");
-        fetchNews();
-    });
-
-    // Handle ticker updates
-    window.dailyAPI.onTickerUpdate(() => {
-        console.log("🔄 Ticker update received. Fetching fresh tickers...");
-        fetchTrackedTickers();
+        fetchNews(); // Refresh news on update
     });
 });
 
-async function loadSettings() {
-    try {
-        console.log("📢 Fetching settings...");
-        window.settings = await window.settingsAPI.get();
-
-        if (!window.settings.news) {
-            console.log("⚠️ `settings.news` is missing, initializing...");
-            window.settings.news = {};
-        }
-
-        console.log("✅ Loaded settings:", window.settings);
-    } catch (error) {
-        console.error("⚠️ Error loading settings:", error);
-        window.settings = { news: {} }; // Fallback
-    }
-}
-
-async function fetchTrackedTickers() {
-    try {
-        console.log("📢 Fetching filtered tickers from settings...");
-
-        const settings = await window.settingsAPI.get();
-        if (!settings.news?.filteredTickers) {
-            console.warn("⚠️ No filtered tickers found in settings! Using empty set.");
-            trackedTickers = new Set(); // Instead of modifying settings, just use an empty set
-        } else {
-            trackedTickers = new Set(settings.news.filteredTickers);
-        }
-
-        console.log("✅ Tracked Tickers (Filtered):", trackedTickers);
-
-        // Refresh the UI with the latest filters
-        updateNewsList();
-    } catch (error) {
-        console.error("⚠️ Error fetching filtered tickers:", error);
-    }
-}
-
-async function fetchNews() {
-    try {
-        console.log("📢 Fetching news...");
-
-        const newsData = await window.newsAPI.get();
-        console.log("📰 Received news:", newsData);
-
-        if (!Array.isArray(newsData)) {
-            console.error("⚠️ Expected an array but got:", newsData);
-            return;
-        }
-
-        allNews = newsData; // Refresh the `allNews` array with the latest news
-        updateNewsList(); // Update news list after fetching new news
-    } catch (error) {
-        console.error("⚠️ Error fetching news:", error);
-        const listContainer = document.getElementById("news-list");
-        listContainer.innerHTML = `<li class='info draggable'>Error fetching news: ${error.message}</li>`;
-    }
-}
-
-function updateNewsList() {
-    console.log("📢 Updating news list...");
-
-    const showOnlyTracked = window.settings.news.showTrackedTickers ?? false;
-    const allowMultiSymbols = window.settings.news.allowMultiSymbols ?? true;
-    const maxEntries = 6;
-    const listContainer = document.getElementById("news-list");
-    listContainer.innerHTML = ""; // Clear previous news
-
-    // ✅ Get the latest blocklist from settings and sanitize it
-    const blockList = window.settings.news?.blockList || [];
-    const sanitizedBlockList = blockList.map((item) => item.toLowerCase().trim()); // Sanitize blocklist items
-    const bullishList = window.settings.news?.bullishList || [];
-    const bearishList = window.settings.news?.bearishList || [];
-
-    let filteredNews = allNews; // Always use fresh `allNews`
-
-    if (showOnlyTracked) {
-        // ✅ Only filter if `showTrackedTickers` is true
-        filteredNews = filteredNews.filter((newsItem) => newsItem.symbols && newsItem.symbols.every((symbol) => trackedTickers.has(symbol.toUpperCase())));
-    }
-
-    if (!allowMultiSymbols) {
-        filteredNews = filteredNews.filter((newsItem) => newsItem.symbols.length <= 1);
-    }
-
-    console.log("📊 Filtered News:", filteredNews);
-
-    if (filteredNews.length === 0) {
-        listContainer.innerHTML = "<li class='info draggable'>no news</li>";
-        return;
-    }
-
-    const uniqueNews = new Map();
-    filteredNews.forEach((newsItem) => {
-        const key = `${newsItem.symbols?.join(",") || "N/A"}|${newsItem.headline}`;
-        if (!uniqueNews.has(key)) {
-            uniqueNews.set(key, newsItem);
-        }
-    });
-
-    const sortedNews = Array.from(uniqueNews.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    const slicedNews = sortedNews.slice(0, maxEntries);
-
-    const topNewsItem = slicedNews[0];
-    if (topNewsItem) {
-        const topKey = `${topNewsItem.symbols?.join(",") || "N/A"}|${topNewsItem.headline}`;
-        if (!flashedNewsKeys.has(topKey)) {
-            playFlash();
-            flashedNewsKeys.add(topKey);
-        }
-    }
-
-    const now = new Date();
-    slicedNews.forEach((article) => {
-        const headline = decodeHTMLEntities(article.headline || "");
-        const li = document.createElement("li");
-        li.className = "no-drag";
-
-        const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
-        li.textContent = symbolText;
-        li.title = `${headline}`;
-
-        // Compare against blockList using sanitized version (lowercase)
-        const sanitizedHeadline = headline.toLowerCase().trim();
-        let blocked = false;
-
-        // Log each blocklist item and its comparison
-        sanitizedBlockList.forEach((blockedWord) => {
-            if (sanitizedHeadline.includes(blockedWord)) {
-                console.log(`Blocked keyword found: "${blockedWord}" in headline: "${headline}"`);
-                blocked = true;
-            }
-        });
-
-        if (blocked) {
-            // Instead of adding "blocked-news", hide the item
-            li.style.display = "none"; // Hide blocked news
-        }
-
-        // Check if headline contains keywords from both lists
-        const hasBullish = bullishList.some((word) => sanitizedHeadline.includes(word.toLowerCase()));
-        const hasBearish = bearishList.some((word) => sanitizedHeadline.includes(word.toLowerCase()));
-
-        // Apply classes only if the headline is exclusively bullish or bearish
-        if (hasBullish && !hasBearish) {
-            li.classList.add("bullish-news");
-        } else if (hasBearish && !hasBullish) {
-            li.classList.add("bearish-news");
-        }
-        // If both are found, no class is added (neutral)
-
-        const newsAge = (now - new Date(article.created_at)) / 1000;
-        if (newsAge >= 300) {
-            li.classList.add("fade-out");
-        }
-
-        // Only append the li if it's not hidden
-        if (li.style.display !== "none") {
-            listContainer.appendChild(li);
-        }
-    });
-
-    console.log("✅ News list updated!");
-}
-
 function playFlash() {
     const now = Date.now();
-    const gap = 1000;
+    const gap = 3000;
     if (now - lastJFlashTime < gap) {
         console.log("Jingle call debounced.");
         return;
     }
     lastJFlashTime = now;
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const startTime = audioCtx.currentTime;
+    // Create a new Audio object and set the source to your custom sound file
+    const audio = new Audio("./flash.wav");
 
-    const frequencies = [400, 400, 700, 700];
-    const beepDuration = 0.15;
-    const gapTime = 0.005;
-
-    frequencies.forEach((freq, i) => {
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.frequency.value = freq;
-        oscillator.type = "square";
-
-        const toneStart = startTime + i * (beepDuration + gapTime);
-        oscillator.start(toneStart);
-        oscillator.stop(toneStart + beepDuration);
-
-        gainNode.gain.setValueAtTime(1, toneStart);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, toneStart + beepDuration);
-    });
+    audio
+        .play()
+        .then(() => {
+            console.log("Sound played successfully.");
+        })
+        .catch((error) => {
+            console.error("Error playing sound:", error);
+        });
 }
 
 function decodeHTMLEntities(text) {
     const parser = new DOMParser();
     const decodedString = parser.parseFromString(text, "text/html").body.textContent;
     return decodedString || text;
+}
+
+
+async function loadSettings() {
+    try {
+        console.log("📢 Fetching settings...");
+        window.settings = await window.settingsAPI.get();
+
+        blockList = window.settings.news?.blockList || [];
+        bullishList = window.settings.news?.bullishList || [];
+        bearishList = window.settings.news?.bearishList || [];
+
+        console.log("✅ Loaded settings:", window.settings);
+
+        updateNewsList(); // Ensure the UI is updated with the new settings
+    } catch (error) {
+        console.error("⚠️ Error loading settings:", error);
+        blockList = [];
+        bullishList = [];
+        bearishList = [];
+        updateNewsList(); // Ensure the UI is updated even if settings load fails
+    }
+}
+
+// Handle news updates
+async function fetchNews() {
+    try {
+        console.log("📢 Fetching news...");
+
+        const newsData = await window.newsAPI.get();
+        if (!Array.isArray(newsData)) {
+            console.error("⚠️ Expected an array but got:", newsData);
+            return;
+        }
+
+        // Process the incoming news data
+        allNews = newsData;
+
+        // Apply filtering based on blocklist and allowMultiSymbols
+        let filteredNews = allNews.filter(newsItem => {
+            const sanitizedHeadline = newsItem.headline.toLowerCase().trim();
+            const isBlocked = blockList.some(blockedWord => sanitizedHeadline.includes(blockedWord.toLowerCase()));
+
+            if (isBlocked) {
+                console.log(`Blocked news: ${newsItem.headline}`);
+                return false;
+            }
+
+            // Allow multi-symbol filter
+            return newsItem.symbols.length <= 1; // Only allow items with 1 symbol
+        });
+
+        console.log("Filtered News Length:", filteredNews.length);
+
+        // Add filtered items to the news queue
+        filteredNews.forEach(newsItem => {
+            if (!displayedNewsKeys.has(newsItem.id) && !newsQueue.some(item => item.id === newsItem.id)) {
+                newsQueue.push(newsItem);
+            }
+        });
+
+        // Update visibleNews array, respecting the maxEntries limit
+        updateVisibleNews();
+
+        // Render the updated news list
+        updateNewsList();
+    } catch (error) {
+        console.error("⚠️ Error fetching news:", error);
+    }
+}
+
+// Render the visible news
+function updateNewsList() {
+    console.log("📢 Rendering news list...");
+
+    const listContainer = document.getElementById("news-list");
+    listContainer.innerHTML = "";  // Clear previous content
+
+    // Check if the list is empty or not, if not empty, render items
+    if (visibleNews.length === 0) {
+        console.log("No visible news to render.");
+    }
+
+    visibleNews.forEach(article => {
+        const headline = decodeHTMLEntities(article.headline || "");
+        const li = document.createElement("li");
+        li.className = "no-drag flashing";  // Add flashing class for new items
+
+        const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
+        li.textContent = symbolText;
+        li.title = `${headline}`;
+
+        // Apply sentiment (Bullish, Bearish, or Neutral)
+        const sentimentClass = getSentimentClass(article.headline);
+        li.classList.add(sentimentClass);
+
+        // Stop flashing on click
+        li.addEventListener("click", () => handleNewsClick(article, li));
+
+        // Append the list item if it's not hidden
+        listContainer.appendChild(li);
+    });
+
+    console.log("✅ News list updated!");
+}
+
+// Determine sentiment (Bullish, Bearish, or Neutral)
+function getSentimentClass(headline) {
+    const sanitizedHeadline = headline.toLowerCase().trim();
+    const hasBullish = bullishList.some(word => sanitizedHeadline.includes(word.toLowerCase()));
+    const hasBearish = bearishList.some(word => sanitizedHeadline.includes(word.toLowerCase()));
+
+    if (hasBullish && !hasBearish) return "bullish-news";
+    if (hasBearish && !hasBullish) return "bearish-news";
+    return "neutral-news";  // Default to neutral if neither
+}
+
+// Handle news item click (stop flashing, update clickedNews, shift next item)
+function handleNewsClick(article, li) {
+    li.classList.remove("flashing");  // Stop flashing on click
+    li.style.animation = "none";  // Stop animation
+
+    // Remember clicked news item
+    clickedNews.add(article.id);
+
+    // Release the current item and move the next one from the queue into visibleNews
+    stopFlashingAndReleaseItem(article, li);
+}
+
+// Stop flashing and release the clicked news item
+function stopFlashingAndReleaseItem(article, li) {
+    // Remove the clicked item from the visible news list
+    visibleNews = visibleNews.filter(item => item.id !== article.id);
+
+    // Check if there are more items in the queue
+    if (newsQueue.length === 0) {
+        console.log("No more items in the queue.");
+        return; // If no more items in the queue, do nothing
+    }
+
+    // If there are more items in the queue, move the next item to visibleNews
+    const nextItem = newsQueue.shift();
+    visibleNews.push(nextItem);
+    displayedNewsKeys.add(nextItem.id);  // Mark as displayed
+
+    updateNewsList();  // Re-render the list with the new item
+    console.log(`Item released: ${article.headline}`);
+}
+
+// Update visibleNews based on the newsQueue and maxEntries
+function updateVisibleNews() {
+    const maxEntries = 4;  // Example: you can adjust the number as needed
+    while (visibleNews.length < maxEntries && newsQueue.length > 0) {
+        const nextItem = newsQueue.shift(); // Move item from queue to visible
+        visibleNews.push(nextItem);
+        displayedNewsKeys.add(nextItem.id); // Mark as displayed
+    }
+
+    // If newsQueue is empty, log it
+    if (newsQueue.length === 0) {
+        console.log("News queue is now empty.");
+    }
 }

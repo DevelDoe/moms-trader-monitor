@@ -54,7 +54,7 @@ let alpacaSocket = null;
 //             const newsItems = data.filter((item) => item.T === "news");
 
 //             if (newsItems.length === 0) {
-//                 return; 
+//                 return;
 //             }
 
 //             log.log(`📰 Processing ${newsItems.length} news entries.`);
@@ -116,9 +116,14 @@ const subscribeToSymbolNews = (symbols) => {
         };
         log.log(`Subscribing to Alpaca news for: ${symbols.join(", ")}`);
         alpacaSocket.send(JSON.stringify(payload));
+
+        // Confirm that the subscription was sent
+        log.log("Subscription request sent.");
     };
 
     alpacaSocket.onmessage = (event) => {
+        log.log("Received message from WebSocket:", event.data); // Log all incoming messages for debugging
+
         try {
             const data = JSON.parse(event.data);
 
@@ -127,13 +132,21 @@ const subscribeToSymbolNews = (symbols) => {
                 return;
             }
 
+            // Check if the response includes a success/failure message regarding the subscription
+            const subscriptionStatus = data.find((item) => item.action === "subscribe");
+            if (subscriptionStatus && subscriptionStatus.status === "success") {
+                log.log("Successfully subscribed to Alpaca news.");
+            } else if (subscriptionStatus && subscriptionStatus.status === "error") {
+                log.error("Subscription failed for some symbols.");
+            }
+
             // Filter for news items
             const newsItems = data.filter((item) => item.T === "news");
 
             if (newsItems.length === 0) {
                 return;
             }
-
+            F;
             log.log(`Processing ${newsItems.length} news entries.`);
             setImmediate(() => {
                 newsItems.forEach(handleNewsData);
@@ -150,6 +163,10 @@ const subscribeToSymbolNews = (symbols) => {
 
     alpacaSocket.onerror = (error) => {
         log.error("WebSocket error:", error.message);
+        // Check if any specific error information is available
+        if (error.message.includes("Subscription failed")) {
+            log.warn("The WebSocket subscription request may have failed.");
+        }
     };
 };
 
@@ -189,9 +206,26 @@ const handleNewsData = (newsItem) => {
 const fetchHistoricalNews = async (ticker) => {
     const tickerStore = require("../store");
 
-    const midnight = new Date();
-    midnight.setHours(0, 0, 0, 0);
-    const start = encodeURIComponent(midnight.toISOString());
+    // Get the current date and calculate the time for the last market close (Friday, 4:00 PM EST)
+    const now = new Date();
+    let lastMarketClose = new Date(now);
+
+    // Calculate the date of the last Friday (if today is Sunday, it's last Friday, etc.)
+    if (now.getDay() === 0) { // Sunday
+        lastMarketClose.setDate(now.getDate() - 2); // Move back to Friday
+    } else if (now.getDay() === 1) { // Monday
+        lastMarketClose.setDate(now.getDate() - 3); // Move back to last Friday
+    } else if (now.getDay() === 6) { // Saturday
+        lastMarketClose.setDate(now.getDate() - 1); // Move back to Friday
+    } else {
+        lastMarketClose.setDate(now.getDate() - (now.getDay() + 2) % 7); // Move back to last Friday
+    }
+
+    // Set time to 4:00 PM (market close time)
+    lastMarketClose.setHours(16, 0, 0, 0); // 4:00 PM EST
+
+    // Format to ISO string for Alpaca API
+    const start = encodeURIComponent(lastMarketClose.toISOString());
     const encodedTicker = encodeURIComponent(ticker);
 
     const ALPACA_NEWS_URL = `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
@@ -217,7 +251,7 @@ const fetchHistoricalNews = async (ticker) => {
         log.log(`Full API response for ${ticker}: ${JSON.stringify(newsData)}`); // ✅ Log API response
 
         if (!newsData.news || newsData.news.length === 0) {
-            log.warn(`No historical news found for ${ticker}.`);
+            // log.warn(`No historical news found for ${ticker}.`);
             return;
         }
 
@@ -227,7 +261,6 @@ const fetchHistoricalNews = async (ticker) => {
         log.error(`Error fetching historical news for ${ticker}:`, error.message);
     }
 };
-
 
 
 module.exports = { fetchHistoricalNews, subscribeToSymbolNews };

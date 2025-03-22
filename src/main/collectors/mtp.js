@@ -29,7 +29,7 @@ const connectMTP = (scannerWindow) => {
             const sanitized = data.toString().replace(/[^\x20-\x7F]/g, "");
             return JSON.parse(sanitized);
         } catch (err) {
-            console.error("[mtp.js] Failed to parse message:", data.toString());
+            log.error("[mtp.js] Failed to parse message:", data.toString());
             return null;
         }
     };
@@ -39,7 +39,7 @@ const connectMTP = (scannerWindow) => {
         ws = new WebSocket(process.env.MTP_WS);
 
         ws.onopen = () => {
-            console.log("[mtp.js] Connected to WebSocket server");
+            log.log("[mtp.js] Connected to WebSocket server");
             ws.send(
                 JSON.stringify({
                     type: "registration",
@@ -57,7 +57,7 @@ const connectMTP = (scannerWindow) => {
         
             // Handle ping messages
             if (msg.type === "ping") {
-                console.log('[mtp.js] Received ping, sending pong');
+                log.log('[mtp.js] Received ping, sending pong');
                 ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
                 return;
             }
@@ -80,23 +80,23 @@ const connectMTP = (scannerWindow) => {
         
                 // 🚀 **Avoid duplicate updates**
                 if (newSymbolUpdate === lastSymbolUpdate) {
-                    console.log("[mtp.js] Ignoring duplicate symbol update.");
+                    log.log("[mtp.js] Ignoring duplicate symbol update.");
                     return;
                 }
         
                 lastSymbolUpdate = newSymbolUpdate; // Update cache
         
-                console.log("[mtp.js] Received new symbol update, triggering debounce...");
+                log.log("[mtp.js] Received new symbol update, triggering debounce...");
                 debouncedFetchSymbols(); // ✅ Call debounced function
             }
         };
 
         ws.onerror = (err) => {
-            console.error("[mtp.js] WebSocket error:", err.message);
+            log.error("[mtp.js] WebSocket error:", err.message);
         };
 
         ws.onclose = (event) => {
-            console.log("[mtp.js] WebSocket closed. Attempting to reconnect...");
+            log.log("[mtp.js] WebSocket closed. Attempting to reconnect...");
             // Reconnect after a delay
             setTimeout(createWebSocket, 5000); // 5 seconds delay before reconnect
         };
@@ -109,16 +109,16 @@ const connectMTP = (scannerWindow) => {
 // ✅ Debounced function (Ensures only one fetch per second)
 const debouncedFetchSymbols = debounce(async () => {
     if (isFetchingSymbols) {
-        console.log("[mtp.js] Fetch already in progress, skipping...");
+        log.log("[mtp.js] Fetch already in progress, skipping...");
         return;
     }
 
     isFetchingSymbols = true;
-    console.log("[mtp.js] Debounced: Fetching new symbols...");
+    log.log("[mtp.js] Debounced: Fetching new symbols...");
     try {
         await fetchSymbolsFromServer();
     } catch (error) {
-        console.error("[mtp.js] Error fetching symbols:", error);
+        log.error("[mtp.js] Error fetching symbols:", error);
     } finally {
         isFetchingSymbols = false;
     }

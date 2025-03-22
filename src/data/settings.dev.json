@@ -60,7 +60,8 @@
       "Rocketing",
       "trading higher",
       "going on with",
-      "shares resumed"
+      "shares resumed",
+      "String phase"
     ],
     "bullishList": [
       "FDA Approves",
@@ -127,7 +128,9 @@
       "Potential Repurchases",
       "Repurchasing",
       "Repurchases",
-      "Repurchased"
+      "Repurchased",
+      "String phase",
+      "FDA-approved"
     ],
     "bearishList": [
       "Sell Alert",
@@ -154,7 +157,8 @@
       "Non-Binding",
       "Down from",
       "Offering",
-      "Miss"
+      "Miss",
+      "Issue new shares"
     ],
     "allowMultiSymbols": false
   },
@@ -165,6 +169,6 @@
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 50,
-    "scannerVolume": 1
+    "scannerVolume": 0
   }
 }
