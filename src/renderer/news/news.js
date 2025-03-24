@@ -43,6 +43,8 @@ function playFlash() {
     // Create a new Audio object and set the source to your custom sound file
     const audio = new Audio("./flash.wav");
 
+    audio.volume = 0.7;
+
     audio
         .play()
         .then(() => {

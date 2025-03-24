@@ -57,4 +57,8 @@ contextBridge.exposeInMainWorld("scannerAPI", {
     onAlert: (callback) => ipcRenderer.on('ws-alert', (_, data) => callback(data)),
 });
 
+contextBridge.exposeInMainWorld("legendAPI", {
+    toggle: () => ipcRenderer.send("toggle-bonuses"),
+});
+
 

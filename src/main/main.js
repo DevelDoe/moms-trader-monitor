@@ -42,6 +42,7 @@ const { createSessionWindow } = require("./windows/session");
 const { createActiveWindow } = require("./windows/active");
 const { createNewsWindow } = require("./windows/news");
 const { createScannerWindow } = require("./windows/scanner");
+const { createBonusesLegendWindow } = require("./windows/bonusesLegend");
 
 let windows = {};
 
@@ -533,8 +534,6 @@ ipcMain.on("toggle-scanner", async () => {
     }
 });
 
-
-
 tickerStore.on('new-high-price', ({ symbol, price }) => {
     if (windows.scanner && windows.scanner.webContents) {
         log.log(`Sending new high price alert to scanner window: ${symbol} - ${price}`);
@@ -548,8 +547,13 @@ tickerStore.on('new-high-price', ({ symbol, price }) => {
     }
 });
 
-
-
+// legends
+ipcMain.on("toggle-bonuses", () => {
+    if (windows.bonusesLegend) {
+        log.log("Toggle Bonuses Legend Window");
+        windows.bonusesLegend.isVisible() ? windows.bonusesLegend.hide() : windows.bonusesLegend.show();
+    }
+});
 
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
@@ -597,6 +601,7 @@ app.on("ready", async () => {
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
         windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
         windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
+        windows.bonusesLegend = createWindow("bonuses-legend", () => createBonusesLegendWindow(isDevelopment));
 
         connectMTP(windows.scanner);
 

@@ -22,9 +22,9 @@ function createDockerWindow(isDevelopment) {
 
     window.loadFile(path.join(__dirname, "../../renderer/docker/docker.html"));
 
-    if (isDevelopment) {
-        window.webContents.openDevTools({ mode: "detach" });
-    }
+    // if (isDevelopment) {
+    //     window.webContents.openDevTools({ mode: "detach" });
+    // }
     return window; // ✅ Return the window instance
 }
 

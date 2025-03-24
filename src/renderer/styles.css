@@ -10,6 +10,10 @@ body {
     background-color: #1c1d23; /* Dark mode background */
 }
 
+body::-webkit-scrollbar {
+    display: none;                /* Chrome, Safari and Opera */
+  }
+
 h2 {
     -webkit-app-region: drag;
     font-size: 10px;

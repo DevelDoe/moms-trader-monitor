@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Bonus Ticker</title>
+        <style>
+            /* Container styling */
+            body {
+                margin: 0;
+                background: #1c1d23; /* dark theme background */
+                color: #f0f0f0; /* light text for contrast */
+                font-family: sans-serif; /* use app's font if needed */
+                height: 100%;
+                width: 100%;
+                overflow-x: hidden;
+            }
+            .bonus-list {
+                position: relative;
+                width: 100%;
+                height: 27px;
+                overflow: hidden;
+                font-size: 14px;
+                color: #f0f0f0;
+                padding: 5px;
+                margin: 0 auto;
+            }
+
+            .bonus-item {
+                position: absolute;
+                display: flex;
+                align-items: center;
+                white-space: nowrap;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .bonus-item.show {
+                animation: slideIn 10s linear forwards;
+                opacity: 1;
+            }
+
+            @keyframes slideIn {
+                0% {
+                    transform: translateX(200%);
+                    opacity: 0;
+                }
+                10% {
+                    transform: translateX(0%);
+                    opacity: 1;
+                }
+                90% {
+                    transform: translateX(0%);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
+
+            .icon {
+                font-size: 20px;
+                margin-right: 8px;
+            }
+
+            /* (If using icon fonts instead of img, you can style the <i> similarly) */
+        </style>
+    </head>
+    <body>
+        <ul class="bonus-list">
+            <li class="bonus-item"><span class="icon">💤</span><span class="desc">Low Volume (less than 100k last 5min)</span></li>
+            <li class="bonus-item"><span class="icon">🚛</span><span class="desc">Medium Volume (between 100k and 300k last 5min)</span></li>
+            <li class="bonus-item"><span class="icon">🔥</span><span class="desc">High Volume (more than 300k last 5min)</span></li>
+
+            <li class="bonus-item"><span class="icon">1️⃣ </span><span class="desc">Float around 1M</span></li>
+            <li class="bonus-item"><span class="icon">5️⃣ </span><span class="desc">Float around 5M</span></li>
+            <li class="bonus-item"><span class="icon">🔟 </span><span class="desc">Float around 10M</span></li>
+
+            <li class="bonus-item"><span class="icon">💼 </span><span class="desc">High insider/institutional/locked shares holders</span></li>
+            <li class="bonus-item"><span class="icon">😼 </span><span class="desc">Has news</span></li>
+            <li class="bonus-item"><span class="icon">📈 </span><span class="desc">New high</span></li>
+
+            <li class="bonus-item"><span class="icon">🧬 </span><span class="desc">Biotechnology stock</span></li>
+            <li class="bonus-item"><span class="icon">🌿 </span><span class="desc">Cannabis stock</span></li>
+            <li class="bonus-item"><span class="icon">🌌 </span><span class="desc">Space industry stock</span></li>
+
+            <li class="bonus-item"><span class="icon">🇨🇳 & 🇭🇰</span><span class="desc">China-based company</span></li>
+
+            <li class="bonus-item"><span class="icon">🩳 </span><span class="desc">High short interest (more than 20% of float)</span></li>
+            <li class="bonus-item"><span class="icon">🥅 </span><span class="desc">Company is currently running at a net loss</span></li>
+            <li class="bonus-item"><span class="icon">📂 </span><span class="desc">Registered S-3 filing</span></li>
+            <li class="bonus-item"><span class="icon">🚨 </span><span class="desc">High dilution risk, Net loss + Registered S-3 </span></li>
+        </ul>
+
+        <script>
+            // Wait for DOM to be ready
+            document.addEventListener("DOMContentLoaded", function () {
+                const items = document.querySelectorAll(".bonus-item");
+                let currentIndex = 0;
+                const total = items.length;
+                if (total === 0) return; // safety check
+
+                // Show the first item initially
+                items[currentIndex].classList.add("show");
+                items[currentIndex].classList.add("slide");
+
+                // Rotate to the next bonus every 3000ms (3 seconds)
+                setInterval(() => {
+                    // current item fades out
+                    items[currentIndex].classList.remove("show");
+                    items[currentIndex].classList.remove("slide");
+                    // move index to next item (loop back to 0 at end)
+                    currentIndex = (currentIndex + 1) % total;
+                    // next item fades in
+                    items[currentIndex].classList.add("show");
+                    items[currentIndex].classList.add("slide");
+                }, 10000);
+            });
+        </script>
+    </body>
+</html>

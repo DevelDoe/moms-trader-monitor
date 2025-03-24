@@ -88,6 +88,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function initializeGeneralSection() {
     console.log("Initializing General Section");
+    document.getElementById("show-bonuses-legend-board").addEventListener("click", () => {
+        window.legendAPI.toggle();
+    });
 }
 
 function initializeScannerSection() {
@@ -106,7 +109,14 @@ function initializeScannerSection() {
     // Ensure all elements exist
     if (!minPriceInput || !maxPriceInput || !directionSelect || !minChangePercentInput || !minVolumeInput || !maxAlertsInput || !volumeSlider || !volumeValueDisplay) {
         console.error("❌ Scanner initialization error. Missing inputs:", {
-            minPriceInput, maxPriceInput, directionSelect, minChangePercentInput, minVolumeInput, maxAlertsInput, volumeSlider, volumeValueDisplay
+            minPriceInput,
+            maxPriceInput,
+            directionSelect,
+            minChangePercentInput,
+            minVolumeInput,
+            maxAlertsInput,
+            volumeSlider,
+            volumeValueDisplay,
         });
         return;
     }
@@ -163,7 +173,6 @@ function initializeScannerSection() {
         updateScannerSettings();
     });
 }
-
 
 function initializeTopSection() {
     if (!window.settings || !window.settings.top) {

@@ -25,9 +25,9 @@ function createSplashWindow(isDevelopment) {
 
     window.show(); // ✅ Ensure splash screen is visible
 
-    if (isDevelopment) {
-        window.webContents.openDevTools({ mode: "detach" });
-    }
+    // if (isDevelopment) {
+    //     window.webContents.openDevTools({ mode: "detach" });
+    // }
 
     return window; // ✅ Return the window instance
 }
