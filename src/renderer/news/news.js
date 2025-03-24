@@ -175,6 +175,7 @@ function getSentimentClass(headline) {
 
     if (hasBullish && !hasBearish) return "bullish-news";
     if (hasBearish && !hasBullish) return "bearish-news";
+    if (hasBearish && hasBullish) return "neutral-news";
     return "neutral-news";  // Default to neutral if neither
 }
 
