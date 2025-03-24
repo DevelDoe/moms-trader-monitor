@@ -122,7 +122,6 @@
       "biotech",
       "Clinical study",
       "Up from",
-      "Down from",
       "Biotechnology",
       "Repurchased Shares",
       "Potential Repurchases",
@@ -130,7 +129,8 @@
       "Repurchases",
       "Repurchased",
       "String phase",
-      "FDA-approved"
+      "FDA-approved",
+      "year-over-year increase"
     ],
     "bearishList": [
       "Sell Alert",
@@ -169,6 +169,6 @@
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 50,
-    "scannerVolume": 0
+    "scannerVolume": 0.7
   }
 }

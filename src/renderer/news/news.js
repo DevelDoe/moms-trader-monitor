@@ -141,6 +141,7 @@ function updateNewsList() {
     }
 
     visibleNews.forEach(article => {
+        
         const headline = decodeHTMLEntities(article.headline || "");
         const li = document.createElement("li");
         li.className = "no-drag flashing";  // Add flashing class for new items
@@ -158,6 +159,7 @@ function updateNewsList() {
 
         // Append the list item if it's not hidden
         listContainer.appendChild(li);
+        playFlash();
     });
 
     console.log("✅ News list updated!");

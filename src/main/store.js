@@ -1,7 +1,7 @@
 const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
-const { subscribeToSymbolNews, fetchHistoricalNews } = require("./collectors/news");
+const { fetchHistoricalNews, connectAlpacaNews } = require("./collectors/news");
 
 class Store extends EventEmitter {
     constructor() {
@@ -52,7 +52,7 @@ class Store extends EventEmitter {
 
         log.log(`[updateSymbols] Symbols list updated. Total symbols:`, this.symbols.size);
 
-        subscribeToSymbolNews(Array.from(this.symbols.keys()));
+        connectAlpacaNews(Array.from(this.symbols.keys()));
 
         // ✅ Fetch historical news for each symbol asynchronously
         (async () => {
