@@ -5,7 +5,7 @@ const path = require("path");
 
 function createBonusesLegendWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 850,
+        width: 300,
         height: 30,
         hasShadow: false,
         frame: false,
