@@ -9,9 +9,12 @@ function createDailyWindow(isDevelopment) {
         height: 140,
         frame: false,
         alwaysOnTop: false,
-        transparent: false,
         resizable: true,
-        hasShadow: false, // Disables window shadow
+        transparent: false,
+        hasShadow: false,
+        roundedCorners: false,
+        backgroundColor: "#00000000",
+        useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true, // Required for contextBridge

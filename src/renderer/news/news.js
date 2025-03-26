@@ -1,4 +1,3 @@
-
 let allNews = [];
 let flashedNewsKeys = new Set(); // Track flashed news
 let lastJFlashTime = 0;
@@ -43,7 +42,7 @@ function playFlash() {
     // Create a new Audio object and set the source to your custom sound file
     const audio = new Audio("./flash.wav");
 
-    audio.volume = 0.7;
+    audio.volume = 0.2;
 
     audio
         .play()
@@ -60,7 +59,6 @@ function decodeHTMLEntities(text) {
     const decodedString = parser.parseFromString(text, "text/html").body.textContent;
     return decodedString || text;
 }
-
 
 async function loadSettings() {
     try {
@@ -98,9 +96,9 @@ async function fetchNews() {
         allNews = newsData;
 
         // Apply filtering based on blocklist and allowMultiSymbols
-        let filteredNews = allNews.filter(newsItem => {
+        let filteredNews = allNews.filter((newsItem) => {
             const sanitizedHeadline = newsItem.headline.toLowerCase().trim();
-            const isBlocked = blockList.some(blockedWord => sanitizedHeadline.includes(blockedWord.toLowerCase()));
+            const isBlocked = blockList.some((blockedWord) => sanitizedHeadline.includes(blockedWord.toLowerCase()));
 
             if (isBlocked) {
                 console.log(`Blocked news: ${newsItem.headline}`);
@@ -114,8 +112,8 @@ async function fetchNews() {
         console.log("Filtered News Length:", filteredNews.length);
 
         // Add filtered items to the news queue
-        filteredNews.forEach(newsItem => {
-            if (!displayedNewsKeys.has(newsItem.id) && !newsQueue.some(item => item.id === newsItem.id)) {
+        filteredNews.forEach((newsItem) => {
+            if (!displayedNewsKeys.has(newsItem.id) && !newsQueue.some((item) => item.id === newsItem.id)) {
                 newsQueue.push(newsItem);
             }
         });
@@ -135,18 +133,20 @@ function updateNewsList() {
     console.log("📢 Rendering news list...");
 
     const listContainer = document.getElementById("news-list");
-    listContainer.innerHTML = "";  // Clear previous content
+    listContainer.innerHTML = ""; // Clear previous content
 
     // Check if the list is empty or not, if not empty, render items
     if (visibleNews.length === 0) {
         console.log("No visible news to render.");
     }
 
-    visibleNews.forEach(article => {
-        
+    visibleNews.forEach((article) => {
         const headline = decodeHTMLEntities(article.headline || "");
         const li = document.createElement("li");
-        li.className = "no-drag flashing";  // Add flashing class for new items
+        li.className = "no-drag";
+        if (!clickedNews.has(article.id)) {
+            li.classList.add("flashing");
+        }
 
         const symbolText = article.symbols ? article.symbols.join(", ") : "N/A";
         li.textContent = symbolText;
@@ -170,31 +170,30 @@ function updateNewsList() {
 // Determine sentiment (Bullish, Bearish, or Neutral)
 function getSentimentClass(headline) {
     const sanitizedHeadline = headline.toLowerCase().trim();
-    const hasBullish = bullishList.some(word => sanitizedHeadline.includes(word.toLowerCase()));
-    const hasBearish = bearishList.some(word => sanitizedHeadline.includes(word.toLowerCase()));
+    const hasBullish = bullishList.some((word) => sanitizedHeadline.includes(word.toLowerCase()));
+    const hasBearish = bearishList.some((word) => sanitizedHeadline.includes(word.toLowerCase()));
 
     if (hasBullish && !hasBearish) return "bullish-news";
     if (hasBearish && !hasBullish) return "bearish-news";
     if (hasBearish && hasBullish) return "neutral-news";
-    return "neutral-news";  // Default to neutral if neither
+    return "neutral-news"; // Default to neutral if neither
 }
 
 // Handle news item click (stop flashing, update clickedNews, shift next item)
 function handleNewsClick(article, li) {
-    li.classList.remove("flashing");  // Stop flashing on click
-    li.style.animation = "none";  // Stop animation
+    li.classList.remove("flashing"); // Stop flashing on click
+    li.style.animation = "none"; // Stop animation
 
-    // Remember clicked news item
-    clickedNews.add(article.id);
+    clickedNews.add(article.id); // Mark as clicked
 
-    // Release the current item and move the next one from the queue into visibleNews
-    stopFlashingAndReleaseItem(article, li);
+    // Just stop flashing; don’t remove unless the list is full
+    console.log(`Marked clicked: ${article.headline}`);
 }
 
 // Stop flashing and release the clicked news item
 function stopFlashingAndReleaseItem(article, li) {
     // Remove the clicked item from the visible news list
-    visibleNews = visibleNews.filter(item => item.id !== article.id);
+    visibleNews = visibleNews.filter((item) => item.id !== article.id);
 
     // Check if there are more items in the queue
     if (newsQueue.length === 0) {
@@ -205,22 +204,41 @@ function stopFlashingAndReleaseItem(article, li) {
     // If there are more items in the queue, move the next item to visibleNews
     const nextItem = newsQueue.shift();
     visibleNews.push(nextItem);
-    displayedNewsKeys.add(nextItem.id);  // Mark as displayed
+    displayedNewsKeys.add(nextItem.id); // Mark as displayed
 
-    updateNewsList();  // Re-render the list with the new item
+    updateNewsList(); // Re-render the list with the new item
     console.log(`Item released: ${article.headline}`);
 }
 
 // Update visibleNews based on the newsQueue and maxEntries
 function updateVisibleNews() {
-    const maxEntries = 4;  // Example: you can adjust the number as needed
+    const maxEntries = 4;
+
     while (visibleNews.length < maxEntries && newsQueue.length > 0) {
-        const nextItem = newsQueue.shift(); // Move item from queue to visible
+        const nextItem = newsQueue.shift();
         visibleNews.push(nextItem);
-        displayedNewsKeys.add(nextItem.id); // Mark as displayed
+        displayedNewsKeys.add(nextItem.id);
     }
 
-    // If newsQueue is empty, log it
+    // If the list is full but more items arrive, replace the oldest one that was clicked
+    while (visibleNews.length >= maxEntries && newsQueue.length > 0) {
+        // Prefer to replace items that were clicked
+        const replaceIndex = visibleNews.findIndex((item) => clickedNews.has(item.id));
+
+        if (replaceIndex !== -1) {
+            const removed = visibleNews.splice(replaceIndex, 1)[0];
+            console.log(`⛔ Replacing clicked item: ${removed.headline}`);
+        } else {
+            // If no clicked item found, remove the oldest
+            const removed = visibleNews.shift();
+            console.log(`⛔ Replacing oldest item: ${removed.headline}`);
+        }
+
+        const nextItem = newsQueue.shift();
+        visibleNews.push(nextItem);
+        displayedNewsKeys.add(nextItem.id);
+    }
+
     if (newsQueue.length === 0) {
         console.log("News queue is now empty.");
     }

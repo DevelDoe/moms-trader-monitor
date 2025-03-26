@@ -10,10 +10,13 @@ function createSplashWindow(isDevelopment) {
         height: 470,
         frame: false, 
         alwaysOnTop: true, 
-        transparent: false, 
         resizable: true,
         show: false,
-        hasShadow: false, // Disables window shadow
+        transparent: false,
+        hasShadow: false,
+        roundedCorners: false,
+        backgroundColor: "#00000000",
+        useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             nodeIntegration: false,

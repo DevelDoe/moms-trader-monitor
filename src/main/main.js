@@ -40,9 +40,9 @@ const { createSettingsWindow } = require("./windows/settings");
 const { createDailyWindow } = require("./windows/daily");
 const { createSessionWindow } = require("./windows/session");
 const { createActiveWindow } = require("./windows/active");
-const { createNewsWindow } = require("./windows/news");
+// const { createNewsWindow } = require("./windows/news");
 const { createScannerWindow } = require("./windows/scanner");
-const { createBonusesLegendWindow } = require("./windows/bonusesLegend");
+const { createInfobarWindow } = require("./windows/infobar");
 
 let windows = {};
 
@@ -548,10 +548,10 @@ tickerStore.on('new-high-price', ({ symbol, price }) => {
 });
 
 // legends
-ipcMain.on("toggle-bonuses", () => {
-    if (windows.bonusesLegend) {
-        log.log("Toggle Bonuses Legend Window");
-        windows.bonusesLegend.isVisible() ? windows.bonusesLegend.hide() : windows.bonusesLegend.show();
+ipcMain.on("toggle-infobar", () => {
+    if (windows.infobar) {
+        log.log("Toggle InfoBar Window");
+        windows.infobar.isVisible() ? windows.infobar.hide() : windows.infobar.show();
     }
 });
 
@@ -599,9 +599,9 @@ app.on("ready", async () => {
         windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
         windows.session = createWindow("session", () => createSessionWindow(isDevelopment));
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
-        windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
+        // windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
         windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
-        windows.bonusesLegend = createWindow("bonuses-legend", () => createBonusesLegendWindow(isDevelopment));
+        windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
 
         connectMTP(windows.scanner);
 

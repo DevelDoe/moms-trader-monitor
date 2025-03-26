@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     exitApp: () => ipcRenderer.send("exit-app"),
 });
 
+
 contextBridge.exposeInMainWorld("settingsAPI", {
     toggle: () => ipcRenderer.send("toggle-settings"),
     get: () => ipcRenderer.invoke("get-settings"),
@@ -57,8 +58,8 @@ contextBridge.exposeInMainWorld("scannerAPI", {
     onAlert: (callback) => ipcRenderer.on('ws-alert', (_, data) => callback(data)),
 });
 
-contextBridge.exposeInMainWorld("legendAPI", {
-    toggle: () => ipcRenderer.send("toggle-bonuses"),
+contextBridge.exposeInMainWorld("infobarAPI", {
+    toggle: () => ipcRenderer.send("toggle-infobar"),
 });
 
 

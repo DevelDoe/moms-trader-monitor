@@ -10,9 +10,12 @@ function createDockerWindow(isDevelopment) {
         height: 80,
         frame: false,
         alwaysOnTop: true,
-        transparent: true,
         resizable: true,
-        hasShadow: false, // Disables window shadow
+        transparent: true,
+        hasShadow: false,
+        roundedCorners: false,
+        backgroundColor: "#00000000",
+        useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             nodeIntegration: false,

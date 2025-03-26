@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
+    
     window.settings = await window.settingsAPI.get();
 
     window.settingsAPI.onUpdate(async (updatedSettings) => {

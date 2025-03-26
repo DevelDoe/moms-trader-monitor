@@ -9,9 +9,12 @@ function createActiveWindow(isDevelopment) {
         height: 660,
         frame: false,
         alwaysOnTop: false,
-        transparent: false,
         resizable: true,
-        hasShadow: false, // Disables window shadow
+        transparent: false,
+        hasShadow: false,
+        roundedCorners: false,
+        backgroundColor: "#00000000",
+        useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true, // Required for contextBridge
@@ -23,6 +26,8 @@ function createActiveWindow(isDevelopment) {
     window.loadFile(path.join(__dirname, "../../renderer/active/active.html"));
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
+
+    window.setOpacity(0.9);
 
     return window; // ✅ Return the window instance
 }
