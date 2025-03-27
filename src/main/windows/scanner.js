@@ -27,8 +27,8 @@ function createScannerWindow(isDevelopment) {
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
-    // Set opacity to 90%
-    window.setOpacity(0.9);
+    // // Set opacity to 90%
+    // window.setOpacity(0.9);
 
     return window; // ✅ Return the window instance
 }

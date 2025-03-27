@@ -1,7 +1,7 @@
 body {
     background-color: #1c1d23;
     color: #cdcdcd;
-    padding: 12px;
+    padding: 5px 10px;
     margin: 0 auto;
     font-size: 14px;
 }
@@ -13,10 +13,15 @@ body {
     color: white;
 }
 
+#symbol {
+    padding-top: 0;
+    margin-top: 5px;
+}
+
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 37vw !important; /* ✅ Keeps it small */
-    height: 37vw !important;
+    width: 35w !important; /* ✅ Keeps it small */
+    height: 35vw !important;
     margin-left: 10px;
 }
 
@@ -30,6 +35,7 @@ body {
 .data-column {
     flex: 1; /* Takes up 50% of the available space */
     max-width: 50%; /* Ensures it doesn't grow beyond half */
+    font-size: 12px;
 }
 
 .chart-column {
@@ -55,7 +61,7 @@ body {
     font-size: 15px;
 
     /* ✅ Fixed height with scrolling */
-    height: 20vw;
+    height: 10vw;
     overflow-y: auto;
 
     /* ✅ Hide scrollbar in Chrome/Electron */
@@ -68,8 +74,8 @@ body {
 
 /* ✅ Gradient fade effect at the bottom */
 .about {
-    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0));
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0));
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 100%, rgba(0, 0, 0, 0));
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 100%, rgba(0, 0, 0, 0));
 }
 
 .about::-webkit-scrollbar {
@@ -104,9 +110,95 @@ body {
     padding: 20px;
     font-size: 18px;
     color: #888;
-    height: 200vw;
+    height: 100vw;
 }
 
 .no-active-symbol.visible {
     display: block; /* Show when no symbol is active */
+}
+
+
+/*  CSS for sliding hover effect */
+
+.tab-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.tab-wrapper.visible {
+    transform: translateY(0);
+}
+
+.tab {
+    background-color: #111;
+    display: flex;
+    gap: 8px;
+    padding: 5px 10px;
+    border-bottom: 1px solid #444;
+}
+
+/* News styling */
+
+.news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 10px;
+}
+
+.news-item {
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background-color: #1e1e1e;
+}
+
+.news-item h5 {
+    margin: 0 0 5px;
+    font-size: 1em;
+}
+
+.news-item p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #ccc;
+}
+
+
+/* latest news on summ  */
+
+#latest-news {
+    display: flex;
+    align-items: center;         /* Vertically center the content */
+    gap: 8px;
+    padding: 6px 10px;
+    margin-top: 10px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background-color: #1e1e1e;
+    font-size: 14px;
+    line-height: 1.3;
+    max-height: 60px;
+    overflow: hidden;
+}
+
+#latest-news strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: inline-block;
+    font-weight: 600;
+}
+
+#latest-news p {
+    margin: 0;
+    color: #aaa;
+    font-size: 12px;
+    display: none; /* optional: hide summary to keep it compact */
 }

@@ -4,6 +4,15 @@ window.ownershipCharts = {};
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
+    // Load settings globally
+    try {
+        window.settings = await window.settingsAPI.get();
+        console.log("✅ Settings loaded in active window:", window.settings);
+    } catch (e) {
+        console.warn("⚠️ Failed to load settings in active window:", e);
+        window.settings = {}; // fallback
+    }
+
     // Initialize UI with no symbol data
     updateUI(null); // Show "No active symbol" placeholder
 
@@ -27,7 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const tabId = defaultTab.dataset.tabId; // Use dataset to get the tab ID
             if (tabId) {
                 openTab(null, tabId); // Open the default tab
-            } 
+            }
         } else {
             const firstTab = document.querySelector(".tablinks");
             if (firstTab) {
@@ -39,6 +48,28 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
         }
+
+        const appContainer = document.getElementById("app-container");
+        const tabWrapper = document.querySelector(".tab-wrapper");
+
+        let hideTimeout;
+
+        const showTab = () => {
+            clearTimeout(hideTimeout);
+            tabWrapper.classList.add("visible");
+        };
+
+        const scheduleHide = () => {
+            hideTimeout = setTimeout(() => {
+                tabWrapper.classList.remove("visible");
+            }, 2000);
+        };
+
+        // Make tab bar stay visible when hovering anywhere over app or the tab itself
+        [appContainer, tabWrapper].forEach((el) => {
+            el.addEventListener("mouseenter", showTab);
+            el.addEventListener("mouseleave", scheduleHide);
+        });
     } catch (error) {
         console.error("❌ Initialization error:", error);
     }
@@ -74,13 +105,13 @@ function updateUI(symbolData) {
         console.log("No symbol data found. Showing placeholder.");
         noActiveSymbolElement.classList.add("visible");
 
-        tabs.forEach((el) => el.style.display = "none");
+        tabs.forEach((el) => (el.style.display = "none"));
         return;
     }
 
     // Hide placeholder & show tabs
     noActiveSymbolElement.classList.remove("visible");
-    tabs.forEach((el) => el.style.display = "");
+    tabs.forEach((el) => (el.style.display = ""));
 
     console.log(`[active.js] Updating UI for symbol: ${symbolData.symbol}`);
     console.log("symbolData:", symbolData);
@@ -128,7 +159,7 @@ function updateUI(symbolData) {
     // Ownership & Float Check
     const sharesOutstanding = symbolData.statistics?.sharesOutstanding ?? 0;
     const floatShares = symbolData.statistics?.floatShares ?? 0;
-    
+
     const dataIsCorrupted = floatShares > sharesOutstanding * 1.05; // Lower tolerance
 
     document.getElementById("data-warning").style.display = dataIsCorrupted ? "block" : "none";
@@ -143,15 +174,9 @@ function updateUI(symbolData) {
     const institutionsHeld = Math.round(sharesOutstanding * (symbolData.ownership?.institutionsPercentHeld || 0));
     const sharesShort = symbolData.statistics?.sharesShort ?? 0;
 
-    const remainingShares = Math.max(
-        sharesOutstanding - Math.min(floatShares + insidersHeld + institutionsHeld, sharesOutstanding),
-        0
-    );
+    const remainingShares = Math.max(sharesOutstanding - Math.min(floatShares + insidersHeld + institutionsHeld, sharesOutstanding), 0);
 
-    const formatWithPercentage = (value, total) => 
-        !Number.isFinite(value) ? `N/A (0.00%)` :
-        total === 0 ? `0 (0.00%)` :
-        `${formatLargeNumber(value)} (${((value / total) * 100).toFixed(2)}%)`;
+    const formatWithPercentage = (value, total) => (!Number.isFinite(value) ? `N/A (0.00%)` : total === 0 ? `0 (0.00%)` : `${formatLargeNumber(value)} (${((value / total) * 100).toFixed(2)}%)`);
 
     setText("statistics-sharesOutstanding", formatLargeNumber(sharesOutstanding));
     setText("statistics-float", formatWithPercentage(floatShares, sharesOutstanding));
@@ -160,10 +185,62 @@ function updateUI(symbolData) {
     setText("statistics-sharesShort", formatWithPercentage(sharesShort, floatShares));
     setText("statistics-remainingShares", formatWithPercentage(remainingShares, sharesOutstanding));
 
+    // News
+    const newsContainer = document.getElementById("news-container");
+    newsContainer.innerHTML = ""; // Clear previous content
+
+    const blockList = window.settings?.news?.blockList || [];
+    const filteredNews = (Array.isArray(symbolData.News) ? symbolData.News : []).filter((newsItem) => {
+        const headline = newsItem.headline || "";
+        return !blockList.some((blocked) => headline.toLowerCase().includes(blocked.toLowerCase()));
+    });
+
+    if (filteredNews.length === 0) {
+        newsContainer.innerHTML = "<p>No recent news available</p>";
+    } else {
+        filteredNews.forEach((newsItem) => {
+            const itemDiv = document.createElement("div");
+            itemDiv.className = "news-item";
+
+            itemDiv.innerHTML = `
+            <h5>${newsItem.headline || "Untitled"}</h5>
+            <p>${newsItem.summary || ""}</p>
+        `;
+
+            newsContainer.appendChild(itemDiv);
+        });
+    }
+
+    // Show only the latest news item in #latest-news
+    const latestNewsDiv = document.getElementById("latest-news");
+    latestNewsDiv.innerHTML = ""; // Clear existing
+
+    function truncateString(str, maxLength) {
+        if (typeof str !== "string") return "";
+        return str.length > maxLength ? str.slice(0, maxLength) + "…" : str;
+    }
+
+    if (filteredNews.length > 0) {
+        // Sort by created_at to get the newest one first
+        const sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const latest = sortedNews[0];
+
+        const latestDiv = document.createElement("div");
+        latestDiv.className = "latest-news-item";
+
+        latestDiv.innerHTML = `
+        <strong>📰 ${truncateString(latest.headline || "Untitled", 55)}</strong>
+        <p>${latest.summary || ""}</p>
+    `;
+
+        latestNewsDiv.appendChild(latestDiv);
+    } else {
+        latestNewsDiv.innerHTML = "<p>No recent news</p>";
+    }
+
     renderOwnershipChart(symbolData, "ownershipChart-summary");
     renderOwnershipChart(symbolData, "ownershipChart-stats");
 }
-
 
 /**
  * Updates the text content of an element by ID.
@@ -180,7 +257,7 @@ function setText(id, value) {
  * @returns {string} - Formatted number.
  */
 function formatLargeNumber(value) {
-    if (value == null || isNaN(value)) return "N/A";  // Allow 0 but reject NaN/null
+    if (value == null || isNaN(value)) return "N/A"; // Allow 0 but reject NaN/null
     const num = Number(value);
     if (num === 0) return "0"; // Ensure 0 is explicitly displayed as "0"
     if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
@@ -188,7 +265,6 @@ function formatLargeNumber(value) {
     if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
     return num.toLocaleString();
 }
-
 
 /**
  * Formats a date string into a readable format.
@@ -210,7 +286,6 @@ function formatPercentage(value) {
     if (value == null || isNaN(value)) return "N/A";
     return (value * 100).toFixed(2) + "%";
 }
-
 
 /**
  * Handles tab switching logic.
@@ -330,7 +405,7 @@ function renderOwnershipChart(symbolData, chartId) {
                     data: floatBreakdown,
                     backgroundColor: [
                         "#1E90FF", // 🔵 Float (excluding short)
-                        "#FFFF00", // 🟡 Shorted Shares 
+                        "#FFFF00", // 🟡 Shorted Shares
                     ],
                     borderColor: "#1c1d23", // ⚪ Keep borders white for better separation
                     borderWidth: 1, // ✅ Reduced width

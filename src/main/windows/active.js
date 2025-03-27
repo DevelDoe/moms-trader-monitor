@@ -27,8 +27,6 @@ function createActiveWindow(isDevelopment) {
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
-    window.setOpacity(0.9);
-
     return window; // ✅ Return the window instance
 }
 

@@ -19,7 +19,7 @@ class Store extends EventEmitter {
     }
 
     updateSymbols(symbolList) {
-        // 🔥 Clear old symbols 
+        // 🔥 Clear old symbols
         this.symbols.clear();
 
         this.symbols = new Map(
@@ -177,67 +177,83 @@ class Store extends EventEmitter {
     attachNews(symbol) {
         log.log(`[attachNews] Checking for news for symbol: ${symbol}`);
         const newsItems = this.newsList.filter((news) => news.symbols.includes(symbol));
-
+    
         newsItems.forEach((newsItem) => {
-            // Add news to dailyData if not already present
-            let ticker = this.dailyData.get(symbol) || {};
-            ticker.News = ticker.News || [];
-            if (!ticker.News.some((existingNews) => existingNews.id === newsItem.id)) {
-                ticker.News.push(newsItem);
-                this.dailyData.set(symbol, ticker);
+            // ✅ Only modify if symbol exists in dailyData
+            if (this.dailyData.has(symbol)) {
+                let ticker = this.dailyData.get(symbol);
+                ticker.News = ticker.News || [];
+                if (!ticker.News.some((n) => n.id === newsItem.id)) {
+                    ticker.News.push(newsItem);
+                    this.dailyData.set(symbol, ticker);
+                }
             }
-
-            // Add news to sessionData if available
+    
+            // ✅ Only modify if exists in sessionData
             if (this.sessionData.has(symbol)) {
                 let sessionTicker = this.sessionData.get(symbol);
                 sessionTicker.News = sessionTicker.News || [];
-                if (!sessionTicker.News.some((existingNews) => existingNews.id === newsItem.id)) {
+                if (!sessionTicker.News.some((n) => n.id === newsItem.id)) {
                     sessionTicker.News.push(newsItem);
                     this.sessionData.set(symbol, sessionTicker);
                 }
             }
+    
+            // ✅ Only modify if exists in symbols
+            if (this.symbols.has(symbol)) {
+                let symbolTicker = this.symbols.get(symbol);
+                symbolTicker.News = symbolTicker.News || [];
+                if (!symbolTicker.News.some((n) => n.id === newsItem.id)) {
+                    symbolTicker.News.push(newsItem);
+                    this.symbols.set(symbol, symbolTicker);
+                }
+            }
         });
     }
+    
 
     addNews(newsItems, symbol) {
         log.log(`[addNews] called for ${symbol}`);
 
-        // Add timestamp to each news item
         const timestampedNews = newsItems.map((news) => ({
             ...news,
             storedAt: Date.now(),
             symbols: Array.isArray(news.symbols) ? news.symbols : [],
         }));
 
-        // ✅ Store all news globally in `newsList`
         this.newsList.push(...timestampedNews);
 
-        // Process news items and attach them to dailyData and sessionData if not already present
         timestampedNews.forEach((newsItem) => {
             if (newsItem.symbols.includes(symbol)) {
-                // Check for duplicate news in dailyData
-                let ticker = this.dailyData.get(symbol) || {};
-                ticker.News = ticker.News || [];
-
-                if (!ticker.News.some((existingNews) => existingNews.id === newsItem.id)) {
-                    ticker.News.push(newsItem); // Add unique news to dailyData
-                    this.dailyData.set(symbol, ticker);
+                // ✅ Only mutate if symbol already exists in dailyData
+                const dailyTicker = this.dailyData.get(symbol);
+                if (dailyTicker) {
+                    dailyTicker.News = dailyTicker.News || [];
+                    if (!dailyTicker.News.some((existingNews) => existingNews.id === newsItem.id)) {
+                        dailyTicker.News.push(newsItem);
+                    }
                 }
 
-                // Check for duplicate news in sessionData
-                if (this.sessionData.has(symbol)) {
-                    let sessionTicker = this.sessionData.get(symbol);
+                // ✅ Same for sessionData
+                const sessionTicker = this.sessionData.get(symbol);
+                if (sessionTicker) {
                     sessionTicker.News = sessionTicker.News || [];
-
                     if (!sessionTicker.News.some((existingNews) => existingNews.id === newsItem.id)) {
-                        sessionTicker.News.push(newsItem); // Add unique news to sessionData
-                        this.sessionData.set(symbol, sessionTicker);
+                        sessionTicker.News.push(newsItem);
                     }
                 }
             }
+
+            // ✅ Only attach to existing tickers — don't create new ones accidentally
+            newsItem.symbols.forEach((sym) => {
+                if (this.dailyData.has(sym) || this.sessionData.has(sym) || this.symbols.has(sym)) {
+                    this.attachNews(sym);
+                } else {
+                    log.debug(`[addNews] Skipping symbol '${sym}' — not found in store`);
+                }
+            });
         });
 
-        // Emit event after adding news
         this.emit("newsUpdated", { newsItems: timestampedNews });
     }
 

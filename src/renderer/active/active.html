@@ -9,109 +9,123 @@
         <link rel="stylesheet" href="../styles.css" />
         <link rel="stylesheet" href="./active.css" />
     </head>
-    <body class="draggable">
-        <div class="settings-container">
-            <!-- "No active symbol" placeholder -->
-            <div id="no-active-symbol" class="no-active-symbol">
-                <p>No active symbol</p>
-            </div>
-
-            <div class="tab">
-                <button class="tablinks active no-drag" onclick="openTab(event, 'summary')">Summary</button>
-                <button class="tablinks no-drag" onclick="openTab(event, 'profile')">Profile</button>
-                <button class="tablinks no-drag" onclick="openTab(event, 'statistics')">Statistics</button>
-                <button class="tablinks no-drag" onclick="openTab(event, 'financials')">Financials</button>
-                <button class="tablinks no-drag" onclick="openTab(event, 'ownership')">Ownership</button>
-                <button class="tablinks no-drag" onclick="openTab(event, 'historical')">Historical</button>
-            </div>
-
-            <!-- Summary -->
-            <div id="summary" class="tabcontent active">
-                <p><span data-id="symbol"></span> - <span data-id="industry"></span>, <span data-id="profile-country"></span></p>
-
-                <div id="data-warning" style="color: #f44336; display: none; margin-bottom: 10px">⚠️ Unable to provide accurate float data due to corrupted data source.</div>
-                <section id="section-float" class="two-column-layout">
-                    <div class="data-column no-drag">
-                        <p><strong title="Total Shares Outstanding">Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
-                        <p><strong title="🔵 Public Float">🔵 Float:</strong> <span data-id="statistics-float"></span></p>
-                        <p><strong title="🟡 Total Shorted Shares">🟡 Short:</strong><span data-id="statistics-sharesShort"></span></p>
-                        <p><strong title="🔴 Held by Insiders">🔴 Inside:</strong> <span data-id="statistics-insidersHeld"></span></p>
-                        <p><strong title="🟠 Held by Institutions">🟠 Insti:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
-                        <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remain:</strong> <span data-id="statistics-remainingShares"></span></p>
-                    </div>
-                    <div class="chart-column">
-                        <div class="chart-container">
-                            <canvas id="ownershipChart-summary" class="no-drag"></canvas>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="about" >
-                    <div class="no-drag" data-id="profile-longBusinessSummary"></div>
+    <body >
+        <div id="app-container">
+            <div class="tab-wrapper ">
+                <div class="tab">
+                    <button class="tablinks active " onclick="openTab(event, 'summary')">Summary</button>
+                    <button class="tablinks " onclick="openTab(event, 'profile')">Profile</button>
+                    <button class="tablinks " onclick="openTab(event, 'news')">News</button>
+                    <button class="tablinks no-drag" onclick="openTab(event, 'statistics')">Statistics</button>
+                    <button class="tablinks no-drag" onclick="openTab(event, 'financials')">Financials</button>
+                    <button class="tablinks no-drag" onclick="openTab(event, 'ownership')">Ownership</button>
+                    <button class="tablinks no-drag" onclick="openTab(event, 'historical')">Historical</button>
                 </div>
             </div>
 
-            <!-- Profile -->
-            <div id="profile" class="tabcontent">
-                <p><strong>Symbol:</strong> <span data-id="symbol"></span></p>
-                <p><strong>Company Name:</strong> <span data-id="profile-companyName"></span></p>
-                <p><strong>Website:</strong> <span data-id="profile-website"></span></p>
-                <p><strong>Sector:</strong> <span data-id="profile-sector"></span></p>
-                <p><strong>Industry:</strong> <span data-id="profile-industry"></span></p>
-                <p><strong>Exchange:</strong> <span data-id="profile-exchange"></span></p>
-                <div data-id="profile-longBusinessSummary" class="about no-drag"></div>
+            <div id="no-active-symbol" class="no-active-symbol draggable">
+                <p>No active symbol</p>
             </div>
 
-            <!-- Statistics -->
-            <div id="statistics" class="tabcontent">
-                <p><strong>Market Cap:</strong> <span data-id="statistics-marketCap"></span></p>
-                <p>
-                    <strong title="Beta (β) is a measure of volatility that indicates how much a stock's price moves relative to the overall market">Beta:</strong>
-                    <span data-id="statistics-beta"></span>
-                </p>
+            <div class="settings-container no-drag">
+                <!-- Summary -->
+                <div id="summary" class="tabcontent active">
+                    <p id="symbol"><span data-id="symbol"></span> - <span data-id="industry"></span>, <span data-id="profile-country"></span></p>
 
-                <div id="data-warning" style="color: #f44336; display: none; margin-bottom: 10px">⚠️ Unable to provide accurate float data due to corrupted data source.</div>
-                <section id="section-float" class="two-column-layout">
-                    <div class="data-column no-drag">
-                        <p><strong title="Total Shares Outstanding">Shares Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
-                        <p><strong title="🔵 Public Float">🔵 Float:</strong> <span data-id="statistics-float"></span></p>
-                        <p><strong title="🟡 Total Shorted Shares">🟡 Shorted:</strong><span data-id="statistics-sharesShort"></span></p>
-                        <p><strong title="🔴Held by Insiders">🔴 Insiders:</strong> <span data-id="statistics-insidersHeld"></span></p>
-                        <p><strong title="🟠 Held by Institutions">🟠 Institutions:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
-                        <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remaining:</strong> <span data-id="statistics-remainingShares"></span></p>
-                    </div>
-                    <div class="chart-column">
-                        <div class="chart-container">
-                            <canvas id="ownershipChart-stats" class="no-drag"></canvas>
+                    <div id="data-warning" style="color: #f44336; display: none; margin-bottom: 10px">⚠️ Unable to provide accurate float data due to corrupted data source.</div>
+                    <section id="section-float" class="two-column-layout">
+                        <div class="data-column no-drag">
+                            <p><strong title="Total Shares Outstanding">Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
+                            <p><strong title="🔵 Public Float">🔵 Float:</strong> <span data-id="statistics-float"></span></p>
+                            <p><strong title="🟡 Total Shorted Shares">🟡 Short:</strong><span data-id="statistics-sharesShort"></span></p>
+                            <p><strong title="🔴 Held by Insiders">🔴 Inside:</strong> <span data-id="statistics-insidersHeld"></span></p>
+                            <p><strong title="🟠 Held by Institutions">🟠 Insti:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
+                            <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remain:</strong> <span data-id="statistics-remainingShares"></span></p>
                         </div>
+                        <div class="chart-column">
+                            <div class="chart-container">
+                                <canvas id="ownershipChart-summary" class="no-drag"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="about">
+                        <div class="no-drag" data-id="profile-longBusinessSummary"></div>
                     </div>
-                </section>
-            </div>
 
-            <!-- Financials -->
-            <div id="financials" class="tabcontent">
-                <p>
-                    <strong title="Net income represents the profit a company makes after subtracting all expenses, taxes, interest, and other costs from its total revenue.">Net Income:</strong>
-                    <span data-id="financials-netIncome"></span>
-                </p>
-            </div>
+                    <div id="latest-news"></div>
+                </div>
 
-            <!-- Ownership -->
-            <div id="ownership" class="tabcontent">
-                <p><strong> Shares Held by All Insider:</strong> <span data-id="ownership-insidersPercentHeld"></span></p>
-                <p><strong> Shares Held by Institutions:</strong> <span data-id="ownership-institutionsFloatPercentHeld"></span></p>
-                <p><strong> Float Held by Institutions:</strong> <span data-id="ownership-institutionsPercentHeld"></span></p>
-            </div>
+                <!-- News -->
+                <div id="news" class="tabcontent">
+                    <h4>Latest News</h4>
+                    <div id="news-container" class="news-list no-drag">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
 
-            <!-- Historical -->
-            <div id="historical" class="tabcontent">
-                <h4>Latest Price</h4>
-                <p><strong>Date:</strong> <span data-id="historical-price-date"></span></p>
-                <p><strong>Value:</strong> <span data-id="historical-price-value"></span></p>
+                <!-- Profile -->
+                <div id="profile" class="tabcontent">
+                    <p><strong>Symbol:</strong> <span data-id="symbol"></span></p>
+                    <p><strong>Company Name:</strong> <span data-id="profile-companyName"></span></p>
+                    <p><strong>Website:</strong> <span data-id="profile-website"></span></p>
+                    <p><strong>Sector:</strong> <span data-id="profile-sector"></span></p>
+                    <p><strong>Industry:</strong> <span data-id="profile-industry"></span></p>
+                    <p><strong>Exchange:</strong> <span data-id="profile-exchange"></span></p>
+                    <div data-id="profile-longBusinessSummary" class="about no-drag"></div>
+                </div>
 
-                <h4>Latest Volume</h4>
-                <p><strong>Date:</strong> <span data-id="historical-volume-date"></span></p>
-                <p><strong>Value:</strong> <span data-id="historical-volume-value"></span></p>
+                <!-- Statistics -->
+                <div id="statistics" class="tabcontent">
+                    <p><strong>Market Cap:</strong> <span data-id="statistics-marketCap"></span></p>
+                    <p>
+                        <strong title="Beta (β) is a measure of volatility that indicates how much a stock's price moves relative to the overall market">Beta:</strong>
+                        <span data-id="statistics-beta"></span>
+                    </p>
+
+                    <div id="data-warning" style="color: #f44336; display: none; margin-bottom: 10px">⚠️ Unable to provide accurate float data due to corrupted data source.</div>
+                    <section id="section-float" class="two-column-layout">
+                        <div class="data-column no-drag">
+                            <p><strong title="Total Shares Outstanding">Shares Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
+                            <p><strong title="🔵 Public Float">🔵 Float:</strong> <span data-id="statistics-float"></span></p>
+                            <p><strong title="🟡 Total Shorted Shares">🟡 Shorted:</strong><span data-id="statistics-sharesShort"></span></p>
+                            <p><strong title="🔴Held by Insiders">🔴 Insiders:</strong> <span data-id="statistics-insidersHeld"></span></p>
+                            <p><strong title="🟠 Held by Institutions">🟠 Institutions:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
+                            <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remaining:</strong> <span data-id="statistics-remainingShares"></span></p>
+                        </div>
+                        <div class="chart-column">
+                            <div class="chart-container">
+                                <canvas id="ownershipChart-stats" class="no-drag"></canvas>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Financials -->
+                <div id="financials" class="tabcontent">
+                    <p>
+                        <strong title="Net income represents the profit a company makes after subtracting all expenses, taxes, interest, and other costs from its total revenue.">Net Income:</strong>
+                        <span data-id="financials-netIncome"></span>
+                    </p>
+                </div>
+
+                <!-- Ownership -->
+                <div id="ownership" class="tabcontent">
+                    <p><strong> Shares Held by All Insider:</strong> <span data-id="ownership-insidersPercentHeld"></span></p>
+                    <p><strong> Shares Held by Institutions:</strong> <span data-id="ownership-institutionsFloatPercentHeld"></span></p>
+                    <p><strong> Float Held by Institutions:</strong> <span data-id="ownership-institutionsPercentHeld"></span></p>
+                </div>
+
+                <!-- Historical -->
+                <div id="historical" class="tabcontent">
+                    <h4>Latest Price</h4>
+                    <p><strong>Date:</strong> <span data-id="historical-price-date"></span></p>
+                    <p><strong>Value:</strong> <span data-id="historical-price-value"></span></p>
+
+                    <h4>Latest Volume</h4>
+                    <p><strong>Date:</strong> <span data-id="historical-volume-date"></span></p>
+                    <p><strong>Value:</strong> <span data-id="historical-volume-value"></span></p>
+                </div>
             </div>
         </div>
 

@@ -222,6 +222,7 @@ function updateTickersList(tickers, listId, prevTickers) {
             if (key === "Symbol") {
                 span.textContent = ticker[key];
                 span.classList.add("symbol");
+                span.classList.add("no-drag");
                 span.style.cursor = "pointer";
                 span.style.backgroundColor = getSymbolColor(ticker[key]);
                 span.title = "A ticker symbol is a short, unique identifier for a publicly traded company.";

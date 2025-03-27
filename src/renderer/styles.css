@@ -13,7 +13,6 @@ body {
     font-size: 10px;
     background-color: #1c1d23; 
     min-height: 40px;
-    -webkit-app-region: drag;
 }
 
 body::-webkit-scrollbar {

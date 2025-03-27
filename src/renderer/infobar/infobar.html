@@ -204,7 +204,7 @@
                         const type = getSentimentClass(newsItem.headline);
 
                         // Truncate headline to 90 characters
-                        const maxLength = 90;
+                        const maxLength = 110;
                         let truncated = newsItem.headline;
                         if (truncated.length > maxLength) {
                             truncated = truncated.slice(0, maxLength - 1).trimEnd() + "…";
@@ -298,9 +298,9 @@
                     li.addEventListener("animationend", cleanup, { once: true });
                 });
 
-                // setTimeout(() => {
-                //     li.click();
-                // }, 30000);
+                setTimeout(() => {
+                    li.click();
+                }, 30000);
             }
 
             function queueNewsItem(desc, id = null, type = "neutral") {
@@ -369,7 +369,7 @@
                 { icon: "🧬", desc: "Biotechnology stock" },
                 { icon: "🌿", desc: "Cannabis stock" },
                 { icon: "🌌", desc: "Space industry stock" },
-                { icon: "🇨🇳 & 🇭🇰", desc: "China-based company" },
+                { icon: "🇨🇳/🇭🇰", desc: "China-based company" },
                 { icon: "🩳", desc: "High short interest (more than 20% of float)" },
                 { icon: "🥅", desc: "Company is currently running at a net loss" },
                 { icon: "📂", desc: "Registered S-3 filing" },
