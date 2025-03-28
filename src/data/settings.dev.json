@@ -1,9 +1,9 @@
 {
   "top": {
-    "minPrice": 1.75,
+    "minPrice": 0,
     "maxPrice": 0,
     "minFloat": 0,
-    "maxFloat": 200000000,
+    "maxFloat": 0,
     "minScore": 0,
     "maxScore": 0,
     "minVolume": 0,
@@ -62,7 +62,11 @@
       "shares resumed",
       "String phase",
       "Stock is skyrocketing",
-      "Stocks Moving"
+      "Stocks Moving",
+      "Shares Surge",
+      "Nasdaq down",
+      "Gains over",
+      "Nasdaq Gains"
     ],
     "bullishList": [
       "FDA Approves",
@@ -163,12 +167,12 @@
     "allowMultiSymbols": false
   },
   "scanner": {
-    "minPrice": 1.75,
-    "maxPrice": 10,
+    "minPrice": 0,
+    "maxPrice": 0,
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 50,
-    "scannerVolume": 1
+    "scannerVolume": 0
   }
 }
