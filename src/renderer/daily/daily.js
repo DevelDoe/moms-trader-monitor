@@ -231,6 +231,7 @@ function updateTickersList(tickers, listId, prevTickers) {
             } else if (key === "Score") {
                 span.textContent = ticker[key];
                 span.classList.add("Score-tooltip");
+                span.classList.add("no-drag");
                 span.title = getScoreBreakdown(ticker);
             } else if (key === "Bonuses") {
                 span.innerHTML = getBonusesHTML(ticker);

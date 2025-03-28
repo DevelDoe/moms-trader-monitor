@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 0,
+    "minPrice": 1.75,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -14,20 +14,18 @@
         "alertChangePercent": false,
         "cumulativeUpChange": false,
         "cumulativeDownChange": false,
-        "Score": true,
-        "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": false
+        "fiveMinVolume": false,
+        "Score": false,
+        "Bonuses": true
       },
       "daily": {
         "Price": false,
         "alertChangePercent": false,
         "cumulativeUpChange": false,
         "cumulativeDownChange": false,
-        "Score": true,
-        "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": false
+        "fiveMinVolume": false,
+        "Score": false,
+        "Bonuses": true
       }
     },
     "transparent": false,
@@ -66,7 +64,11 @@
       "Shares Surge",
       "Nasdaq down",
       "Gains over",
-      "Nasdaq Gains"
+      "Nasdaq Gains",
+      "Skyrocketing",
+      "Down tumbles",
+      "Down Tumbles",
+      "dow tumbles over"
     ],
     "bullishList": [
       "FDA Approves",
@@ -173,6 +175,6 @@
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 50,
-    "scannerVolume": 0
+    "scannerVolume": 0.7
   }
 }

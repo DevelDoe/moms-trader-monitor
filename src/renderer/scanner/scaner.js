@@ -1,6 +1,9 @@
 document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
 
+    const magicDustAudio = new Audio("./magic.mp3");
+    magicDustAudio.volume = 0.5; // tweak to taste
+
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
         window.settings = updatedSettings;
@@ -44,10 +47,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function createAlertElement(alertData) {
-        const { symbol, price, change_percent, direction } = alertData;
-        const percent = direction === "DOWN" ? -change_percent : change_percent;
+        const { symbol, price, change_percent = 0, direction = "", volume = 0, type = "" } = alertData;
 
         const alertDiv = document.createElement("li");
+
+        if (type === "new-high-price") {
+            alertDiv.className = "alert new-high";
+
+            const symbolSpan = document.createElement("span");
+            symbolSpan.className = "alert-symbol no-drag";
+            symbolSpan.textContent = symbol;
+            symbolSpan.style.backgroundColor = getSymbolColor(symbol);
+            symbolSpan.style.cursor = "pointer";
+            symbolSpan.title = "Click to copy and set active ticker";
+
+            symbolSpan.addEventListener("click", () => {
+                navigator.clipboard.writeText(symbol);
+                console.log(`📋 Copied ${symbol} to clipboard!`);
+                window.activeAPI.setActiveTicker(symbol);
+            });
+
+            const contentDiv = document.createElement("div");
+            contentDiv.className = "alert-content";
+
+            const valuesDiv = document.createElement("div");
+            valuesDiv.className = "alert-values";
+            valuesDiv.innerHTML = `<span>$${price.toFixed(2)}</span><span>🔔 New High</span>`;
+
+            contentDiv.appendChild(valuesDiv);
+            alertDiv.appendChild(symbolSpan);
+            alertDiv.appendChild(contentDiv);
+
+            magicDustAudio.currentTime = 0;
+            magicDustAudio.play();
+
+            return alertDiv;
+        }
+
+        const percent = direction === "DOWN" ? -change_percent : change_percent;
         alertDiv.className = `alert ${direction.toLowerCase()}`;
 
         const symbolSpan = document.createElement("span");
@@ -96,6 +133,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         alertDiv.appendChild(symbolSpan);
         alertDiv.appendChild(contentDiv);
+
+        // Apply blinking effect only if the direction is UP (upticks)
+        if (direction === "UP" && volume > 300000) {
+            alertDiv.classList.add("blinking-alert"); // Add the blinking class for high volume
+        }
+
+        if (volume < 100000 || direction === "DOWN") {
+            alertDiv.classList.add("low");
+        }
 
         return alertDiv;
     }

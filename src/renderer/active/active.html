@@ -30,7 +30,10 @@
             <div class="settings-container no-drag">
                 <!-- Summary -->
                 <div id="summary" class="tabcontent active">
-                    <p id="symbol"><span data-id="symbol"></span> - <span data-id="industry"></span>, <span data-id="profile-country"></span></p>
+                    <p id="symbol">
+                        <input id="symbol-input" class="editable-symbol" type="text" spellcheck="false" />
+                        - <span data-id="industry"></span>, <span data-id="profile-country"></span>
+                    </p>
 
                     <div id="data-warning" style="color: #f44336; display: none; margin-bottom: 10px">⚠️ Unable to provide accurate float data due to corrupted data source.</div>
                     <section id="section-float" class="two-column-layout">
@@ -53,7 +56,7 @@
                         <div class="no-drag" data-id="profile-longBusinessSummary"></div>
                     </div>
 
-                    <div id="latest-news"></div>
+                    <div id="latest-news" style="display: none;"></div>
                 </div>
 
                 <!-- News -->

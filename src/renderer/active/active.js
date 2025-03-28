@@ -127,7 +127,7 @@ function updateUI(symbolData) {
 
     // Profile
     setText("profile-companyName", symbolData.profile?.companyName || "N/A");
-    setText("profile-longBusinessSummary", symbolData.profile?.longBusinessSummary || "N/A");
+    setText("profile-longBusinessSummary", symbolData.profile?.longBusinessSummary || "");
     setText("profile-website", symbolData.profile?.website || "N/A");
     setText("profile-sector", symbolData.profile?.sector || "N/A");
     setText("profile-industry", symbolData.profile?.industry || "N/A");
@@ -185,14 +185,39 @@ function updateUI(symbolData) {
     setText("statistics-sharesShort", formatWithPercentage(sharesShort, floatShares));
     setText("statistics-remainingShares", formatWithPercentage(remainingShares, sharesOutstanding));
 
+    // User set symbol input
+    const symbolInput = document.getElementById("symbol-input");
+    if (symbolInput) {
+        symbolInput.value = symbolData.symbol;
+
+        // Handle user setting a new symbol
+        symbolInput.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                const newSymbol = symbolInput.value.trim().toUpperCase();
+                if (newSymbol && newSymbol !== symbolData.symbol) {
+                    window.activeAPI.setActiveTicker(newSymbol);
+                }
+                symbolInput.blur();
+            }
+        };
+    }
+
     // News
     const newsContainer = document.getElementById("news-container");
     newsContainer.innerHTML = ""; // Clear previous content
 
     const blockList = window.settings?.news?.blockList || [];
+    // Log what would be blocked
+    (symbolData.News || []).forEach((newsItem) => {
+        const headline = sanitize(newsItem.headline || "");
+        const match = blockList.find((b) => headline.includes(sanitize(b)));
+        if (match) {
+            console.log(`🚫 Blocked by "${match}":`, newsItem.headline);
+        }
+    });
     const filteredNews = (Array.isArray(symbolData.News) ? symbolData.News : []).filter((newsItem) => {
-        const headline = newsItem.headline || "";
-        return !blockList.some((blocked) => headline.toLowerCase().includes(blocked.toLowerCase()));
+        const headline = sanitize(newsItem.headline || "");
+        return !blockList.some((blocked) => headline.includes(sanitize(blocked)));
     });
 
     if (filteredNews.length === 0) {
@@ -211,7 +236,6 @@ function updateUI(symbolData) {
         });
     }
 
-    // Show only the latest news item in #latest-news
     const latestNewsDiv = document.getElementById("latest-news");
     latestNewsDiv.innerHTML = ""; // Clear existing
 
@@ -221,13 +245,13 @@ function updateUI(symbolData) {
     }
 
     if (filteredNews.length > 0) {
-        // Sort by created_at to get the newest one first
+        latestNewsDiv.style.display = "block"; // ✅ Show it
+
         const sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         const latest = sortedNews[0];
 
         const latestDiv = document.createElement("div");
         latestDiv.className = "latest-news-item";
-
         latestDiv.innerHTML = `
         <strong>📰 ${truncateString(latest.headline || "Untitled", 55)}</strong>
         <p>${latest.summary || ""}</p>
@@ -235,11 +259,19 @@ function updateUI(symbolData) {
 
         latestNewsDiv.appendChild(latestDiv);
     } else {
-        latestNewsDiv.innerHTML = "<p>No recent news</p>";
+        latestNewsDiv.style.display = "none"; // ✅ Hide completely if no news
     }
 
     renderOwnershipChart(symbolData, "ownershipChart-summary");
     renderOwnershipChart(symbolData, "ownershipChart-stats");
+}
+
+function sanitize(str) {
+    return str
+        .toLowerCase()
+        .replace(/[’‘“”]/g, "'") // Normalize fancy quotes
+        .replace(/[^\w\s]/g, "") // Remove most punctuation
+        .trim(); // Trim whitespace
 }
 
 /**

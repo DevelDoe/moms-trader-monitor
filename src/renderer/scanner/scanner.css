@@ -1,0 +1,121 @@
+body {
+    color: #e0e0e0;
+    font-size: 10px;
+    position: relative;
+    margin: 0px auto;
+    width: 100vw;
+    box-sizing: border-box;
+    height: 100%;
+}
+#log {
+    overflow-y: auto;
+    padding: 5px;
+    width: 100vw;
+    font-size: 14px;
+    position: fixed;
+    bottom: -6px;
+    list-style-type: none;
+    margin: 0px auto;
+    box-sizing: border-box;
+}
+.alert {
+    padding: 5px;
+    margin: 5px 0;
+    border-radius: 5px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    background-color: #2a2b32;
+    border-left: 5px solid transparent;
+    opacity: 0;
+    animation: fadeIn 0.2s forwards;
+}
+.alert-symbol {
+    width: 40px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px;
+    border-radius: 3px;
+    color: #1c1d23;
+    background-color: gray;
+}
+.alert-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding-left: 5px;
+}
+.alert-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.progress-bar {
+    display: flex;
+    margin-top: 3px;
+}
+.segment {
+    width: 8px;
+    height: 10px;
+    margin: 1px;
+    background-color: gray;
+}
+.segment.filled.up {
+    background-color: #28a745;
+}
+.segment.filled.down {
+    background-color: #dc3545;
+}
+.up {
+    border-left-color: #28a745;
+}
+.down {
+    border-left-color: #dc3545;
+}
+.low {
+    filter: grayscale(60%) brightness(0.8); /* Makes the alert duller */
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* CSS for blinking effect with opacity */
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 0.7; /* Medium fade for mid volume */
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* High volume blink */
+.blinking-alert {
+    animation: blink 0.5s infinite;
+}
+.alert.new-high {
+    border-left: 5px solid gold;
+    background-color: #333d2a;
+    animation: pulseNewHigh 1.2s infinite;
+}
+
+@keyframes pulseNewHigh {
+    0% {
+        background-color: #333d2a;
+    }
+    50% {
+        background-color: #445e33;
+    }
+    100% {
+        background-color: #333d2a;
+    }
+}

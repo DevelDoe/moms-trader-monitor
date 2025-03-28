@@ -178,6 +178,10 @@ async function applySavedFilters() {
     tickersSessions = [];
 }
 
+let intervalSet = false; // To ensure we set the interval only once
+let debounceTimeout; // For managing debounce
+let lastClickedSymbol = null; // 🧠 Track the last clicked symbol
+
 function updateTickersList(tickers, listId, prevTickers) {
     const ul = document.getElementById(listId);
 
@@ -256,6 +260,7 @@ function updateTickersList(tickers, listId, prevTickers) {
             } else if (key === "Score") {
                 span.textContent = ticker[key];
                 span.classList.add("Score-tooltip");
+                span.classList.add("no-drag");
                 span.title = getScoreBreakdown(ticker);
             } else if (key === "Bonuses") {
                 span.innerHTML = getBonusesHTML(ticker);
@@ -270,6 +275,25 @@ function updateTickersList(tickers, listId, prevTickers) {
     });
 
     console.log(`✅ Finished updating list: ${listId}`);
+
+    if (!intervalSet) {
+        intervalSet = true;
+        setInterval(() => {
+            clearTimeout(debounceTimeout);
+
+            debounceTimeout = setTimeout(() => {
+                const topSymbolElement = ul.querySelector(".ticker-item:first-child .symbol");
+                if (topSymbolElement) {
+                    const currentSymbol = topSymbolElement.textContent.trim();
+
+                    if (currentSymbol !== lastClickedSymbol) {
+                        topSymbolElement.click();
+                        lastClickedSymbol = currentSymbol; // ✅ Update the tracker
+                    }
+                }
+            }, 59000);
+        }, 60000);
+    }
 }
 
 function getSymbolColor(symbol) {
@@ -520,7 +544,7 @@ function getScoreBreakdown(ticker) {
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
         Score *= 1.1;
         breakdown.push(`🔟 Float 7.5M-13M: 1.1x multiplier`);
-    } 
+    }
 
     // Insiders and institutions
     if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {

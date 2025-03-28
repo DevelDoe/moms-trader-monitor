@@ -136,35 +136,35 @@ const handleNewsData = (newsItem) => {
 
 const fetchHistoricalNews = async (ticker) => {
     const tickerStore = require("../store");
-
-    // Get the current date and calculate the time for the last market close (Friday, 4:00 PM EST)
     const now = new Date();
-    let lastMarketClose = new Date(now);
 
-    // Calculate the date of the last Friday (if today is Sunday, it's last Friday, etc.)
-    if (now.getDay() === 0) {
-        // Sunday
-        lastMarketClose.setDate(now.getDate() - 2); // Move back to Friday
-    } else if (now.getDay() === 1) {
-        // Monday
-        lastMarketClose.setDate(now.getDate() - 3); // Move back to last Friday
-    } else if (now.getDay() === 6) {
-        // Saturday
-        lastMarketClose.setDate(now.getDate() - 1); // Move back to Friday
+    const lastClose = new Date(now);
+
+    // Get current day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    const day = now.getDay();
+
+    if (day === 0) {
+        // Sunday → back to Friday
+        lastClose.setDate(now.getDate() - 2);
+    } else if (day === 1) {
+        // Monday → back to Friday
+        lastClose.setDate(now.getDate() - 3);
+    } else if (day === 6) {
+        // Saturday → back to Friday
+        lastClose.setDate(now.getDate() - 1);
     } else {
-        lastMarketClose.setDate(now.getDate() - ((now.getDay() + 2) % 7)); // Move back to last Friday
+        // Tuesday to Friday → use yesterday
+        lastClose.setDate(now.getDate() - 1);
     }
 
-    // Set time to 4:00 PM (market close time)
-    lastMarketClose.setHours(16, 0, 0, 0); // 4:00 PM EST
+    // Set time to 4:00 PM EST = 21:00 UTC
+    lastClose.setUTCHours(21, 0, 0, 0);
 
-    // Format to ISO string for Alpaca API
-    const start = encodeURIComponent(lastMarketClose.toISOString());
+    const start = encodeURIComponent(lastClose.toISOString());
     const encodedTicker = encodeURIComponent(ticker);
-
     const ALPACA_NEWS_URL = `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
 
-    log.log(`Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
+    log.log(`[news.js] Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
 
     try {
         const response = await fetch(ALPACA_NEWS_URL, {
@@ -182,12 +182,9 @@ const fetchHistoricalNews = async (ticker) => {
         }
 
         const newsData = await response.json();
-        log.log(`Full API response for ${ticker}: ${JSON.stringify(newsData)}`); // ✅ Log API response
+        log.log(`Full API response for ${ticker}: ${JSON.stringify(newsData)}`);
 
-        if (!newsData.news || newsData.news.length === 0) {
-            // log.warn(`No historical news found for ${ticker}.`);
-            return;
-        }
+        if (!newsData.news || newsData.news.length === 0) return;
 
         log.log(`✅ Retrieved ${newsData.news.length} historical news articles for ${ticker}.`);
         tickerStore.addNews(newsData.news);
@@ -195,5 +192,6 @@ const fetchHistoricalNews = async (ticker) => {
         log.error(`Error fetching historical news for ${ticker}:`, error.message);
     }
 };
+
 
 module.exports = { fetchHistoricalNews, subscribeToSymbolNews };

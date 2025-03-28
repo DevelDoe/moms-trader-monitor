@@ -3,6 +3,8 @@ const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews, subscribeToSymbolNews } = require("./collectors/news");
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 class Store extends EventEmitter {
     constructor() {
         super();
@@ -57,6 +59,7 @@ class Store extends EventEmitter {
         (async () => {
             for (const symbol of this.symbols.keys()) {
                 await fetchHistoricalNews(symbol);
+                await sleep(500); // ⏳ Add 500ms delay between requests
             }
         })();
     }
