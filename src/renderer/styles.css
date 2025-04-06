@@ -19,12 +19,21 @@ body::-webkit-scrollbar {
     display: none;                /* Chrome, Safari and Opera */
   }
 
+  h1 {
+    -webkit-app-region: drag;
+    font-size: 16px;
+    font-weight: bold;
+    color: #595959;
+    margin-left: 10px;
+    width: 90%;
+}
+
 h2 {
     -webkit-app-region: drag;
     font-size: 10px;
     color: #595959;
     margin-left: 10px;
-    width: 59%;
+    width: 90%;
 }
 
 /* Disable text selection across the entire application */

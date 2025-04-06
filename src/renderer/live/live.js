@@ -503,11 +503,6 @@ function getBonusesHTML(ticker) {
         tooltipText.push("CN: Chinese based company");
     }
 
-    if (ticker.profile?.country && (ticker.profile.country === "China" || ticker.profile.country === "CN")) {
-        bonuses.push('<span class="bonus cn no-drag">🇨🇳</span>');
-        tooltipText.push("🇨🇳: Chinese based company");
-    }
-
     if (ticker.profile?.country && (ticker.profile.country === "HK" || ticker.profile.country === "hk")) {
         bonuses.push('<span class="bonus hk no-drag">🇭🇰</span>');
         tooltipText.push("🇭🇰: Hong Kong based company");

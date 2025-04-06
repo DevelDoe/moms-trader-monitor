@@ -15,12 +15,23 @@ contextBridge.exposeInMainWorld("settingsAPI", {
 });
 
 contextBridge.exposeInMainWorld("dailyAPI", {
+    toggle: () => ipcRenderer.send("toggle-daily"),
+    refresh: () => ipcRenderer.send("refresh-daily"),
+    getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
+    onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
+    applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
+    onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
+});
+
+contextBridge.exposeInMainWorld("focusAPI", {
     toggle: () => ipcRenderer.send("toggle-focus"),
     refresh: () => ipcRenderer.send("refresh-focus"),
     getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
     onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
     applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
+    onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
+    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
 });
 
 contextBridge.exposeInMainWorld("sessionAPI", {
@@ -68,9 +79,4 @@ contextBridge.exposeInMainWorld("traderviewAPI", {
     toggleWidget: () => ipcRenderer.send("toggle-traderview-widget"),
     toggleBrowser: () => ipcRenderer.send("toggle-traderview-browser"),
     setTopTickers: (tickers) => ipcRenderer.send("set-top-tickers", tickers),
-});
-
-contextBridge.exposeInMainWorld("focusAPI", {
-    onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
-    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
 });

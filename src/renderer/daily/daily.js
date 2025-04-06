@@ -16,21 +16,21 @@ const floatFiveHundredMillion = 600_000_000;
 const symbolColors = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("⚡ Loading focus Window...");
+    console.log("⚡ Loading daily Window...");
 
-    await applySavedFilters(); // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
-    await fetchAndUpdateTickers(); // getTickers("focus"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+    await applySavedFilters(); 
+    await fetchAndUpdateTickers(); 
 
     // ✅ Listen for ticker updates
     window.dailyAPI.onTickerUpdate(() => {
         console.log("🔔 Lists updates received, fetching latest data...");
-        fetchAndUpdateTickers(); // getTickers("focus"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+        fetchAndUpdateTickers(); 
     });
 
     // ✅ Listen for news updates (new articles)
     window.dailyAPI.onNewsUpdate(({ ticker, newsItems }) => {
         console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`); //
-        fetchAndUpdateTickers(); // getTickers("focus"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+        fetchAndUpdateTickers(); 
     });
 
     // ✅ Listen for settings updates globally
@@ -41,8 +41,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.settings = updatedSettings;
 
         // ✅ Re-apply filters & update UI
-        await applySavedFilters(); // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
-        await fetchAndUpdateTickers(); // getTickers("focus"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+        await applySavedFilters(); 
+        await fetchAndUpdateTickers();
     });
 });
 
@@ -51,8 +51,8 @@ async function fetchAndUpdateTickers() {
         console.log("Fetching updated tickers...");
 
         // ✅ Fetch tickers from API
-        const dailyData = await window.dailyAPI.getTickers("focus");
-        console.log("📊 focus Data:", dailyData);
+        const dailyData = await window.dailyAPI.getTickers("daily");
+        console.log("📊 daily Data:", dailyData);
 
         // ✅ Store previous state for comparison
         let oldTickersDaily = { ...prevTickersDaily };
@@ -102,11 +102,11 @@ async function fetchAndUpdateTickers() {
                 .sort((a, b) => b.Score - a.Score);
 
         const filteredDaily = applyFilters(dailyData);
-        console.log("✅ Filtered focus Data:", filteredDaily);
+        console.log("✅ Filtered daily Data:", filteredDaily);
 
         // ✅ Limit number of displayed entries
         tickersDaily = filteredDaily.slice(0, maxDailyLength);
-        console.log("✅ Final focus List after max length:", tickersDaily);
+        console.log("✅ Final daily List after max length:", tickersDaily);
 
         // ✅ Update previous ticker states
         prevTickersDaily = Object.fromEntries(tickersDaily.map((t) => [t.Symbol, t]));
@@ -129,7 +129,7 @@ async function fetchAndUpdateTickers() {
             console.log("🔄 Updating UI with new filtered tickers...");
 
             // ✅ Update UI only (no settings update)
-            updateTickersList(tickersDaily, "tickers-focus", prevTickersDaily);
+            updateTickersList(tickersDaily, "tickers-daily", prevTickersDaily);
         } else {
             console.log("✅ No changes in filtered tickers, skipping update.");
         }
@@ -175,10 +175,12 @@ function updateTickersList(tickers, listId, prevTickers) {
     ul.innerHTML = ""; // ✅ Prevent duplicates
 
     // ✅ Determine which columns should be displayed
-    const listType = "focus";
-    const enabledColumns = window.settings.top.lists?.[listType] || {};
-
-    const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
+    const listType = "daily";
+    const allColumns = [
+        "Symbol",
+        "Score",
+        "Bonuses",
+      ];
 
     // ✅ Populate list items
     tickers.forEach((ticker) => {

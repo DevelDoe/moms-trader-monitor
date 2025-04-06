@@ -1,11 +1,11 @@
-// ./src/main/windows/Daily.js
+// ./src/main/windows/daily.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
 function createDailyWindow(isDevelopment) {
-    const state = getWindowState("DailyWindow");
+    const state = getWindowState("dailyWindow");
 
     const window = new BrowserWindow({
         width: state.width || 850,
@@ -28,18 +28,18 @@ function createDailyWindow(isDevelopment) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/Daily/Daily.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/daily/daily.html"));
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
     window.on("move", () => {
         const bounds = window.getBounds();
-        setWindowBounds("DailyWindow", bounds);
+        setWindowBounds("dailyWindow", bounds);
     });
     
     window.on("resize", () => {
         const bounds = window.getBounds();
-        setWindowBounds("DailyWindow", bounds);
+        setWindowBounds("dailyWindow", bounds);
     });
 
     return window; // ✅ Return the window instance

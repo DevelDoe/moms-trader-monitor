@@ -472,8 +472,30 @@ ipcMain.on("refresh-focus", async () => {
     }
 
     // ✅ Recreate the window with updated settings
-    windows.focus = await createTopWindow(isDevelopment);
+    windows.focus = await createFocusWindow(isDevelopment);
     windows.focus.show();
+});
+
+// daily
+ipcMain.on("toggle-daily", () => {
+    const daily = windows.daily;
+    if (daily) {
+        const isVisible = daily.isVisible();
+        isVisible ? daily.hide() : daily.show();
+        updateWindowVisibilityState("daily", !isVisible);
+    }
+});
+
+ipcMain.on("refresh-daily", async () => {
+    log.log("Refreshing daily window.");
+
+    if (windows.daily) {
+        windows.daily.close(); // Close the old window
+    }
+
+    // ✅ Recreate the window with updated settings
+    windows.daily = await createDailyWindow(isDevelopment);
+    windows.daily.show();
 });
 
 // live
@@ -715,6 +737,7 @@ app.on("ready", async () => {
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
         windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment));
+        windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
         windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
         // windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
@@ -741,6 +764,7 @@ app.on("ready", async () => {
         const windowKeyMap = {
             settings: "settingsWindow",
             focus: "focusWindow",
+            daily: "dailyWindow",
             live: "liveWindow",
             active: "activeWindow",
             scanner: "scannerWindow",

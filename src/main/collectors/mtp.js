@@ -218,7 +218,7 @@ const fetchSymbolsFromServer = async () => {
 
 
 function startMockAlerts(windows) {
-    simulateAlerts(["AKAN", "BOLD", "CREV", "MYSZ", "FOXX", "STEC", "RMTI", "MNDO", "CRWS", "NCEW",  "SXTC", "SHLT", "INKT", "ARKR", "FTCI", "JZXN", "RAYA", "CELU", "XBP", "ATRA", "GLST", "BMR", ], (alert) => {
+    simulateAlerts(["AKAN", "BOLD", "CREV", "MYSZ", "FOXX", "STEC", "RMTI", "MNDO", "CRWS", "NCEW",  "SXTC", "SHLT" ], (alert) => {
 
         // 📡 Send raw alert to scanner
         if (windows?.scanner?.webContents && !windows.scanner.webContents.isDestroyed()) {
@@ -287,7 +287,7 @@ function simulateAlerts(symbols, sendAlert, interval = 16000) {
 
                     sendAlert({
                         symbol,
-                        direction: "down",
+                        direction: "DOWN",
                         price: newPrice,
                         volume,
                         change_percent,

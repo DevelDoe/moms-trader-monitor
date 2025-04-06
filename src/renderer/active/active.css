@@ -72,6 +72,7 @@ body {
 
     padding-bottom: 30px;
     margin-bottom: 23px;
+    max-width: 50%;
 }
 
 /* ✅ Gradient fade effect at the bottom */
