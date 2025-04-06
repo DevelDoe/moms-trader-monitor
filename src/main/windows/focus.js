@@ -1,11 +1,11 @@
-// ./src/main/windows/top.js
+// ./src/main/windows/focus.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createScannerWindow(isDevelopment) {
-    const state = getWindowState("scannerWindow");
+function createFocusWindow(isDevelopment) {
+    const state = getWindowState("focusWindow");
 
     const window = new BrowserWindow({
         width: state.width || 850,
@@ -28,22 +28,21 @@ function createScannerWindow(isDevelopment) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/scanner/scanner.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/focus/focus.html"));
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
     window.on("move", () => {
         const bounds = window.getBounds();
-        setWindowBounds("scannerWindow", bounds);
+        setWindowBounds("focusWindow", bounds);
     });
     
     window.on("resize", () => {
         const bounds = window.getBounds();
-        setWindowBounds("scannerWindow", bounds);
+        setWindowBounds("focusWindow", bounds);
     });
-    
 
     return window; // ✅ Return the window instance
 }
 
-module.exports = { createScannerWindow };
+module.exports = { createFocusWindow };

@@ -4,6 +4,7 @@ body {
     padding: 5px 10px;
     margin: 0 auto;
     font-size: 14px;
+     /* font-family: "Press Start 2P", monospace;  */
 }
 
 .tablinks {
@@ -50,7 +51,8 @@ body {
 }
 
 /* Optional: Add some spacing and alignment */
-#section-float p {
+#section-float-summary p,
+#section-float-stats p {
     margin: 10px 0;
 }
 
@@ -89,7 +91,8 @@ body {
     display: none !important;
 }
 
-#section-float {
+#section-float-summary,
+#section-float-stats {
     font-size: 15px !important;
 }
 

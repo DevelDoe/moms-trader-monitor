@@ -19,6 +19,7 @@ ul {
     list-style-type: none;
     margin: 0 auto;
     padding: 0;
+    opacity: 0.8;
 }
 li {
     padding: 5px;
@@ -58,13 +59,13 @@ li span {
 
 /* Apply pointer cursor to Symbol column */
 #tickers-session td:first-child,
-#tickers-daily td:first-child {
+#tickers-focus td:first-child {
     cursor: pointer;
 }
 
 /* Style when symbol is clicked (feedback effect) */
 #tickers-session td.copied,
-#tickers-daily td.copied {
+#tickers-focus td.copied {
     background-color: #90ee90; /* Light green */
     transition: background-color 0.3s ease-in-out;
 }

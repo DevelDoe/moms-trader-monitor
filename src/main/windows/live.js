@@ -1,11 +1,11 @@
-// ./src/main/windows/top.js
+// ./src/main/windows/live.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createScannerWindow(isDevelopment) {
-    const state = getWindowState("scannerWindow");
+function createLiveWindow(isDevelopment) {
+    const state = getWindowState("liveWindow");
 
     const window = new BrowserWindow({
         width: state.width || 850,
@@ -28,22 +28,23 @@ function createScannerWindow(isDevelopment) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/scanner/scanner.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/live/live.html"));
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
     window.on("move", () => {
         const bounds = window.getBounds();
-        setWindowBounds("scannerWindow", bounds);
+        setWindowBounds("liveWindow", bounds);
     });
     
     window.on("resize", () => {
         const bounds = window.getBounds();
-        setWindowBounds("scannerWindow", bounds);
+        setWindowBounds("liveWindow", bounds);
     });
+
     
 
-    return window; // ✅ Return the window instance
+    return window;
 }
 
-module.exports = { createScannerWindow };
+module.exports = { createLiveWindow };

@@ -4,6 +4,8 @@ window.ownershipCharts = {};
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
+    window.activeAPI.setActiveTicker("TEST");
+
     // Load settings globally
     try {
         window.settings = await window.settingsAPI.get();
@@ -162,12 +164,18 @@ function updateUI(symbolData) {
 
     const dataIsCorrupted = floatShares > sharesOutstanding * 1.05; // Lower tolerance
 
-    document.getElementById("data-warning").style.display = dataIsCorrupted ? "block" : "none";
-    document.getElementById("section-float").style.display = dataIsCorrupted ? "none" : "flex";
+    document.getElementById("data-warning-summary").style.display = dataIsCorrupted ? "block" : "none";
+    document.getElementById("section-float-summary").style.display = "flex";
+
+    document.getElementById("data-warning-stats").style.display = dataIsCorrupted ? "block" : "none";
+    document.getElementById("section-float-stats").style.display = "flex";
 
     if (dataIsCorrupted) {
-        console.warn("Corrupted float data detected for:", symbolData.profile?.companyName || "Unknown Company");
-        return;
+        console.warn("⚠️ Float data appears inconsistent:", {
+            floatShares,
+            sharesOutstanding,
+            ratio: (floatShares / sharesOutstanding).toFixed(2),
+        });
     }
 
     const insidersHeld = Math.round(sharesOutstanding * (symbolData.ownership?.insidersPercentHeld || 0));

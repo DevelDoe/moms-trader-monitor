@@ -14,10 +14,16 @@
             <h1 class="draggable" style="width: 90%">Settings</h1>
 
             <div class="tab">
-                <button class="tablinks active" onclick="openTab(event, 'general')">General</button>
+                
+                <button class="tablinks" onclick="openTab(event, 'admin')">Admin</button>
+                <!-- <button class="tablinks active" onclick="openTab(event, 'general')">General</button> -->
                 <button class="tablinks" onclick="openTab(event, 'scanner')">Alerts</button>
                 <button class="tablinks" onclick="openTab(event, 'top')">Top</button>
                 <button class="tablinks" onclick="openTab(event, 'news')">News</button>
+            </div>
+
+            <div id="admin" class="tabcontent">
+                <button id="fetchNewsBtn">Fetch News</button>
             </div>
 
             <div id="general" class="tabcontent">
@@ -83,19 +89,19 @@
                 </section>
 
                 <div class="filter-section">
-                    <h3>Session Attribute Filters</h3>
-                    <button id="session-toggle-all">Select All</button>
-                    <button id="session-toggle-none">Deselect All</button>
-                    <div id="session-filters" class="filter-container"></div>
-                    <label> Max Entries: <input type="number" id="session-length" min="1" step="1" /> </label>
+                    <h3>live Attribute Filters</h3>
+                    <button id="live-toggle-all">Select All</button>
+                    <button id="live-toggle-none">Deselect All</button>
+                    <div id="live-filters" class="filter-container"></div>
+                    <label> Max Entries: <input type="number" id="live-length" min="1" step="1" /> </label>
                 </div>
 
                 <div class="filter-section">
-                    <h3>Daily Attribute Filters</h3>
-                    <button id="daily-toggle-all">Select All</button>
-                    <button id="daily-toggle-none">Deselect All</button>
-                    <div id="daily-filters" class="filter-container"></div>
-                    <label> Max Entries: <input type="number" id="daily-length" min="1" step="1" /> </label>
+                    <h3>focus Attribute Filters</h3>
+                    <button id="focus-toggle-all">Select All</button>
+                    <button id="focus-toggle-none">Deselect All</button>
+                    <div id="focus-filters" class="filter-container"></div>
+                    <label> Max Entries: <input type="number" id="focus-length" min="1" step="1" /> </label>
                 </div>
             </div>
 

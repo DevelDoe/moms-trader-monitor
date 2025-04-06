@@ -73,9 +73,22 @@ body {
 .down {
     border-left-color: #dc3545;
 }
-.low {
-    filter: grayscale(60%) brightness(0.8); /* Makes the alert duller */
+.low-1 {
+    filter: grayscale(60%) brightness(0.8);
 }
+
+.low-2 {
+    filter: grayscale(45%) brightness(0.6);
+}
+
+.low-3 {
+    filter: grayscale(30%) brightness(0.4);
+}
+
+.low-4 {
+    filter: grayscale(15%) brightness(0.2);
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -90,11 +103,11 @@ body {
     0% {
         opacity: 1;
     }
-    90% {
-        opacity: 0.7; /* Medium fade for mid volume */
+    50% {
+        opacity: 1;
     }
     100% {
-        opacity: 1;
+        opacity: 0.8; 
     }
 }
 
@@ -105,17 +118,14 @@ body {
 .alert.new-high {
     border-left: 5px solid gold;
     background-color: #333d2a;
-    animation: pulseNewHigh 1.2s infinite;
+    animation: pulseNewHigh 0.5s infinite;
 }
 
 @keyframes pulseNewHigh {
     0% {
-        background-color: #333d2a;
-    }
-    50% {
-        background-color: #445e33;
+        opacity: 1;
     }
     100% {
-        background-color: #333d2a;
+        opacity: 0.7; /* Medium fade for mid volume */
     }
 }

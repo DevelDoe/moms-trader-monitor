@@ -17,7 +17,7 @@ function openTab(evt, tabId) {
 }
 
 const HARDCODED_ATTRIBUTES = {
-    session: {
+    live: {
         Price: false,
         alertChangePercent: false,
         cumulativeUpChange: false,
@@ -26,7 +26,7 @@ const HARDCODED_ATTRIBUTES = {
         Score: false,
         Bonuses: false,
     },
-    daily: {
+    focus: {
         Price: false,
         alertChangePercent: false,
         cumulativeUpChange: false,
@@ -49,25 +49,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         initializeScannerSection();
         initializeTopSection();
         initializeNewsSection();
+        initializeAdminSection();
 
-        await loadAttributeFilters("session", "session-filters");
-        await loadAttributeFilters("daily", "daily-filters");
+        await loadAttributeFilters("live", "live-filters");
+        await loadAttributeFilters("focus", "focus-filters");
 
         // ✅ Update toggle buttons to pass settings
-        document.querySelector("#session-toggle-all").addEventListener("click", () => {
-            toggleAll("session", true);
+        document.querySelector("#live-toggle-all").addEventListener("click", () => {
+            toggleAll("live", true);
         });
 
-        document.querySelector("#session-toggle-none").addEventListener("click", () => {
-            toggleAll("session", false);
+        document.querySelector("#live-toggle-none").addEventListener("click", () => {
+            toggleAll("live", false);
         });
 
-        document.querySelector("#daily-toggle-all").addEventListener("click", () => {
-            toggleAll("daily", true);
+        document.querySelector("#focus-toggle-all").addEventListener("click", () => {
+            toggleAll("focus", true);
         });
 
-        document.querySelector("#daily-toggle-none").addEventListener("click", () => {
-            toggleAll("daily", false);
+        document.querySelector("#focus-toggle-none").addEventListener("click", () => {
+            toggleAll("focus", false);
         });
 
         // window.settingsAPI.onUpdate((updatedSettings) => {
@@ -90,6 +91,14 @@ function initializeGeneralSection() {
     console.log("Initializing General Section");
     document.getElementById("show-bonuses-legend-board").addEventListener("click", () => {
         window.legendAPI.toggle();
+    });
+}
+
+function initializeAdminSection() {
+    document.getElementById("fetchNewsBtn").addEventListener("click", () => {
+        console.log("📰 Fetch News button clicked");
+        window.settingsAPI.fetchNews();
+        window.infobarAPI.refresh(); // I need this to refresh our infobar window
     });
 }
 
@@ -191,8 +200,8 @@ function initializeTopSection() {
     const minScoreInput = document.getElementById("min-score");
     const maxScoreInput = document.getElementById("max-score");
     // const topTransparentToggle = document.getElementById("top-transparent-toggle");
-    const sessionLengthInput = document.getElementById("session-length");
-    const dailyLengthInput = document.getElementById("daily-length");
+    const liveLengthInput = document.getElementById("live-length");
+    const focusLengthInput = document.getElementById("focus-length");
 
     if (
         !minPriceInput ||
@@ -204,8 +213,8 @@ function initializeTopSection() {
         !minVolumeInput ||
         !maxVolumeInput ||
         // !topTransparentToggle ||
-        !sessionLengthInput ||
-        !dailyLengthInput
+        !liveLengthInput ||
+        !focusLengthInput
     ) {
         console.error("One or more input elements not found!");
         return;
@@ -237,8 +246,8 @@ function initializeTopSection() {
     // if (window.settings.top.transparent !== undefined) topTransparentToggle.checked = window.settings.top.transparent;
 
     // ✅ Load saved length settings
-    sessionLengthInput.value = window.settings.top.sessionListLength ?? 10;
-    dailyLengthInput.value = window.settings.top.dailyListLength ?? 10;
+    liveLengthInput.value = window.settings.top.liveListLength ?? 10;
+    focusLengthInput.value = window.settings.top.focusListLength ?? 10;
 
     console.log("✅ Applied topSettings:", {
         minPrice: minPriceInput.value,
@@ -250,8 +259,8 @@ function initializeTopSection() {
         minScore: minScoreInput.value,
         maxScore: maxScoreInput.value,
         // transparent: topTransparentToggle.checked,
-        sessionLength: sessionLengthInput.value,
-        dailyLength: dailyLengthInput.value,
+        liveLength: liveLengthInput.value,
+        focusLength: focusLengthInput.value,
     });
 
     async function updatePriceFilter() {
@@ -399,7 +408,7 @@ function initializeTopSection() {
                 ...latestSettings,
                 top: {
                     ...latestSettings.top,
-                    [`${type}ListLength`]: newLength, // ✅ Updates sessionListLength or dailyListLength at the root
+                    [`${type}ListLength`]: newLength, // ✅ Updates liveListLength or focusListLength at the root
                 },
             };
 
@@ -424,8 +433,8 @@ function initializeTopSection() {
     maxScoreInput.addEventListener("input", updateScoreFilter);
 
     // topTransparentToggle.addEventListener("change", updateTransparency);
-    sessionLengthInput.addEventListener("input", () => updateListLength("session", sessionLengthInput));
-    dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
+    liveLengthInput.addEventListener("input", () => updateListLength("live", liveLengthInput));
+    focusLengthInput.addEventListener("input", () => updateListLength("focus", focusLengthInput));
 }
 
 async function loadAttributeFilters(listType, containerId) {
@@ -482,8 +491,8 @@ async function updateAttributeFilters() {
         // ✅ Update settings dynamically while preserving other lists
         const updatedLists = {
             ...latestSettings.top.lists,
-            session: Object.fromEntries(Array.from(document.querySelectorAll("input[name='session']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-            daily: Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+            live: Object.fromEntries(Array.from(document.querySelectorAll("input[name='live']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+            focus: Object.fromEntries(Array.from(document.querySelectorAll("input[name='focus']")).map((checkbox) => [checkbox.value, checkbox.checked])),
         };
 
         // ✅ Spread everything and only update `lists`

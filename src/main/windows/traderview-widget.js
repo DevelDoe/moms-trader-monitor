@@ -1,11 +1,10 @@
-// ./src/main/windows/top.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createScannerWindow(isDevelopment) {
-    const state = getWindowState("scannerWindow");
+function createTraderWidgetViewWindow(isDevelopment) {
+    const state = getWindowState("traderviewWidgetWindow");
 
     const window = new BrowserWindow({
         width: state.width || 850,
@@ -28,22 +27,22 @@ function createScannerWindow(isDevelopment) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/scanner/scanner.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/traderview/traderview-widget.html"));
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
     window.on("move", () => {
         const bounds = window.getBounds();
-        setWindowBounds("scannerWindow", bounds);
+        setWindowBounds("traderviewWindow", bounds);
     });
     
     window.on("resize", () => {
         const bounds = window.getBounds();
-        setWindowBounds("scannerWindow", bounds);
+        setWindowBounds("traderviewWindow", bounds);
     });
     
 
-    return window; // ✅ Return the window instance
+    return window;
 }
 
-module.exports = { createScannerWindow };
+module.exports = { createTraderWidgetViewWindow };

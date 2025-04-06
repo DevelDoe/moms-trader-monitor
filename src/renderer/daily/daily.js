@@ -16,21 +16,21 @@ const floatFiveHundredMillion = 600_000_000;
 const symbolColors = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("⚡ Loading Daily Window...");
+    console.log("⚡ Loading focus Window...");
 
     await applySavedFilters(); // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
-    await fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+    await fetchAndUpdateTickers(); // getTickers("focus"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
 
     // ✅ Listen for ticker updates
     window.dailyAPI.onTickerUpdate(() => {
         console.log("🔔 Lists updates received, fetching latest data...");
-        fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+        fetchAndUpdateTickers(); // getTickers("focus"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
     });
 
     // ✅ Listen for news updates (new articles)
     window.dailyAPI.onNewsUpdate(({ ticker, newsItems }) => {
         console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`); //
-        fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+        fetchAndUpdateTickers(); // getTickers("focus"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
     });
 
     // ✅ Listen for settings updates globally
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // ✅ Re-apply filters & update UI
         await applySavedFilters(); // settingsAPI.get(); -> .invoke("get-settings") -> return appSettings;
-        await fetchAndUpdateTickers(); // getTickers("daily"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
+        await fetchAndUpdateTickers(); // getTickers("focus"); -> .invoke("get-tickers", listType) ->  return tickerStore.getAllTickers(listType);
     });
 });
 
@@ -51,8 +51,8 @@ async function fetchAndUpdateTickers() {
         console.log("Fetching updated tickers...");
 
         // ✅ Fetch tickers from API
-        const dailyData = await window.dailyAPI.getTickers("daily");
-        console.log("📊 Daily Data:", dailyData);
+        const dailyData = await window.dailyAPI.getTickers("focus");
+        console.log("📊 focus Data:", dailyData);
 
         // ✅ Store previous state for comparison
         let oldTickersDaily = { ...prevTickersDaily };
@@ -64,9 +64,9 @@ async function fetchAndUpdateTickers() {
         const maxFloat = window.settings.top?.maxFloat ?? 0;
         const minScore = window.settings.top?.minScore ?? 0;
         const maxScore = window.settings.top?.maxScore ?? 0;
-        const minVolume = window.settings.top?.minVolume ?? 0;
+        const minVolume = 0
         const maxVolume = window.settings.top?.maxVolume ?? 0;
-        const maxDailyLength = window.settings.top.dailyListLength ?? 10;
+        const maxDailyLength = window.settings.top.focusListLength ?? 10;
 
         console.log("Applying filters:", {
             minPrice,
@@ -102,11 +102,11 @@ async function fetchAndUpdateTickers() {
                 .sort((a, b) => b.Score - a.Score);
 
         const filteredDaily = applyFilters(dailyData);
-        console.log("✅ Filtered Daily Data:", filteredDaily);
+        console.log("✅ Filtered focus Data:", filteredDaily);
 
         // ✅ Limit number of displayed entries
         tickersDaily = filteredDaily.slice(0, maxDailyLength);
-        console.log("✅ Final Daily List after max length:", tickersDaily);
+        console.log("✅ Final focus List after max length:", tickersDaily);
 
         // ✅ Update previous ticker states
         prevTickersDaily = Object.fromEntries(tickersDaily.map((t) => [t.Symbol, t]));
@@ -129,7 +129,7 @@ async function fetchAndUpdateTickers() {
             console.log("🔄 Updating UI with new filtered tickers...");
 
             // ✅ Update UI only (no settings update)
-            updateTickersList(tickersDaily, "tickers-daily", prevTickersDaily);
+            updateTickersList(tickersDaily, "tickers-focus", prevTickersDaily);
         } else {
             console.log("✅ No changes in filtered tickers, skipping update.");
         }
@@ -144,8 +144,16 @@ async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
     window.settings = settings; // ✅ Ensure settings are globally updated
 
-    window.minPrice = settings.top.minPrice ?? 0;
-    window.maxPrice = settings.top.maxPrice ?? 1000;
+   // Apply the relevant filters based on the settings
+   window.minPrice = settings.top.minPrice ?? 0; // Set minimum price filter
+   window.maxPrice = settings.top.maxPrice ?? 1000; // Set maximum price filter
+   window.minFloat = settings.top.minFloat ?? 0; // Set minimum float filter
+   window.maxFloat = settings.top.maxFloat ?? 0; // Set maximum float filter
+   window.minScore = settings.top.minScore ?? 0; // Set minimum score filter
+   window.maxScore = settings.top.maxScore ?? 0; // Set maximum score filter
+   window.minVolume = 0
+   window.maxVolume = settings.top.maxVolume ?? 0; // Set maximum volume filter
+    
 
     console.log("✅ Applied saved filters:", { minPrice: window.minPrice, maxPrice: window.maxPrice });
 
@@ -167,7 +175,7 @@ function updateTickersList(tickers, listId, prevTickers) {
     ul.innerHTML = ""; // ✅ Prevent duplicates
 
     // ✅ Determine which columns should be displayed
-    const listType = "daily";
+    const listType = "focus";
     const enabledColumns = window.settings.top.lists?.[listType] || {};
 
     const allColumns = [...new Set([...Object.keys(tickers[0]), "Bonuses"])].filter((key) => enabledColumns[key] || key === "Symbol");
@@ -218,7 +226,7 @@ function updateTickersList(tickers, listId, prevTickers) {
                     span.classList.add("down");
                 }
             } else if (key === "cumulativeUpChange") {
-                span.textContent = ticker[key] + "%";
+                span.textContent = (Number(ticker[key]) || 0).toFixed(0) + "%";
                 span.title = "Cumulative up change";
                 span.classList.add("up");
             } else if (key === "cumulativeDownChange") {
@@ -229,10 +237,16 @@ function updateTickersList(tickers, listId, prevTickers) {
                 span.textContent = formatVolume(ticker[key]);
                 span.title = "Volume last 5 minutes";
             } else if (key === "Score") {
-                span.textContent = ticker[key];
-                span.classList.add("Score-tooltip");
-                span.classList.add("no-drag");
-                span.title = getScoreBreakdown(ticker);
+                const scoreValue = Number(ticker[key]) || 0;
+                span.textContent = scoreValue.toFixed(0) + "%";
+                span.classList.add("Score-tooltip", "no-drag");
+                span.title = `Momentum Score: ${scoreValue.toFixed(1)}%\n` + getScoreBreakdown(ticker);
+
+                if (scoreValue > 0) {
+                    span.classList.add("up");
+                } else if (scoreValue < 0) {
+                    span.classList.add("down");
+                }
             } else if (key === "Bonuses") {
                 span.innerHTML = getBonusesHTML(ticker);
             } else {
@@ -319,99 +333,87 @@ function formatLargeNumber(value) {
     return num.toLocaleString();
 }
 
+function applyMultiplier(score, multiplier) {
+    return score > 0 ? score * multiplier : score / multiplier;
+}
+
+function sanitize(str) {
+    return (str || "")
+        .toLowerCase()
+        .replace(/[^\w\s]/gi, "")   // removes symbols
+        .replace(/\s+/g, " ")       // normalize whitespace
+        .trim();
+}
+
 function calculateScore(ticker) {
     let Score = Math.floor(ticker.cumulativeUpChange || 0);
 
     const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
-    const volumeValue = ticker.Volume !== undefined ? parseVolumeValue(ticker.Volume) : 0;
+    const volumeValue = fiveMinVolume = formatLargeNumber(ticker.fiveMinVolume);
 
-    let blockList = window.settings.news?.blockList || [];
+    const blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
     if (Array.isArray(ticker.News) && ticker.News.length > 0) {
         filteredNews = ticker.News.filter((newsItem) => {
             const headline = newsItem.headline || "";
-            const isBlocked = blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
-            return !isBlocked;
+            return !blockList.some((blockedWord) => headline.toLowerCase().includes(blockedWord.toLowerCase()));
         });
     }
 
-    // news
     if (filteredNews.length > 0) {
-        Score = Score * 1.9;
+        Score = applyMultiplier(Score, 1.9);
     }
 
-    // New high
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
-        Score = Score * 1.5;
+        Score = applyMultiplier(Score, 1.5);
     }
 
-    // Float
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        Score = Score * 1.5;
+        Score = applyMultiplier(Score, 1.5);
     } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        Score = Score * 1.25;
+        Score = applyMultiplier(Score, 1.25);
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
-        Score = Score * 1.1;
-    } else if (floatValue >= floatTenMillion && floatValue < floatFiftyMillion) {
+        Score = applyMultiplier(Score, 1.1);
     } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
-        Score = Score * 0.8;
+        Score = applyMultiplier(Score, 0.8);
     } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
-        Score = Score * 0.6;
+        Score = applyMultiplier(Score, 0.6);
     } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
-        Score = Score * 0.4;
+        Score = applyMultiplier(Score, 0.4);
     } else if (floatValue >= floatFiveHundredMillion) {
-        Score = Score * 0.1;
+        Score = applyMultiplier(Score, 0.1);
     }
 
-    if (ticker.profile.industry && ticker.profile.industry === "Biotechnology") {
-        Score *= 1.4;
-    } else if (ticker.profile.longBusinessSummary && ticker.profile.longBusinessSummary.toLowerCase().includes("cannabis")) {
-        Score *= 1.2;
+    if (ticker.profile?.industry === "Biotechnology") {
+        Score = applyMultiplier(Score, 1.4);
+    } else if (ticker.profile?.longBusinessSummary?.toLowerCase().includes("cannabis")) {
+        Score = applyMultiplier(Score, 1.2);
     }
 
-    // total volume
-    if (volumeValue > 0) {
-        // Score += Math.floor(volumeValue / 1_000_000) * 2;
-    }
-
-    // Ownership
     const floatShares = ticker.statistics?.floatShares || 0;
     const insidersPercentHeld = ticker.ownership?.insidersPercentHeld || 0;
     const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
     const sharesOutstanding = ticker.statistics?.sharesOutstanding || 0;
     const sharesShort = ticker.statistics?.sharesShort || 0;
 
-    // ✅ Calculate actual shares held
     const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
     const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
-    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
+    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0);
 
-    // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
     if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {
-        Score *= 0.5;
+        Score = applyMultiplier(Score, 0.5);
     }
 
-    // Check if short shares exceed 10% of the total float
     if (sharesShort > 0.2 * floatShares) {
-        Score *= 1.5;
+        Score = applyMultiplier(Score, 1.5);
     }
 
-    // Check safely if net income is negative:
     const netIncome = ticker.financials?.cashflowStatement?.netIncome;
     const hasNegativeIncome = typeof netIncome === "number" && netIncome < 0;
-    const hasS3Filing = !!ticker.offReg; // Ensure it's treated as a boolean
+    const hasS3Filing = !!ticker.offReg;
 
-    // Clear bonuses & tooltips if both conditions are met
     if (hasNegativeIncome && hasS3Filing) {
-        Score = Score * 0.7;
-    } else {
-        if (hasNegativeIncome) {
-            // Score = Score * 0.9;
-        }
-
-        if (hasS3Filing) {
-            // Score = Score * 0.9;
-        }
+        Score = applyMultiplier(Score, 0.7);
     }
 
     return Math.floor(Score);
@@ -423,7 +425,6 @@ function getScoreBreakdown(ticker) {
 
     const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
 
-    // News
     const blockList = window.settings.news?.blockList || [];
     const filteredNews = Array.isArray(ticker.News)
         ? ticker.News.filter((newsItem) => {
@@ -432,71 +433,69 @@ function getScoreBreakdown(ticker) {
           })
         : [];
 
-    // Ownership
     const floatShares = ticker.statistics?.floatShares || 0;
     const insidersPercentHeld = ticker.ownership?.insidersPercentHeld || 0;
     const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
     const sharesOutstanding = ticker.statistics?.sharesOutstanding || 0;
     const sharesShort = ticker.statistics?.sharesShort || 0;
 
-    // ✅ Calculate actual shares held
     const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
     const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
-    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
+    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0);
 
-    // Add base up change to breakdown
     breakdown.push(`Cumulative Up Change: ${ticker.cumulativeUpChange || 0}`);
     breakdown.push(`---------------------`);
 
     // Float
     if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        Score *= 1.5;
+        Score = applyMultiplier(Score, 1.5);
         breakdown.push(`1️⃣ Float less than 2M: 1.5x multiplier`);
     } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        Score *= 1.25;
+        Score = applyMultiplier(Score, 1.25);
         breakdown.push(`5️⃣ Float 2M-7.5M: 1.25x multiplier`);
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
-        Score *= 1.1;
+        Score = applyMultiplier(Score, 1.1);
         breakdown.push(`🔟 Float 7.5M-13M: 1.1x multiplier`);
-    } 
+    }
 
+    // News
     if (filteredNews.length > 0) {
-        Score *= 1.9;
+        Score = applyMultiplier(Score, 1.9);
         breakdown.push(`😼 Has News: 1.9x multiplier`);
     }
 
     // New High
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
-        Score *= 1.5;
+        Score = applyMultiplier(Score, 1.5);
         breakdown.push("📈 New High: 1.5x multiplier");
     }
 
     // Industry & keywords
-    const summary = ticker.profile.longBusinessSummary?.toLowerCase() || "";
-    const isBiotech = ticker.profile.industry === "Biotechnology" || summary.includes("biotech") || summary.includes("biotechnology");
+    const profile = ticker.profile || {};
+    const summary = profile.longBusinessSummary?.toLowerCase() || "";
+    const companyName = profile.companyName.toLowerCase() || "";
+    const isBiotech = profile.industry === "Biotechnology" || companyName.includes("biopharma") || summary.includes("biotech") || summary.includes("biotechnology");
     const isCannabis = summary.includes("cannabis");
     const isSpace = summary.includes("space");
 
     if (isBiotech) {
-        Score *= 1.5;
+        Score = applyMultiplier(Score, 1.5);
         breakdown.push("🧬 Biotechnology stock: 1.5x multiplier");
     } else if (isCannabis) {
-        Score *= 0.8;
+        Score = applyMultiplier(Score, 0.8);
         breakdown.push("🌿 Cannabis: 0.8x multiplier");
     } else if (isSpace) {
-        Score *= 1.2;
+        Score = applyMultiplier(Score, 1.2);
         breakdown.push("🌌 Space: 1.2x multiplier");
     }
 
-    // ✅ Check if (Insiders + Institutions + Remaining) > 50% of total shares
     if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {
-        Score = Score * 0.5;
+        Score = applyMultiplier(Score, 0.5);
         breakdown.push("💼 High percentage of shares held by insiders and institutions: 0.5x multiplier");
     }
 
-    // Check if short shares exceed 20% of the total float
     if (sharesShort > 0.2 * floatShares) {
-        Score = Score * 1.5;
+        Score = applyMultiplier(Score, 1.5);
         breakdown.push("🩳 High percentage of shares are shorted: 1.5x multiplier");
     }
 
@@ -505,23 +504,11 @@ function getScoreBreakdown(ticker) {
     const hasNegativeIncome = typeof netIncome === "number" && netIncome < 0;
     const hasS3Filing = !!ticker.offReg;
 
-    // Clear bonuses & tooltips if both conditions are met
     if (hasNegativeIncome && hasS3Filing) {
-        Score = Score * 0.7;
+        Score = applyMultiplier(Score, 0.7);
         breakdown.push(`🚨 Registered S-3 & Net loss: 0.7x multiplier`);
-    } else {
-        if (hasNegativeIncome) {
-            // Score = Score * 0.9;
-            // breakdown.push("Running at net loss 0.9x multiplier");
-        }
-
-        if (hasS3Filing) {
-            // Score = Score * 0.9;
-            // breakdown.push("Registered offering 0.9x multiplier");
-        }
     }
 
-    // Add final Score to breakdown
     breakdown.push(`---------------------`);
     breakdown.push(`Final Score: ${Math.floor(Score)}`);
 
@@ -534,7 +521,7 @@ function getBonusesHTML(ticker) {
 
     const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
     const fiveMinVolume = formatLargeNumber(ticker.fiveMinVolume);
-    
+
     // News
     let blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
@@ -579,7 +566,7 @@ function getBonusesHTML(ticker) {
     } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
         bonuses.push('<span class="bonus bronze-float no-drag">🔟</span>');
         tooltipText.push("🔟 Float between 7.5M-13M");
-    } 
+    }
 
     // Insiders and institutions
     if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {
@@ -598,8 +585,10 @@ function getBonusesHTML(ticker) {
     }
 
     // Industry & keywords
-    const summary = ticker.profile.longBusinessSummary?.toLowerCase() || "";
-    const isBiotech = ticker.profile.industry === "Biotechnology" || summary.includes("biotech") || summary.includes("biotechnology");
+    const profile = ticker.profile || {};
+    const summary = profile.longBusinessSummary?.toLowerCase() || "";
+    const companyName = profile.companyName.toLowerCase() || "";
+    const isBiotech = profile.industry === "Biotechnology" || companyName.includes("biopharma") || summary.includes("biotech") || summary.includes("biotechnology");
     const isCannabis = summary.includes("cannabis");
     const isSpace = summary.includes("space");
 

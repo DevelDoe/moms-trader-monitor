@@ -1,12 +1,16 @@
-// ./src/main/windows/top.js
-
+// ./src/main/windows/active.js
 const { BrowserWindow } = require("electron");
 const path = require("path");
+const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
 function createActiveWindow(isDevelopment) {
+    const state = getWindowState("activeWindow");
+
     const window = new BrowserWindow({
-        width: 850,
-        height: 660,
+        width: state.width || 850,
+        height: state.height || 660,
+        x: state.x,
+        y: state.y,
         frame: false,
         alwaysOnTop: false,
         resizable: true,
@@ -17,9 +21,9 @@ function createActiveWindow(isDevelopment) {
         useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
-            contextIsolation: true, // Required for contextBridge
-            enableRemoteModule: false, // Keep this disabled unless necessary
-            nodeIntegration: false, // Should be false for security
+            contextIsolation: true,
+            enableRemoteModule: false,
+            nodeIntegration: false,
         },
     });
 
@@ -27,7 +31,18 @@ function createActiveWindow(isDevelopment) {
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
-    return window; // ✅ Return the window instance
+    window.on("move", () => {
+        const bounds = window.getBounds();
+        setWindowBounds("activeWindow", bounds);
+    });
+    
+    window.on("resize", () => {
+        const bounds = window.getBounds();
+        setWindowBounds("activeWindow", bounds);
+    });
+    
+
+    return window;
 }
 
 module.exports = { createActiveWindow };

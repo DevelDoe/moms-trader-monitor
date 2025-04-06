@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 1.75,
+    "minPrice": 0,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -9,28 +9,30 @@
     "minVolume": 0,
     "maxVolume": 0,
     "lists": {
-      "session": {
-        "Price": false,
+      "live": {
+        "Price": true,
         "alertChangePercent": false,
         "cumulativeUpChange": false,
         "cumulativeDownChange": false,
-        "fiveMinVolume": false,
         "Score": false,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 3,
+        "fiveMinVolume": true
       },
-      "daily": {
+      "focus": {
         "Price": false,
         "alertChangePercent": false,
-        "cumulativeUpChange": false,
+        "cumulativeUpChange": true,
         "cumulativeDownChange": false,
-        "fiveMinVolume": false,
-        "Score": false,
-        "Bonuses": true
+        "Score": true,
+        "Bonuses": true,
+        "length": 3,
+        "fiveMinVolume": false
       }
     },
     "transparent": false,
-    "sessionListLength": 3,
-    "dailyListLength": 3
+    "liveListLength": 12,
+    "focusListLength": 2
   },
   "news": {
     "showTrackedTickers": false,
@@ -68,7 +70,13 @@
       "Skyrocketing",
       "Down tumbles",
       "Down Tumbles",
-      "dow tumbles over"
+      "dow tumbles over",
+      "Nasdaq tumbles over",
+      "Resumed trade",
+      "dow dips",
+      "dow dips over",
+      "Shares halt",
+      "Dow tumbles"
     ],
     "bullishList": [
       "FDA Approves",
@@ -164,17 +172,104 @@
       "Down from",
       "Offering",
       "Miss",
-      "Issue new shares"
+      "Issue new shares",
+      "Public offering",
+      "Definitive Securities  Purchase",
+      "definitive securities purchase"
     ],
     "allowMultiSymbols": false
   },
   "scanner": {
-    "minPrice": 0,
-    "maxPrice": 0,
+    "minPrice": 1,
+    "maxPrice": 10,
     "direction": null,
     "minChangePercent": 0,
-    "minVolume": 0,
+    "minVolume": 1,
     "maxAlerts": 50,
-    "scannerVolume": 0.7
+    "scannerVolume": 0
+  },
+  "windows": {
+    "activeWindow": {
+      "width": 746,
+      "height": 479,
+      "x": -70,
+      "y": -860
+    },
+    "settingsWindow": {
+      "width": 850,
+      "height": 753,
+      "x": 1441,
+      "y": -762
+    },
+    "focusWindow": {
+      "width": 394,
+      "height": 400,
+      "x": 282,
+      "y": -400
+    },
+    "sessionWindow": {
+      "width": 353,
+      "height": 113,
+      "x": 1638,
+      "y": 449
+    },
+    "scannerWindow": {
+      "width": 179,
+      "height": 900,
+      "x": -250,
+      "y": -900,
+      "isOpen": true
+    },
+    "infobarWindow": {
+      "width": 927,
+      "height": 39,
+      "x": -251,
+      "y": -900
+    },
+    "traderviewWindow": {
+      "width": 452,
+      "height": 445,
+      "x": 1820,
+      "y": 669
+    },
+    "lightchartWindow": {
+      "width": 850,
+      "height": 660,
+      "x": 1495,
+      "y": 730,
+      "isOpen": true
+    },
+    "traderviewWidgetWindow": {
+      "width": 380,
+      "height": 199,
+      "x": 2044,
+      "y": 282,
+      "isOpen": true
+    },
+    "traderviewWindow_0": {
+      "width": 1457,
+      "height": 1059,
+      "x": 0,
+      "y": 2
+    },
+    "traderviewWindow_1": {
+      "width": 1453,
+      "height": 1129,
+      "x": 8,
+      "y": 987
+    },
+    "traderviewWindow_2": {
+      "width": 1472,
+      "height": 1061,
+      "x": 2370,
+      "y": 2
+    },
+    "traderviewWindow_3": {},
+    "liveWindow": {
+      "width": 351,
+      "height": 401,
+      "x": -70,
+      "y": -400
+    }
   }
 }

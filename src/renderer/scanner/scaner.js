@@ -22,26 +22,78 @@ document.addEventListener("DOMContentLoaded", async () => {
         return symbolColors[symbol];
     }
 
-    function playAudioAlert(symbol, alertType = "standard") {
+    // function playAudioAlert(symbol, alertType = "standard") {
+    //     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    //     const oscillator = audioCtx.createOscillator();
+    //     const gainNode = audioCtx.createGain();
+
+    //     oscillator.connect(gainNode).connect(audioCtx.destination);
+
+    //     const baseFrequencies = { "new-high-price": 880, critical: 660, standard: 440 };
+    //     let baseFrequency = baseFrequencies[alertType] || 440;
+
+    //     let uptickCount = symbolUpticks[symbol] || 0;
+    //     let frequency = baseFrequency + uptickCount * 50;
+    //     oscillator.frequency.value = frequency;
+
+    //     const volume = Math.max(0, Math.min(1, window.settings?.scanner?.scannerVolume ?? 0.5));
+    //     gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+    //     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+    //     oscillator.start();
+    //     oscillator.stop(audioCtx.currentTime + 0.15);
+
+    //     oscillator.onended = () => audioCtx.close();
+    // }
+
+    function playAudioAlert(symbol, alertType = "standard", volumeValue = 0) {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
 
         oscillator.connect(gainNode).connect(audioCtx.destination);
 
-        const baseFrequencies = { "new-high-price": 880, critical: 660, standard: 440 };
-        let baseFrequency = baseFrequencies[alertType] || 440;
+        const uptickCount = symbolUpticks[symbol] || 0;
 
-        let uptickCount = symbolUpticks[symbol] || 0;
-        let frequency = baseFrequency + uptickCount * 50;
+        let baseFreq = 432;
+        let duration = 0.15;
+        let attack = 0.01;
+        let decay = 0.05;
+        let sustain = 0.3;
+        let release = 0.1;
+
+        if (volumeValue < 100000) {
+            baseFreq = 108;
+            duration = 0.2;
+            attack = 0.005;
+            decay = 0.02;
+            sustain = 0.5;
+            release = 0.03;
+        } else if (volumeValue > 300000) {
+            baseFreq = 432;
+            duration = 0.6;
+            attack = 0;
+            decay = 0;
+            sustain = 1;
+            release = 0;
+        } else {
+            baseFreq = 216;
+            duration = 0.3;
+            attack = 0.4;
+            decay = 0.05;
+            sustain = 1;
+            release = 0;
+        }
+
+        const frequency = baseFreq + uptickCount * 50;
         oscillator.frequency.value = frequency;
 
         const volume = Math.max(0, Math.min(1, window.settings?.scanner?.scannerVolume ?? 0.5));
         gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.15);
+        oscillator.stop(audioCtx.currentTime + duration);
 
         oscillator.onended = () => audioCtx.close();
     }
@@ -52,7 +104,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const alertDiv = document.createElement("li");
 
         if (type === "new-high-price") {
+            // 🚫 Skip if volume is too low
+            if (parseVolumeValue(alertData?.fiveMinVolume || 0) < 10_000) {
+                console.log(`⏩ Skipping new-high alert for ${symbol} due to low volume (${alertData?.fiveMinVolume})`);
+                return null;
+            }
             alertDiv.className = "alert new-high";
+
+            console.log("alertdata: ", alertData);
 
             const symbolSpan = document.createElement("span");
             symbolSpan.className = "alert-symbol no-drag";
@@ -67,14 +126,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                 window.activeAPI.setActiveTicker(symbol);
             });
 
-            const contentDiv = document.createElement("div");
+            const contentDiv = document.createElement("div"); // 🛠️ You were missing this line!
             contentDiv.className = "alert-content";
 
             const valuesDiv = document.createElement("div");
             valuesDiv.className = "alert-values";
-            valuesDiv.innerHTML = `<span>$${price.toFixed(2)}</span><span>🔔 New High</span>`;
+            const percent = direction === "DOWN" ? -change_percent : change_percent;
+
+            valuesDiv.innerHTML = `
+                <span>$${price.toFixed(2)}</span>
+                <span>${percent.toFixed(2)}%</span>
+            `;
+
+            const newHighBar = document.createElement("div");
+            newHighBar.className = "progress-bar";
+            newHighBar.innerHTML = `<span style="color: gold; font-weight: bold;">✨ New High</span>`;
 
             contentDiv.appendChild(valuesDiv);
+            contentDiv.appendChild(newHighBar);
+
             alertDiv.appendChild(symbolSpan);
             alertDiv.appendChild(contentDiv);
 
@@ -139,8 +209,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             alertDiv.classList.add("blinking-alert"); // Add the blinking class for high volume
         }
 
+        // Remove previous low classes just in case
+        alertDiv.classList.remove("low-1", "low-2", "low-3", "low-4");
+
         if (volume < 100000 || direction === "DOWN") {
-            alertDiv.classList.add("low");
+            if (volume >= 75000) {
+                alertDiv.classList.add("low-1");
+            } else if (volume >= 50000) {
+                alertDiv.classList.add("low-2");
+            } else if (volume >= 25000) {
+                alertDiv.classList.add("low-3");
+            } else {
+                alertDiv.classList.add("low-4");
+            }
         }
 
         return alertDiv;
@@ -174,8 +255,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 symbolUpticks[symbol] = 0;
             }
 
-            if (alertData.direction === "UP") {
-                playAudioAlert(symbol, alertType);
+            if (alertData.direction === "UP" && alertData.volume >= 50000) {
+                playAudioAlert(symbol, alertType, alertData.volume);
             }
 
             const alertElement = createAlertElement(alertData);

@@ -1,12 +1,17 @@
-// ./src/main/windows/daily.js
+// ./src/main/windows/Daily.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
+const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
 function createDailyWindow(isDevelopment) {
+    const state = getWindowState("DailyWindow");
+
     const window = new BrowserWindow({
-        width: 300,
-        height: 140,
+        width: state.width || 850,
+        height: state.height || 660,
+        x: state.x,
+        y: state.y,
         frame: false,
         alwaysOnTop: false,
         resizable: true,
@@ -17,15 +22,25 @@ function createDailyWindow(isDevelopment) {
         useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
-            contextIsolation: true, // Required for contextBridge
-            enableRemoteModule: false, // Keep this disabled unless necessary
-            nodeIntegration: false, // Should be false for security
+            contextIsolation: true,
+            enableRemoteModule: false,
+            nodeIntegration: false,
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/daily/daily.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/Daily/Daily.html"));
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
+
+    window.on("move", () => {
+        const bounds = window.getBounds();
+        setWindowBounds("DailyWindow", bounds);
+    });
+    
+    window.on("resize", () => {
+        const bounds = window.getBounds();
+        setWindowBounds("DailyWindow", bounds);
+    });
 
     return window; // ✅ Return the window instance
 }

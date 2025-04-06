@@ -3,7 +3,7 @@ const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews, subscribeToSymbolNews } = require("./collectors/news");
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class Store extends EventEmitter {
     constructor() {
@@ -59,7 +59,7 @@ class Store extends EventEmitter {
         (async () => {
             for (const symbol of this.symbols.keys()) {
                 await fetchHistoricalNews(symbol);
-                await sleep(500); // ⏳ Add 500ms delay between requests
+                await sleep(200); // ⏳ Add 500ms delay between requests
             }
         })();
     }
@@ -162,7 +162,14 @@ class Store extends EventEmitter {
 
             // Emit update event for new high
             if (isNewHigh) {
-                this.emit("new-high-price", { symbol, price });
+                this.emit("new-high-price", {
+                    symbol,
+                    price,
+                    direction: direction || "UP",
+                    change_percent: change_percent || 0,
+                    fiveMinVolume: volume || 0, // ✅ correct attr
+                    type: "new-high-price",
+                });
             }
 
             // Emit store update event
@@ -180,7 +187,7 @@ class Store extends EventEmitter {
     attachNews(symbol) {
         log.log(`[attachNews] Checking for news for symbol: ${symbol}`);
         const newsItems = this.newsList.filter((news) => news.symbols.includes(symbol));
-    
+
         newsItems.forEach((newsItem) => {
             // ✅ Only modify if symbol exists in dailyData
             if (this.dailyData.has(symbol)) {
@@ -191,7 +198,7 @@ class Store extends EventEmitter {
                     this.dailyData.set(symbol, ticker);
                 }
             }
-    
+
             // ✅ Only modify if exists in sessionData
             if (this.sessionData.has(symbol)) {
                 let sessionTicker = this.sessionData.get(symbol);
@@ -201,7 +208,7 @@ class Store extends EventEmitter {
                     this.sessionData.set(symbol, sessionTicker);
                 }
             }
-    
+
             // ✅ Only modify if exists in symbols
             if (this.symbols.has(symbol)) {
                 let symbolTicker = this.symbols.get(symbol);
@@ -213,7 +220,6 @@ class Store extends EventEmitter {
             }
         });
     }
-    
 
     addNews(newsItems, symbol) {
         log.log(`[addNews] called for ${symbol}`);
@@ -263,6 +269,18 @@ class Store extends EventEmitter {
     getAllNews() {
         log.log("[getAllNews] called");
         return this.newsList;
+    }
+
+    fetchNews() {
+        const symbols = Array.from(this.symbols.keys());
+        subscribeToSymbolNews(symbols);
+        log.log(`[subscribeToNews] Subscribed to news for ${symbols.length} symbols.`);
+        (async () => {
+            for (const symbol of this.symbols.keys()) {
+                await fetchHistoricalNews(symbol);
+                await sleep(200); // ⏳ Add 500ms delay between requests
+            }
+        })();
     }
 
     getAllSymbols() {

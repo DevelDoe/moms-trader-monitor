@@ -118,8 +118,8 @@
             }
 
             .bearish-news {
-                color: #e70049;;
-                border-left: 4px solid #e70049;;
+                color: #e70049;
+                border-left: 4px solid #e70049;
             }
 
             .neutral-news {
@@ -157,7 +157,12 @@
                 window.newsAPI.onUpdate(() => {
                     console.log("🔄 Received news update. Fetching fresh news...");
                     fetchNews(); // Refresh news on update
-                    playFlash();
+                });
+
+                window.infobarAPI.onForceRefresh(() => {
+                    console.log("🔁 Refreshing infobar from main process trigger...");
+                    displayedNewsKeys.clear(); // Allow re-showing previous news
+                    fetchNews(); // Will re-queue everything again
                 });
             });
 
@@ -280,6 +285,8 @@
 
                 container.innerHTML = "";
 
+                playFlash();
+
                 const li = document.createElement("li");
                 li.className = `news-item show slide-in no-drag ${type}-news`;
                 li.innerHTML = `<span class="icon">${icon}</span><span class="desc">${desc}</span>`;
@@ -357,23 +364,25 @@
             }
 
             const bonusItems = [
-                { icon: "💤", desc: "Low Volume (less than 100k last 5min)" },
-                { icon: "🚛", desc: "Medium Volume (between 100k and 300k last 5min)" },
-                { icon: "🔥", desc: "High Volume (more than 300k last 5min)" },
+                { icon: "💀", desc: "Very Low Volume (less than 80k last 5min)" },
+                { icon: "💤", desc: "Low Volume (80k to 120k last 5min)" },
+                { icon: "🚛", desc: "Medium Volume (120k to 240k last 5min)" },
+                { icon: "🔥", desc: "High Volume (more than 240k last 5min)" },
                 { icon: "1️⃣", desc: "Float around 1M" },
                 { icon: "5️⃣", desc: "Float around 5M" },
                 { icon: "🔟", desc: "Float around 10M" },
                 { icon: "💼", desc: "High insider/institutional/locked shares holders" },
                 { icon: "😼", desc: "Has news" },
                 { icon: "📈", desc: "New high" },
+                { icon: "🔁", desc: "Recovering — stock is bouncing back after a downtrend" },
                 { icon: "🧬", desc: "Biotechnology stock" },
                 { icon: "🌿", desc: "Cannabis stock" },
                 { icon: "🌌", desc: "Space industry stock" },
-                { icon: "🇨🇳/🇭🇰", desc: "China-based company" },
+                { icon: "🇨🇳/🇭🇰", desc: "China/Hong Kong-based company" },
                 { icon: "🩳", desc: "High short interest (more than 20% of float)" },
                 { icon: "🥅", desc: "Company is currently running at a net loss" },
                 { icon: "📂", desc: "Registered S-3 filing" },
-                { icon: "🚨", desc: "High dilution risk, Net loss + Registered S-3" },
+                { icon: "🚨", desc: "High dilution risk: Net loss + Registered S-3" },
             ];
 
             // Show regular ticker
