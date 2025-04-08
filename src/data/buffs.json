@@ -1,0 +1,31 @@
+[
+    { "key": "lowVol", "icon": "💤", "desc": "Very Low Volume (less than 60k last 5min)", "volume": 30000, "pennyVol": 60000, "value": 0.01 },
+    { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume (above 100k last 5min)", "volume": 100000, "pennyVol": 140000, "value": 0.08 },
+    { "key": "highVol", "icon": "🔥", "desc": "High Volume (more than 240k last 5min)", "volume": 240000, "pennyVol": 500000, "value": 1 },
+    { "key": "paracolicVol", "icon": "🚀", "desc": "Parabolic Volume (more than 400k last 5min)", "volume": 400000, "pennyVol": 400000, "value": 1.25 },
+    
+    { "key": "float1m", "icon": "1️⃣", "desc": "Float around 1M", "value": 1.15 },
+    { "key": "float5m", "icon": "5️⃣", "desc": "Float around 5M", "value": 1.10 },
+    { "key": "float10m", "icon": "🔟", "desc": "Float around 10M", "value": 1.05 },
+    { "key": "float50m", "icon": "🔟", "desc": "Float around 10M", "value": 1 },
+    { "key": "float100m", "icon": "🔟", "desc": "Float around 10M", "value": 0.8 },
+    { "key": "float200m", "icon": "🔟", "desc": "Float around 10M", "value": 0.6 },
+    { "key": "float500m", "icon": "🔟", "desc": "Float around 10M", "value": 0.4 },
+    { "key": "float600m+", "icon": "🔟", "desc": "Float around 10M", "value": 0.1 },
+  
+    { "key": "lockedShares", "icon": "💼", "desc": "High insider/institutional/locked shares holders", "value": 10 },
+  
+    { "key": "hasNews", "icon": "😼", "desc": "Has news", "value": 15 },
+    { "key": "newHigh", "icon": "📈", "desc": "New high", "value": 10 },
+    { "key": "bounceBack", "icon": "🔁", "desc": "Recovering — stock is bouncing back after a downtrend", "value": 5 },
+  
+    { "key": "bio", "icon": "🧬", "desc": "Biotechnology stock", "value": 5 },
+    { "key": "weed", "icon": "🌿", "desc": "Cannabis stock", "value": 5 },
+    { "key": "space", "icon": "🌌", "desc": "Space industry stock", "value": 5 },
+    { "key": "china", "icon": "🇨🇳/🇭🇰", "desc": "China/Hong Kong-based company", "value": -5 },
+  
+    { "key": "highShort", "icon": "🩳", "desc": "High short interest (more than 20% of float)", "value": 10 },
+    { "key": "netLoss", "icon": "🥅", "desc": "Company is currently running at a net loss", "value": -5 },
+    { "key": "hasS3", "icon": "📂", "desc": "Registered S-3 filing", "value": -10 },
+    { "key": "dilutionRisk", "icon": "🚨", "desc": "High dilution risk: Net loss + Registered S-3", "value": -20 }
+  ]

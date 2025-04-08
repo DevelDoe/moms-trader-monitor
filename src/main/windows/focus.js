@@ -4,7 +4,7 @@ const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createFocusWindow(isDevelopment) {
+function createFocusWindow(isDevelopment, buffs) {
     const state = getWindowState("focusWindow");
 
     const window = new BrowserWindow({
@@ -25,6 +25,9 @@ function createFocusWindow(isDevelopment) {
             contextIsolation: true,
             enableRemoteModule: false,
             nodeIntegration: false,
+            additionalArguments: [
+                `--buffs=${encodeURIComponent(JSON.stringify(buffs))}`
+            ]
         },
     });
 
@@ -36,13 +39,14 @@ function createFocusWindow(isDevelopment) {
         const bounds = window.getBounds();
         setWindowBounds("focusWindow", bounds);
     });
-    
+
     window.on("resize", () => {
         const bounds = window.getBounds();
         setWindowBounds("focusWindow", bounds);
     });
 
-    return window; // ✅ Return the window instance
+    return window;
 }
 
 module.exports = { createFocusWindow };
+

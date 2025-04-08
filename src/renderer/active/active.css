@@ -73,6 +73,8 @@ body {
     padding-bottom: 30px;
     margin-bottom: 23px;
     max-width: 50%;
+    position: absolute;
+    bottom: 5px;
 }
 
 /* ✅ Gradient fade effect at the bottom */
@@ -177,9 +179,10 @@ body {
 /* latest news on summ  */
 
 #latest-news {
+    position: absolute;
     display: flex;
-    justify-content: center;       /* 🔄 horizontally center content */
-    align-items: center;           /* 🔼 vertically center */
+    justify-content: center;
+    align-items: center;
     gap: 8px;
     padding: 6px 10px;
     margin-top: 10px;
@@ -188,9 +191,11 @@ body {
     background-color: #1e1e1e;
     font-size: 14px;
     line-height: 1.3;
-    height: 60px;
+    height: 34px;
     overflow: hidden;
     box-shadow: -4px -4px 8px rgba(0, 0, 0, 0.05);
+    bottom: -18px;
+    width: 90%;
 }
 
 #latest-news .latest-news-item {

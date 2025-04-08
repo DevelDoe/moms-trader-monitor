@@ -1,3 +1,14 @@
+function parseVolumeValue(str) {
+    if (!str) return 0;
+    let value = parseFloat(String(str).replace(/[^0-9.]/g, "")) || 0;
+
+    if (/B/i.test(str)) value *= 1_000_000_000;
+    else if (/M/i.test(str)) value *= 1_000_000;
+    else if (/K/i.test(str)) value *= 1_000;
+
+    return value;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
 

@@ -41,5 +41,8 @@ function getDailyTopHeroes(limit = 10) {
 Symbol	LV	XP	Peak Score
 $AREB	6	78	3200
 $PXMD	5	44	2900
+
 Add subtle sparkles ✨ or even RPG-style medals 🥇 to top 3. Could also persist this to disk so you can show "Top Gappers of the Week" later.
+
+These could at close be saved as former runner perc
 

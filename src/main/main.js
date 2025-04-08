@@ -15,6 +15,8 @@ const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const { connectBridge, sendActiveSymbol } = require("../bridge");
 const { autoUpdater } = require("electron-updater");
 const tickerStore = require("./store");
+const { safeSend } = require("./utils/safeSend");
+const { broadcast } = require("./utils/broadcast");
 
 const path = require("path");
 const fs = require("fs");
@@ -34,27 +36,54 @@ autoUpdater.setFeedURL({
 ////////////////////////////////////////////////////////////////////////////////////
 // WINDOWS
 
+// Buffs
+
+const buffsPath = path.join(__dirname, "../data/buffs.json");
+let buffs = [];
+
+try {
+    const raw = fs.readFileSync(buffsPath, "utf-8");
+    buffs = JSON.parse(raw);
+    console.log("[Buffs] Loaded", buffs.length, "buffs");
+} catch (err) {
+    console.error("[Buffs] Failed to load buffs.json:", err);
+}
+
+
+
+const { createOrRestoreWindow } = require("./windowManager");
 const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
 const { createFocusWindow } = require("./windows/focus");
-const { createDailyWindow } = require("./windows/daily");
 const { createLiveWindow } = require("./windows/live");
+const { createDailyWindow } = require("./windows/daily");
 const { createActiveWindow } = require("./windows/active");
-// const { createNewsWindow } = require("./windows/news");
 const { createScannerWindow } = require("./windows/scanner");
 const { createInfobarWindow } = require("./windows/infobar");
-// const { createTraderWidgetViewWindow } = require("./windows/traderview-widget.js");
 const { createTradingViewWindow } = require("./windows/traderview");
 
 let windows = {};
 
 function createWindow(name, createFn) {
-    windows[name] = createFn();
-    return windows[name];
+    const win = createFn();
+
+    win.windowName = name; // ✅ Tag the window with its name
+
+    // 🧹 Cleanup on close
+    win.on("closed", () => {
+        if (windows[name]) {
+            delete windows[name];
+            log.log(`[WindowManager] Removed reference to closed window: ${name}`);
+        }
+    });
+
+    windows[name] = win;
+    return win;
 }
 
-const { getWindowState, saveWindowState, toggleWindowWithState } = require("./utils/windowState");
+
+const { getWindowState, saveWindowState } = require("./utils/windowState");
 
 global.sharedState = {
     activeTicker: "asdf", // Default fallback
@@ -70,7 +99,6 @@ const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts }
 
 // Use system settings file for production, separate file for development
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
-
 const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock"); // used to determine if this is a fresh new install
 
 // Default settings for fresh installs
@@ -389,7 +417,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
     log.log("Broadcasting 'settings-updated' event...");
 
     BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("settings-updated", appSettings);
+        safeSend(win, "settings-updated", appSettings);
     });
 });
 
@@ -424,17 +452,12 @@ tickerStore.on("newsUpdated", (update) => {
 
     log.log(`Broadcasting ${newsItems.length} new articles`);
 
-    // ✅ Send all news items at once instead of per ticker
-    BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("news-updated", { newsItems });
-    });
+    broadcast("news-updated", { newsItems });
 });
 
 tickerStore.on("lists-update", () => {
     log.log("Broadcasting store update");
-    BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("lists-updated");
-    });
+    broadcast("lists-updated");
 });
 
 ipcMain.on("clear-live", () => {
@@ -444,9 +467,7 @@ ipcMain.on("clear-live", () => {
 
     setTimeout(() => {
         log.log("📢 Broadcasting clear live event to all windows... ✅");
-        BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send("live-cleared");
-        });
+        broadcast("live-cleared");
     }, 500); // ✅ Give store time to clear live
 });
 
@@ -605,7 +626,6 @@ tickerStore.on("new-high-price", ({ symbol, price, direction, change_percent, fi
     }
 });
 
-
 // infobar
 ipcMain.on("toggle-infobar", () => {
     const infobar = windows.infobar;
@@ -736,26 +756,28 @@ app.on("ready", async () => {
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
-        windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment));
+        windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
         windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
-        windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
+        // windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
         // windows.news = createWindow("news", () => createNewsWindow(isDevelopment));
         windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
         windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
+
+        windows.live = createOrRestoreWindow("live", () => createLiveWindow(isDevelopment));
 
         windows.traderview_1 = createTradingViewWindow("AAPL", 0, isDevelopment);
         windows.traderview_2 = createTradingViewWindow("TSLA", 1, isDevelopment);
         windows.traderview_3 = createTradingViewWindow("NVDA", 2, isDevelopment);
         windows.traderview_4 = createTradingViewWindow("GOOGL", 3, isDevelopment); // Adding the 4th window
 
-        global.traderviewWindows = [windows.traderview_1, windows.traderview_2, windows.traderview_3, windows.traderview_4 ];
+        global.traderviewWindows = [windows.traderview_1, windows.traderview_2, windows.traderview_3, windows.traderview_4];
 
         // windows.traderviewWidget = createWindow("traderviewWidget", () => createTraderWidgetViewWindow(isDevelopment));
 
         connectMTP(windows.scanner, windows.focus);
         flushMessageQueue(windows.scanner);
-        connectBridge(); 
+        connectBridge();
 
         // Hide all windows by default
         Object.values(windows).forEach((window) => window?.hide());
@@ -787,14 +809,31 @@ app.on("ready", async () => {
         windows.docker.show();
 
         // Send settings to all windows
-        Object.values(windows).forEach((window) => {
-            if (window?.webContents) {
-                window.webContents.send("settings-updated", loadSettings());
-            }
+        const settings = loadSettings(); // load once, reuse
+
+        Object.values(windows).forEach((win) => {
+            safeSend(win, "settings-updated", settings);
         });
 
-        // startMockAlerts(windows); 
+        // startMockAlerts(windows);
     });
+});
+
+const { globalShortcut } = require('electron');
+
+const { getWindow } = require("./windowManager");
+
+app.whenReady().then(() => {
+  // Already exists...
+  globalShortcut.register("Control+Shift+L", () => {
+    const live = getWindow("live");
+    if (live) {
+      console.log("[CrashTest] Crashing Live window renderer...");
+      live.webContents.forcefullyCrashRenderer();
+    } else {
+      console.warn("[CrashTest] Live window not found.");
+    }
+  });
 });
 
 // Quit the app when all windows are closed

@@ -15,8 +15,50 @@ const floatFiveHundredMillion = 600_000_000;
 
 const symbolColors = {};
 
+function getMarketDateString() {
+    const now = new Date();
+    const offset = -5 * 60; // EST offset in minutes
+    const localOffset = now.getTimezoneOffset();
+    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
+    return estDate.toISOString().split("T")[0];
+}
+
+function saveDailyState() {
+    const payload = {
+        date: getMarketDateString(),
+        tickers: tickersDaily,
+    };
+    localStorage.setItem("dailyState", JSON.stringify(payload));
+    console.log("💾 Saved daily state.");
+}
+
+function loadDailyState() {
+    const saved = localStorage.getItem("dailyState");
+    if (!saved) return false;
+
+    try {
+        const parsed = JSON.parse(saved);
+        if (parsed.date === getMarketDateString()) {
+            tickersDaily = parsed.tickers || [];
+            prevTickersDaily = Object.fromEntries(tickersDaily.map((t) => [t.Symbol, t]));
+            console.log("🔄 Restored daily state from earlier session.");
+            return true;
+        } else {
+            console.log("🧼 Skipping old session state.");
+            localStorage.removeItem("dailyState");
+            return false;
+        }
+    } catch (err) {
+        console.warn("⚠️ Could not parse saved daily state:", err);
+        localStorage.removeItem("dailyState");
+        return false;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading daily Window...");
+
+    const restored = loadDailyState(); // ✅ Load saved state if available
 
     await applySavedFilters();
     await fetchAndUpdateTickers();
@@ -130,6 +172,7 @@ async function fetchAndUpdateTickers() {
 
             // ✅ Update UI only (no settings update)
             updateTickersList(tickersDaily, "tickers-daily", prevTickersDaily);
+            saveDailyState(); // ✅ Save after update
         } else {
             console.log("✅ No changes in filtered tickers, skipping update.");
         }

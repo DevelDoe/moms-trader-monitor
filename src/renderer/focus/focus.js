@@ -1,6 +1,6 @@
 const DECAY_INTERVAL_MS = 6000; 
 const TOTAL_DECAY_DURATION = 450_000; 
-const XP_DECAY_PER_TICK = 880 / (TOTAL_DECAY_DURATION / DECAY_INTERVAL_MS); 
+const XP_DECAY_PER_TICK = 600 / (TOTAL_DECAY_DURATION / DECAY_INTERVAL_MS); 
 
 const focusState = {};
 let container;
@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 strength: 0,
                 xp: 0,
                 lv: 0,
-                score: 0,
+                score: 0, 
                 lastEvent: {
                     hp: 0,
                     dp: 0,
@@ -195,8 +195,8 @@ function updateFocusStateFromEvent(event) {
 
     const topN = window.settings?.top?.focusListLength ?? 10;
     const currentTopHeroes = Object.values(focusState)
-        .filter((s) => s.score > 100)
-        .sort((a, b) => b.lv - a.lv || b.score - a.score)
+        .filter((s) => s.score > 3)
+        .sort((a, b) => b.score - a.score)
         .slice(0, topN)
         .map((s) => s.hero);
 
@@ -210,13 +210,12 @@ function updateFocusStateFromEvent(event) {
     saveState();
 }
 
-// ⛏️ Render all cards
 function renderAll() {
     container.innerHTML = "";
 
     Object.values(focusState)
-        .filter((s) => s.score > 100)
-        .sort((a, b) => b.lv - a.lv || b.score - a.score)
+        .filter((s) => s.score > 3)
+        .sort((a, b) => b.score - a.score)
         .slice(0, window.settings?.top?.focusListLength ?? 3)
         .forEach((data) => {
             const card = renderCard(data);
@@ -225,8 +224,8 @@ function renderAll() {
 
     // ✅ After rendering all top heroes, remove any zombie cards
     const topSymbols = Object.values(focusState)
-        .filter((s) => s.score > 100)
-        .sort((a, b) => b.lv - a.lv || b.score - a.score)
+        .filter((s) => s.score > 3)
+        .sort((a, b) => b.score - a.score)
         .slice(0, window.settings?.top?.focusListLength ?? 3)
         .map((s) => s.hero);
 
@@ -239,13 +238,12 @@ function renderAll() {
     });
 }
 
-// 🎯 Update just one card's values in the DOM
 function updateCardDOM(hero) {
     // Do nothing if not in the top list
     const topN = window.settings?.top?.focusListLength ?? 10;
     const topHeroes = Object.values(focusState)
-        .filter((s) => s.score > 100)
-        .sort((a, b) => b.lv - a.lv || b.score - a.score)
+        .filter((s) => s.score > 3)
+        .sort((a, b) => b.score - a.score)
         .slice(0, topN)
         .map((s) => s.hero);
 
@@ -259,7 +257,6 @@ function updateCardDOM(hero) {
     existing.replaceWith(newCard);
 }
 
-// 🔁 Create a ticker card and bind it to DOM
 function renderCard({ hero, price, hp, dp, strength }) {
     const card = document.createElement("div");
     card.className = "ticker-card";
@@ -357,16 +354,22 @@ function applyMultiplier(score, multiplier) {
     return score * multiplier;
 }
 
-function adjustMultiplier(multiplier) {
-    return Math.max(0.01, Math.min(multiplier, 3)); // Limit to 3x max multiplier
-}
+// Scaling multiplier: starts high, drops toward 10 as hp increases
+const scaleHpBoost = (hp) => {
+    const baseMultiplier = 20; // starting value when hp is low
+    const minMultiplier = 10;  // minimum multiplier when hp is high
+    const maxHp = 10;
+  
+    const factor = Math.max(minMultiplier, baseMultiplier - (hp / maxHp) * (baseMultiplier - minMultiplier));
+    return factor;
+  };
 
 function calculateScore(hero, event, floatValue = hero.float || 0) {
     let baseScore = 0;
 
     // 🧠 Apply alert changes
     if (event.hp > 0) {
-        baseScore += 100 + event.hp * 10;
+        baseScore += event.hp * scaleHpBoost(event.hp);
 
         // Boost if it's a new ticker or if it just reversed
         if (hero.hp === 0) {
@@ -389,61 +392,65 @@ function calculateScore(hero, event, floatValue = hero.float || 0) {
     return Math.max(0, baseScore);
 }
 
-function applyVolumeMultiplier(score, volume, price = 1, isLongBiased = true) {
-    let multiplier = 1;
+function adjustMultiplier(multiplier) {
+    return Math.max(0.01, Math.min(multiplier, 3)); // Limit to 3x max multiplier
+}
 
+function applyVolumeMultiplier(score, volume, price = 1) {
     const isPenny = price < 1.5;
 
-    // Adjust thresholds for penny stocks
+    const low = window.buffs.find(b => b.key === "lowVol");
+    const medium = window.buffs.find(b => b.key === "mediumVol");
+    const high = window.buffs.find(b => b.key === "highVol");
+    const para = window.buffs.find(b => b.key === "paracolicVol");
+
+    let multiplier = 1;
+
     if (isPenny) {
-        if (volume < 60_000) {
-            multiplier = adjustMultiplier(0.01);
-        } else if (volume < 240_000) {
-            multiplier = adjustMultiplier(0.8);
-        } else if (volume < 500_000) {
-            multiplier = adjustMultiplier(1);
+        if (volume < low.pennyVol) {
+            multiplier = low.value;
+        } else if (volume < medium.pennyVol) {
+            multiplier = medium.value;
+        } else if (volume < high.pennyVol) {
+            multiplier = high.value;
         } else {
-            multiplier = adjustMultiplier(1.25);
+            multiplier = para.value;
         }
     } else {
-        if (volume < 30_000) {
-            multiplier = adjustMultiplier(0.01);
-        } else if (volume < 120_000) {
-            multiplier = adjustMultiplier(0.8);
-        } else if (volume < 240_000) {
-            multiplier = adjustMultiplier(1);
+        if (volume < low.volume) {
+            multiplier = low.value;
+        } else if (volume < medium.volume) {
+            multiplier = medium.value;
+        } else if (volume < high.volume) {
+            multiplier = high.value;
         } else {
-            multiplier = adjustMultiplier(1.25);
+            multiplier = para.value;
         }
     }
 
-    return applyMultiplier(score, multiplier);
+    return applyMultiplier(score, adjustMultiplier(multiplier));
 }
 
 function applyFloatMultiplier(score, floatValue) {
-    const floatOneMillionHigh = 1_200_000;
-    const floatFiveMillion = 5_000_000;
-    const floatTenMillion = 10_000_000;
-    const floatFiftyMillion = 50_000_000;
-    const floatHundredMillion = 100_000_000;
-    const floatTwoHundredMillion = 200_000_000;
-    const floatFiveHundredMillion = 500_000_000;
+    let multiplier = 1;
 
-    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        return applyMultiplier(score, adjustMultiplier(1.25));
-    } else if (floatValue < floatFiveMillion) {
-        return applyMultiplier(score, adjustMultiplier(1.15));
-    } else if (floatValue < floatTenMillion) {
-        return applyMultiplier(score, adjustMultiplier(1.05));
-    } else if (floatValue < floatHundredMillion) {
-        return applyMultiplier(score, adjustMultiplier(0.8));
-    } else if (floatValue < floatTwoHundredMillion) {
-        return applyMultiplier(score, adjustMultiplier(0.6));
-    } else if (floatValue < floatFiveHundredMillion) {
-        return applyMultiplier(score, adjustMultiplier(0.4));
+    if (floatValue < 1_200_000) {
+        multiplier = window.buffs.find(b => b.key === "float1m")?.value ?? 1;
+    } else if (floatValue < 5_000_000) {
+        multiplier = window.buffs.find(b => b.key === "float5m")?.value ?? 1;
+    } else if (floatValue < 10_000_000) {
+        multiplier = window.buffs.find(b => b.key === "float10m")?.value ?? 1;
+    } else if (floatValue < 50_000_000) {
+        multiplier = window.buffs.find(b => b.key === "float50m")?.value ?? 1;
+    } else if (floatValue < 100_000_000) {
+        multiplier = window.buffs.find(b => b.key === "float100m")?.value ?? 1;
+    } else if (floatValue < 200_000_000) {
+        multiplier = window.buffs.find(b => b.key === "float200m")?.value ?? 1;
     } else {
-        return applyMultiplier(score, adjustMultiplier(0.1));
+        multiplier = window.buffs.find(b => b.key === "float600m+")?.value ?? 1;
     }
+
+    return applyMultiplier(score, adjustMultiplier(multiplier));
 }
 
 function calculateXp(hero) {
@@ -485,30 +492,3 @@ function startScoreDecay() {
         }
     }, DECAY_INTERVAL_MS);
 }
-
-const buffs = [
-    { key: "veryLowVol", icon: "💀", desc: "Very Low Volume (less than 80k last 5min)", modifier: -20 },
-    { key: "lowVol", icon: "💤", desc: "Low Volume (80k to 120k last 5min)", modifier: -10 },
-    { key: "mediumVol", icon: "🚛", desc: "Medium Volume (120k to 240k last 5min)", modifier: 0 },
-    { key: "highVol", icon: "🔥", desc: "High Volume (more than 240k last 5min)", modifier: 20 },
-
-    { key: "float1m", icon: "1️⃣", desc: "Float around 1M", modifier: 20 },
-    { key: "float5m", icon: "5️⃣", desc: "Float around 5M", modifier: 10 },
-    { key: "float10m", icon: "🔟", desc: "Float around 10M", modifier: 0 },
-
-    { key: "lockedShares", icon: "💼", desc: "High insider/institutional/locked shares holders", modifier: 10 },
-
-    { key: "hasNews", icon: "😼", desc: "Has news", modifier: 15 },
-    { key: "newHigh", icon: "📈", desc: "New high", modifier: 10 },
-    { key: "bounceBack", icon: "🔁", desc: "Recovering — stock is bouncing back after a downtrend", modifier: 5 },
-
-    { key: "bio", icon: "🧬", desc: "Biotechnology stock", modifier: 5 },
-    { key: "weed", icon: "🌿", desc: "Cannabis stock", modifier: 5 },
-    { key: "space", icon: "🌌", desc: "Space industry stock", modifier: 5 },
-    { key: "china", icon: "🇨🇳/🇭🇰", desc: "China/Hong Kong-based company", modifier: -5 },
-
-    { key: "highShort", icon: "🩳", desc: "High short interest (more than 20% of float)", modifier: 10 },
-    { key: "netLoss", icon: "🥅", desc: "Company is currently running at a net loss", modifier: -5 },
-    { key: "hasS3", icon: "📂", desc: "Registered S-3 filing", modifier: -10 },
-    { key: "dilutionRisk", icon: "🚨", desc: "High dilution risk: Net loss + Registered S-3", modifier: -20 },
-];

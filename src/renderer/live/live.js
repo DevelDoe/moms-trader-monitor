@@ -224,9 +224,9 @@ function calculateScore(ticker) {
     Score = Math.max(0, Math.floor(Score));
 
     // 5. Volume impact - reversed logic for short-biased traders
-    if (fiveMinVolume < 80_000) {
+    if (fiveMinVolume < 30_000) {
         Score = applyMultiplier(Score, adjustMultiplier(0.01));
-    } else if (fiveMinVolume < 120_000) {
+    } else if (fiveMinVolume < 90_000) {
         Score = applyMultiplier(Score, adjustMultiplier(0.8));
     } else if (fiveMinVolume < 240_000) {
         Score = applyMultiplier(Score, adjustMultiplier(1));
@@ -436,10 +436,10 @@ function getBonusesHTML(ticker) {
     const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
     const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
 
-    if (ticker.fiveMinVolume < 80_000) {
+    if (ticker.fiveMinVolume < 30_000) {
         bonuses.push('<span class="bonus low-volume no-drag">💀</span>');
         tooltipText.push(`💀 Volume too low: ${fiveMinVolume}`);
-    } else if (ticker.fiveMinVolume < 120_000) {
+    } else if (ticker.fiveMinVolume < 90_000) {
         bonuses.push('<span class="bonus low-volume no-drag">💤</span>');
         tooltipText.push(`💤 Low Volume: ${fiveMinVolume}`);
     } else if (ticker.fiveMinVolume < 240_000) {
@@ -566,7 +566,7 @@ function triggerGlobalAnimation() {
     }
 }
 
-let currentMaxScore = 0; // Variable to track the max score globally
+let currentMaxScore = 0;
 
 function renderTickers(listId = "tickers-live") {
     const container = document.getElementById(listId);
@@ -729,8 +729,6 @@ function renderTickers(listId = "tickers-live") {
         prevTickersSessions[ticker.Symbol] = { ...ticker };
     });
 }
-
-
 
 function getSymbolColor(symbol) {
     if (!symbolColors[symbol]) {
