@@ -14,27 +14,20 @@
         "alertChangePercent": false,
         "cumulativeUpChange": false,
         "cumulativeDownChange": false,
-        "fiveMinVolume": true,
         "Score": false,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 3,
+        "fiveMinVolume": true
       },
       "focus": {
         "Price": false,
         "alertChangePercent": false,
         "cumulativeUpChange": true,
         "cumulativeDownChange": false,
-        "fiveMinVolume": false,
         "Score": false,
-        "Bonuses": true
-      },
-      "daily": {
-        "Price": false,
-        "alertChangePercent": false,
-        "cumulativeUpChange": false,
-        "cumulativeDownChange": false,
-        "fiveMinVolume": false,
-        "Score": false,
-        "Bonuses": true
+        "Bonuses": true,
+        "length": 3,
+        "fiveMinVolume": false
       }
     },
     "transparent": false,
@@ -194,7 +187,7 @@
     "minChangePercent": 0,
     "minVolume": 1,
     "maxAlerts": 50,
-    "scannerVolume": 0.7
+    "scannerVolume": 0
   },
   "windows": {
     "activeWindow": {
