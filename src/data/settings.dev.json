@@ -195,8 +195,7 @@
       "width": 753,
       "height": 407,
       "x": -77,
-      "y": -900,
-      "isOpen": true
+      "y": -900
     },
     "settingsWindow": {
       "width": 850,
@@ -279,8 +278,7 @@
       "width": 358,
       "height": 493,
       "x": -77,
-      "y": -493,
-      "isOpen": true
+      "y": -493
     },
     "dailyWindow": {
       "width": 394,

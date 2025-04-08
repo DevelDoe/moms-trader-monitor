@@ -1,12 +1,19 @@
 body {
     background-color: #1c1d23;
     color: #cdcdcd;
-    padding: 5px 10px;
+    
     margin: 0 auto;
     font-size: 14px;
      /* font-family: "Press Start 2P", monospace;  */
+     height: 100%;
+     
+   
 }
-
+#app-container {
+    padding: 5px 10px;
+    box-shadow: inset 0px 0px 0px 0px  rgba(0,0,0,0.5);
+    height: 100%;
+}
 .tablinks {
     font-size: 8px;
     border: none;
@@ -57,24 +64,22 @@ body {
 }
 
 .about {
-    margin-top: 15px;
+    margin-top: -90px;
     color: #696050 !important;
     font: menu;
     font-size: 15px;
 
     /* ✅ Fixed height with scrolling */
-    height: 10vw;
-    overflow-y: auto;
+    height: 10px;
+    overflow-y: hidden;
 
     /* ✅ Hide scrollbar in Chrome/Electron */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
 
-    padding-bottom: 30px;
+    padding-bottom: 130px;
     margin-bottom: 23px;
     max-width: 50%;
-    position: absolute;
-    bottom: 5px;
 }
 
 /* ✅ Gradient fade effect at the bottom */
