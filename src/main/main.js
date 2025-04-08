@@ -753,7 +753,7 @@ app.on("ready", async () => {
 
         // windows.traderviewWidget = createWindow("traderviewWidget", () => createTraderWidgetViewWindow(isDevelopment));
 
-        connectMTP(windows.scanner);
+        connectMTP(windows.scanner, windows.focus);
         flushMessageQueue(windows.scanner);
         connectBridge(); 
 

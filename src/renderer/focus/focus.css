@@ -39,6 +39,17 @@ body::-webkit-scrollbar {
     align-items: center; /* Vertically center items */
 }
 
+h1, h2 {
+    font-size: 16px;
+    margin-top: -3px;
+    color: #595959;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h2 {
+    font-size: 10px;
+    margin-top: -12px;
+}
 
 .ticker-info {
     display: flex;
@@ -53,6 +64,14 @@ body::-webkit-scrollbar {
     color: #1c1d23;
     padding: 3px;
     /* border-radius: 3px; */
+}
+
+.ticker-symbol .lv {
+    font-size: 0.5em;
+    margin-left: 0;
+    color: white;
+    font-weight: 300;
+    background-color: #1c1d23;
 }
 
 .ticker-price {
@@ -95,6 +114,8 @@ body::-webkit-scrollbar {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+
 
 /* Bar Color Classes */
 .xp {
@@ -175,6 +196,12 @@ body::-webkit-scrollbar {
     background-repeat: no-repeat;
     animation: soldier-walk 1s steps(10) ;
     background-position-x: 0;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.sprite-active {
+    opacity: 1;
 }
 
 @keyframes soldier-walk {

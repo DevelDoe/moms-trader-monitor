@@ -1,12 +1,12 @@
 {
   "top": {
-    "minPrice": 1,
-    "maxPrice": 10,
+    "minPrice": 0,
+    "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
     "maxScore": 0,
-    "minVolume": 1,
+    "minVolume": 0,
     "maxVolume": 0,
     "lists": {
       "live": {
@@ -26,11 +26,21 @@
         "fiveMinVolume": false,
         "Score": false,
         "Bonuses": true
+      },
+      "daily": {
+        "Price": false,
+        "alertChangePercent": false,
+        "cumulativeUpChange": false,
+        "cumulativeDownChange": false,
+        "fiveMinVolume": false,
+        "Score": false,
+        "Bonuses": true
       }
     },
     "transparent": false,
     "liveListLength": 12,
-    "focusListLength": 13
+    "focusListLength": 3,
+    "dailyListLength": 13
   },
   "news": {
     "showTrackedTickers": false,
@@ -184,26 +194,28 @@
     "minChangePercent": 0,
     "minVolume": 1,
     "maxAlerts": 50,
-    "scannerVolume": 0
+    "scannerVolume": 0.7
   },
   "windows": {
     "activeWindow": {
-      "width": 753,
-      "height": 475,
-      "x": -77,
-      "y": -860
+      "width": 463,
+      "height": 453,
+      "x": 1460,
+      "y": 2,
+      "isOpen": false
     },
     "settingsWindow": {
       "width": 850,
       "height": 753,
       "x": 1441,
-      "y": -762
+      "y": -762,
+      "isOpen": false
     },
     "focusWindow": {
-      "width": 395,
-      "height": 385,
-      "x": 281,
-      "y": -385,
+      "width": 502,
+      "height": 492,
+      "x": 282,
+      "y": -492,
       "isOpen": true
     },
     "sessionWindow": {
@@ -215,16 +227,16 @@
     "scannerWindow": {
       "width": 173,
       "height": 900,
-      "x": -250,
-      "y": -900,
-      "isOpen": true
+      "x": 1203,
+      "y": 439,
+      "isOpen": false
     },
     "infobarWindow": {
       "width": 927,
-      "height": 39,
-      "x": -251,
-      "y": -900,
-      "isOpen": true
+      "height": 58,
+      "x": 1048,
+      "y": 537,
+      "isOpen": false
     },
     "traderviewWindow": {
       "width": 452,
@@ -253,35 +265,36 @@
       "y": 2
     },
     "traderviewWindow_1": {
-      "width": 1453,
-      "height": 987,
+      "width": 1448,
+      "height": 1057,
       "x": 8,
-      "y": 1129
+      "y": 1059
     },
     "traderviewWindow_2": {
       "width": 1472,
       "height": 1059,
-      "x": 2370,
+      "x": 2368,
       "y": 2
     },
     "traderviewWindow_3": {
       "width": 1472,
       "height": 1060,
-      "x": 2369,
-      "y": 1061
+      "x": 2368,
+      "y": 1060
     },
     "liveWindow": {
       "width": 358,
-      "height": 385,
+      "height": 492,
       "x": -77,
-      "y": -385
+      "y": -492,
+      "isOpen": false
     },
     "dailyWindow": {
-      "width": 850,
-      "height": 660,
-      "x": 1495,
-      "y": 730,
-      "isOpen": false
+      "width": 397,
+      "height": 490,
+      "x": 785,
+      "y": -491,
+      "isOpen": true
     }
   }
 }

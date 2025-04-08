@@ -18,19 +18,19 @@ const symbolColors = {};
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Loading daily Window...");
 
-    await applySavedFilters(); 
-    await fetchAndUpdateTickers(); 
+    await applySavedFilters();
+    await fetchAndUpdateTickers();
 
     // ✅ Listen for ticker updates
     window.dailyAPI.onTickerUpdate(() => {
         console.log("🔔 Lists updates received, fetching latest data...");
-        fetchAndUpdateTickers(); 
+        fetchAndUpdateTickers();
     });
 
     // ✅ Listen for news updates (new articles)
     window.dailyAPI.onNewsUpdate(({ ticker, newsItems }) => {
         console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`); //
-        fetchAndUpdateTickers(); 
+        fetchAndUpdateTickers();
     });
 
     // ✅ Listen for settings updates globally
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.settings = updatedSettings;
 
         // ✅ Re-apply filters & update UI
-        await applySavedFilters(); 
+        await applySavedFilters();
         await fetchAndUpdateTickers();
     });
 });
@@ -64,9 +64,9 @@ async function fetchAndUpdateTickers() {
         const maxFloat = window.settings.top?.maxFloat ?? 0;
         const minScore = window.settings.top?.minScore ?? 0;
         const maxScore = window.settings.top?.maxScore ?? 0;
-        const minVolume = 0
+        const minVolume = 0;
         const maxVolume = window.settings.top?.maxVolume ?? 0;
-        const maxDailyLength = window.settings.top.focusListLength ?? 10;
+        const maxDailyLength = window.settings.top.dailyListLength ?? 10;
 
         console.log("Applying filters:", {
             minPrice,
@@ -144,16 +144,15 @@ async function applySavedFilters() {
     const settings = await window.settingsAPI.get();
     window.settings = settings; // ✅ Ensure settings are globally updated
 
-   // Apply the relevant filters based on the settings
-   window.minPrice = settings.top.minPrice ?? 0; // Set minimum price filter
-   window.maxPrice = settings.top.maxPrice ?? 1000; // Set maximum price filter
-   window.minFloat = settings.top.minFloat ?? 0; // Set minimum float filter
-   window.maxFloat = settings.top.maxFloat ?? 0; // Set maximum float filter
-   window.minScore = settings.top.minScore ?? 0; // Set minimum score filter
-   window.maxScore = settings.top.maxScore ?? 0; // Set maximum score filter
-   window.minVolume = 0
-   window.maxVolume = settings.top.maxVolume ?? 0; // Set maximum volume filter
-    
+    // Apply the relevant filters based on the settings
+    window.minPrice = settings.top.minPrice ?? 0; // Set minimum price filter
+    window.maxPrice = settings.top.maxPrice ?? 1000; // Set maximum price filter
+    window.minFloat = settings.top.minFloat ?? 0; // Set minimum float filter
+    window.maxFloat = settings.top.maxFloat ?? 0; // Set maximum float filter
+    window.minScore = settings.top.minScore ?? 0; // Set minimum score filter
+    window.maxScore = settings.top.maxScore ?? 0; // Set maximum score filter
+    window.minVolume = 0;
+    window.maxVolume = settings.top.maxVolume ?? 0; // Set maximum volume filter
 
     console.log("✅ Applied saved filters:", { minPrice: window.minPrice, maxPrice: window.maxPrice });
 
@@ -176,34 +175,34 @@ function updateTickersList(tickers, listId, prevTickers) {
 
     // ✅ Determine which columns should be displayed
     const listType = "daily";
-    const allColumns = [
-        "Symbol",
-        "Score",
-        "Bonuses",
-      ];
+    const allColumns = ["Symbol", "Score", "Bonuses"];
 
     // ✅ Populate list items
-    tickers.forEach((ticker) => {
+    tickers.forEach((ticker, index) => {
         const li = document.createElement("li");
         li.classList.add("ticker-item");
-
+    
+        // 🔆 Brightness based on position
+        // const brightness = Math.max(0, 90 - index * 6); // 0–90 range over 15 items
+        // li.style.filter = `brightness(${brightness}%)`;
+    
         // 🔍 **Detect new or updated tickers**
         const prevTicker = prevTickers[ticker.Symbol];
-
+    
         let isNew = !prevTicker;
         let isUpdated = prevTicker && (prevTicker.Price !== ticker.Price || prevTicker.Count !== ticker.Count || prevTicker.Score !== ticker.Score);
-
+    
         if (isNew) {
             li.classList.add("highlight-new"); // 🟢 Apply new ticker highlight
         } else if (isUpdated) {
             li.classList.add("highlight-updated"); // 🟠 Apply update highlight
         }
-
+    
         // ✅ Construct ticker row
         allColumns.forEach((key) => {
             const span = document.createElement("span");
             span.className = "ticker-data";
-
+    
             if (key === "Symbol") {
                 span.textContent = ticker[key];
                 span.classList.add("symbol");
@@ -243,7 +242,7 @@ function updateTickersList(tickers, listId, prevTickers) {
                 span.textContent = scoreValue.toFixed(0) + "%";
                 span.classList.add("Score-tooltip", "no-drag");
                 span.title = `Momentum Score: ${scoreValue.toFixed(1)}%\n` + getScoreBreakdown(ticker);
-
+    
                 if (scoreValue > 0) {
                     span.classList.add("up");
                 } else if (scoreValue < 0) {
@@ -254,12 +253,15 @@ function updateTickersList(tickers, listId, prevTickers) {
             } else {
                 span.textContent = ticker[key];
             }
-
+    
             li.appendChild(span);
         });
-
+    
         ul.appendChild(li);
     });
+    
+    console.log(`✅ Finished updating list: ${listId}`);
+    
 
     console.log(`✅ Finished updating list: ${listId}`);
 }
@@ -342,8 +344,8 @@ function applyMultiplier(score, multiplier) {
 function sanitize(str) {
     return (str || "")
         .toLowerCase()
-        .replace(/[^\w\s]/gi, "")   // removes symbols
-        .replace(/\s+/g, " ")       // normalize whitespace
+        .replace(/[^\w\s]/gi, "") // removes symbols
+        .replace(/\s+/g, " ") // normalize whitespace
         .trim();
 }
 
@@ -351,7 +353,7 @@ function calculateScore(ticker) {
     let Score = Math.floor(ticker.cumulativeUpChange || 0);
 
     const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
-    const volumeValue = fiveMinVolume = formatLargeNumber(ticker.fiveMinVolume);
+    const volumeValue = (fiveMinVolume = formatLargeNumber(ticker.fiveMinVolume));
 
     const blockList = window.settings.news?.blockList || [];
     let filteredNews = [];
@@ -475,7 +477,7 @@ function getScoreBreakdown(ticker) {
     // Industry & keywords
     const profile = ticker.profile || {};
     const summary = profile.longBusinessSummary?.toLowerCase() || "";
-    const companyName = profile.companyName.toLowerCase() || "";
+    const companyName = profile.companyName?.toLowerCase() || "";
     const isBiotech = profile.industry === "Biotechnology" || companyName.includes("biopharma") || summary.includes("biotech") || summary.includes("biotechnology");
     const isCannabis = summary.includes("cannabis");
     const isSpace = summary.includes("space");
@@ -589,7 +591,7 @@ function getBonusesHTML(ticker) {
     // Industry & keywords
     const profile = ticker.profile || {};
     const summary = profile.longBusinessSummary?.toLowerCase() || "";
-    const companyName = profile.companyName.toLowerCase() || "";
+    const companyName = profile.companyName?.toLowerCase() || "";
     const isBiotech = profile.industry === "Biotechnology" || companyName.includes("biopharma") || summary.includes("biotech") || summary.includes("biotechnology");
     const isCannabis = summary.includes("cannabis");
     const isSpace = summary.includes("space");

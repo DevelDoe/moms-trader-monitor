@@ -308,7 +308,6 @@ function calculateScore(ticker) {
     return Math.floor(Score);
 }
 
-
 function getScoreBreakdown(ticker) {
     let breakdown = [];
     let Score = Math.floor(ticker.cumulativeUpChange || 0) - Math.floor(ticker.cumulativeDownChange || 0);
@@ -370,7 +369,7 @@ function getScoreBreakdown(ticker) {
     // Industry & keywords
     const profile = ticker.profile || {};
     const summary = profile.longBusinessSummary?.toLowerCase() || "";
-    const companyName = profile.companyName.toLowerCase() || "";
+    const companyName = profile.companyName?.toLowerCase() || "";
     const isBiotech = profile.industry === "Biotechnology" || companyName.includes("biopharma") || summary.includes("biotech") || summary.includes("biotechnology");
     const isCannabis = summary.includes("cannabis");
     const isSpace = summary.includes("space");
@@ -482,7 +481,7 @@ function getBonusesHTML(ticker) {
     // Industry & keywords
     const profile = ticker.profile || {};
     const summary = profile.longBusinessSummary?.toLowerCase() || "";
-    const companyName = profile.companyName.toLowerCase() || "";
+    const companyName = profile.companyName?.toLowerCase() || "";
     const isBiotech = profile.industry === "Biotechnology" || companyName.includes("biopharma") || summary.includes("biotech") || summary.includes("biotechnology");
     const isCannabis = summary.includes("cannabis");
     const isSpace = summary.includes("space");
@@ -633,6 +632,7 @@ function renderTickers(listId = "tickers-live") {
         // Row 1: Ticker data row
         row1.style.opacity = opacity;
         row1.style.filter = `grayscale(${grayscale})`;
+        
 
         // Column 1: Symbol cell (spans 2 rows)
         const symbolCell = document.createElement("td");

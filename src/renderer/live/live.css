@@ -24,13 +24,14 @@ td {
 .symbol-cell {
     text-align: center; /* Horizontal centering */
     vertical-align: middle; /* Ensures the cell itself is vertically centered */
+    
 }
 
 .symbol-cell span {
     border-radius: 3px;
     padding: 3px;
-    color: #1c1d23;
-    font-weight: bold;
+    color: #ffffff;
+    font-weight: 400;
     width: 40px;
     height: 15px;
     display: inline-flex; /* Use flexbox for both horizontal and vertical centering */
@@ -78,9 +79,10 @@ td  {
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid #2b2b2b;
     font-size: 19px;
+    color: #90ee90;
 }
 #clear-live-btn:hover {
-    color: #90ee90;
+    color: #ffc400;
     background-color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
 }

@@ -31,8 +31,8 @@ function debounce(func, delay) {
 }
 
 // mtp.js - Fixed version
-const connectMTP = (scannerWindow) => {
-    const clientId = "MTM-Collector";
+const connectMTP = (scannerWindow, focusWindow) => {
+    const clientId = "MTM-DEV";
     let ws;
 
     // Helper function for safe JSON parsing
@@ -88,9 +88,10 @@ const connectMTP = (scannerWindow) => {
                 }
 
                 // Send to focusWindow
-                if (global.windows?.focus && global.windows.focus.webContents && !global.windows.focus.webContents.isDestroyed()) {
-                    const focusEvent = transformToFocusEvent(msg.data);
-                    global.windows.focus.webContents.send("ws-events", [focusEvent]); // Send as array
+                if (focusWindow?.webContents && !focusWindow.webContents.isDestroyed()) {
+                    const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
+                    focusWindow.webContents.send("ws-events", [focusEvent]);
+                    console.log("sending message to focus:", focusEvent);
                 }
             }
 
@@ -216,10 +217,8 @@ const fetchSymbolsFromServer = async () => {
     });
 };
 
-
 function startMockAlerts(windows) {
-    simulateAlerts(["AKAN", "BOLD", "CREV", "MYSZ", "FOXX", "STEC", "RMTI", "MNDO", "CRWS", "NCEW",  "SXTC", "SHLT" ], (alert) => {
-
+    simulateAlerts(["AKAN", "BOLD", "CREV", "MYSZ", "FOXX", "STEC", "RMTI", "MNDO", "CRWS", "NCEW", "SXTC", "SHLT"], (alert) => {
         // 📡 Send raw alert to scanner
         if (windows?.scanner?.webContents && !windows.scanner.webContents.isDestroyed()) {
             windows.scanner.webContents.send("ws-alert", alert);
@@ -238,7 +237,6 @@ function startMockAlerts(windows) {
         }
     });
 }
-
 
 module.exports = { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts };
 
@@ -292,7 +290,7 @@ function simulateAlerts(symbols, sendAlert, interval = 16000) {
                         volume,
                         change_percent,
                         hp: 0,
-                        dp: -change_percent,  // ✅ only dp for down (convert to positive)
+                        dp: -change_percent, // ✅ only dp for down (convert to positive)
                     });
 
                     await delay(randomDelay(2000, 3000));
@@ -306,7 +304,6 @@ function simulateAlerts(symbols, sendAlert, interval = 16000) {
     });
 }
 
-
 function delay(ms) {
     return new Promise((res) => setTimeout(res, ms));
 }
@@ -314,7 +311,6 @@ function delay(ms) {
 function randomDelay(min = 400, max = 550) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
 
 // function randomDelay() {
 //     return Math.floor(Math.random() * 400 + 150); // 150–550ms
@@ -326,8 +322,8 @@ function transformToFocusEvent(alert) {
 
     return {
         hero: alert.symbol,
-        hp: isUp ? change : 0,  // 5 = 5%
-        dp: isUp ? 0 : change,   // 3 = 3%
+        hp: isUp ? change : 0, // 5 = 5%
+        dp: isUp ? 0 : change, // 3 = 3%
         strength: alert.volume,
         price: alert.price,
     };

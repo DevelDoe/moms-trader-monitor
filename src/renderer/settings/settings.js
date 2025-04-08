@@ -35,6 +35,15 @@ const HARDCODED_ATTRIBUTES = {
         Score: false,
         Bonuses: false,
     },
+    daily: {
+        Price: false,
+        alertChangePercent: false,
+        cumulativeUpChange: false,
+        cumulativeDownChange: false,
+        fiveMinVolume: false,
+        Score: false,
+        Bonuses: false,
+    },
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -53,6 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         await loadAttributeFilters("live", "live-filters");
         await loadAttributeFilters("focus", "focus-filters");
+        await loadAttributeFilters("daily", "daily-filters");
 
         // ✅ Update toggle buttons to pass settings
         document.querySelector("#live-toggle-all").addEventListener("click", () => {
@@ -69,6 +79,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         document.querySelector("#focus-toggle-none").addEventListener("click", () => {
             toggleAll("focus", false);
+        });
+
+        document.querySelector("#daily-toggle-all").addEventListener("click", () => {
+            toggleAll("daily", true);
+        });
+
+        document.querySelector("#daily-toggle-none").addEventListener("click", () => {
+            toggleAll("daily", false);
         });
 
         // window.settingsAPI.onUpdate((updatedSettings) => {
@@ -202,6 +220,7 @@ function initializeTopSection() {
     // const topTransparentToggle = document.getElementById("top-transparent-toggle");
     const liveLengthInput = document.getElementById("live-length");
     const focusLengthInput = document.getElementById("focus-length");
+    const dailyLengthInput = document.getElementById("daily-length");
 
     if (
         !minPriceInput ||
@@ -214,7 +233,8 @@ function initializeTopSection() {
         !maxVolumeInput ||
         // !topTransparentToggle ||
         !liveLengthInput ||
-        !focusLengthInput
+        !focusLengthInput ||
+        !dailyLengthInput
     ) {
         console.error("One or more input elements not found!");
         return;
@@ -247,6 +267,7 @@ function initializeTopSection() {
 
     // ✅ Load saved length settings
     liveLengthInput.value = window.settings.top.liveListLength ?? 10;
+    focusLengthInput.value = window.settings.top.focusListLength ?? 3;
     focusLengthInput.value = window.settings.top.focusListLength ?? 10;
 
     console.log("✅ Applied topSettings:", {
@@ -261,6 +282,7 @@ function initializeTopSection() {
         // transparent: topTransparentToggle.checked,
         liveLength: liveLengthInput.value,
         focusLength: focusLengthInput.value,
+        dailyLength: dailyLengthInput.value,
     });
 
     async function updatePriceFilter() {
@@ -435,6 +457,7 @@ function initializeTopSection() {
     // topTransparentToggle.addEventListener("change", updateTransparency);
     liveLengthInput.addEventListener("input", () => updateListLength("live", liveLengthInput));
     focusLengthInput.addEventListener("input", () => updateListLength("focus", focusLengthInput));
+    dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
 }
 
 async function loadAttributeFilters(listType, containerId) {
@@ -493,6 +516,8 @@ async function updateAttributeFilters() {
             ...latestSettings.top.lists,
             live: Object.fromEntries(Array.from(document.querySelectorAll("input[name='live']")).map((checkbox) => [checkbox.value, checkbox.checked])),
             focus: Object.fromEntries(Array.from(document.querySelectorAll("input[name='focus']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+            daily: Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+
         };
 
         // ✅ Spread everything and only update `lists`
