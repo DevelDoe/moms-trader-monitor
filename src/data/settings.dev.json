@@ -185,9 +185,9 @@
     "maxPrice": 10,
     "direction": null,
     "minChangePercent": 0,
-    "minVolume": 1,
+    "minVolume": 0,
     "maxAlerts": 50,
-    "scannerVolume": 0
+    "scannerVolume": 0.7
   },
   "windows": {
     "activeWindow": {
@@ -199,17 +199,16 @@
     },
     "settingsWindow": {
       "width": 850,
-      "height": 753,
-      "x": 1441,
-      "y": -762,
+      "height": 999,
+      "x": 2662,
+      "y": 605,
       "isOpen": false
     },
     "focusWindow": {
-      "width": 502,
-      "height": 492,
-      "x": 282,
-      "y": -492,
-      "isOpen": true
+      "width": 515,
+      "height": 493,
+      "x": 281,
+      "y": -493
     },
     "sessionWindow": {
       "width": 353,
@@ -278,9 +277,9 @@
     "liveWindow": {
       "width": 358,
       "height": 492,
-      "x": -77,
-      "y": -492,
-      "isOpen": false
+      "x": 92,
+      "y": 125,
+      "isOpen": true
     },
     "dailyWindow": {
       "width": 397,

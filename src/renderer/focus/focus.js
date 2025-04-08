@@ -1,6 +1,6 @@
 const DECAY_INTERVAL_MS = 6000; 
 const TOTAL_DECAY_DURATION = 450_000; 
-const XP_DECAY_PER_TICK = 1050 / (TOTAL_DECAY_DURATION / DECAY_INTERVAL_MS); 
+const XP_DECAY_PER_TICK = 880 / (TOTAL_DECAY_DURATION / DECAY_INTERVAL_MS); 
 
 const focusState = {};
 let container;
@@ -152,7 +152,7 @@ function updateFocusStateFromEvent(event) {
 
     const wasDead = hero.hp === 0 && event.hp > 0;
     if (wasDead) {
-        hero.score += 30; // ⚡ Give a comeback boost
+        hero.score += 50; // ⚡ Give a comeback boost
     }
 
     hero.price = event.price;
@@ -195,8 +195,8 @@ function updateFocusStateFromEvent(event) {
 
     const topN = window.settings?.top?.focusListLength ?? 10;
     const currentTopHeroes = Object.values(focusState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
+        .filter((s) => s.score > 100)
+        .sort((a, b) => b.lv - a.lv || b.score - a.score)
         .slice(0, topN)
         .map((s) => s.hero);
 
@@ -215,8 +215,8 @@ function renderAll() {
     container.innerHTML = "";
 
     Object.values(focusState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
+        .filter((s) => s.score > 100)
+        .sort((a, b) => b.lv - a.lv || b.score - a.score)
         .slice(0, window.settings?.top?.focusListLength ?? 3)
         .forEach((data) => {
             const card = renderCard(data);
@@ -225,8 +225,8 @@ function renderAll() {
 
     // ✅ After rendering all top heroes, remove any zombie cards
     const topSymbols = Object.values(focusState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
+        .filter((s) => s.score > 100)
+        .sort((a, b) => b.lv - a.lv || b.score - a.score)
         .slice(0, window.settings?.top?.focusListLength ?? 3)
         .map((s) => s.hero);
 
@@ -244,8 +244,8 @@ function updateCardDOM(hero) {
     // Do nothing if not in the top list
     const topN = window.settings?.top?.focusListLength ?? 10;
     const topHeroes = Object.values(focusState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
+        .filter((s) => s.score > 100)
+        .sort((a, b) => b.lv - a.lv || b.score - a.score)
         .slice(0, topN)
         .map((s) => s.hero);
 
@@ -396,17 +396,17 @@ function applyVolumeMultiplier(score, volume, price = 1, isLongBiased = true) {
 
     // Adjust thresholds for penny stocks
     if (isPenny) {
-        if (volume < 200_000) {
+        if (volume < 60_000) {
             multiplier = adjustMultiplier(0.01);
-        } else if (volume < 400_000) {
-            multiplier = adjustMultiplier(0.6);
-        } else if (volume < 600_000) {
-            multiplier = adjustMultiplier(0.9);
+        } else if (volume < 240_000) {
+            multiplier = adjustMultiplier(0.8);
+        } else if (volume < 500_000) {
+            multiplier = adjustMultiplier(1);
         } else {
-            multiplier = adjustMultiplier(1.1);
+            multiplier = adjustMultiplier(1.25);
         }
     } else {
-        if (volume < 80_000) {
+        if (volume < 30_000) {
             multiplier = adjustMultiplier(0.01);
         } else if (volume < 120_000) {
             multiplier = adjustMultiplier(0.8);
