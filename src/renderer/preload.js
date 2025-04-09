@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld("focusAPI", {
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
     onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
     getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+    calculateVolumeImpact: (volume, price) => ipcRenderer.invoke('calculate-volume-impact', { volume, price })
 });
 
 contextBridge.exposeInMainWorld("sessionAPI", {

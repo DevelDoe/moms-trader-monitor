@@ -19,7 +19,9 @@ body {
 body::-webkit-scrollbar {
     display: none; /* Hide scrollbar in WebKit browsers */
 }
-
+#focus-window{
+    margin-top: -5px;
+}
 /* Ticker Card */
 .ticker-card {
     background-color: #2a2d36;
@@ -134,7 +136,7 @@ h2 {
 .hp-boost, .dp-damage {
     font-size: 12px;
     position: absolute;
-    left: 160px;
+    left: 180px;
     animation: floatOut 1.2s ease-out forwards;
     padding-bottom: 500px;
 }
@@ -150,7 +152,7 @@ h2 {
 /* Boost Animation */
 .boost {
     position: absolute;
-    left: 50%;
+    left: 200%;
     top: -6px;
     font-size: 10px;
     padding: 2px 4px;
@@ -197,7 +199,7 @@ h2 {
     animation: soldier-walk 1s steps(10) ;
     background-position-x: 0;
     opacity: 0;
-    transition: opacity 0.1s ease;
+    transition: opacity 0.01s ease;
 }
 
 .sprite-active {
@@ -221,4 +223,24 @@ h2 {
     top: 0;
     width: 100%;
     z-index: 10;
+}
+
+/* hp bar animatiion  */
+/* Smooth transitions for all bars */
+
+.bar-fill {
+    transition: width 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: width;
+    transform: translateZ(0); /* GPU acceleration */
+}
+
+/* Optional pulse animation */
+@keyframes barPulse {
+    0% { transform: scaleX(1); }
+    50% { transform: scaleX(1.02); }
+    100% { transform: scaleX(1); }
+}
+
+.bar-animate {
+    animation: barPulse 0.3s ease-out;
 }

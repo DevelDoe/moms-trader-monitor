@@ -3,6 +3,8 @@
 const net = require("net");
 
 let socket = null;
+let reconnectTimeout = null;
+const RETRY_INTERVAL = 3000; // Retry every 3 seconds
 
 function connectBridge() {
     socket = net.createConnection({ port: 7878 }, () => {
@@ -15,12 +17,20 @@ function connectBridge() {
 
     socket.on("close", () => {
         console.warn("[bridge] 🔌 Disconnected from MTT");
-        // Optional: Add reconnection logic later
+
+        // Retry connection after a short delay
+        if (!reconnectTimeout) {
+            reconnectTimeout = setTimeout(() => {
+                reconnectTimeout = null;
+                console.log("[bridge] 🔄 Attempting to reconnect to MTT...");
+                connectBridge();
+            }, RETRY_INTERVAL);
+        }
     });
 }
 
 function sendActiveSymbol(symbol) {
-    if (socket && socket.writable) {
+    if (socket && socket.writable && !socket.destroyed) {
         const msg = `set-active-symbol:${symbol.trim().toUpperCase()}`;
         socket.write(msg);
         console.log("[bridge] 📡 Sent:", msg);

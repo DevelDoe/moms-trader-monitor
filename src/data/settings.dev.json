@@ -195,7 +195,8 @@
       "width": 753,
       "height": 407,
       "x": -77,
-      "y": -900
+      "y": -900,
+      "isOpen": true
     },
     "settingsWindow": {
       "width": 850,
@@ -203,13 +204,6 @@
       "x": 2662,
       "y": 605,
       "isOpen": false
-    },
-    "focusWindow": {
-      "width": 515,
-      "height": 493,
-      "x": 281,
-      "y": -493,
-      "isOpen": true
     },
     "sessionWindow": {
       "width": 353,
@@ -228,7 +222,8 @@
       "width": 512,
       "height": 39,
       "x": 677,
-      "y": -839
+      "y": -839,
+      "isOpen": true
     },
     "traderviewWindow": {
       "width": 452,
@@ -277,8 +272,8 @@
     "liveWindow": {
       "width": 358,
       "height": 493,
-      "x": 4,
-      "y": -625,
+      "x": -77,
+      "y": -493,
       "isOpen": true
     },
     "dailyWindow": {
@@ -287,6 +282,12 @@
       "x": 796,
       "y": -493,
       "isOpen": true
+    },
+    "focusWindow": {
+      "width": 515,
+      "height": 493,
+      "x": 281,
+      "y": -493
     }
   }
 }

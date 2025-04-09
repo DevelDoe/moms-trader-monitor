@@ -476,42 +476,93 @@ ipcMain.handle("fetch-news", async () => {
 
 // focus
 
+// ipcMain.on("toggle-focus", () => {
+//     const focus = getWindow("focus");
+
+//     if (focus && !focus.isDestroyed()) {
+//         console.log("[toggle-focus] Destroying focus window");
+//         updateWindowVisibilityState("focus", false); // ✅ do this before destroying
+//         destroyWindow("focus");
+//     } else {
+//         console.log("[toggle-focus] Creating focus window");
+//         const newWin = createOrRestoreWindow("focus", () => createFocusWindow(isDevelopment, buffs));
+//         updateWindowVisibilityState("focus", true);
+
+//         newWin.webContents.on("did-finish-load", () => {
+//             console.log("[toggle-focus] Focus window loaded");
+//         });
+
+//         newWin.on("ready-to-show", () => {
+//             console.log("[toggle-focus] Focus window ready to show");
+//         });
+
+//         newWin.on("closed", () => {
+//             console.log("[toggle-focus] Focus window closed and cleaned up");
+//         });
+//     }
+// });
+
 ipcMain.on("toggle-focus", () => {
-    const focus = getWindow("focus");
-
-    if (focus && !focus.isDestroyed()) {
-        console.log("[toggle-focus] Destroying focus window");
-        updateWindowVisibilityState("focus", false); // ✅ do this before destroying
-        destroyWindow("focus");
-    } else {
-        console.log("[toggle-focus] Creating focus window");
-        const newWin = createOrRestoreWindow("focus", () => createFocusWindow(isDevelopment, buffs));
-        updateWindowVisibilityState("focus", true);
-
-        newWin.webContents.on("did-finish-load", () => {
-            console.log("[toggle-focus] Focus window loaded");
-        });
-
-        newWin.on("ready-to-show", () => {
-            console.log("[toggle-focus] Focus window ready to show");
-        });
-
-        newWin.on("closed", () => {
-            console.log("[toggle-focus] Focus window closed and cleaned up");
-        });
+    const focus = windows.focus;
+    if (focus) {
+        const isVisible = focus.isVisible();
+        isVisible ? focus.hide() : focus.show();
+        updateWindowVisibilityState("infobar", !isVisible);
     }
 });
 
 ipcMain.on("refresh-focus", async () => {
     log.log("Refreshing focus window.");
-
+    // Optionally, hide it instead of closing if the intent is to update content.
     if (windows.focus) {
-        windows.focus.close(); // Close the old window
+        windows.focus.close(); // Make sure 'closed' events remove the reference
     }
-
-    // ✅ Recreate the window with updated settings
-    windows.focus = await createFocusWindow(isDevelopment);
+    windows.focus = createOrRestoreWindow("focus", () => createFocusWindow(isDevelopment, buffs));
     windows.focus.show();
+});
+
+
+ipcMain.handle("calculate-volume-impact", (_, { volume = 0, price = 1 }) => {
+    // 1. Define tier thresholds based on price
+    const getTiers = (price) => {
+        if (price < 2)
+            return [
+                // Penny stocks ($1-$2)
+                { threshold: 30000, icon: "💤", base: 0.7 },
+                { threshold: 150000, icon: "🚛", base: 1.0 },
+                { threshold: 300000, icon: "🔥", base: 1.3 },
+                { threshold: 600000, icon: "🚀", base: 1.8 }, // $1 needs 600K
+            ];
+        else if (price < 5)
+            return [
+                // Mid-tier ($2-$5)
+                { threshold: 20000, icon: "💤", base: 0.7 },
+                { threshold: 100000, icon: "🚛", base: 1.0 },
+                { threshold: 250000, icon: "🔥", base: 1.3 },
+                { threshold: 450000, icon: "🚀", base: 1.8 }, // $3 needs 450K
+            ];
+        else
+            return [
+                // Expensive stocks ($5+)
+                { threshold: 10000, icon: "💤", base: 0.7 },
+                { threshold: 30000, icon: "🚛", base: 1.0 },
+                { threshold: 60000, icon: "🔥", base: 1.3 },
+                { threshold: 100000, icon: "🚀", base: 1.8 }, // $50 needs 100K
+            ];
+    };
+
+    const tiers = getTiers(price);
+    const tier = tiers.findLast((t) => volume >= t.threshold) || tiers[0];
+    const multiplier = Math.min(
+        tier.base * Math.log2(1 + volume / tier.threshold),
+        2.5 // Cap multiplier at 2.5x
+    );
+
+    return {
+        multiplier,
+        icon: tier.icon,
+        label: `${tier.label} Volume`,
+    };
 });
 
 // daily
@@ -689,28 +740,58 @@ ipcMain.on("toggle-traderview-widget", () => {
 });
 
 ipcMain.on("toggle-traderview-browser", async () => {
-    if (!global.traderviewWindows) return;
+    // Ensure that the necessary global arrays exist.
+    if (!global.traderviewWindows || !global.currentTopTickers) return;
 
+    const newSymbols = global.currentTopTickers;
+    // Determine if all current windows are visible.
     const allVisible = global.traderviewWindows.every((win) => win?.isVisible());
 
-    for (let i = 0; i < global.traderviewWindows.length; i++) {
-        const win = global.traderviewWindows[i];
-        const key = `traderviewWindow_${i}`;
-
-        if (!win) continue;
-
-        if (allVisible) {
-            win.hide();
-            updateWindowVisibilityState(key, false);
-        } else {
-            // Optionally reset the symbol (only if needed)
-            if (global.currentTopTickers && global.currentTopTickers[i]) {
-                const symbol = encodeURIComponent(global.currentTopTickers[i]);
-                win.loadURL(`https://www.tradingview.com/chart/?symbol=${symbol}`);
+    // If all windows are currently visible, hide them and update their state.
+    if (allVisible) {
+        global.traderviewWindows.forEach((win, i) => {
+            if (win) {
+                win.hide();
+                updateWindowVisibilityState(`traderviewWindow_${i}`, false);
             }
+        });
+        return;
+    }
 
+    // Loop over the list of new symbols.
+    for (let i = 0; i < newSymbols.length; i++) {
+        const symbol = newSymbols[i];
+        let win = global.traderviewWindows[i];
+
+        // If there's no window at this slot or the current window is showing a different symbol...
+        if (!win || win.symbolLoaded !== symbol) {
+            // If a window exists but with an incorrect symbol, destroy it.
+            if (win) {
+                win.destroy();
+            }
+            // Create a new window using your existing createTradingViewWindow function.
+            win = createTradingViewWindow(symbol, i);
+            // Mark the newly created window with the loaded symbol.
+            win.symbolLoaded = symbol;
+            // Save the new window in the appropriate slot.
+            global.traderviewWindows[i] = win;
+        } else {
+            // If the window is already showing the correct symbol, simply show it.
             win.show();
-            updateWindowVisibilityState(key, true);
+        }
+        // Update the visibility state for the window.
+        updateWindowVisibilityState(`traderviewWindow_${i}`, true);
+    }
+
+    // If there are extra windows (i.e. the global window array has more windows than symbols),
+    // hide or clean them up.
+    if (global.traderviewWindows.length > newSymbols.length) {
+        for (let i = newSymbols.length; i < global.traderviewWindows.length; i++) {
+            const win = global.traderviewWindows[i];
+            if (win) {
+                win.hide();
+                updateWindowVisibilityState(`traderviewWindow_${i}`, false);
+            }
         }
     }
 });

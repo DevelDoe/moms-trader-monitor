@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
 
     const magicDustAudio = new Audio("./magic.mp3");
-    magicDustAudio.volume = 0.5; // tweak to taste
+    magicDustAudio.volume = 0.3; // tweak to taste
 
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
