@@ -1,6 +1,6 @@
-const DECAY_INTERVAL_MS = 6000; 
-const TOTAL_DECAY_DURATION = 450_000; 
-const XP_DECAY_PER_TICK = 600 / (TOTAL_DECAY_DURATION / DECAY_INTERVAL_MS); 
+const DECAY_INTERVAL_MS = 6000;
+const TOTAL_DECAY_DURATION = 450_000;
+const XP_DECAY_PER_TICK = 600 / (TOTAL_DECAY_DURATION / DECAY_INTERVAL_MS);
 
 const focusState = {};
 let container;
@@ -86,6 +86,14 @@ function loadState() {
     }
 }
 
+function clearState() {
+    localStorage.removeItem("focusState");
+    for (const key in focusState) {
+        delete focusState[key];
+    }
+    console.log("🧹 Cleared saved and in-memory focus state.");
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
@@ -118,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 strength: 0,
                 xp: 0,
                 lv: 0,
-                score: 0, 
+                score: 0,
                 lastEvent: {
                     hp: 0,
                     dp: 0,
@@ -354,15 +362,15 @@ function applyMultiplier(score, multiplier) {
     return score * multiplier;
 }
 
-// Scaling multiplier: starts high, drops toward 10 as hp increases
 const scaleHpBoost = (hp) => {
-    const baseMultiplier = 20; // starting value when hp is low
-    const minMultiplier = 10;  // minimum multiplier when hp is high
+    const baseMultiplier = 20;
+    const minMultiplier = 1;
     const maxHp = 10;
-  
-    const factor = Math.max(minMultiplier, baseMultiplier - (hp / maxHp) * (baseMultiplier - minMultiplier));
-    return factor;
-  };
+
+    const t = Math.min(hp / maxHp, 1); // normalize to [0, 1]
+    const eased = Math.pow(1 - t, 2); // exponential drop
+    return minMultiplier + eased * (baseMultiplier - minMultiplier);
+};
 
 function calculateScore(hero, event, floatValue = hero.float || 0) {
     let baseScore = 0;
@@ -399,10 +407,10 @@ function adjustMultiplier(multiplier) {
 function applyVolumeMultiplier(score, volume, price = 1) {
     const isPenny = price < 1.5;
 
-    const low = window.buffs.find(b => b.key === "lowVol");
-    const medium = window.buffs.find(b => b.key === "mediumVol");
-    const high = window.buffs.find(b => b.key === "highVol");
-    const para = window.buffs.find(b => b.key === "paracolicVol");
+    const low = window.buffs.find((b) => b.key === "lowVol");
+    const medium = window.buffs.find((b) => b.key === "mediumVol");
+    const high = window.buffs.find((b) => b.key === "highVol");
+    const para = window.buffs.find((b) => b.key === "paracolicVol");
 
     let multiplier = 1;
 
@@ -435,19 +443,19 @@ function applyFloatMultiplier(score, floatValue) {
     let multiplier = 1;
 
     if (floatValue < 1_200_000) {
-        multiplier = window.buffs.find(b => b.key === "float1m")?.value ?? 1;
+        multiplier = window.buffs.find((b) => b.key === "float1m")?.value ?? 1;
     } else if (floatValue < 5_000_000) {
-        multiplier = window.buffs.find(b => b.key === "float5m")?.value ?? 1;
+        multiplier = window.buffs.find((b) => b.key === "float5m")?.value ?? 1;
     } else if (floatValue < 10_000_000) {
-        multiplier = window.buffs.find(b => b.key === "float10m")?.value ?? 1;
+        multiplier = window.buffs.find((b) => b.key === "float10m")?.value ?? 1;
     } else if (floatValue < 50_000_000) {
-        multiplier = window.buffs.find(b => b.key === "float50m")?.value ?? 1;
+        multiplier = window.buffs.find((b) => b.key === "float50m")?.value ?? 1;
     } else if (floatValue < 100_000_000) {
-        multiplier = window.buffs.find(b => b.key === "float100m")?.value ?? 1;
+        multiplier = window.buffs.find((b) => b.key === "float100m")?.value ?? 1;
     } else if (floatValue < 200_000_000) {
-        multiplier = window.buffs.find(b => b.key === "float200m")?.value ?? 1;
+        multiplier = window.buffs.find((b) => b.key === "float200m")?.value ?? 1;
     } else {
-        multiplier = window.buffs.find(b => b.key === "float600m+")?.value ?? 1;
+        multiplier = window.buffs.find((b) => b.key === "float600m+")?.value ?? 1;
     }
 
     return applyMultiplier(score, adjustMultiplier(multiplier));

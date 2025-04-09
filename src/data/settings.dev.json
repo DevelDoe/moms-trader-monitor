@@ -277,8 +277,9 @@
     "liveWindow": {
       "width": 358,
       "height": 493,
-      "x": -77,
-      "y": -493
+      "x": 4,
+      "y": -625,
+      "isOpen": true
     },
     "dailyWindow": {
       "width": 394,

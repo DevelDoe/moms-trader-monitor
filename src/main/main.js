@@ -11,12 +11,13 @@ const forceUpdate = process.env.forceUpdate === "true";
 // PACKAGES
 log.log("Init app");
 
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require("electron");
 const { connectBridge, sendActiveSymbol } = require("../bridge");
 const { autoUpdater } = require("electron-updater");
 const tickerStore = require("./store");
 const { safeSend } = require("./utils/safeSend");
 const { broadcast } = require("./utils/broadcast");
+const windowManager = require("./windowManager");
 
 const path = require("path");
 const fs = require("fs");
@@ -49,9 +50,9 @@ try {
     console.error("[Buffs] Failed to load buffs.json:", err);
 }
 
+const { createOrRestoreWindow, destroyWindow, getWindow } = require("./windowManager");
+const { getWindowState, saveWindowState } = require("./utils/windowState");
 
-
-const { createOrRestoreWindow } = require("./windowManager");
 const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
@@ -81,9 +82,6 @@ function createWindow(name, createFn) {
     windows[name] = win;
     return win;
 }
-
-
-const { getWindowState, saveWindowState } = require("./utils/windowState");
 
 global.sharedState = {
     activeTicker: "asdf", // Default fallback
@@ -351,6 +349,7 @@ ipcMain.on("restart-app", () => {
 
 app.on("before-quit", () => {
     isQuitting = true;
+    windowManager.setQuitting(true); // ✅ sync with internal state
 });
 
 ipcMain.on("resize-window-to-content", (event, { width, height }) => {
@@ -476,12 +475,30 @@ ipcMain.handle("fetch-news", async () => {
 });
 
 // focus
+
 ipcMain.on("toggle-focus", () => {
-    const focus = windows.focus;
-    if (focus) {
-        const isVisible = focus.isVisible();
-        isVisible ? focus.hide() : focus.show();
-        updateWindowVisibilityState("focus", !isVisible);
+    const focus = getWindow("focus");
+
+    if (focus && !focus.isDestroyed()) {
+        console.log("[toggle-focus] Destroying focus window");
+        updateWindowVisibilityState("focus", false); // ✅ do this before destroying
+        destroyWindow("focus");
+    } else {
+        console.log("[toggle-focus] Creating focus window");
+        const newWin = createOrRestoreWindow("focus", () => createFocusWindow(isDevelopment, buffs));
+        updateWindowVisibilityState("focus", true);
+
+        newWin.webContents.on("did-finish-load", () => {
+            console.log("[toggle-focus] Focus window loaded");
+        });
+
+        newWin.on("ready-to-show", () => {
+            console.log("[toggle-focus] Focus window ready to show");
+        });
+
+        newWin.on("closed", () => {
+            console.log("[toggle-focus] Focus window closed and cleaned up");
+        });
     }
 });
 
@@ -521,11 +538,30 @@ ipcMain.on("refresh-daily", async () => {
 
 // live
 ipcMain.on("toggle-live", () => {
-    const live = windows.live;
-    if (live) {
-        const isVisible = live.isVisible();
-        isVisible ? live.hide() : live.show();
-        updateWindowVisibilityState("live", !isVisible);
+    const live = getWindow("live");
+
+    if (live && !live.isDestroyed()) {
+        console.log("[toggle-live] Destroying live window");
+        windowManager.destroyWindow("live", isQuitting);
+    } else {
+        console.log("[toggle-live] Creating live window");
+        const newWin = createOrRestoreWindow("live", () => createLiveWindow(isDevelopment));
+
+        newWin.webContents.on("did-finish-load", () => {
+            if (!newWin.isDestroyed()) {
+                const bounds = newWin.getBounds();
+                saveWindowState("liveWindow", bounds, true); // ✅ now isOpen will be true
+                console.log("[toggle-live] Live window loaded");
+            }
+        });
+
+        newWin.on("ready-to-show", () => {
+            console.log("[toggle-live] Live window ready to show");
+        });
+
+        newWin.on("closed", () => {
+            console.log("[toggle-live] Live window closed");
+        });
     }
 });
 
@@ -819,21 +855,17 @@ app.on("ready", async () => {
     });
 });
 
-const { globalShortcut } = require('electron');
-
-const { getWindow } = require("./windowManager");
-
 app.whenReady().then(() => {
-  // Already exists...
-  globalShortcut.register("Control+Shift+L", () => {
-    const live = getWindow("live");
-    if (live) {
-      console.log("[CrashTest] Crashing Live window renderer...");
-      live.webContents.forcefullyCrashRenderer();
-    } else {
-      console.warn("[CrashTest] Live window not found.");
-    }
-  });
+    // Already exists...
+    globalShortcut.register("Control+Shift+L", () => {
+        const live = getWindow("live");
+        if (live) {
+            console.log("[CrashTest] Crashing Live window renderer...");
+            live.webContents.forcefullyCrashRenderer();
+        } else {
+            console.warn("[CrashTest] Live window not found.");
+        }
+    });
 });
 
 // Quit the app when all windows are closed

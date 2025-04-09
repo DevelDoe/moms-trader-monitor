@@ -33,8 +33,13 @@ function createFocusWindow(isDevelopment, buffs) {
 
     window.loadFile(path.join(__dirname, "../../renderer/focus/focus.html"));
 
-    if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
-
+    if (isDevelopment) {
+        window.webContents.once("did-finish-load", () => {
+            window.webContents.openDevTools({ mode: "detach" });
+            console.log("[Focus] DevTools opened after did-finish-load");
+        });
+    }
+    
     window.on("move", () => {
         const bounds = window.getBounds();
         setWindowBounds("focusWindow", bounds);
