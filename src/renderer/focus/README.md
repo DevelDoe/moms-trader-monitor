@@ -46,3 +46,36 @@ Add subtle sparkles ✨ or even RPG-style medals 🥇 to top 3. Could also persi
 
 These could at close be saved as former runner perc
 
+
+
+
+
+
+⚡⚡⚡ [KTTA] SCORING BREAKDOWN ⚡⚡⚡
+focus.js:445 📜 INITIAL STATE → Price: 2 |  Score: 22.89 | HP: 21.05 | DP: 0
+focus.js:448 🤎 Base DP Deducted               1.48
+focus.js:448 🏷️ Float Mult (2.59M)             1.10
+focus.js:448 📢 Volume Mult (171.93K)          1.35
+focus.js:479 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+focus.js:448 🎯 TOTAL SCORE CHANGE             -2.21
+focus.js:481 🔥 FINAL SCORE → 20.68
+
+
+⚡⚡⚡ [PRFX] SCORING BREAKDOWN ⚡⚡⚡
+focus.js:445 📜 INITIAL STATE → Price: 3.03 |  Score: 56.47 | HP: 72.59000000000006 | DP: 0
+focus.js:448 💖 Base HP Added                  1.34
+focus.js:448 🏷️ Float Mult (144.51K)           1.15
+focus.js:448 📢 Volume Mult (129.85K)          1.34
+focus.js:479 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+focus.js:448 🎯 TOTAL SCORE CHANGE             2.06
+focus.js:481 🔥 FINAL SCORE → 58.53
+
+
+⚡⚡⚡ [WHLR] SCORING BREAKDOWN ⚡⚡⚡
+focus.js:445 📜 INITIAL STATE → Price: 3.41 |  Score: 0.00 | HP: 0 | DP: 0
+focus.js:448 🤎 Base DP Deducted               5.01
+focus.js:448 🏷️ Float Mult (204.76K)           1.15
+focus.js:448 📢 Volume Mult (89.11K)           1.11
+focus.js:479 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+focus.js:448 🎯 TOTAL SCORE CHANGE             -6.40
+focus.js:481 🔥 FINAL SCORE → 0.00

@@ -258,7 +258,7 @@ class Store extends EventEmitter {
                 if (this.dailyData.has(sym) || this.sessionData.has(sym) || this.symbols.has(sym)) {
                     this.attachNews(sym);
                 } else {
-                    log.debug(`[addNews] Skipping symbol '${sym}' — not found in store`);
+                    log.log(`[addNews] Skipping symbol '${sym}' — not found in store`);
                 }
             });
         });

@@ -1,8 +1,8 @@
 [
-    { "key": "lowVol", "icon": "💤", "desc": "Very Low Volume (less than 60k last 5min)", "volume": 30000, "value": 0.01 },
+    { "key": "lowVol", "icon": "💤", "desc": "Very Low Volume (less than 30k last 5min)", "volume": 30000, "value": 0.01 },
     { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume (above 100k last 5min)", "volume": 100000, "value": 0.08 },
-    { "key": "highVol", "icon": "🔥", "desc": "High Volume (more than 240k last 5min)", "volume": 300000, "value": 1 },
-    { "key": "paracolicVol", "icon": "🚀", "desc": "Parabolic Volume (more than 400k last 5min)", "volume": 500000,  "value": 1.25 },
+    { "key": "highVol", "icon": "🔥", "desc": "High Volume (more than 300k last 5min)", "volume": 300000, "value": 1 },
+    { "key": "paracolicVol", "icon": "🚀", "desc": "Parabolic Volume (more than 400k last 5min)", "volume": 400000,  "value": 1.25 },
     
     { "key": "float1m", "icon": "1️⃣", "desc": "Float around 1M", "value": 1.15 },
     { "key": "float5m", "icon": "5️⃣", "desc": "Float around 5M", "value": 1.1 },

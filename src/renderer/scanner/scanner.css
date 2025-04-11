@@ -34,10 +34,10 @@ body {
     width: 40px;
     text-align: center;
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 300;
     padding: 3px;
     border-radius: 3px;
-    color: #1c1d23;
+    color: #ffffff;
     background-color: gray;
 }
 .alert-content {

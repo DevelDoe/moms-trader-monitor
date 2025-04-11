@@ -1,6 +1,6 @@
 const DECAY_INTERVAL_MS = 12000;
-const XP_DECAY_PER_TICK = 1; // Base decay per tick (you might lower this for longer duration)
-const SCORE_NORMALIZATION = 200; // Increase this value to reduce the impact of score on decay
+const XP_DECAY_PER_TICK = 0.2; // Base decay per tick (you might lower this for longer duration)
+const SCORE_NORMALIZATION = 10; // Increase this value to reduce the impact of score on decay
 
 const focusState = {};
 let container;
@@ -20,14 +20,21 @@ isLongBiased = true;
 
 let eventsPaused = false;
 
+const debug = true;
+
+const debugScoreCalc = true;
+const debugLimitSamples = 15;
+let debugSamples = 0;
+
+
 window.pauseEvents = () => {
     eventsPaused = true;
-    console.log("Events are now paused");
+    if (debug) console.log("Events are now paused");
 };
 
 window.resumeEvents = () => {
     eventsPaused = false;
-    console.log("Events are now resumed");
+    if (debug) console.log("Events are now resumed");
 };
 
 function getMarketDateString() {
@@ -46,7 +53,7 @@ function saveState() {
         try {
             const parsed = JSON.parse(existing);
             if (parsed.date && parsed.date !== sessionDate) {
-                console.log("🧼 Overwriting old session from", parsed.date);
+                if (debug) console.log("🧼 Overwriting old session from", parsed.date);
             } else {
                 sessionDate = parsed.date || sessionDate;
             }
@@ -75,10 +82,10 @@ function loadState() {
             Object.entries(parsed.state).forEach(([symbol, data]) => {
                 focusState[symbol] = data;
             });
-            console.log("🔄 Restored focus state from earlier session.");
+            if (debug) console.log("🔄 Restored focus state from earlier session.");
             return true;
         } else {
-            console.log("🧼 Session from previous day. Skipping restore.");
+            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
             localStorage.removeItem("focusState");
             return false;
         }
@@ -94,15 +101,15 @@ function clearState() {
     for (const key in focusState) {
         delete focusState[key];
     }
-    console.log("🧹 Cleared saved and in-memory focus state.");
+    if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("⚡ DOMContentLoaded event fired!");
+    if (debug) console.log("⚡ DOMContentLoaded event fired!");
 
     const restored = loadState(); // ✅ returns true if valid state loadedloadState();
 
-    console.log();
+    if (debug) console.log();
 
     container = document.getElementById("focus"); // Focus div is where the cards will be injected
 
@@ -112,7 +119,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // ✅ Listen for settings updates globally
     window.settingsAPI.onUpdate(async (updatedSettings) => {
-        console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
+        if (debug) console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
         window.settings = updatedSettings;
         renderAll();
     });
@@ -146,10 +153,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 3. Listen for incoming alerts
     window.focusAPI.onFocusEvents((events) => {
         events.forEach(updateFocusStateFromEvent);
-        // console.log("⚡ Received focus events:", events);
+        // if(debug) console.log("⚡ Received focus events:", events);
     });
 
-    // startScoreDecay();
+    startScoreDecay();
 });
 
 function updateFocusStateFromEvent(event) {
@@ -168,16 +175,15 @@ function updateFocusStateFromEvent(event) {
     // 1. FIRST check for resurrection BEFORE changing HP
     const wasDead = hero.hp === 0 && event.hp > 0;
     if (wasDead) {
-        console.log(`💀 ${hero.hero} RISES FROM DEAD! +5 bonus`);
-        hero.score += 5; // Directly add to score
+        if (debug) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
+        // hero.score += 5; // Directly add to score
     }
 
     // 2. Check for reversal (must happen BEFORE applying new HP)
     const isReversal = hero.lastEvent.dp > 0 && event.hp > 0;
     if (isReversal) {
-        hero.score += 5;
-        console.log(`hero.lastEvent.dp: `, hero.lastEvent.dp);
-        console.log(`🔄 ${hero.hero} REVERSAL! +5 bonus`);
+        // hero.score += 5;
+        if (debug) console.log(`🔄 ${hero.hero} REVERSAL! s`);
     }
 
     // 🧠 Apply alert changes
@@ -194,7 +200,6 @@ function updateFocusStateFromEvent(event) {
     // 🎯 scoring
     calculateScore(hero, event).then((scoreDelta) => {
         hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
-        console.log(hero.score); // This will log -2.9
     });
 
     hero.lastEvent = {
@@ -287,7 +292,7 @@ function updateCardDOM(hero) {
     // 2. Check if hero is in top list
     const topN = window.settings?.top?.focusListLength ?? 10;
     const topHeroes = Object.values(focusState)
-        .filter((s) => s?.score > 0)
+        .filter((s) => s.score > 0)
         .sort((a, b) => (b?.score || 0) - (a?.score || 0))
         .slice(0, topN)
         .map((s) => s?.hero)
@@ -440,50 +445,57 @@ function getSymbolColor(symbol) {
 }
 
 async function calculateScore(hero, event) {
-    // 🎯 Safely initialize score
+    if (event.strength < 1000) {
+        if (debug && debugSamples< debugLimitSamples) console.log("TO LOW VOLUME, SKIPPING...");
+        return 0;
+    }
+    debugSamples++;
     const currentScore = Number(hero.score) || 0;
 
-    // Debug Header with null checks
-    console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
-    console.log(`📜 INITIAL STATE → Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
+    // Logging initial state
+    if (debug && debugSamples< debugLimitSamples)  console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
+    if (debug && debugSamples< debugLimitSamples)  console.log(`📜 INITIAL STATE → Price: ${hero.price} |  Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
 
     let baseScore = 0;
     const logStep = (emoji, message, value) => console.log(`${emoji} ${message.padEnd(30)} ${(Number(value) || 0).toFixed(2)}`);
 
     try {
-        // 💚 HP Processing
+        // If it's an "up" event (hp > 0)
         if (event.hp > 0) {
             baseScore += event.hp;
-            logStep("💚", "Base HP Added", event.hp);
-
-            // 🏷️ Float Multiplier
-            const floatMult = getFloatMultiplier(hero.floatValue || 1);
-            logStep(hero.floatValue ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
-            baseScore *= floatMult;
-            logStep("✖️", "After Float Mult", baseScore);
-
-            // 🔊 Volume Multiplier (IPC version)
-            const { multiplier: volMult } = await window.focusAPI.calculateVolumeImpact(event.strength || 0, hero.price || 1).catch(() => ({ multiplier: 1 })); // Fallback to 1x if IPC fails
-
-            logStep("📢", `Volume Mult (${humanReadableNumbers(event.strength)})`, volMult);
-            baseScore *= volMult;
-            logStep("✖️", "After Volume Mult", baseScore);
+            if (debug && debugSamples< debugLimitSamples)  logStep("💖", "Base HP Added", event.hp);
         }
 
-        // 💔 DP Processing
+        // If it's a "down" event (dp > 0)
         if (event.dp > 0) {
-            logStep("💔", "DP Damage Applied", event.dp);
             baseScore -= event.dp;
+            if (debug && debugSamples< debugLimitSamples)  logStep("💥", "Base DP Deducted", event.dp);
         }
+
+        // Apply Float Multiplier
+        const floatMult = getFloatMultiplier(hero.floatValue || 1);
+        if (debug && debugSamples< debugLimitSamples)  logStep(hero.floatValue ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
+
+        if (floatMult < 0.01) {
+            Score = 0;
+        } else {
+            baseScore *= floatMult;
+        }
+
+        // Apply Volume Multiplier
+
+        const { multiplier: volMult } = await window.focusAPI.calculateVolumeImpact(event.strength || 0, hero.price || 1);
+        if (debug && debugSamples< debugLimitSamples)  logStep("📢", `Volume Mult (${humanReadableNumbers(event.strength)})`, volMult);
+        baseScore *= volMult;
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
         baseScore = 0; // Reset on error
     }
 
-    // 🏁 Final Result
-    console.log("━".repeat(50));
-    logStep("🎯", "TOTAL SCORE CHANGE", baseScore);
-    console.log(`🔥 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n`);
+    // Final log and result
+    if (debug && debugSamples< debugLimitSamples)  console.log("━".repeat(50));
+    if (debug && debugSamples< debugLimitSamples)  logStep("🎯", "TOTAL SCORE CHANGE", baseScore);
+    if (debug && debugSamples< debugLimitSamples)  console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
 
     return baseScore;
 }
@@ -528,7 +540,7 @@ function calculateXp(hero) {
         hero.lv += 1;
 
         // 🪄 Optional: Trigger "Level Up!" animation
-        console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
+        if (debug) console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
     }
 }
 
@@ -568,4 +580,28 @@ function humanReadableNumbers(value) {
     if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
     if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
     return num.toLocaleString(); // For values smaller than 1,000
+}
+
+// Constants to fine-tune the algorithm
+const BASE_MULTIPLIER = 0.5; // Starting multiplier
+const VOLUME_SCALING = 50000; // Volume divisor for log2 scaling
+const PRICE_SCALING = 3; // Root type for price influence: 2 = square root, 3 = cube root
+const MAX_MULTIPLIER = 2.5; // Cap on the multiplier
+
+function calculateVolumeImpact(volume = 0, price = 1) {
+    // Adjust volume factor
+    const volumeFactor = Math.log2(1 + volume / VOLUME_SCALING);
+
+    // Adjust price weight based on chosen scaling
+    const priceWeight = PRICE_SCALING === 3 ? Math.cbrt(price) : Math.sqrt(price);
+
+    // Compute multiplier with cap
+    const rawMultiplier = BASE_MULTIPLIER * volumeFactor * priceWeight;
+    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);
+
+    return {
+        multiplier,
+        icon: volumeFactor > 1.5 ? "🔥" : volumeFactor > 1.0 ? "🚛" : "💤",
+        label: `Volume (${volume.toLocaleString()})`,
+    };
 }

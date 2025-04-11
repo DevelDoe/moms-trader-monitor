@@ -22,24 +22,31 @@ let topTickers = ["", "", "", ""];
 
 isLongBiased = true;
 
+const debug = true;
+const debugScoreCalc = true;
+const debugLimitSamples = 13;
+let debugSamples = 0;
+
+let currentMaxScore = 0;
+
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("⚡ Loading live Window...");
+    if (debug) console.log("⚡ Loading live Window...");
 
     await applySavedFilters();
     await fetchAndUpdateTickers();
 
     window.sessionAPI.onTickerUpdate(() => {
-        console.log("🔔 Lists update received, fetching latest data...");
+        if (debug) console.log("🔔 Lists update received, fetching latest data...");
         fetchAndUpdateTickers();
     });
 
     window.sessionAPI.onNewsUpdate(({ ticker, newsItems }) => {
-        console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`);
+        if (debug) console.log(`📰 Received ${newsItems.length} new articles for ${ticker}`);
         fetchAndUpdateTickers();
     });
 
     window.settingsAPI.onUpdate(async (updatedSettings) => {
-        console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
+        if (debug) console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
         window.settings = updatedSettings;
 
         await applySavedFilters();
@@ -50,7 +57,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function fetchAndUpdateTickers() {
     try {
         const sessionData = await window.sessionAPI.getTickers("session");
-        console.log(sessionData)
         const filters = {
             minPrice: window.settings.top?.minPrice ?? 0,
             maxPrice: window.settings.top?.maxPrice ?? 0,
@@ -111,16 +117,17 @@ async function applySavedFilters() {
     window.minVolume = settings.top.minVolume ?? 0; // Set minimum volume filter
     window.maxVolume = settings.top.maxVolume ?? 0; // Set maximum volume filter
 
-    console.log("✅ Applied saved filters:", {
-        minPrice: window.minPrice,
-        maxPrice: window.maxPrice,
-        minFloat: window.minFloat,
-        maxFloat: window.maxFloat,
-        minScore: window.minScore,
-        maxScore: window.maxScore,
-        minVolume: window.minVolume,
-        maxVolume: window.maxVolume,
-    });
+    if (debug)
+        console.log("✅ Applied saved filters:", {
+            minPrice: window.minPrice,
+            maxPrice: window.maxPrice,
+            minFloat: window.minFloat,
+            maxFloat: window.maxFloat,
+            minScore: window.minScore,
+            maxScore: window.maxScore,
+            minVolume: window.minVolume,
+            maxVolume: window.maxVolume,
+        });
 }
 
 function scoreSort(a, b) {
@@ -174,26 +181,36 @@ function updateTickers(rawTickers, newFilters, newMaxVisible = 10) {
 
 function calculateScoreWithDecay(ticker, decay) {
     const baseScore = calculateScore(ticker); // from live.js
-    const decayMultiplier = Math.pow(0.95, decay);
+    const decayMultiplier = Math.pow(0.9, decay);
     return applyMultiplier(baseScore, decay > 0 ? decayMultiplier : 1);
 }
 
-// Global multiplier adjustment factor
-let multiplierScaleFactor = 0.25;  // 1/4th of the original multiplier
+let multiplierScaleFactor = 0.25; // 1/4th of the original multiplier
 
-// Adjusted multiplier function
 function adjustMultiplier(originalMultiplier) {
     return originalMultiplier * multiplierScaleFactor + 1;
 }
 
 function calculateScore(ticker) {
+    const fiveMinVolume = formatLargeNumber(ticker.fiveMinVolume);
+    debugSamples++;
+    if (debug && fiveMinVolume < 1000) {
+        return 0;
+    }
+    if (debug && debugSamples < debugLimitSamples) console.log(`⚡⚡⚡ [${ticker.symbol}] SCORING BREAKDOWN ⚡⚡⚡`);
+
     const up = Math.floor(ticker.cumulativeUpChange || 0);
     const down = Math.floor(ticker.cumulativeDownChange || 0);
-    const fiveMinVolume = formatLargeNumber(ticker.fiveMinVolume);
+    
+
     const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
+    const price = ticker.Price || 0;
 
     // 1. Base score is just the up leg
     let Score = up;
+
+    // Log initial state
+    if (debug && debugSamples < debugLimitSamples) console.log(`📜 INITIAL STATE → Price: ${price} | Score: ${up} `);
 
     // 2. If it's recovering (down was greater, but up is now increasing), apply a recovery boost
     if (down > up && up > 0) {
@@ -202,9 +219,13 @@ function calculateScore(ticker) {
 
         // Apply dynamic boost based on trader's bias
         if (isLongBiased) {
-            Score = applyMultiplier(Score, 1 + adjustMultiplier(recoveryBoost)); // Long-biased: Recovery boost
+            const prevScore = Score;
+            Score = applyMultiplier(Score, 1 + adjustMultiplier(recoveryBoost));
+            if (debug && debugSamples < debugLimitSamples) console.log(`🔄 Recovery Boost (${recoveryBoost.toFixed(2)}x)        ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
         } else {
-            Score = applyMultiplier(Score, 1 - adjustMultiplier(recoveryBoost)); // Short-biased: Recovery penalty (if recovery ratio is positive)
+            const prevScore = Score;
+            Score = applyMultiplier(Score, 1 - adjustMultiplier(recoveryBoost));
+            if (debug && debugSamples < debugLimitSamples) console.log(`🔀 Recovery Penalty (${recoveryBoost.toFixed(2)}x)      ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
         }
     }
 
@@ -214,28 +235,52 @@ function calculateScore(ticker) {
 
         // Apply dynamic penalty or boost based on trader's bias
         if (isLongBiased) {
-            Score = applyMultiplier(Score, 1 - adjustMultiplier(penalty)); // Long-biased: Apply penalty
+            const prevScore = Score;
+            Score = applyMultiplier(Score, 1 - adjustMultiplier(penalty));
+            if (debug && debugSamples < debugLimitSamples) console.log(`⚠️ Downtrend Penalty (${penalty.toFixed(2)}x)       ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
         } else {
-            Score = applyMultiplier(Score, 1 + adjustMultiplier(penalty)); // Short-biased: Apply boost (to capitalize on the downtrend)
+            const prevScore = Score;
+            Score = applyMultiplier(Score, 1 + adjustMultiplier(penalty));
+            if (debug && debugSamples < debugLimitSamples) console.log(`⬇️ Downtrend Boost (${penalty.toFixed(2)}x)        ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
         }
     }
 
     // 4. Score floor
     Score = Math.max(0, Math.floor(Score));
 
-    // 5. Volume impact - reversed logic for short-biased traders
-    if (fiveMinVolume < 30_000) {
-        Score = applyMultiplier(Score, adjustMultiplier(0.01));
-    } else if (fiveMinVolume < 90_000) {
-        Score = applyMultiplier(Score, adjustMultiplier(0.8));
-    } else if (fiveMinVolume < 240_000) {
-        Score = applyMultiplier(Score, adjustMultiplier(1));
-    } else {
-        if (isLongBiased) {
-            Score = applyMultiplier(Score, adjustMultiplier(1.5)); // Long-biased: Positive effect for high volume
+    if (floatValue > 0) {
+        const prevScore = Score;
+        let mult = 1;
+        let floatDesc = "";
+
+        if (floatValue < floatOneMillionHigh) {
+            mult = 1.5;
+            floatDesc = "<1M";
+        } else if (floatValue < floatFiveMillion) {
+            mult = 1.25;
+            floatDesc = "1-5M";
+        } else if (floatValue < floatTenMillion) {
+            mult = 1.1;
+            floatDesc = "5-10M";
+        } else if (floatValue < floatFiftyMillion) {
+            mult = 1;
+            floatDesc = "10-50M";
+        } else if (floatValue < floatHundredMillion) {
+            mult = 0.8;
+            floatDesc = "50-100M";
+        } else if (floatValue < floatTwoHundredMillion) {
+            mult = 0.6;
+            floatDesc = "100-200M";
+        } else if (floatValue < floatFiveHundredMillion) {
+            mult = 0.4;
+            floatDesc = "200-500M";
         } else {
-            Score = applyMultiplier(Score, adjustMultiplier(0.8)); // Short-biased: Negative effect for high volume
+            mult = 0.1;
+            floatDesc = "500M+";
         }
+
+        Score = applyMultiplier(Score, adjustMultiplier(mult));
+        if (debug && debugSamples < debugLimitSamples) console.log(`🏷️ Float Mult (${floatDesc})         ${mult.toFixed(2)}x → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
     }
 
     let blockList = window.settings?.news?.blockList || [];
@@ -250,35 +295,29 @@ function calculateScore(ticker) {
     }
 
     if (filteredNews.length > 0) {
+        const prevScore = Score;
         Score = applyMultiplier(Score, adjustMultiplier(1.9));
+        if (debug && debugSamples < debugLimitSamples) console.log(`📰 News Multiplier (${filteredNews.length} items)  1.90x → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
     }
 
     if (ticker.highestPrice !== undefined && ticker.Price === ticker.highestPrice) {
+        const prevScore = Score;
         Score = applyMultiplier(Score, adjustMultiplier(1.5));
+        if (debug && debugSamples < debugLimitSamples) console.log(`🏆 At High Price Multiplier       1.50x → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
     }
 
-    if (floatValue > 0 && floatValue < floatOneMillionHigh) {
-        Score = applyMultiplier(Score, adjustMultiplier(1.5));
-    } else if (floatValue >= floatOneMillionHigh && floatValue < floatFiveMillion) {
-        Score = applyMultiplier(Score, adjustMultiplier(1.25));
-    } else if (floatValue >= floatFiveMillion && floatValue < floatTenMillion) {
-        Score = applyMultiplier(Score, adjustMultiplier(1.1));
-    } else if (floatValue >= floatFiftyMillion && floatValue < floatHundredMillion) {
-        Score = applyMultiplier(Score, adjustMultiplier(0.8));
-    } else if (floatValue >= floatHundredMillion && floatValue < floatTwoHundredMillion) {
-        Score = applyMultiplier(Score, adjustMultiplier(0.6));
-    } else if (floatValue >= floatTwoHundredMillion && floatValue < floatFiveHundredMillion) {
-        Score = applyMultiplier(Score, adjustMultiplier(0.4));
-    } else if (floatValue >= floatFiveHundredMillion) {
-        Score = applyMultiplier(Score, adjustMultiplier(0.1));
-    }
-
+    // Industry multipliers
     if (ticker.profile?.industry === "Biotechnology") {
+        const prevScore = Score;
         Score = applyMultiplier(Score, adjustMultiplier(1.4));
+        if (debug && debugSamples < debugLimitSamples) console.log(`🧪 BioTech Multiplier          1.40x → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
     } else if (ticker.profile?.longBusinessSummary?.toLowerCase().includes("cannabis")) {
+        const prevScore = Score;
         Score = applyMultiplier(Score, adjustMultiplier(1.2));
+        if (debug && debugSamples < debugLimitSamples) console.log(`🌿 Cannabis Multiplier         1.20x → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
     }
 
+    // Ownership calculations
     const floatShares = ticker.statistics?.floatShares || 0;
     const insidersPercentHeld = ticker.ownership?.insidersPercentHeld || 0;
     const institutionsPercentHeld = ticker.ownership?.institutionsPercentHeld || 0;
@@ -290,22 +329,65 @@ function calculateScore(ticker) {
     const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0);
 
     if (insiderShares + institutionalShares + remainingShares > 0.5 * sharesOutstanding) {
+        const prevScore = Score;
         Score = applyMultiplier(Score, adjustMultiplier(0.5));
+        if (debug && debugSamples < debugLimitSamples) console.log(`👥 Concentrated Ownership      0.50x → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
     }
 
     if (sharesShort > 0.2 * floatShares) {
+        const prevScore = Score;
         Score = applyMultiplier(Score, adjustMultiplier(1.5));
+        if (debug && debugSamples < debugLimitSamples) console.log(`🔥 High Short Interest         1.50x → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
     }
 
+    // Financial health checks
     const netIncome = ticker.financials?.cashflowStatement?.netIncome;
     const hasNegativeIncome = typeof netIncome === "number" && netIncome < 0;
     const hasS3Filing = !!ticker.offReg;
 
     if (hasNegativeIncome && hasS3Filing) {
+        const prevScore = Score;
         Score = applyMultiplier(Score, adjustMultiplier(0.7));
+        if (debug && debugSamples < debugLimitSamples) console.log(`💸 Negative Income + S3        0.70x → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
     }
 
-    return Math.floor(Score);
+    // // 5. Volume impact
+    const prevScore = Score;
+
+    const { multiplier: volMult } = calculateVolumeImpact(parseVolumeValue(fiveMinVolume), ticker.Price || 1);
+    Score *= volMult;
+    if (debug && debugSamples < debugLimitSamples) console.log(`📢 Volume Mult (${fiveMinVolume})         ${volMult.toFixed(2)} → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
+
+    // Final score
+    const finalScore = Math.floor(Score);
+    if (debug && debugSamples < debugLimitSamples) console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    if (debug && debugSamples < debugLimitSamples) console.log(`🎯 TOTAL SCORE CHANGE             ${(finalScore - up).toFixed(2)}`);
+    if (debug && debugSamples < debugLimitSamples) console.log(`🔥 FINAL SCORE → ${finalScore.toFixed(2)}\n\n\n`);
+
+    return finalScore;
+}
+
+const BASE_MULTIPLIER = 0.5; // Starting multiplier
+const VOLUME_SCALING = 100000; // Volume divisor for log2 scaling
+const PRICE_SCALING = 3; // Root type for price influence: 2 = square root, 3 = cube root
+const MAX_MULTIPLIER = 5; // Cap on the multiplier
+
+function calculateVolumeImpact(volume = 0, price = 1) {
+    // Adjust volume factor
+    const volumeFactor = Math.log2(1 + volume / VOLUME_SCALING);
+
+    // Adjust price weight based on chosen scaling
+    const priceWeight = PRICE_SCALING === 3 ? Math.cbrt(price) : Math.sqrt(price);
+
+    // Compute multiplier with cap
+    const rawMultiplier = BASE_MULTIPLIER * volumeFactor * priceWeight;
+    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);
+
+    return {
+        multiplier,
+        icon: volumeFactor > 1.5 ? "🔥" : volumeFactor > 1.0 ? "🚛" : "💤",
+        label: `Volume (${volume.toLocaleString()})`,
+    };
 }
 
 function getScoreBreakdown(ticker) {
@@ -437,17 +519,17 @@ function getBonusesHTML(ticker) {
     const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0); // Ensure no negatives
 
     if (ticker.fiveMinVolume < 30_000) {
-        bonuses.push('<span class="bonus low-volume no-drag">💀</span>');
-        tooltipText.push(`💀 Volume too low: ${fiveMinVolume}`);
-    } else if (ticker.fiveMinVolume < 90_000) {
         bonuses.push('<span class="bonus low-volume no-drag">💤</span>');
         tooltipText.push(`💤 Low Volume: ${fiveMinVolume}`);
-    } else if (ticker.fiveMinVolume < 240_000) {
-        bonuses.push('<span class="bonus normal-volume no-drag">🚛</span>');
-        tooltipText.push(`🚛 Medium Volume: ${fiveMinVolume}`);
-    } else {
-        bonuses.push('<span class="bonus high-volume no-drag">🔥</span>');
+    } else if (ticker.fiveMinVolume > 100_000) {
+        bonuses.push(`<span class="bonus medium-volume no-drag">🚛</span>`);
+        tooltipText.push(`🚛 High Volume: ${fiveMinVolume}`);
+    } else if (ticker.fiveMinVolume > 300_000) {
+        bonuses.push(`<span class="bonus high-volume no-drag">🔥</span>`);
         tooltipText.push(`🔥 High Volume: ${fiveMinVolume}`);
+    } else if (ticker.fiveMinVolume > 500_000) {
+        bonuses.push(`<span class="bonus normal-volume no-drag">🚀</span>`);
+        tooltipText.push(`🚀 Parabolic Volume: ${fiveMinVolume}`);
     }
 
     // FLOAT
@@ -566,42 +648,48 @@ function triggerGlobalAnimation() {
     }
 }
 
-let currentMaxScore = 0;
+let tickerConfirmation = {};
+const DEBOUNCE_TIME = 5000; // e.g., 5 seconds
 
 function renderTickers(listId = "tickers-live") {
     const container = document.getElementById(listId);
     const allTickers = getVisibleTickers(100);
 
-    console.log(allTickers);
-
-    const isValidScore = (t) => typeof t.Score === "number" && t.Score > 10;
+    const isValidScore = (t) => typeof t.Score === "number" && t.Score > 100;
     const sorted = allTickers.filter(isValidScore).sort((a, b) => b.Score - a.Score);
-
-    console.log("🎯 liveListLength:", window.settings.top.liveListLength);
-    console.log("📦 Total sorted tickers:", sorted.length);
 
     // 👇 Slice for UI rendering (from settings)
     const listLength = window.settings.top.liveListLength ?? 10;
     const uiTickers = sorted.slice(0, listLength);
 
-    // 👇 Always track top 4 for traderview windows
+    // 👇 Debounce logic for top tickers
+    const now = Date.now();
     const newTopTickers = sorted.slice(0, 4).map((t) => t.Symbol);
-    const hasChanged = newTopTickers.some((s, i) => s !== topTickers[i]);
+
+    // Update the confirmation map
+    newTopTickers.forEach((ticker) => {
+        if (!tickerConfirmation[ticker]) {
+            tickerConfirmation[ticker] = now;
+        }
+    });
+
+    // Keep only tickers that have been stable for the debounce duration
+    const stableTopTickers = newTopTickers.filter((ticker) => now - tickerConfirmation[ticker] >= DEBOUNCE_TIME);
+
+    // If the stable top tickers differ from the current topTickers, update them
+    const hasChanged = stableTopTickers.some((s, i) => s !== topTickers[i]);
 
     if (hasChanged) {
-        topTickers = newTopTickers;
+        topTickers = stableTopTickers;
         window.traderviewAPI.setTopTickers(topTickers);
     }
 
-    // 👇 Debounce active ticker switch
-    const topSymbol = sorted[0]?.Symbol;
-    if (topSymbol && topSymbol !== lastTopSymbol) {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            lastTopSymbol = topSymbol;
-            window.activeAPI.setActiveTicker(topSymbol);
-        }, 10_000);
-    }
+    // Clear out old tickers from the confirmation map
+    Object.keys(tickerConfirmation).forEach((ticker) => {
+        if (!newTopTickers.includes(ticker)) {
+            delete tickerConfirmation[ticker];
+        }
+    });
 
     // 👇 Setup UI table
     const table = document.createElement("table");
@@ -632,7 +720,6 @@ function renderTickers(listId = "tickers-live") {
         // Row 1: Ticker data row
         row1.style.opacity = opacity;
         row1.style.filter = `grayscale(${grayscale})`;
-        
 
         // Column 1: Symbol cell (spans 2 rows)
         const symbolCell = document.createElement("td");
@@ -741,7 +828,6 @@ function getSymbolColor(symbol) {
     }
     return symbolColors[symbol];
 }
-applyMultiplier;
 
 function parseHumanNumber(str) {
     if (!str) return 0; // Ensure null or undefined returns 0
@@ -780,18 +866,15 @@ function formatLargeNumber(value) {
     return num.toLocaleString(); // For values smaller than 1,000
 }
 
-// Apply multiplier to score
 function applyMultiplier(score, multiplier) {
     return score > 0 ? score * multiplier : score / multiplier;
 }
 
-// Format price as currency
 function formatPrice(price) {
     if (typeof price !== "number" || isNaN(price)) return "$0.00";
     return `$${price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 }
 
-// Format volume into human-readable format
 function formatVolume(volume) {
     if (volume >= 1_000_000_000) {
         return (volume / 1_000_000_000).toFixed(1) + "B"; // Billions
@@ -803,11 +886,19 @@ function formatVolume(volume) {
     return volume.toString(); // If less than 1K, return as is
 }
 
-// Sanitize string (remove non-alphanumeric characters)
 function sanitize(str) {
     return (str || "")
         .toLowerCase()
         .replace(/[^\w\s]/gi, "") // removes symbols
         .replace(/\s+/g, " ") // normalize whitespace
         .trim();
+}
+
+function humanReadableNumbers(value) {
+    if (!value || isNaN(value)) return "-";
+    const num = Number(value);
+    if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
+    return num.toLocaleString(); // For values smaller than 1,000
 }

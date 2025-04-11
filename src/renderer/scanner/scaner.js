@@ -74,8 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         let release = 0.1;
 
         if (volumeValue < 100000) {
-            baseFreq = 108;
-            duration = 0.2;
+            baseFreq = 64;
+            duration = 0.12;
             attack = 0.005;
             decay = 0.02;
             sustain = 0.5;

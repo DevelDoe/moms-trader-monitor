@@ -521,47 +521,27 @@ ipcMain.on("refresh-focus", async () => {
     windows.focus.show();
 });
 
+// Constants to fine-tune the algorithm
+const BASE_MULTIPLIER = 0.5; // Starting multiplier
+const VOLUME_SCALING = 50000; // Volume divisor for log2 scaling
+const PRICE_SCALING = 3; // Root type for price influence: 2 = square root, 3 = cube root
+const MAX_MULTIPLIER = 2.5; // Cap on the multiplier
 
 ipcMain.handle("calculate-volume-impact", (_, { volume = 0, price = 1 }) => {
-    // 1. Define tier thresholds based on price
-    const getTiers = (price) => {
-        if (price < 2)
-            return [
-                // Penny stocks ($1-$2)
-                { threshold: 30000, icon: "💤", base: 0.7 },
-                { threshold: 150000, icon: "🚛", base: 1.0 },
-                { threshold: 300000, icon: "🔥", base: 1.3 },
-                { threshold: 600000, icon: "🚀", base: 1.8 }, // $1 needs 600K
-            ];
-        else if (price < 5)
-            return [
-                // Mid-tier ($2-$5)
-                { threshold: 20000, icon: "💤", base: 0.7 },
-                { threshold: 100000, icon: "🚛", base: 1.0 },
-                { threshold: 250000, icon: "🔥", base: 1.3 },
-                { threshold: 450000, icon: "🚀", base: 1.8 }, // $3 needs 450K
-            ];
-        else
-            return [
-                // Expensive stocks ($5+)
-                { threshold: 10000, icon: "💤", base: 0.7 },
-                { threshold: 30000, icon: "🚛", base: 1.0 },
-                { threshold: 60000, icon: "🔥", base: 1.3 },
-                { threshold: 100000, icon: "🚀", base: 1.8 }, // $50 needs 100K
-            ];
-    };
+    // Adjust volume factor
+    const volumeFactor = Math.log2(1 + volume / VOLUME_SCALING);
 
-    const tiers = getTiers(price);
-    const tier = tiers.findLast((t) => volume >= t.threshold) || tiers[0];
-    const multiplier = Math.min(
-        tier.base * Math.log2(1 + volume / tier.threshold),
-        2.5 // Cap multiplier at 2.5x
-    );
+    // Adjust price weight based on chosen scaling
+    const priceWeight = PRICE_SCALING === 3 ? Math.cbrt(price) : Math.sqrt(price);
+
+    // Compute multiplier with cap
+    const rawMultiplier = BASE_MULTIPLIER * volumeFactor * priceWeight;
+    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);
 
     return {
         multiplier,
-        icon: tier.icon,
-        label: `${tier.label} Volume`,
+        icon: volumeFactor > 1.5 ? "🔥" : volumeFactor > 1.0 ? "🚛" : "💤",
+        label: `Volume (${volume.toLocaleString()})`,
     };
 });
 

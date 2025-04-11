@@ -31,7 +31,7 @@
       }
     },
     "transparent": false,
-    "liveListLength": 12,
+    "liveListLength": 13,
     "focusListLength": 3,
     "dailyListLength": 13
   },
@@ -188,7 +188,7 @@
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 50,
-    "scannerVolume": 0
+    "scannerVolume": 1
   },
   "windows": {
     "activeWindow": {
