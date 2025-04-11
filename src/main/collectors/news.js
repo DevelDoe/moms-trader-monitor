@@ -11,94 +11,94 @@ dotenv.config({ path: path.join(__dirname, "../../config/.env") });
 let alpacaSocket = null;
 
 const subscribeToSymbolNews = (symbols) => {
-    // Validate symbols
-    if (!Array.isArray(symbols) || symbols.length === 0) {
-        log.warn("No symbols provided for news subscription.");
-        return;
-    }
+    // // Validate symbols
+    // if (!Array.isArray(symbols) || symbols.length === 0) {
+    //     log.warn("No symbols provided for news subscription.");
+    //     return;
+    // }
 
-    // If WebSocket is already open, subscribe immediately
-    if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
-        const payload = {
-            action: "subscribe",
-            news: symbols,
-        };
-        log.log(`📡 Subscribing to Alpaca news for: ${symbols.join(", ")}`);
-        alpacaSocket.send(JSON.stringify(payload));
-        return;
-    }
+    // // If WebSocket is already open, subscribe immediately
+    // if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
+    //     const payload = {
+    //         action: "subscribe",
+    //         news: symbols,
+    //     };
+    //     log.log(`📡 Subscribing to Alpaca news for: ${symbols.join(", ")}`);
+    //     alpacaSocket.send(JSON.stringify(payload));
+    //     return;
+    // }
 
-    // If WebSocket is not open, create a new connection
-    log.log("WebSocket not open. Opening a new connection...");
+    // // If WebSocket is not open, create a new connection
+    // log.log("WebSocket not open. Opening a new connection...");
 
-    const ALPACA_NEWS_URL = `${process.env.APCA_API_STREAM_URL}/v1beta1/news`;
+    // const ALPACA_NEWS_URL = `${process.env.APCA_API_STREAM_URL}/v1beta1/news`;
 
-    alpacaSocket = new WebSocket(ALPACA_NEWS_URL, {
-        headers: {
-            "APCA-API-KEY-ID": process.env.APCA_API_KEY_ID,
-            "APCA-API-SECRET-KEY": process.env.APCA_API_SECRET_KEY,
-        },
-    });
+    // alpacaSocket = new WebSocket(ALPACA_NEWS_URL, {
+    //     headers: {
+    //         "APCA-API-KEY-ID": process.env.APCA_API_KEY_ID,
+    //         "APCA-API-SECRET-KEY": process.env.APCA_API_SECRET_KEY,
+    //     },
+    // });
 
-    alpacaSocket.onopen = () => {
-        log.log("Connected to Alpaca News WebSocket.");
+    // alpacaSocket.onopen = () => {
+    //     log.log("Connected to Alpaca News WebSocket.");
 
-        const authMsg = {
-            action: "auth",
-            key: process.env.APCA_API_KEY_ID,
-            secret: process.env.APCA_API_SECRET_KEY,
-        };
+    //     const authMsg = {
+    //         action: "auth",
+    //         key: process.env.APCA_API_KEY_ID,
+    //         secret: process.env.APCA_API_SECRET_KEY,
+    //     };
 
-        alpacaSocket.send(JSON.stringify(authMsg));
-        log.log("Sent authentication message.");
-    };
+    //     alpacaSocket.send(JSON.stringify(authMsg));
+    //     log.log("Sent authentication message.");
+    // };
 
-    alpacaSocket.onmessage = (event) => {
-        log.log("Received message from WebSocket:", event.data);
+    // alpacaSocket.onmessage = (event) => {
+    //     log.log("Received message from WebSocket:", event.data);
 
-        try {
-            const data = JSON.parse(event.data);
+    //     try {
+    //         const data = JSON.parse(event.data);
 
-            // If it's an array (normal behavior)
-            const messages = Array.isArray(data) ? data : [data];
+    //         // If it's an array (normal behavior)
+    //         const messages = Array.isArray(data) ? data : [data];
 
-            for (const msg of messages) {
-                // Handle authentication success
-                if (msg.T === "success" && msg.msg === "authenticated") {
-                    log.log("Successfully authenticated.");
+    //         for (const msg of messages) {
+    //             // Handle authentication success
+    //             if (msg.T === "success" && msg.msg === "authenticated") {
+    //                 log.log("Successfully authenticated.");
 
-                    const payload = {
-                        action: "subscribe",
-                        news: symbols,
-                    };
-                    log.log(`Subscribing to Alpaca news for: ${symbols.join(", ")}`);
-                    alpacaSocket.send(JSON.stringify(payload));
-                    return;
-                }
+    //                 const payload = {
+    //                     action: "subscribe",
+    //                     news: symbols,
+    //                 };
+    //                 log.log(`Subscribing to Alpaca news for: ${symbols.join(", ")}`);
+    //                 alpacaSocket.send(JSON.stringify(payload));
+    //                 return;
+    //             }
 
-                // Handle news message
-                if (msg.T === "n") {
-                    log.log("📢 News item received:", msg.headline);
-                    handleNewsData(msg); // optionally wrap this in setImmediate
-                }
-            }
-        } catch (error) {
-            log.error("Error processing WebSocket message:", error.message);
-        }
-    };
+    //             // Handle news message
+    //             if (msg.T === "n") {
+    //                 log.log("📢 News item received:", msg.headline);
+    //                 handleNewsData(msg); // optionally wrap this in setImmediate
+    //             }
+    //         }
+    //     } catch (error) {
+    //         log.error("Error processing WebSocket message:", error.message);
+    //     }
+    // };
 
-    alpacaSocket.onclose = () => {
-        log.warn("WebSocket closed. Reconnecting in 5s...");
-        setTimeout(() => subscribeToSymbolNews(symbols), 5000); // Reconnect and resubscribe
-    };
+    // alpacaSocket.onclose = () => {
+    //     log.warn("WebSocket closed. Reconnecting in 5s...");
+    //     setTimeout(() => subscribeToSymbolNews(symbols), 5000); // Reconnect and resubscribe
+    // };
 
-    alpacaSocket.onerror = (error) => {
-        log.error("WebSocket error:", error.message);
-        // Check if any specific error information is available
-        if (error.message.includes("Subscription failed")) {
-            log.warn("The WebSocket subscription request may have failed.");
-        }
-    };
+    // alpacaSocket.onerror = (error) => {
+    //     log.error("WebSocket error:", error.message);
+    //     // Check if any specific error information is available
+    //     if (error.message.includes("Subscription failed")) {
+    //         log.warn("The WebSocket subscription request may have failed.");
+    //     }
+    // };
 };
 
 // ✅ Handle News Items Only
@@ -164,7 +164,7 @@ const fetchHistoricalNews = async (ticker) => {
     const encodedTicker = encodeURIComponent(ticker);
     const ALPACA_NEWS_URL = `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
 
-    log.log(`[news.js] Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
+    // log.log(`[news.js] Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
 
     try {
         const response = await fetch(ALPACA_NEWS_URL, {
@@ -182,7 +182,7 @@ const fetchHistoricalNews = async (ticker) => {
         }
 
         const newsData = await response.json();
-        log.log(`Full API response for ${ticker}: ${JSON.stringify(newsData)}`);
+        // log.log(`Full API response for ${ticker}: ${JSON.stringify(newsData)}`);
 
         if (!newsData.news || newsData.news.length === 0) return;
 

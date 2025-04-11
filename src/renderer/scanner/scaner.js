@@ -13,7 +13,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
 
     const magicDustAudio = new Audio("./magic.mp3");
-    magicDustAudio.volume = 0.3; // tweak to taste
+    // magicDustAudio.volume = 0.3; 
+    magicDustAudio.volume = 0; 
 
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
@@ -100,7 +101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         oscillator.frequency.value = frequency;
 
         const volume = Math.max(0, Math.min(1, window.settings?.scanner?.scannerVolume ?? 0.5));
-        gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
         oscillator.start();

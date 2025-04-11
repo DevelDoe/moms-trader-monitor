@@ -1,4 +1,4 @@
-// ./src/hlps/safeSend.js
+// ./src/utils/safeSend.js
 
 
 function safeSend(win, channel, payload) {

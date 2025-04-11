@@ -24,7 +24,7 @@ isLongBiased = true;
 
 const debug = true;
 const debugScoreCalc = true;
-const debugLimitSamples = 13;
+const debugLimitSamples = 1300;
 let debugSamples = 0;
 
 let currentMaxScore = 0;

@@ -51,7 +51,7 @@ contextBridge.exposeInMainWorld("focusAPI", {
 
 contextBridge.exposeInMainWorld("sessionAPI", {
     toggle: () => ipcRenderer.send("toggle-live"),
-    refresh: () => ipcRenderer.send("refresh-live"),
+    reCreate: () => ipcRenderer.send("recreate-live"),
     getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
     onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
     clearSession: () => ipcRenderer.send("clear-live"),

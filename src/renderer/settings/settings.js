@@ -116,7 +116,7 @@ function initializeAdminSection() {
     document.getElementById("fetchNewsBtn").addEventListener("click", () => {
         console.log("📰 Fetch News button clicked");
         window.settingsAPI.fetchNews();
-        window.infobarAPI.refresh(); // I need this to refresh our infobar window
+        window.infobarAPI.refresh(); 
     });
 }
 
