@@ -11,6 +11,7 @@ function parseVolumeValue(str) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
+    console.log("loaded settings: ", window.settings);
 
     const magicDustAudio = new Audio("./magic.mp3");
     // magicDustAudio.volume = 0.3; 

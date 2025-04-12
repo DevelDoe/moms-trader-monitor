@@ -4,7 +4,7 @@ const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createLiveWindow(isDevelopment) {
+function createLiveWindow(isDevelopment, buffs) {
     const state = getWindowState("liveWindow");
 
     const window = new BrowserWindow({
@@ -25,6 +25,9 @@ function createLiveWindow(isDevelopment) {
             contextIsolation: true,
             enableRemoteModule: false,
             nodeIntegration: false,
+            additionalArguments: [
+                `--buffs=${encodeURIComponent(JSON.stringify(buffs))}`
+            ]
         },
     });
 

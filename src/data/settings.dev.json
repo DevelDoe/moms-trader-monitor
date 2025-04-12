@@ -1,7 +1,7 @@
 {
   "top": {
     "minPrice": 0,
-    "maxPrice": 0,
+    "maxPrice": 100,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -10,279 +10,39 @@
     "maxVolume": 0,
     "lists": {
       "live": {
-        "Price": true,
+        "Price": false,
         "alertChangePercent": false,
-        "cumulativeUpChange": false,
+        "cumulativeUpChange": true,
         "cumulativeDownChange": false,
-        "Score": false,
+        "Score": true,
         "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": true
+        "length": 3
       },
       "focus": {
         "Price": false,
         "alertChangePercent": false,
         "cumulativeUpChange": true,
         "cumulativeDownChange": false,
-        "Score": false,
+        "Score": true,
         "Bonuses": true,
-        "length": 3,
-        "fiveMinVolume": false
+        "length": 3
       }
-    },
-    "transparent": false,
-    "liveListLength": 12,
-    "focusListLength": 3,
-    "dailyListLength": 13
+    }
   },
   "news": {
     "showTrackedTickers": false,
-    "filteredTickers": [
-      "SIDU",
-      "AIFF",
-      "MIRA",
-      "LFWD"
-    ],
-    "blockList": [
-      "US Stocks Likely To Open Lower After Gaining For 2 Days",
-      "Market-Moving News for",
-      "What's Going On",
-      "Why Five9 Shares",
-      "Shares Halted On",
-      "Shares Resume Trade",
-      "Stock Is skyrocketing",
-      "US Stocks",
-      "Shares are trading higher",
-      "Trading Halt",
-      "Earnings Schedule",
-      "Stock Rocketing",
-      "Shares are",
-      "Looking in to",
-      "trading higher",
-      "going on with",
-      "shares resumed",
-      "String phase",
-      "Stock is skyrocketing",
-      "Stocks Moving",
-      "Shares Surge",
-      "Nasdaq down",
-      "Gains over",
-      "Nasdaq Gains",
-      "Skyrocketing",
-      "Down tumbles",
-      "Down Tumbles",
-      "dow tumbles over",
-      "Nasdaq tumbles over",
-      "Resumed trade",
-      "dow dips",
-      "dow dips over",
-      "Shares halt",
-      "Dow tumbles",
-      "reiterates"
-    ],
+    "filteredTickers": [],
+    "blockList": [],
     "bullishList": [
       "FDA Approves",
       "Clinical Trials",
-      "Noteworthy Insider Activity",
-      "FDA Approval Granted",
-      "Drug Trial Success",
-      "Phase 3 Trial Results",
-      "Breakthrough Therapy Designation",
-      "Biotech Approval",
-      "Positive Data from Clinical Study",
-      "SEC Investigation Dropped",
-      "Regulatory Approval Granted",
-      "Government Contract Secured",
-      "Lawsuit Settlement Reached",
-      "Initiates Coverage",
-      "Price Target Raised",
-      "Raises Price Target",
-      "New Wall Street Coverage",
-      "Stock Upgrade",
-      "Underweight to Overweight",
-      "Hedge Fund Buys",
-      "Institutional Ownership Increases",
-      "Buffett Increases Stake",
-      "ARK Invest Adds",
-      "Large Insider Purchase",
-      "CEO Buys",
-      "10% Owner Acquires",
-      "Earnings Beat Expectations",
-      "Revenue Surprise",
-      "Raises Guidance",
-      "Record Revenue",
-      "Strategic Partnership",
-      "Joint Venture Agreement",
-      "Government Contract Awarded",
-      "Short Interest at Record High",
-      "Short Squeeze Potential",
-      "Unusual Options Activity",
-      "Dark Pool Order Detected",
-      "Unusual Trading Volume",
-      "Share Repurchase",
-      "Board Of Directors Has Approved",
-      "Receives Data And Safety Monitoring",
-      "Announces Deployment",
-      "Beats",
-      "Has Received Total Proceeds",
-      "Exclusive Deal",
-      "Secures",
-      "beats",
-      "Signs Commercial Deal",
-      "Reaches Financing",
-      "Revenue Boost",
-      "Phase 3 Safety",
-      "FDA Clearence",
-      "fda clearance",
-      "enhances value",
-      "Clinical study",
-      "Up from",
-      "Repurchased Shares",
-      "Potential Repurchases",
-      "Repurchasing",
-      "Repurchases",
-      "Repurchased",
-      "String phase",
-      "FDA-approved",
-      "year-over-year increase",
-      "Investigate Potential Naked Short Selling",
-      "beat",
-      "Takeover Proposal",
-      "Regains NASDAQ listing"
+      "Noteworthy Insider Activity"
     ],
     "bearishList": [
       "Sell Alert",
       "Stock Downgrade",
-      "Downgrades to Sell",
-      "Lowers Price Target",
-      "Underperform Rating",
-      "Bearish Call",
-      "Snaps Up",
-      "Takeover Attempt",
-      "Exploring Strategic Alternatives",
-      "CEO Sells",
-      "Large Insider Selling",
-      "Hedge Fund Exits",
-      "Institutional Ownership Decreases",
-      "Revenue Miss",
-      "Earnings Miss",
-      "Lowers Guidance",
-      "Regulatory Investigation",
-      "SEC Investigation Launched",
-      "Short Report Released",
-      "Misses",
-      "Down from",
-      "Offering",
-      "Miss",
-      "Issue new shares",
-      "Public offering",
-      "Definitive Securities  Purchase",
-      "definitive securities purchase"
+      "Downgrades to Sell"
     ],
     "allowMultiSymbols": false
-  },
-  "scanner": {
-    "minPrice": 0,
-    "maxPrice": 0,
-    "direction": null,
-    "minChangePercent": 0,
-    "minVolume": 0,
-    "maxAlerts": 50,
-    "scannerVolume": 0
-  },
-  "windows": {
-    "activeWindow": {
-      "width": 753,
-      "height": 407,
-      "x": 2732,
-      "y": -930
-    },
-    "settingsWindow": {
-      "width": 850,
-      "height": 999,
-      "x": 2662,
-      "y": 605,
-      "isOpen": false
-    },
-    "sessionWindow": {
-      "width": 353,
-      "height": 113,
-      "x": 1638,
-      "y": 449
-    },
-    "scannerWindow": {
-      "width": 173,
-      "height": 900,
-      "x": 2557,
-      "y": -926
-    },
-    "infobarWindow": {
-      "width": 512,
-      "height": 39,
-      "x": 1035,
-      "y": 491
-    },
-    "traderviewWindow": {
-      "width": 452,
-      "height": 445,
-      "x": 1820,
-      "y": 669
-    },
-    "lightchartWindow": {
-      "width": 850,
-      "height": 660,
-      "x": 1495,
-      "y": 730,
-      "isOpen": true
-    },
-    "traderviewWidgetWindow": {
-      "width": 380,
-      "height": 199,
-      "x": 2044,
-      "y": 282,
-      "isOpen": true
-    },
-    "traderviewWindow_0": {
-      "width": 1457,
-      "height": 1057,
-      "x": 0,
-      "y": 2
-    },
-    "traderviewWindow_1": {
-      "width": 1448,
-      "height": 1057,
-      "x": 8,
-      "y": 1059
-    },
-    "traderviewWindow_2": {
-      "width": 1472,
-      "height": 1059,
-      "x": 2368,
-      "y": 2
-    },
-    "traderviewWindow_3": {
-      "width": 1472,
-      "height": 1060,
-      "x": 2368,
-      "y": 1060
-    },
-    "liveWindow": {
-      "width": 358,
-      "height": 493,
-      "x": 2732,
-      "y": -526
-    },
-    "dailyWindow": {
-      "width": 394,
-      "height": 493,
-      "x": 3611,
-      "y": -521
-    },
-    "focusWindow": {
-      "width": 515,
-      "height": 493,
-      "x": 3094,
-      "y": -520
-    }
   }
 }

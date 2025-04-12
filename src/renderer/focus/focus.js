@@ -1,6 +1,6 @@
 const DECAY_INTERVAL_MS = 12000;
 const XP_DECAY_PER_TICK = 0.2; // Base decay per tick (you might lower this for longer duration)
-const SCORE_NORMALIZATION = 10; // Increase this value to reduce the impact of score on decay
+const SCORE_NORMALIZATION = 1; // Increase this value to reduce the impact of score on decay
 
 const focusState = {};
 let container;
@@ -25,7 +25,6 @@ const debug = true;
 const debugScoreCalc = true;
 const debugLimitSamples = 15;
 let debugSamples = 0;
-
 
 window.pauseEvents = () => {
     eventsPaused = true;
@@ -116,6 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1. Get symbols from preload store
     const storeSymbols = await window.focusAPI.getSymbols();
     window.settings = await window.settingsAPI.get();
+    console.log("laoded settings: ", window.settings);
 
     // ✅ Listen for settings updates globally
     window.settingsAPI.onUpdate(async (updatedSettings) => {
@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 2. Create initial focus state
     // Only init state if we didn't load one
-    if (!restored) {
+    if (restored) {
         storeSymbols.forEach((symbolData) => {
             focusState[symbolData.symbol] = {
                 hero: symbolData.symbol,
@@ -198,9 +198,8 @@ function updateFocusStateFromEvent(event) {
     };
 
     // 🎯 scoring
-    calculateScore(hero, event).then((scoreDelta) => {
-        hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
-    });
+    const scoreDelta = calculateScore(hero, event); // Call the function synchronously
+    hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
 
     hero.lastEvent = {
         hp: event.hp || 0,
@@ -444,17 +443,20 @@ function getSymbolColor(symbol) {
     return symbolColors[symbol];
 }
 
-async function calculateScore(hero, event) {
+function calculateScore(hero, event) {
     if (event.strength < 1000) {
-        if (debug && debugSamples< debugLimitSamples) console.log("TO LOW VOLUME, SKIPPING...");
-        return 0;
+        if (debug && debugSamples < debugLimitSamples) {
+            console.log(`⚠️ Skipping event due to low volume (strength: ${event.strength})`);
+        }
+        return 0; // Skip this event entirely
     }
+
     debugSamples++;
     const currentScore = Number(hero.score) || 0;
 
     // Logging initial state
-    if (debug && debugSamples< debugLimitSamples)  console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
-    if (debug && debugSamples< debugLimitSamples)  console.log(`📜 INITIAL STATE → Price: ${hero.price} |  Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
+    if (debug && debugSamples < debugLimitSamples) console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
+    if (debug && debugSamples < debugLimitSamples) console.log(`📜 INITIAL STATE → Price: ${hero.price} | Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
 
     let baseScore = 0;
     const logStep = (emoji, message, value) => console.log(`${emoji} ${message.padEnd(30)} ${(Number(value) || 0).toFixed(2)}`);
@@ -463,29 +465,33 @@ async function calculateScore(hero, event) {
         // If it's an "up" event (hp > 0)
         if (event.hp > 0) {
             baseScore += event.hp;
-            if (debug && debugSamples< debugLimitSamples)  logStep("💖", "Base HP Added", event.hp);
+            if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", event.hp);
         }
 
         // If it's a "down" event (dp > 0)
         if (event.dp > 0) {
             baseScore -= event.dp;
-            if (debug && debugSamples< debugLimitSamples)  logStep("💥", "Base DP Deducted", event.dp);
+            if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp);
         }
 
         // Apply Float Multiplier
         const floatMult = getFloatMultiplier(hero.floatValue || 1);
-        if (debug && debugSamples< debugLimitSamples)  logStep(hero.floatValue ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
+        if (debug && debugSamples < debugLimitSamples) logStep(hero.floatValue ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
 
         if (floatMult < 0.01) {
-            Score = 0;
+            baseScore = 0;
         } else {
             baseScore *= floatMult;
         }
 
         // Apply Volume Multiplier
-
-        const { multiplier: volMult } = await window.focusAPI.calculateVolumeImpact(event.strength || 0, hero.price || 1);
-        if (debug && debugSamples< debugLimitSamples)  logStep("📢", `Volume Mult (${humanReadableNumbers(event.strength)})`, volMult);
+        const volMult = calculateVolumeImpact(event.strength || 0, hero.price || 1);
+    
+        // Debugging: log the multiplier and category assigned
+        if (debug && debugSamples < debugLimitSamples) {
+            logStep("📢", `Volume Mult (${humanReadableNumbers(event.strength)})`, volMult);
+        }
+    
         baseScore *= volMult;
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
@@ -493,9 +499,9 @@ async function calculateScore(hero, event) {
     }
 
     // Final log and result
-    if (debug && debugSamples< debugLimitSamples)  console.log("━".repeat(50));
-    if (debug && debugSamples< debugLimitSamples)  logStep("🎯", "TOTAL SCORE CHANGE", baseScore);
-    if (debug && debugSamples< debugLimitSamples)  console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
+    if (debug && debugSamples < debugLimitSamples) console.log("━".repeat(50));
+    if (debug && debugSamples < debugLimitSamples) logStep("🎯", "TOTAL SCORE CHANGE", baseScore);
+    if (debug && debugSamples < debugLimitSamples) console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
 
     return baseScore;
 }
@@ -582,26 +588,56 @@ function humanReadableNumbers(value) {
     return num.toLocaleString(); // For values smaller than 1,000
 }
 
-// Constants to fine-tune the algorithm
-const BASE_MULTIPLIER = 0.5; // Starting multiplier
-const VOLUME_SCALING = 50000; // Volume divisor for log2 scaling
-const PRICE_SCALING = 3; // Root type for price influence: 2 = square root, 3 = cube root
-const MAX_MULTIPLIER = 2.5; // Cap on the multiplier
-
 function calculateVolumeImpact(volume = 0, price = 1) {
-    // Adjust volume factor
-    const volumeFactor = Math.log2(1 + volume / VOLUME_SCALING);
+    // Filter buffs to only include those with category definitions
+    const categories = (window.buffs || []).filter(buff => 
+        buff.category &&
+        typeof buff.priceThreshold === "number" &&
+        Array.isArray(buff.volumeStages) && buff.volumeStages.length > 0
+    );
 
-    // Adjust price weight based on chosen scaling
-    const priceWeight = PRICE_SCALING === 3 ? Math.cbrt(price) : Math.sqrt(price);
-
-    // Compute multiplier with cap
-    const rawMultiplier = BASE_MULTIPLIER * volumeFactor * priceWeight;
-    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);
-
-    return {
-        multiplier,
-        icon: volumeFactor > 1.5 ? "🔥" : volumeFactor > 1.0 ? "🚛" : "💤",
-        label: `Volume (${volume.toLocaleString()})`,
+    // Initialize result
+    let result = {
+        multiplier: 1,
+        capAssigned: "None",
+        volumeStage: "None",
+        message: "No matching category found"
     };
+
+    if (categories.length === 0) {
+        return result.multiplier;
+    }
+
+    // Sort categories by priceThreshold (lowest to highest)
+    const sortedCategories = [...categories].sort((a, b) => a.priceThreshold - b.priceThreshold);
+
+    // Find the matching category by price
+    for (const category of sortedCategories) {
+        if (price <= category.priceThreshold) {
+            result.capAssigned = category.category;
+
+            // Sort volume stages by volumeThreshold (ascending order)
+            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
+
+            // If volume is below the lowest threshold, use that stage
+            if (volume < sortedStages[0].volumeThreshold) {
+                result.multiplier = sortedStages[0].multiplier;
+                result.volumeStage = sortedStages[0].key;
+                result.message = `${category.category} ${sortedStages[0].key} (below threshold)`;
+            } else {
+                // Loop through stages updating the stage if volume meets or exceeds the threshold
+                for (const stage of sortedStages) {
+                    if (volume >= stage.volumeThreshold) {
+                        result.multiplier = stage.multiplier;
+                        result.volumeStage = stage.key;
+                        result.message = `${category.category} ${stage.key}`;
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    console.log(`🛠️ ${result.message} x ${result.multiplier}`);
+    return result.multiplier;
 }

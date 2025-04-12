@@ -1,6 +1,20 @@
 const { BrowserWindow } = require("electron");
 const { getWindowState, saveWindowState } = require("./utils/windowState");
+const { loadSettings } = require("./settings");
 const log = require("../hlps/logger")(__filename);
+const { safeSend} = require("./utils/safeSend");
+
+
+
+const { createSettingsWindow } = require("./windows/settings");
+const { createLiveWindow } = require("./windows/live");
+const { createFocusWindow } = require("./windows/focus");
+const { createDailyWindow } = require("./windows/daily");
+const { createActiveWindow } = require("./windows/active");
+const { createScannerWindow } = require("./windows/scanner");
+const { createInfobarWindow } = require("./windows/infobar");
+
+const isDevelopment = process.env.NODE_ENV === "development";
 
 const windows = {};
 
@@ -21,6 +35,7 @@ function createWindow(name, createFn) {
             cleanupWindow(name, win);
         });
     }
+    
     return win;
 }
 
@@ -52,6 +67,8 @@ function getWindow(name) {
 
 // This function will be responsible for restoring windows on app startup
 function restoreWindows() {
+    const settings = loadSettings(); 
+    
     const windowKeyMap = {
         settings: "settingsWindow",
         live: "liveWindow",
@@ -62,7 +79,6 @@ function restoreWindows() {
         infobar: "infobarWindow",
         docker: "dockerWindow",
         traderview: "traderviewWindow",
-        traderviewWidget: "traderviewWidgetWindow",
     };
 
     // Loop through all window states and restore if isOpen is true
@@ -74,24 +90,43 @@ function restoreWindows() {
             windows[name].show(); // Make it visible if it was open
         }
     });
+
+    // Show the docker window explicitly
+    if (windows.docker) {
+        windows.docker.show();
+    }
+
+    // Load the settings once, and send them to all windows
+
+    Object.values(windows).forEach((win) => {
+        safeSend(win, "settings-updated", settings);
+    });
 }
 
 // Function to create windows dynamically based on the window name
 function createWindowByName(name) {
     switch (name) {
-        case "live":
-            return createLiveWindow(isDevelopment);
-        case "focus":
-            return createFocusWindow(isDevelopment, buffs);
         case "settings":
             return createSettingsWindow(isDevelopment);
-        // Add more cases for other windows
+        case "live":
+            return createLiveWindow(isDevelopment, buffs);
+        case "focus":
+            return createFocusWindow(isDevelopment, buffs);
+        case "daily":
+            return createDailyWindow(isDevelopment);
+        case "active":
+            return createActiveWindow(isDevelopment);
+        case "scanner":
+            return createScannerWindow(isDevelopment);
+        case "infobar":
+            return createInfobarWindow(isDevelopment);
         default:
             throw new Error(`No creator function for window: ${name}`);
     }
 }
 
 module.exports = {
+    windows,
     createWindow,
     destroyWindow,
     getWindow,

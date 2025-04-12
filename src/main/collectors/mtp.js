@@ -5,6 +5,7 @@ const log = createLogger(__filename);
 const dotenv = require("dotenv");
 const path = require("path");
 dotenv.config({ path: path.join(__dirname, "../../config/.env") });
+const { windows } = require("../windowManager"); 
 
 const SYMBOL_UPDATE_EXPIRY_MS = 60 * 1000; // 1 minute
 
@@ -32,7 +33,7 @@ function debounce(func, delay) {
 
 // mtp.js - Fixed version
 const connectMTP = (scannerWindow, focusWindow) => {
-    const clientId = "DEVELOPMENT";
+    const clientId = "DEV";
     let ws;
 
     // Helper function for safe JSON parsing
@@ -81,13 +82,14 @@ const connectMTP = (scannerWindow, focusWindow) => {
                     tickerStore.addMtpAlerts(JSON.stringify(msg.data));
                 }
 
+                const scannerWindow = windows.scanner
                 if (scannerWindow?.webContents && !scannerWindow.webContents.isDestroyed()) {
                     scannerWindow.webContents.send("ws-alert", msg.data);
                 } else {
                     messageQueue.push(msg.data);
                 }
 
-                // Send to focusWindow
+                const focusWindow = windows.focus; 
                 if (focusWindow?.webContents && !focusWindow.webContents.isDestroyed()) {
                     const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
                     focusWindow.webContents.send("ws-events", [focusEvent]);
