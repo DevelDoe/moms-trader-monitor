@@ -643,7 +643,7 @@ app.on("ready", async () => {
             safeSend(win, "settings-updated", settings);
         });
 
-        startMockAlerts();
+        // startMockAlerts();
     });
 });
 
