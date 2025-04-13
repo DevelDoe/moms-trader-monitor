@@ -5,8 +5,8 @@
         "volumeStages": [
             { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 100000, "multiplier": 0.5, "score": -100 },
             { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 350000, "multiplier": 1, "score": 0 },
-            { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 500000, "multiplier": 1.5, "score": 10 },
-            { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 2.0, "score": 50 }
+            { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 500000, "multiplier": 1.5, "score": 100 },
+            { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 2.0, "score": 500 }
         ]
     },
     {
@@ -15,8 +15,8 @@
         "volumeStages": [
             { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 80000, "multiplier": 0.5, "score": -100 },
             { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 300000, "multiplier": 1, "score": 0 },
-            { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 400000, "multiplier": 1.5, "score": 10 },
-            { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 2.0, "score": 50 }
+            { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 400000, "multiplier": 1.5, "score": 100 },
+            { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 2.0, "score": 500 }
         ]
     },
     {
@@ -25,19 +25,19 @@
         "volumeStages": [
             { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 80000, "multiplier": 0.5, "score": -100 },
             { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 300000, "multiplier": 1, "score": 0 },
-            { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 400000, "multiplier": 1.5, "score": 10 },
-            { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 2.0, "score": 50 }
+            { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 400000, "multiplier": 1.5, "score": 100 },
+            { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 2.0, "score": 500 }
         ]
     },
 
-    { "key": "float1m", "icon": "1️⃣", "desc": "Float around 1M", "multiplier": 1.15 },
-    { "key": "float5m", "icon": "5️⃣", "desc": "Float around 5M", "multiplier": 1.1 },
-    { "key": "float10m", "icon": "🔟", "desc": "Float around 10M", "multiplier": 1.05 },
-    { "key": "float50m", "icon": "", "desc": "Float around 50M", "multiplier": 1 },
-    { "key": "float100m", "icon": "", "desc": "Float around 100M", "multiplier": 0.8 },
-    { "key": "float200m", "icon": "", "desc": "Float around 2000M", "multiplier": 0.6 },
-    { "key": "float500m", "icon": "", "desc": "Float around 500M", "multiplier": 0.4 },
-    { "key": "float600m+", "icon": "", "desc": "Float higher than 600M", "multiplier": 0.1 },
+    { "key": "float1m", "icon": "1️⃣", "desc": "Float around 1M", "multiplier": 1.15, "score": 300 },
+    { "key": "float5m", "icon": "5️⃣", "desc": "Float around 5M", "multiplier": 1.1, "score": 100 },
+    { "key": "float10m", "icon": "🔟", "desc": "Float around 10M", "multiplier": 1.05, "score": 50 },
+    { "key": "float50m", "icon": "", "desc": "Float around 50M", "multiplier": 1, "score": 0 },
+    { "key": "float100m", "icon": "", "desc": "Float around 100M", "multiplier": 0.8, "score":-50 },
+    { "key": "float200m", "icon": "", "desc": "Float around 2000M", "multiplier": 0.6, "score": -100 },
+    { "key": "float500m", "icon": "", "desc": "Float around 500M", "multiplier": 0.4, "score": -300 },
+    { "key": "float600m+", "icon": "", "desc": "Float higher than 600M", "multiplier": 0.1, "score": -1000 },
 
     { "key": "lockedShares", "icon": "💼", "desc": "High insider/institutional/locked shares holders", "score": 10 },
 

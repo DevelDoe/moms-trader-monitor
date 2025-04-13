@@ -18,7 +18,7 @@ body {
 body::-webkit-scrollbar {
     display: none; /* Hide scrollbar in WebKit browsers */
 }
-#frontline-window{
+#frontline-window {
     margin-top: -5px;
 }
 /* Ticker Card */
@@ -30,6 +30,17 @@ body::-webkit-scrollbar {
     display: flex;
     flex-direction: column; /* Changed to column for better alignment */
     margin: 5px;
+    opacity: 0.8;
+}
+
+/* Full opacity for top 3 cards */
+.ticker-card:nth-child(-n + 3) {
+    opacity: 1;
+}
+
+.ticker-card:nth-child(-n + 3) .ticker-symbol {
+    font-size: 17px;
+    width: 58px;
 }
 
 /* Header Section with Sprite and Price */
@@ -40,7 +51,8 @@ body::-webkit-scrollbar {
     align-items: left; /* Vertically center items */
 }
 
-h1, h2 {
+h1,
+h2 {
     font-size: 16px;
     margin-top: -3px;
     color: #595959;
@@ -62,11 +74,18 @@ h2 {
 }
 
 .ticker-symbol {
-    font-size: 20px;
-    font-weight: bold;
-    color: #1c1d23;
+    /* Your existing symbol styles */
+    white-space: nowrap; /* Prevents line breaks */
+    color: antiquewhite !important;
+    font-weight: 300;
+    width: 45px;
+    font-size: 13px;
     padding: 3px;
-    /* border-radius: 3px; */
+    border-radius: 1px;
+    cursor: pointer;
+}
+.ticker-symbol:hover {
+    color: #a6fcca !important;
 }
 
 .ticker-price {
@@ -77,10 +96,16 @@ h2 {
 /* Bars Section */
 .bar {
     height: 8px;
-    background: rgba(0,0,0,0.09);
-    margin: 1px 0;
+    /* background: rgba(0, 0, 0, 00); */
+    margin: 0px 0;
     border-radius: 2px;
     overflow: hidden;
+}
+
+.ticker-card:nth-child(-n+3) .bar {
+
+    margin: 1px 0;
+
 }
 
 .bar-fill {
@@ -100,7 +125,8 @@ h2 {
     background: linear-gradient(90deg, #263cff, #00aeff);
 }
 
-.hp-boost, .dp-damage {
+.hp-boost,
+.dp-damage {
     display: inline-block;
     margin-left: 6px;
     font-size: 10px;
@@ -116,12 +142,17 @@ h2 {
 }
 
 @keyframes fadeFloat {
-    0% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-10px); }
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
 }
 
 /* Animation for HP and DP Boost */
-
 
 .hp-boost {
     color: #00ff00;
@@ -140,13 +171,14 @@ h2 {
 .boost.dp {
     color: #ff3333;
 }
-.change{
+.change {
     position: absolute;
     bottom: 50px;
     right: 170px;
     padding-right: 40px;
 }
-.hp-boost, .dp-damage {
+.hp-boost,
+.dp-damage {
     position: absolute;
     right: 30px; /* adjust as needed */
     animation: floatUp 0.8s ease-out forwards;
@@ -154,8 +186,14 @@ h2 {
 }
 
 @keyframes floatUp {
-    0% { opacity: 1; transform: translateY(20px); }
-    100% { opacity: 0; transform: translateY(0); }
+    0% {
+        opacity: 1;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(0);
+    }
 }
 
 /* Draggable Area */
@@ -179,43 +217,37 @@ h2 {
 
 /* Optional pulse animation */
 @keyframes barPulse {
-    0% { transform: scaleX(1); }
-    50% { transform: scaleX(1.02); }
-    100% { transform: scaleX(1); }
+    0% {
+        transform: scaleX(1);
+    }
+    50% {
+        transform: scaleX(1.02);
+    }
+    100% {
+        transform: scaleX(1);
+    }
 }
 
 .bar-animate {
     animation: barPulse 0.3s ease-out;
 }
 
-
 .ticker-header {
-    display: flex;               /* Makes children align horizontally */
-    align-items: flex-start;     /* Aligns items at the top */
-    gap: 3px;                   /* Space between symbol and info */
-}
-
-.ticker-symbol {
-    /* Your existing symbol styles */
-    white-space: nowrap;         /* Prevents line breaks */
-    color: antiquewhite !important;
-    font-weight: 300;
-    width: 45px;
-    font-size: 13px;
-    padding: 5px;
-    border-radius: 1px;
+    display: flex; /* Makes children align horizontally */
+    align-items: flex-start; /* Aligns items at the top */
+    gap: 3px; /* Space between symbol and info */
 }
 
 .ticker-info {
     display: flex;
-    flex-direction: column;      /* Stacks ticker-data and bars vertically */
-    gap: 0px;                   /* Space between the two rows */
-    flex-grow: 1;               /* Allows it to take remaining space */
+    flex-direction: column; /* Stacks ticker-data and bars vertically */
+    gap: 0px; /* Space between the two rows */
+    flex-grow: 1; /* Allows it to take remaining space */
     margin-bottom: 3px;
 }
 
 .ticker-data {
-    display: flex;              /* Makes price, volume, change inline */
+    display: flex; /* Makes price, volume, change inline */
     align-items: center;
     gap: 4px;
     font-size: 12px;
@@ -230,26 +262,70 @@ h2 {
 
 .bar {
     height: 1px;
-    background: rgba(0, 0, 0, 0.2);           /* Background for empty part of bar */
+    background: rgba(0, 0, 0, 0); /* Background for empty part of bar */
     width: 100%;
 }
-
 
 /* stength text  */
 
 /* Volume text colors */
-.bar-text.volume-none { color: #cccccc; }      /* Default/gray when no volume */
-.bar-text.volume-lowvol { color: #6b7280; }   /* Gray for low volume */
-.bar-text.volume-mediumvol { color: #3b82f6; }/* Blue for medium volume */
-.bar-text.volume-highvol { color: #ef4444; }  /* Red for high volume */
-.bar-text.volume-parabolicvol {               /* Amber with animation for parabolic */
+.bar-text.volume-none {
+    color: #cccccc;
+} /* Default/gray when no volume */
+.bar-text.volume-lowvol {
+    color: #6b7280;
+} /* Gray for low volume */
+.bar-text.volume-mediumvol {
+    color: #3b82f6;
+} /* Blue for medium volume */
+.bar-text.volume-highvol {
+    color: #ef4444;
+} /* Red for high volume */
+.bar-text.volume-parabolicvol {
+    /* Amber with animation for parabolic */
     color: #f59e0b;
     animation: pulse 1.5s infinite;
 }
 
 /* Pulse animation for parabolic volume */
 @keyframes pulse {
-    0% { opacity: 0.8; }
-    50% { opacity: 1; }
-    100% { opacity: 0.8; }
+    0% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.8;
+    }
+}
+
+.ticker-card {
+    transition: opacity 0.3s ease;
+}
+
+
+/* update animation  */
+.ticker-card {
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.card-update-highlight {
+    animation: cardPulse 1s ease;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.091);
+}
+
+@keyframes cardPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 5px rgba(0, 255, 255, 0.091);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.091);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 5px rgba(0, 255, 255, 0.091);
+    }
 }

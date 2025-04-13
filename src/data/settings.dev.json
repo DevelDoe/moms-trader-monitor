@@ -31,7 +31,7 @@
       }
     },
     "liveListLength": 9,
-    "frontlineListLength": 12,
+    "frontlineListLength": 14,
     "focusListLength": 3,
     "dailyListLength": 13
   },
@@ -70,7 +70,7 @@
     },
     "settingsWindow": {
       "width": 1093,
-      "height": 660,
+      "height": 736,
       "x": 2808,
       "y": -820,
       "isOpen": false
@@ -98,7 +98,7 @@
     },
     "activeWindow": {
       "width": 753,
-      "height": 406,
+      "height": 404,
       "x": -77,
       "y": -900,
       "isOpen": true
@@ -129,9 +129,9 @@
     },
     "frontlineWindow": {
       "width": 358,
-      "height": 480,
+      "height": 482,
       "x": -77,
-      "y": -494,
+      "y": -496,
       "isOpen": true
     }
   }

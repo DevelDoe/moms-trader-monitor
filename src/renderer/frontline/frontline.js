@@ -1,6 +1,6 @@
-const DECAY_INTERVAL_MS = 12000;
-const XP_DECAY_PER_TICK = 0.2; // Base decay per tick (you might lower this for longer duration)
-const SCORE_NORMALIZATION = 1; // Increase this value to reduce the impact of score on decay
+const DECAY_INTERVAL_MS = 1000;
+const XP_DECAY_PER_TICK = 0.1; // Base decay per tick (you might lower this for longer duration)
+const SCORE_NORMALIZATION = 2; // Increase this value to reduce the impact of score on decay
 
 const frontlineState = {};
 let container;
@@ -299,6 +299,9 @@ function updateCardDOM(hero) {
         }
     });
 
+    // Add highlight animation class before replacing
+    newCard.classList.add('card-update-highlight');
+    
     existing.replaceWith(newCard);
 
     // Animate to final values
@@ -307,6 +310,11 @@ function updateCardDOM(hero) {
         newCard.querySelector(".bar-fill.score").style.width = `${Math.min((state.score / maxScore) * 100, 100)}%`;
         newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
         newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / 400000) * 100, 100)}%`;
+        
+        // Remove highlight after animation completes
+        setTimeout(() => {
+            newCard.classList.remove('card-update-highlight');
+        }, 1000);
     });
 }
 
@@ -336,8 +344,11 @@ function renderCard({ hero, price, hp, dp, strength }) {
         strength: strength,
     };
 
+    const opacity = state.score < 30 ? 0.5 : 1;
+    const opacityStyle = `opacity: ${opacity}`;
+
     card.innerHTML = `
-    <div class="ticker-header">
+    <div class="ticker-header" style="${opacityStyle}">
         <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> $${hero} </div>
         <div class="ticker-info">
             <div class="ticker-data">
@@ -358,6 +369,35 @@ function renderCard({ hero, price, hp, dp, strength }) {
             </div>
         </div>
     </div>`;
+
+    // Add click handler to the symbol element
+    const symbolElement = card.querySelector(".ticker-symbol");
+    symbolElement.onclick = (e) => {
+        e.stopPropagation(); // Prevent event bubbling
+
+        try {
+            // Copy to clipboard
+            navigator.clipboard.writeText(hero);
+            console.log(`📋 Copied ${hero} to clipboard`);
+
+            // Set as active ticker if the API exists
+            if (window.activeAPI && window.activeAPI.setActiveTicker) {
+                window.activeAPI.setActiveTicker(hero);
+                console.log(`🎯 Set ${hero} as active ticker`);
+            }
+
+            // Store last clicked symbol
+            lastClickedSymbol = hero;
+
+            // Optional: Add visual feedback
+            symbolElement.classList.add("symbol-clicked");
+            setTimeout(() => {
+                symbolElement.classList.remove("symbol-clicked");
+            }, 200);
+        } catch (err) {
+            console.error(`⚠️ Failed to handle click for ${hero}:`, err);
+        }
+    };
 
     return card;
 }
@@ -383,7 +423,7 @@ function getSymbolColor(symbol) {
 }
 
 function calculateScore(hero, event) {
-    if (event.strength < 1000) {
+    if (event.strength < 10000) {
         if (debug && debugSamples < debugLimitSamples) {
             console.log(`⚠️ Skipping event due to low volume (strength: ${event.strength})`);
         }
@@ -482,30 +522,69 @@ function calculateXp(hero) {
 }
 
 function startScoreDecay() {
+    let decayTickCount = 0;
+    const DECAY_TICKS_BETWEEN_LOGS = 5; // Only log every 5 ticks to avoid spam
+
+    console.log(`\n🌌🌠 STARTING SCORE DECAY SYSTEM 🌠🌌`);
+    console.log(`⏱️  Decay Interval: ${DECAY_INTERVAL_MS}ms`);
+    console.log(`📉 Base Decay/Tick: ${XP_DECAY_PER_TICK}`);
+    console.log(`⚖️  Normalization Factor: ${SCORE_NORMALIZATION}\n`);
+
     setInterval(() => {
+        decayTickCount++;
         let changed = false;
+        let totalDecay = 0;
+        let heroesDecayed = 0;
+        const activeHeroes = [];
 
         Object.values(frontlineState).forEach((hero) => {
             if (hero.score > 0) {
-                // Calculate a multiplier based on the current score.
+                const originalScore = hero.score;
                 const scalingFactor = 1 + hero.score / SCORE_NORMALIZATION;
-                // Compute the decay amount for this tick.
                 const decayAmount = XP_DECAY_PER_TICK * scalingFactor;
                 const newScore = Math.max(0, hero.score - decayAmount);
+
                 if (hero.score !== newScore) {
                     hero.score = newScore;
-
-                    // Clear any event indicators so that decay doesn't trigger new animations.
                     hero.lastEvent.hp = 0;
                     hero.lastEvent.dp = 0;
+
                     changed = true;
+                    totalDecay += originalScore - newScore;
+                    heroesDecayed++;
+                    activeHeroes.push(hero);
                 }
             }
         });
 
         if (changed) {
+            // Only show full details periodically
+            if (decayTickCount % DECAY_TICKS_BETWEEN_LOGS === 0) {
+                console.log(`\n⏳ [DECAY TICK #${decayTickCount}]`);
+                console.log(`🌡️ ${heroesDecayed} heroes decaying | Total decay: ${totalDecay.toFixed(2)}`);
+                console.log("━".repeat(50));
+
+                // Show top 3 most affected heroes (or all if ≤3)
+                activeHeroes
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 3)
+                    .forEach((hero) => {
+                        const decayAmount = XP_DECAY_PER_TICK * (1 + hero.score / SCORE_NORMALIZATION);
+                        console.log(`🧙 ${hero.hero.padEnd(15)}`);
+                        console.log(`   📊 Score: ${hero.score.toFixed(2).padStart(8)} → ${(hero.score - decayAmount).toFixed(2)}`);
+                        console.log(`   🔻 Decay: ${decayAmount.toFixed(2)} (scale: ${(1 + hero.score / SCORE_NORMALIZATION).toFixed(2)}x)`);
+                        console.log("─".repeat(50));
+                    });
+            } else {
+                // Brief status for non-log ticks
+                console.log(`♻️  Tick #${decayTickCount}: ${heroesDecayed} heroes decayed (${totalDecay.toFixed(2)} total)`);
+            }
+
             renderAll();
             saveState();
+        } else if (decayTickCount % 10 === 0) {
+            // Only log inactivity every 10 ticks
+            console.log(`🌵 Tick #${decayTickCount}: No scores needed decay`);
         }
     }, DECAY_INTERVAL_MS);
 }
@@ -539,10 +618,7 @@ function humanReadableNumbers(value) {
 
 function calculateVolumeImpact(volume = 0, price = 1) {
     const categories = (window.buffs || []).filter(
-        (buff) => buff.category && 
-                 (typeof buff.priceThreshold === "number" || buff.priceThreshold === "Infinity") && 
-                 Array.isArray(buff.volumeStages) && 
-                 buff.volumeStages.length > 0
+        (buff) => buff.category && (typeof buff.priceThreshold === "number" || buff.priceThreshold === "Infinity") && Array.isArray(buff.volumeStages) && buff.volumeStages.length > 0
     );
 
     let result = {
@@ -604,7 +680,7 @@ function calculateVolumeImpact(volume = 0, price = 1) {
                     cssClass: `volume-${stageToUse.key.toLowerCase()}`,
                     icon: stageToUse.icon || "",
                     description: stageToUse.desc || stageToUse.key,
-                    color: getColorForStage(stageToUse.key), 
+                    color: getColorForStage(stageToUse.key),
                     animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
                 };
             }

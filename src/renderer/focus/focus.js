@@ -1,6 +1,6 @@
 const DECAY_INTERVAL_MS = 12000;
 const XP_DECAY_PER_TICK = 0.2; // Base decay per tick (you might lower this for longer duration)
-const SCORE_NORMALIZATION = 1; // Increase this value to reduce the impact of score on decay
+const SCORE_NORMALIZATION = 2; // Increase this value to reduce the impact of score on decay
 
 const focusState = {};
 let container;
@@ -8,11 +8,16 @@ let container;
 const symbolColors = {};
 
 let maxXP = 100;
-let maxHP = 300;
+let maxHP = 10;
 
 const BASE_MAX_HP = 300;
 const HP_SCALE_DOWN_THRESHOLD = 0.2; // 20%
 const HP_SCALE_DOWN_FACTOR = 0.9; // Reduce by 10%
+
+let lastActiveTickerUpdate = 0;
+const ACTIVE_TICKER_UPDATE_INTERVAL = 3 * 60 * 1000; // 3 minutes
+let currentTopHero = null;
+let currentActiveTicker = null;
 
 let lastTopHeroes = [];
 
@@ -126,7 +131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 2. Create initial focus state
     // Only init state if we didn't load one
-    if (!restored) {
+    if (restored) {
         storeSymbols.forEach((symbolData) => {
             focusState[symbolData.symbol] = {
                 hero: symbolData.symbol,
@@ -223,11 +228,36 @@ function updateFocusStateFromEvent(event) {
     }
 
     const topN = window.settings?.top?.focusListLength ?? 10;
-    const currentTopHeroes = Object.values(focusState)
+    const sortedHeroes = Object.values(focusState)
         .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, topN)
-        .map((s) => s.hero);
+        .sort((a, b) => b.score - a.score);
+
+    const newTopHero = sortedHeroes[0]?.hero;
+    const currentTopHeroes = sortedHeroes.slice(0, topN).map((s) => s.hero);
+    const now = Date.now();
+
+    // 1. Priority: Immediately update if #1 hero changes
+    if (newTopHero && newTopHero !== currentTopHero) {
+        currentTopHero = newTopHero;
+        if (window.activeAPI?.setActiveTicker) {
+            window.activeAPI.setActiveTicker(newTopHero);
+            currentActiveTicker = newTopHero;
+            lastActiveTickerUpdate = now;
+            if (debug) console.log(`🏆 New top hero: ${newTopHero}`);
+        }
+    }
+    // 2. Secondary: Auto-rotate every 3 minutes (if no #1 change)
+    else if (window.activeAPI?.setActiveTicker && currentTopHeroes.length > 0 && now - lastActiveTickerUpdate >= ACTIVE_TICKER_UPDATE_INTERVAL) {
+        // Filter out current active ticker to avoid immediate repeats
+        const candidates = currentTopHeroes.filter((h) => h !== currentActiveTicker);
+        const selectedHero = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : currentTopHeroes[Math.floor(Math.random() * currentTopHeroes.length)];
+
+        window.activeAPI.setActiveTicker(selectedHero);
+        currentActiveTicker = selectedHero;
+        lastActiveTickerUpdate = now;
+
+        if (debug) console.log(`🔀 Rotated to: ${selectedHero} (of ${currentTopHeroes.length} top heroes)`);
+    }
 
     // Check if we should scale down maxHP
     if (currentTopHeroes.length > 0) {
@@ -420,6 +450,35 @@ function renderCard({ hero, price, hp, dp, strength }) {
         }, 900);
     }
 
+    // Add click handler to the symbol element
+    const symbolElement = card.querySelector(".ticker-symbol");
+    symbolElement.onclick = (e) => {
+        e.stopPropagation(); // Prevent event bubbling
+
+        try {
+            // Copy to clipboard
+            navigator.clipboard.writeText(hero);
+            console.log(`📋 Copied ${hero} to clipboard`);
+
+            // Set as active ticker if the API exists
+            if (window.activeAPI && window.activeAPI.setActiveTicker) {
+                window.activeAPI.setActiveTicker(hero);
+                console.log(`🎯 Set ${hero} as active ticker`);
+            }
+
+            // Store last clicked symbol
+            lastClickedSymbol = hero;
+
+            // Optional: Add visual feedback
+            symbolElement.classList.add("symbol-clicked");
+            setTimeout(() => {
+                symbolElement.classList.remove("symbol-clicked");
+            }, 200);
+        } catch (err) {
+            console.error(`⚠️ Failed to handle click for ${hero}:`, err);
+        }
+    };
+
     return card;
 }
 
@@ -444,7 +503,7 @@ function getSymbolColor(symbol) {
 }
 
 function calculateScore(hero, event) {
-    if (event.strength < 1000) {
+    if (event.strength < 10000) {
         if (debug && debugSamples < debugLimitSamples) {
             console.log(`⚠️ Skipping event due to low volume (strength: ${event.strength})`);
         }
@@ -474,25 +533,23 @@ function calculateScore(hero, event) {
             if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp);
         }
 
-        // Apply Float Multiplier
-        const floatMult = getFloatMultiplier(hero.floatValue || 1);
-        if (debug && debugSamples < debugLimitSamples) logStep(hero.floatValue ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
-
-        if (floatMult < 0.01) {
-            baseScore = 0;
-        } else {
-            baseScore *= floatMult;
+        // Apply Float score
+        const floatScore = getFloatScore(hero.floatValue || 1);
+        if (debug && debugSamples < debugLimitSamples) {
+            const formattedFloat = hero.floatValue ? humanReadableNumbers(hero.floatValue) : "N/A";
+            logStep(hero.floatValue ? "🏷️" : "⚠️", `Float score (${formattedFloat})`, floatScore);
         }
+        baseScore += floatScore;
 
-        // Apply Volume Multiplier
-        const volMult = calculateVolumeImpact(event.strength || 0, hero.price || 1);
-    
+        // Apply Volume score
+        const volRes = calculateVolumeImpact(event.strength || 0, hero.price || 1);
+
         // Debugging: log the multiplier and category assigned
         if (debug && debugSamples < debugLimitSamples) {
-            logStep("📢", `${volMult.message}`,volMult.multiplier);
+            logStep("📢", `${volRes.message}`, volRes.score);
         }
-    
-        baseScore *= volMult.multiplier;
+
+        baseScore += volRes.score;
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
         baseScore = 0; // Reset on error
@@ -506,32 +563,56 @@ function calculateScore(hero, event) {
     return baseScore;
 }
 
-function getFloatMultiplier(floatValue) {
+function getFloatScore(floatValue) {
+    if (!floatValue) return 0; // Neutral score if missing
+
+    const floatBuffs = window.buffs?.filter((b) => b.key?.startsWith("float")) || [];
+
+    if (floatValue < 2_000_000) {
+        return floatBuffs.find((b) => b.key === "float1m")?.score ?? 0;
+    } else if (floatValue < 7_500_000) {
+        return floatBuffs.find((b) => b.key === "float5m")?.score ?? 0;
+    } else if (floatValue < 13_000_000) {
+        return floatBuffs.find((b) => b.key === "float10m")?.score ?? 0;
+    } else if (floatValue < 65_000_000) {
+        return floatBuffs.find((b) => b.key === "float50m")?.score ?? 0;
+    } else if (floatValue < 125_000_000) {
+        return floatBuffs.find((b) => b.key === "float100m")?.score ?? -50;
+    } else if (floatValue < 250_000_000) {
+        return floatBuffs.find((b) => b.key === "float200m")?.score ?? -100;
+    } else if (floatValue < 600_000_000) {
+        return floatBuffs.find((b) => b.key === "float500m")?.score ?? -300;
+    } else {
+        return floatBuffs.find((b) => b.key === "float600m+")?.score ?? -1000;
+    }
+}
+
+function getFloatScore(floatValue) {
     if (!floatValue) {
         return 1; // no multiplier if float data is missing or 0
     }
 
-    let multiplier = 1;
+    let score = 1;
 
     if (floatValue < 2_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float1m")?.multiplier ?? 1;
+        score = window.buffs.find((b) => b.key === "float1m")?.score ?? 1;
     } else if (floatValue < 7_500_000) {
-        multiplier = window.buffs.find((b) => b.key === "float5m")?.multiplier ?? 1;
+        score = window.buffs.find((b) => b.key === "float5m")?.score ?? 1;
     } else if (floatValue < 13_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float10m")?.multiplier ?? 1;
+        score = window.buffs.find((b) => b.key === "float10m")?.score ?? 1;
     } else if (floatValue < 65_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float50m")?.multiplier ?? 1;
+        score = window.buffs.find((b) => b.key === "float50m")?.score ?? 1;
     } else if (floatValue < 125_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float100m")?.multiplier ?? 1;
-    } else if (floatValue < 250_000_000) {  // Added back (exists in your JSON)
-        multiplier = window.buffs.find((b) => b.key === "float200m")?.multiplier ?? 1;
+        score = window.buffs.find((b) => b.key === "float100m")?.score ?? 1;
+    } else if (floatValue < 250_000_000) {
+        score = window.buffs.find((b) => b.key === "float200m")?.score ?? 1;
     } else if (floatValue < 600_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float500m")?.multiplier ?? 1;
+        score = window.buffs.find((b) => b.key === "float500m")?.score ?? 1;
     } else {
-        multiplier = window.buffs.find((b) => b.key === "float600m+")?.multiplier ?? 0.01;
+        score = window.buffs.find((b) => b.key === "float600m+")?.score ?? 0.01;
     }
 
-    return multiplier;
+    return score;
 }
 
 function calculateXp(hero) {
@@ -549,30 +630,69 @@ function calculateXp(hero) {
 }
 
 function startScoreDecay() {
+    let decayTickCount = 0;
+    const DECAY_TICKS_BETWEEN_LOGS = 5; // Only log every 5 ticks to avoid spam
+
+    console.log(`\n🌌🌠 STARTING SCORE DECAY SYSTEM 🌠🌌`);
+    console.log(`⏱️  Decay Interval: ${DECAY_INTERVAL_MS}ms`);
+    console.log(`📉 Base Decay/Tick: ${XP_DECAY_PER_TICK}`);
+    console.log(`⚖️  Normalization Factor: ${SCORE_NORMALIZATION}\n`);
+
     setInterval(() => {
+        decayTickCount++;
         let changed = false;
+        let totalDecay = 0;
+        let heroesDecayed = 0;
+        const activeHeroes = [];
 
         Object.values(focusState).forEach((hero) => {
             if (hero.score > 0) {
-                // Calculate a multiplier based on the current score.
+                const originalScore = hero.score;
                 const scalingFactor = 1 + hero.score / SCORE_NORMALIZATION;
-                // Compute the decay amount for this tick.
                 const decayAmount = XP_DECAY_PER_TICK * scalingFactor;
                 const newScore = Math.max(0, hero.score - decayAmount);
+
                 if (hero.score !== newScore) {
                     hero.score = newScore;
-
-                    // Clear any event indicators so that decay doesn't trigger new animations.
                     hero.lastEvent.hp = 0;
                     hero.lastEvent.dp = 0;
+
                     changed = true;
+                    totalDecay += originalScore - newScore;
+                    heroesDecayed++;
+                    activeHeroes.push(hero);
                 }
             }
         });
 
         if (changed) {
+            // Only show full details periodically
+            if (decayTickCount % DECAY_TICKS_BETWEEN_LOGS === 0) {
+                console.log(`\n⏳ [DECAY TICK #${decayTickCount}]`);
+                console.log(`🌡️ ${heroesDecayed} heroes decaying | Total decay: ${totalDecay.toFixed(2)}`);
+                console.log("━".repeat(50));
+
+                // Show top 3 most affected heroes (or all if ≤3)
+                activeHeroes
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 3)
+                    .forEach((hero) => {
+                        const decayAmount = XP_DECAY_PER_TICK * (1 + hero.score / SCORE_NORMALIZATION);
+                        console.log(`🧙 ${hero.hero.padEnd(15)}`);
+                        console.log(`   📊 Score: ${hero.score.toFixed(2).padStart(8)} → ${(hero.score - decayAmount).toFixed(2)}`);
+                        console.log(`   🔻 Decay: ${decayAmount.toFixed(2)} (scale: ${(1 + hero.score / SCORE_NORMALIZATION).toFixed(2)}x)`);
+                        console.log("─".repeat(50));
+                    });
+            } else {
+                // Brief status for non-log ticks
+                console.log(`♻️  Tick #${decayTickCount}: ${heroesDecayed} heroes decayed (${totalDecay.toFixed(2)} total)`);
+            }
+
             renderAll();
             saveState();
+        } else if (decayTickCount % 10 === 0) {
+            // Only log inactivity every 10 ticks
+            console.log(`🌵 Tick #${decayTickCount}: No scores needed decay`);
         }
     }, DECAY_INTERVAL_MS);
 }
@@ -588,14 +708,12 @@ function humanReadableNumbers(value) {
 
 function calculateVolumeImpact(volume = 0, price = 1) {
     const categories = (window.buffs || []).filter(
-        (buff) => buff.category && 
-                 (typeof buff.priceThreshold === "number" || buff.priceThreshold === "Infinity") && 
-                 Array.isArray(buff.volumeStages) && 
-                 buff.volumeStages.length > 0
+        (buff) => buff.category && (typeof buff.priceThreshold === "number" || buff.priceThreshold === "Infinity") && Array.isArray(buff.volumeStages) && buff.volumeStages.length > 0
     );
 
     let result = {
         multiplier: 1,
+        score: 0,
         capAssigned: "None",
         volumeStage: "None",
         message: "No matching category found",
@@ -646,6 +764,7 @@ function calculateVolumeImpact(volume = 0, price = 1) {
 
             if (stageToUse) {
                 result.multiplier = stageToUse.multiplier;
+                result.score = stageToUse.score || 0;
                 result.volumeStage = stageToUse.key;
                 result.message = `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`;
 
@@ -664,7 +783,6 @@ function calculateVolumeImpact(volume = 0, price = 1) {
     return result;
 }
 
-// Placeholder for getColorForStage (since it wasn't provided)
 function getColorForStage(stageKey) {
     const colors = {
         lowVol: "#cccccc",

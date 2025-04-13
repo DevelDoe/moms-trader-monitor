@@ -219,7 +219,7 @@ const fetchSymbolsFromServer = async () => {
     });
 };
 
-function startMockAlerts(baseInterval = 1500, fluctuation = 1000) {
+function startMockAlerts(baseInterval = 500, fluctuation = 1000) {
     let currentIndex = 0;
     let wavePosition = 0;
 
@@ -306,102 +306,102 @@ module.exports = { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startM
 // Predefined alerts
 const predefinedAlerts = [
     // RADX alerts
-    { symbol: "RADX", direction: "UP", price: 1.85, volume: 1250000, change_percent: 3.2 },
-    { symbol: "RADX", direction: "DOWN", price: 1.72, volume: 980000, change_percent: -2.5 },
-    { symbol: "RADX", direction: "UP", price: 1.91, volume: 2100000, change_percent: 5.1 },
+    { symbol: "RADX", direction: "UP", price: 1.85, volume: 125000, change_percent: 3.2 },
+    { symbol: "RADX", direction: "DOWN", price: 1.72, volume: 98000, change_percent: 2.5 },
+    { symbol: "RADX", direction: "UP", price: 1.91, volume: 21000, change_percent: 5.1 },
 
     // NRXP alerts
-    { symbol: "NRXP", direction: "UP", price: 0.42, volume: 3500000, change_percent: 8.7 },
-    { symbol: "NRXP", direction: "DOWN", price: 0.38, volume: 2800000, change_percent: -4.3 },
-    { symbol: "NRXP", direction: "UP", price: 0.45, volume: 4200000, change_percent: 12.5 },
+    { symbol: "NRXP", direction: "UP", price: 0.42, volume: 35000, change_percent: 8.7 },
+    { symbol: "NRXP", direction: "DOWN", price: 0.38, volume: 2800, change_percent: 4.3 },
+    { symbol: "NRXP", direction: "UP", price: 0.45, volume: 42000, change_percent: 12.5 },
 
     // DSWL alerts
-    { symbol: "DSWL", direction: "UP", price: 2.15, volume: 750000, change_percent: 2.8 },
-    { symbol: "DSWL", direction: "UP", price: 2.25, volume: 920000, change_percent: 4.1 },
-    { symbol: "DSWL", direction: "DOWN", price: 2.08, volume: 680000, change_percent: -3.2 },
+    { symbol: "DSWL", direction: "UP", price: 2.15, volume: 75000, change_percent: 2.8 },
+    { symbol: "DSWL", direction: "UP", price: 2.25, volume: 92000, change_percent: 4.1 },
+    { symbol: "DSWL", direction: "DOWN", price: 2.08, volume: 68000, change_percent: 3.2 },
 
     // LTRN alerts
-    { symbol: "LTRN", direction: "UP", price: 3.40, volume: 450000, change_percent: 1.9 },
-    { symbol: "LTRN", direction: "UP", price: 3.55, volume: 520000, change_percent: 3.5 },
-    { symbol: "LTRN", direction: "DOWN", price: 3.32, volume: 410000, change_percent: -2.1 },
+    { symbol: "LTRN", direction: "UP", price: 3.40, volume: 45000, change_percent: 1.9 },
+    { symbol: "LTRN", direction: "UP", price: 3.55, volume: 52000, change_percent: 3.5 },
+    { symbol: "LTRN", direction: "DOWN", price: 3.32, volume: 41000, change_percent: 2.1 },
 
     // FBRX alerts
-    { symbol: "FBRX", direction: "UP", price: 0.65, volume: 1800000, change_percent: 6.2 },
-    { symbol: "FBRX", direction: "DOWN", price: 0.59, volume: 1500000, change_percent: -4.8 },
-    { symbol: "FBRX", direction: "UP", price: 0.68, volume: 2200000, change_percent: 8.9 },
+    { symbol: "FBRX", direction: "UP", price: 0.65, volume: 180000, change_percent: 6.2 },
+    { symbol: "FBRX", direction: "DOWN", price: 0.59, volume: 150000, change_percent: 4.8 },
+    { symbol: "FBRX", direction: "UP", price: 0.68, volume: 220000, change_percent: 8.9 },
 
     // BCG alerts
-    { symbol: "BCG", direction: "UP", price: 1.12, volume: 950000, change_percent: 2.3 },
-    { symbol: "BCG", direction: "UP", price: 1.18, volume: 1100000, change_percent: 4.7 },
-    { symbol: "BCG", direction: "DOWN", price: 1.09, volume: 850000, change_percent: -2.6 },
+    { symbol: "BCG", direction: "UP", price: 1.12, volume: 95000, change_percent: 2.3 },
+    { symbol: "BCG", direction: "UP", price: 1.18, volume: 110000, change_percent: 4.7 },
+    { symbol: "BCG", direction: "DOWN", price: 1.09, volume: 85000, change_percent: 2.6 },
 
     // CUPR alerts
-    { symbol: "CUPR", direction: "UP", price: 0.88, volume: 3200000, change_percent: 5.4 },
-    { symbol: "CUPR", direction: "DOWN", price: 0.82, volume: 2800000, change_percent: -3.8 },
-    { symbol: "CUPR", direction: "UP", price: 0.92, volume: 3800000, change_percent: 9.1 },
+    { symbol: "CUPR", direction: "UP", price: 0.88, volume: 320000, change_percent: 5.4 },
+    { symbol: "CUPR", direction: "DOWN", price: 0.82, volume: 280000, change_percent: 3.8 },
+    { symbol: "CUPR", direction: "UP", price: 0.92, volume: 380000, change_percent: 9.1 },
 
     // SXTC alerts
-    { symbol: "SXTC", direction: "UP", price: 1.05, volume: 650000, change_percent: 3.7 },
-    { symbol: "SXTC", direction: "UP", price: 1.12, volume: 780000, change_percent: 6.2 },
-    { symbol: "SXTC", direction: "DOWN", price: 1.01, volume: 590000, change_percent: -3.1 },
+    { symbol: "SXTC", direction: "UP", price: 1.05, volume: 65000, change_percent: 3.7 },
+    { symbol: "SXTC", direction: "UP", price: 1.12, volume: 78000, change_percent: 6.2 },
+    { symbol: "SXTC", direction: "DOWN", price: 1.01, volume: 59000, change_percent: 3.1 },
 
     // BWEN alerts
-    { symbol: "BWEN", direction: "UP", price: 2.75, volume: 420000, change_percent: 2.1 },
-    { symbol: "BWEN", direction: "DOWN", price: 2.65, volume: 380000, change_percent: -1.8 },
-    { symbol: "BWEN", direction: "UP", price: 2.85, volume: 510000, change_percent: 5.3 },
+    { symbol: "BWEN", direction: "UP", price: 2.75, volume: 42000, change_percent: 2.1 },
+    { symbol: "BWEN", direction: "DOWN", price: 2.65, volume: 38000, change_percent: 1.8 },
+    { symbol: "BWEN", direction: "UP", price: 2.85, volume: 51000, change_percent: 5.3 },
 
     // BMR alerts
-    { symbol: "BMR", direction: "UP", price: 0.95, volume: 1200000, change_percent: 4.5 },
-    { symbol: "BMR", direction: "DOWN", price: 0.89, volume: 950000, change_percent: -3.2 },
-    { symbol: "BMR", direction: "UP", price: 1.02, volume: 1500000, change_percent: 8.7 },
+    { symbol: "BMR", direction: "UP", price: 0.95, volume: 1200, change_percent: 4.5 },
+    { symbol: "BMR", direction: "DOWN", price: 0.89, volume: 9500, change_percent: 3.2 },
+    { symbol: "BMR", direction: "UP", price: 1.02, volume: 1500, change_percent: 8.7 },
 
     // SPAI alerts
-    { symbol: "SPAI", direction: "UP", price: 0.48, volume: 2500000, change_percent: 7.3 },
-    { symbol: "SPAI", direction: "DOWN", price: 0.44, volume: 2100000, change_percent: -4.2 },
+    { symbol: "SPAI", direction: "UP", price: 0.48, volume: 25000, change_percent: 7.3 },
+    { symbol: "SPAI", direction: "DOWN", price: 0.44, volume: 21000, change_percent: 4.2 },
     { symbol: "SPAI", direction: "UP", price: 0.52, volume: 3100000, change_percent: 10.6 },
 
     // RAYA alerts
-    { symbol: "RAYA", direction: "UP", price: 1.22, volume: 850000, change_percent: 3.4 },
-    { symbol: "RAYA", direction: "UP", price: 1.28, volume: 980000, change_percent: 5.8 },
-    { symbol: "RAYA", direction: "DOWN", price: 1.18, volume: 720000, change_percent: -2.9 },
+    { symbol: "RAYA", direction: "UP", price: 1.22, volume: 8500, change_percent: 3.4 },
+    { symbol: "RAYA", direction: "UP", price: 1.28, volume: 9800, change_percent: 5.8 },
+    { symbol: "RAYA", direction: "DOWN", price: 1.18, volume: 7200, change_percent: 2.9 },
 
     // UONE alerts
-    { symbol: "UONE", direction: "UP", price: 3.15, volume: 620000, change_percent: 2.7 },
-    { symbol: "UONE", direction: "DOWN", price: 3.05, volume: 550000, change_percent: -1.9 },
-    { symbol: "UONE", direction: "UP", price: 3.25, volume: 750000, change_percent: 4.8 },
+    { symbol: "UONE", direction: "UP", price: 3.15, volume: 62000, change_percent: 2.7 },
+    { symbol: "UONE", direction: "DOWN", price: 3.05, volume: 55000, change_percent: 1.9 },
+    { symbol: "UONE", direction: "UP", price: 3.25, volume: 75000, change_percent: 4.8 },
 
     // HHS alerts
-    { symbol: "HHS", direction: "UP", price: 1.45, volume: 1100000, change_percent: 3.9 },
-    { symbol: "HHS", direction: "DOWN", price: 1.38, volume: 950000, change_percent: -2.7 },
-    { symbol: "HHS", direction: "UP", price: 1.52, volume: 1300000, change_percent: 6.3 },
+    { symbol: "HHS", direction: "UP", price: 1.45, volume: 11000, change_percent: 3.9 },
+    { symbol: "HHS", direction: "DOWN", price: 1.38, volume: 95000, change_percent: 2.7 },
+    { symbol: "HHS", direction: "UP", price: 1.52, volume: 13000, change_percent: 6.3 },
 
     // STEC alerts
-    { symbol: "STEC", direction: "UP", price: 0.75, volume: 1800000, change_percent: 5.2 },
-    { symbol: "STEC", direction: "DOWN", price: 0.71, volume: 1500000, change_percent: -3.6 },
-    { symbol: "STEC", direction: "UP", price: 0.79, volume: 2100000, change_percent: 8.1 },
+    { symbol: "STEC", direction: "UP", price: 0.75, volume: 18000, change_percent: 5.2 },
+    { symbol: "STEC", direction: "DOWN", price: 0.71, volume: 15000, change_percent: 3.6 },
+    { symbol: "STEC", direction: "UP", price: 0.79, volume: 21000, change_percent: 8.1 },
 
     // GLE alerts
-    { symbol: "GLE", direction: "UP", price: 0.62, volume: 2900000, change_percent: 6.9 },
-    { symbol: "GLE", direction: "DOWN", price: 0.58, volume: 2400000, change_percent: -4.3 },
-    { symbol: "GLE", direction: "UP", price: 0.66, volume: 3400000, change_percent: 10.2 },
+    { symbol: "GLE", direction: "UP", price: 0.62, volume: 290000, change_percent: 6.9 },
+    { symbol: "GLE", direction: "DOWN", price: 0.58, volume: 240000, change_percent: 4.3 },
+    { symbol: "GLE", direction: "UP", price: 0.66, volume: 340000, change_percent: 10.2 },
 
     // NCEW alerts
-    { symbol: "NCEW", direction: "UP", price: 1.85, volume: 480000, change_percent: 2.6 },
-    { symbol: "NCEW", direction: "UP", price: 1.92, volume: 550000, change_percent: 4.3 },
-    { symbol: "NCEW", direction: "DOWN", price: 1.78, volume: 420000, change_percent: -3.1 },
+    { symbol: "NCEW", direction: "UP", price: 1.85, volume: 4800, change_percent: 2.6 },
+    { symbol: "NCEW", direction: "UP", price: 1.92, volume: 5500, change_percent: 4.3 },
+    { symbol: "NCEW", direction: "DOWN", price: 1.78, volume: 4200, change_percent: 3.1 },
 
     // KPLT alerts
-    { symbol: "KPLT", direction: "UP", price: 0.28, volume: 4200000, change_percent: 7.5 },
-    { symbol: "KPLT", direction: "DOWN", price: 0.26, volume: 3800000, change_percent: -5.4 },
-    { symbol: "KPLT", direction: "UP", price: 0.31, volume: 5100000, change_percent: 12.8 },
+    { symbol: "KPLT", direction: "UP", price: 0.28, volume: 420000, change_percent: 7.5 },
+    { symbol: "KPLT", direction: "DOWN", price: 0.26, volume: 380000, change_percent: 5.4 },
+    { symbol: "KPLT", direction: "UP", price: 0.31, volume: 510000, change_percent: 12.8 },
 
     // INKT alerts
-    { symbol: "INKT", direction: "UP", price: 1.15, volume: 950000, change_percent: 3.8 },
-    { symbol: "INKT", direction: "DOWN", price: 1.08, volume: 820000, change_percent: -2.9 },
-    { symbol: "INKT", direction: "UP", price: 1.22, volume: 1100000, change_percent: 7.4 },
+    { symbol: "INKT", direction: "UP", price: 1.15, volume: 95000, change_percent: 3.8 },
+    { symbol: "INKT", direction: "DOWN", price: 1.08, volume: 82000, change_percent: 2.9 },
+    { symbol: "INKT", direction: "UP", price: 1.22, volume: 110000, change_percent: 7.4 },
 
     // RAVE alerts
-    { symbol: "RAVE", direction: "UP", price: 0.95, volume: 1200000, change_percent: 4.6 },
-    { symbol: "RAVE", direction: "DOWN", price: 0.89, volume: 980000, change_percent: -3.5 },
-    { symbol: "RAVE", direction: "UP", price: 1.02, volume: 1500000, change_percent: 9.1 }
+    { symbol: "RAVE", direction: "UP", price: 0.95, volume: 120000, change_percent: 4.6 },
+    { symbol: "RAVE", direction: "DOWN", price: 0.89, volume: 98000, change_percent: 3.5 },
+    { symbol: "RAVE", direction: "UP", price: 1.02, volume: 150000, change_percent: 9.1 }
 ];
