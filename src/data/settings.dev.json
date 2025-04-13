@@ -16,7 +16,8 @@
         "cumulativeDownChange": false,
         "Score": true,
         "Bonuses": true,
-        "length": 3
+        "length": 3,
+        "fiveMinVolume": false
       },
       "focus": {
         "Price": false,
@@ -25,9 +26,14 @@
         "cumulativeDownChange": false,
         "Score": true,
         "Bonuses": true,
-        "length": 3
+        "length": 3,
+        "fiveMinVolume": false
       }
-    }
+    },
+    "liveListLength": 9,
+    "frontlineListLength": 12,
+    "focusListLength": 3,
+    "dailyListLength": 13
   },
   "news": {
     "showTrackedTickers": false,
@@ -74,20 +80,20 @@
       "height": 481,
       "x": -77,
       "y": -494,
-      "isOpen": true
+      "isOpen": false
     },
     "focusWindow": {
       "width": 515,
-      "height": 481,
+      "height": 483,
       "x": 281,
-      "y": -494,
+      "y": -496,
       "isOpen": true
     },
     "dailyWindow": {
       "width": 394,
-      "height": 480,
+      "height": 483,
       "x": 796,
-      "y": -493,
+      "y": -496,
       "isOpen": true
     },
     "activeWindow": {
@@ -119,6 +125,13 @@
       "height": 14,
       "x": -253,
       "y": -13,
+      "isOpen": true
+    },
+    "frontlineWindow": {
+      "width": 358,
+      "height": 480,
+      "x": -77,
+      "y": -494,
       "isOpen": true
     }
   }

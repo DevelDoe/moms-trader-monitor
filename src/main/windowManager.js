@@ -7,15 +7,16 @@ const { safeSend } = require("./utils/safeSend");
 const path = require("path");
 const fs = require("fs");
 
-const { createSettingsWindow } = require("./windows/settings");
-const { createLiveWindow } = require("./windows/live");
-const { createFocusWindow } = require("./windows/focus");
-const { createDailyWindow } = require("./windows/daily");
-const { createActiveWindow } = require("./windows/active");
-const { createScannerWindow } = require("./windows/scanner");
-const { createInfobarWindow } = require("./windows/infobar");
-const { createWizardWindow } = require("./windows/wizard");
-const { createProgressWindow } = require("./windows/progress");
+const { createSettingsWindow }  = require("./windows/settings");
+const { createLiveWindow }      = require("./windows/live");
+const { createFrontlineWindow } = require("./windows/frontline");
+const { createFocusWindow }     = require("./windows/focus");
+const { createDailyWindow }     = require("./windows/daily");
+const { createActiveWindow }    = require("./windows/active");
+const { createScannerWindow }   = require("./windows/scanner");
+const { createInfobarWindow }   = require("./windows/infobar");
+const { createWizardWindow }    = require("./windows/wizard");
+const { createProgressWindow }  = require("./windows/progress");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -43,7 +44,7 @@ function setQuitting(val) {
 function createWindow(name, createFn) {
     let win = windows[name];
     if (!win || win.isDestroyed()) {
-        // If window doesn't exist or is destroyed, create a new one
+
         win = createFn();
         windows[name] = win;
 
@@ -91,6 +92,7 @@ function restoreWindows() {
     const windowKeyMap = {
         settings: "settingsWindow",
         live: "liveWindow",
+        frontline: "frontlineWindow",
         focus: "focusWindow",
         daily: "dailyWindow",
         active: "activeWindow",
@@ -133,6 +135,8 @@ function createWindowByName(name) {
             return createSettingsWindow(isDevelopment);
         case "live":
             return createLiveWindow(isDevelopment, buffs);
+        case "frontline":
+            return createFrontlineWindow(isDevelopment, buffs);
         case "focus":
             return createFocusWindow(isDevelopment, buffs);
         case "daily":

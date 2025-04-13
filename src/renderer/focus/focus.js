@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 2. Create initial focus state
     // Only init state if we didn't load one
-    if (restored) {
+    if (!restored) {
         storeSymbols.forEach((symbolData) => {
             focusState[symbolData.symbol] = {
                 hero: symbolData.symbol,
@@ -489,7 +489,7 @@ function calculateScore(hero, event) {
     
         // Debugging: log the multiplier and category assigned
         if (debug && debugSamples < debugLimitSamples) {
-            logStep("📢", `${volMult.message}(${humanReadableNumbers(event.strength)})`,volMult.multiplier);
+            logStep("📢", `${volMult.message}`,volMult.multiplier);
         }
     
         baseScore *= volMult.multiplier;
@@ -506,10 +506,6 @@ function calculateScore(hero, event) {
     return baseScore;
 }
 
-function adjustMultiplier(multiplier) {
-    return Math.max(0.01, Math.min(multiplier, 5)); // Limit to 3x max multiplier
-}
-
 function getFloatMultiplier(floatValue) {
     if (!floatValue) {
         return 1; // no multiplier if float data is missing or 0
@@ -517,23 +513,25 @@ function getFloatMultiplier(floatValue) {
 
     let multiplier = 1;
 
-    if (floatValue < 1_200_000) {
-        multiplier = window.buffs.find((b) => b.key === "float1m")?.value ?? 1;
-    } else if (floatValue < 5_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float5m")?.value ?? 1;
-    } else if (floatValue < 10_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float10m")?.value ?? 1;
-    } else if (floatValue < 50_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float50m")?.value ?? 1;
-    } else if (floatValue < 100_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float100m")?.value ?? 1;
-    } else if (floatValue < 200_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float200m")?.value ?? 1;
+    if (floatValue < 2_000_000) {
+        multiplier = window.buffs.find((b) => b.key === "float1m")?.multiplier ?? 1;
+    } else if (floatValue < 7_500_000) {
+        multiplier = window.buffs.find((b) => b.key === "float5m")?.multiplier ?? 1;
+    } else if (floatValue < 13_000_000) {
+        multiplier = window.buffs.find((b) => b.key === "float10m")?.multiplier ?? 1;
+    } else if (floatValue < 65_000_000) {
+        multiplier = window.buffs.find((b) => b.key === "float50m")?.multiplier ?? 1;
+    } else if (floatValue < 125_000_000) {
+        multiplier = window.buffs.find((b) => b.key === "float100m")?.multiplier ?? 1;
+    } else if (floatValue < 250_000_000) {  // Added back (exists in your JSON)
+        multiplier = window.buffs.find((b) => b.key === "float200m")?.multiplier ?? 1;
+    } else if (floatValue < 600_000_000) {
+        multiplier = window.buffs.find((b) => b.key === "float500m")?.multiplier ?? 1;
     } else {
-        multiplier = window.buffs.find((b) => b.key === "float600m+")?.value ?? 1;
+        multiplier = window.buffs.find((b) => b.key === "float600m+")?.multiplier ?? 0.01;
     }
 
-    return adjustMultiplier(multiplier);
+    return multiplier;
 }
 
 function calculateXp(hero) {
@@ -589,54 +587,90 @@ function humanReadableNumbers(value) {
 }
 
 function calculateVolumeImpact(volume = 0, price = 1) {
-    // Filter buffs to only include those with category definitions
-    const categories = (window.buffs || []).filter(buff => 
-        buff.category &&
-        typeof buff.priceThreshold === "number" &&
-        Array.isArray(buff.volumeStages) && buff.volumeStages.length > 0
+    const categories = (window.buffs || []).filter(
+        (buff) => buff.category && 
+                 (typeof buff.priceThreshold === "number" || buff.priceThreshold === "Infinity") && 
+                 Array.isArray(buff.volumeStages) && 
+                 buff.volumeStages.length > 0
     );
 
-    // Initialize result
     let result = {
         multiplier: 1,
         capAssigned: "None",
         volumeStage: "None",
-        message: "No matching category found"
+        message: "No matching category found",
+        style: {
+            cssClass: "volume-none",
+            icon: "",
+            description: "No volume",
+            color: "#cccccc",
+            animation: "none",
+        },
     };
 
-    if (categories.length === 0) {
-        return result.multiplier;
-    }
+    if (categories.length === 0) return result;
 
-    // Sort categories by priceThreshold (lowest to highest)
-    const sortedCategories = [...categories].sort((a, b) => a.priceThreshold - b.priceThreshold);
+    // Sort categories by price (lowest first, Infinity last)
+    const sortedCategories = [...categories].sort((a, b) => {
+        const aPrice = a.priceThreshold === "Infinity" ? Infinity : a.priceThreshold;
+        const bPrice = b.priceThreshold === "Infinity" ? Infinity : b.priceThreshold;
+        return aPrice - bPrice;
+    });
 
-    // Find the matching category by price
+    // Find matching category
     for (const category of sortedCategories) {
-        if (price <= category.priceThreshold) {
+        const priceThreshold = category.priceThreshold === "Infinity" ? Infinity : category.priceThreshold;
+        if (price <= priceThreshold) {
             result.capAssigned = category.category;
 
-            // Sort volume stages by volumeThreshold (ascending order)
-            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
+            // Sort stages by threshold (descending, highest first)
+            const sortedStages = [...category.volumeStages].sort((a, b) => {
+                const aThreshold = a.volumeThreshold === "Infinity" ? Infinity : a.volumeThreshold;
+                const bThreshold = b.volumeThreshold === "Infinity" ? Infinity : b.volumeThreshold;
+                return bThreshold - aThreshold; // Descending order
+            });
 
-            // If volume is below the lowest threshold, use that stage
-            if (volume < sortedStages[0].volumeThreshold) {
-                result.multiplier = sortedStages[0].multiplier;
-                result.volumeStage = sortedStages[0].key;
-                result.message = `${category.category} ${sortedStages[0].key} (below threshold)`;
-            } else {
-                // Loop through stages updating the stage if volume meets or exceeds the threshold
-                for (const stage of sortedStages) {
-                    if (volume >= stage.volumeThreshold) {
-                        result.multiplier = stage.multiplier;
-                        result.volumeStage = stage.key;
-                        result.message = `${category.category} ${stage.key}`;
-                    }
+            // Find the first stage where volume is <= threshold
+            let matchedStage = null;
+            for (const stage of sortedStages) {
+                const threshold = stage.volumeThreshold === "Infinity" ? Infinity : stage.volumeThreshold;
+                if (volume <= threshold) {
+                    matchedStage = stage;
+                } else {
+                    break; // Since we're going high to low, stop once volume exceeds threshold
                 }
+            }
+
+            // If no stage matched (volume > all thresholds), use the highest threshold stage
+            const stageToUse = matchedStage || sortedStages[0];
+
+            if (stageToUse) {
+                result.multiplier = stageToUse.multiplier;
+                result.volumeStage = stageToUse.key;
+                result.message = `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`;
+
+                result.style = {
+                    cssClass: `volume-${stageToUse.key.toLowerCase()}`,
+                    icon: stageToUse.icon || "",
+                    description: stageToUse.desc || stageToUse.key,
+                    color: getColorForStage(stageToUse.key), // Assuming this function is defined elsewhere
+                    animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
+                };
             }
             break;
         }
     }
 
     return result;
+}
+
+// Placeholder for getColorForStage (since it wasn't provided)
+function getColorForStage(stageKey) {
+    const colors = {
+        lowVol: "#cccccc",
+        mediumVol: "#4caf50",
+        highVol: "#ff9800",
+        parabolicVol: "#f44336",
+    };
+    return colors[stageKey] || "#cccccc";
 }

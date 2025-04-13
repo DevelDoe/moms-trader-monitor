@@ -104,3 +104,9 @@ contextBridge.exposeInMainWorld("progressAPI", {
 contextBridge.exposeInMainWorld("alertAPI", {
     onAlertEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
 });
+
+contextBridge.exposeInMainWorld("frontlineAPI", {
+    activate: () => ipcRenderer.send("activate-frontline"),
+    deactivate: () => ipcRenderer.send("deactivate-frontline"),
+    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+});

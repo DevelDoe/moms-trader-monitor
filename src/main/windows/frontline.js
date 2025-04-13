@@ -1,15 +1,15 @@
-// ./src/main/windows/wizard.js
+// ./src/main/windows/frontline.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createWizardWindow(isDevelopment) {
-    const state = getWindowState("wizardWindow");
+function createFrontlineWindow(isDevelopment, buffs) {
+    const state = getWindowState("frontlineWindow");
 
     const window = new BrowserWindow({
-        width: state.width || 1440,
-        height: state.height || 300,
+        width: state.width || 850,
+        height: state.height || 660,
         x: state.x,
         y: state.y,
         frame: false,
@@ -19,17 +19,19 @@ function createWizardWindow(isDevelopment) {
         hasShadow: false,
         roundedCorners: false,
         backgroundColor: "#00000000",
-        transparent: true,
         useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,
             enableRemoteModule: false,
             nodeIntegration: false,
+            additionalArguments: [
+                `--buffs=${encodeURIComponent(JSON.stringify(buffs))}`
+            ]
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/wizard/wizard.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/frontline/frontline.html"));
 
     if (isDevelopment) {
         window.webContents.once("did-finish-load", () => {
@@ -39,16 +41,15 @@ function createWizardWindow(isDevelopment) {
     
     window.on("move", () => {
         const bounds = window.getBounds();
-        setWindowBounds("wizardWindow", bounds);
+        setWindowBounds("frontlineWindow", bounds);
     });
 
     window.on("resize", () => {
         const bounds = window.getBounds();
-        setWindowBounds("wizardWindow", bounds);
+        setWindowBounds("frontlineWindow", bounds);
     });
 
     return window;
 }
 
-module.exports = { createWizardWindow };
-
+module.exports = { createFrontlineWindow };

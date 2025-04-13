@@ -2,14 +2,13 @@
 body {
     background-color: #1c1d23;
     color: #fff;
-    font-family: "Press Start 2P", monospace; 
-    /* font-family: Arial, Helvetica, sans-serif; */
+    /* font-family: "Press Start 2P", monospace;  */
+    font-family: Arial, Helvetica, sans-serif;
     margin: 0;
     padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    font-size: 10px;
     overflow-x: hidden; /* Hide horizontal scrollbar */
     overflow-y: scroll; /* Allow vertical scrolling */
     scrollbar-width: none; /* For Firefox */
@@ -19,15 +18,15 @@ body {
 body::-webkit-scrollbar {
     display: none; /* Hide scrollbar in WebKit browsers */
 }
-#focus-window{
+#frontline-window{
     margin-top: -5px;
 }
 /* Ticker Card */
 .ticker-card {
-    background-color: #2a2d36;
-    border: 2px solid #444;
+    background-color: transparent;
+    border: 0px solid #444;
     border-radius: 8px;
-    padding: 12px;
+    padding: 0;
     display: flex;
     flex-direction: column; /* Changed to column for better alignment */
     margin: 5px;
@@ -38,7 +37,7 @@ body::-webkit-scrollbar {
     display: grid;
     grid-template-columns: auto 1fr; /* 2 columns: sprite takes auto width, the rest takes the remaining space */
     grid-gap: 10px; /* Space between columns */
-    align-items: center; /* Vertically center items */
+    align-items: left; /* Vertically center items */
 }
 
 h1, h2 {
@@ -55,90 +54,57 @@ h2 {
 
 .ticker-info {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
+    flex-direction: row; /* This is default, can be omitted */
+    align-items: left; /* Align items vertically in center */
+    gap: 3px; /* Adds space between items */
+    flex-wrap: wrap; /* Allows items to wrap if needed */
+    font-size: 14px;
 }
 
 .ticker-symbol {
-    font-size: 16px;
+    font-size: 20px;
     font-weight: bold;
     color: #1c1d23;
     padding: 3px;
     /* border-radius: 3px; */
 }
 
-.ticker-symbol .lv {
-    font-size: 0.5em;
-    margin-left: 0;
-    color: white;
-    font-weight: 300;
-    background-color: #1c1d23;
-}
-
 .ticker-price {
-    font-size: 12px;
     color: #ddd;
     margin-top: 4px;
 }
 
 /* Bars Section */
-.bars {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 6px;
-}
-
-/* Individual Bar */
 .bar {
-    height: 12px;
-    background-color: #444;
-    border-radius: 3px;
+    height: 8px;
+    background: rgba(0,0,0,0.09);
+    margin: 1px 0;
+    border-radius: 2px;
     overflow: hidden;
 }
 
-/* Bar Fill */
 .bar-fill {
     height: 100%;
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding-left: 6px;
-    font-size: 10px;
-    font-weight: bold;
-    color: #000;
+    transition: width 0.3s ease-out;
 }
 
-/* Bar Text */
-.bar-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.bar-fill.hp {
+    background: linear-gradient(90deg, #c20101, #fd5151);
 }
 
-
-
-/* Bar Color Classes */
-.xp {
-    background-color: #00ff00;
+.bar-fill.score {
+    background: linear-gradient(90deg, #faab00, #ffe499);
 }
 
-.hp {
-    background-color: #ff0000;
+.bar-fill.strength {
+    background: linear-gradient(90deg, #263cff, #00aeff);
 }
 
-.strength {
-    background-color: #0099ff;
-}
-
-/* Animation for HP and DP Boost */
 .hp-boost, .dp-damage {
-    font-size: 12px;
-    position: absolute;
-    left: 180px;
-    animation: floatOut 1.2s ease-out forwards;
-    padding-bottom: 500px;
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    animation: fadeFloat 0.8s ease-out forwards;
 }
 
 .hp-boost {
@@ -149,18 +115,23 @@ h2 {
     color: #ff0040;
 }
 
-/* Boost Animation */
-.boost {
-    position: absolute;
-    left: 200%;
-    top: -6px;
-    font-size: 10px;
-    padding: 2px 4px;
-    border-radius: 4px;
-    opacity: 1;
-    animation: floatOut 1.2s ease-out forwards;
-    pointer-events: none;
+@keyframes fadeFloat {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
 }
+
+/* Animation for HP and DP Boost */
+
+
+.hp-boost {
+    color: #00ff00;
+}
+
+.dp-damage {
+    color: #ff0040;
+}
+
+/* Boost Animation */
 
 .boost.hp {
     color: #00ff00;
@@ -169,55 +140,27 @@ h2 {
 .boost.dp {
     color: #ff3333;
 }
-
-/* Keyframe for Animation */
-@keyframes floatOut {
-    0% {
-        opacity: 1;
-        transform: translateY(20px); /* Start 20px below its final position */
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(0); /* End at its original position */
-    }
-}
-
-/* Sprite Styles */
-.sprite-container {
+.change{
     position: absolute;
-    right: 254px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    bottom: 50px;
+    right: 170px;
+    padding-right: 40px;
+}
+.hp-boost, .dp-damage {
+    position: absolute;
+    right: 30px; /* adjust as needed */
+    animation: floatUp 0.8s ease-out forwards;
+    /* transform will be added inline */
 }
 
-.sprite {
-    width: 57px;
-    height: 79px;
-    background-image: url("./sprite/Soldier.png");
-    background-repeat: no-repeat;
-    animation: soldier-walk 1s steps(10) ;
-    background-position-x: 0;
-    opacity: 0;
-    transition: opacity 0.01s ease;
-}
-
-.sprite-active {
-    opacity: 1;
-}
-
-@keyframes soldier-walk {
-    from {
-        background-position-x: 0;
-    }
-    to {
-        background-position-x: -1000px; /* 10 columns * 100px */
-    }
+@keyframes floatUp {
+    0% { opacity: 1; transform: translateY(20px); }
+    100% { opacity: 0; transform: translateY(0); }
 }
 
 /* Draggable Area */
 .drag-area {
-    height: 30px;
+    height: 3px;
     -webkit-app-region: drag; /* Enable dragging */
     position: absolute;
     top: 0;
@@ -243,4 +186,70 @@ h2 {
 
 .bar-animate {
     animation: barPulse 0.3s ease-out;
+}
+
+
+.ticker-header {
+    display: flex;               /* Makes children align horizontally */
+    align-items: flex-start;     /* Aligns items at the top */
+    gap: 3px;                   /* Space between symbol and info */
+}
+
+.ticker-symbol {
+    /* Your existing symbol styles */
+    white-space: nowrap;         /* Prevents line breaks */
+    color: antiquewhite !important;
+    font-weight: 300;
+    width: 45px;
+    font-size: 13px;
+    padding: 5px;
+    border-radius: 1px;
+}
+
+.ticker-info {
+    display: flex;
+    flex-direction: column;      /* Stacks ticker-data and bars vertically */
+    gap: 0px;                   /* Space between the two rows */
+    flex-grow: 1;               /* Allows it to take remaining space */
+    margin-bottom: 3px;
+}
+
+.ticker-data {
+    display: flex;              /* Makes price, volume, change inline */
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.bars {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+}
+
+.bar {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.2);           /* Background for empty part of bar */
+    width: 100%;
+}
+
+
+/* stength text  */
+
+/* Volume text colors */
+.bar-text.volume-none { color: #cccccc; }      /* Default/gray when no volume */
+.bar-text.volume-lowvol { color: #6b7280; }   /* Gray for low volume */
+.bar-text.volume-mediumvol { color: #3b82f6; }/* Blue for medium volume */
+.bar-text.volume-highvol { color: #ef4444; }  /* Red for high volume */
+.bar-text.volume-parabolicvol {               /* Amber with animation for parabolic */
+    color: #f59e0b;
+    animation: pulse 1.5s infinite;
+}
+
+/* Pulse animation for parabolic volume */
+@keyframes pulse {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
 }

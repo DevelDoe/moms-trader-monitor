@@ -16,7 +16,7 @@
             <div class="tab">
                 
                 <button class="tablinks" onclick="openTab(event, 'admin')">Admin</button>
-                <!-- <button class="tablinks active" onclick="openTab(event, 'general')">General</button> -->
+                <button class="tablinks active" onclick="openTab(event, 'general')">General</button>
                 <button class="tablinks" onclick="openTab(event, 'scanner')">Alerts</button>
                 <button class="tablinks" onclick="openTab(event, 'top')">Top</button>
                 <button class="tablinks" onclick="openTab(event, 'news')">News</button>
@@ -24,16 +24,23 @@
 
             <div id="admin" class="tabcontent">
                 <button id="fetchNewsBtn">Fetch News</button><br><br>
+            </div>
+
+            <div id="general" class="tabcontent active">
+                <h2>Windows</h2>
+
+                <label class="switch">
+                    <input type="checkbox" id="show-frontline" />
+                    <span class="slider round"></span>
+                </label>
+                <span>Frontline</span>
 
                 <label class="switch">
                     <input type="checkbox" id="show-progress" />
                     <span class="slider round"></span>
                 </label>
-                <span>Show trend</span>
-            </div>
-
-            <div id="general" class="tabcontent">
-                <button id="show-bonuses-legend-board">Toggle Bonuses Legend</button>
+                <span>Show Market Sentiment Flow</span>
+                <!-- <button id="show-bonuses-legend-board">Toggle Bonuses Legend</button> -->
             </div>
 
             <div id="scanner" class="tabcontent">
@@ -73,9 +80,8 @@
                 </section>
             </div>
         
-            
-
-            <div id="top" class="tabcontent active">
+        
+            <div id="top" class="tabcontent">
                 <!-- <div>
                     <label>
                         <input type="checkbox" id="top-transparent-toggle" />
@@ -154,7 +160,8 @@
                 <div class="keyword-lists">
                     <div>
                         <h4>Block List</h4>
-                        <ul id="block-list"></ul>
+                        <ul id="block-list"></ul>frontline
+                        
                     </div>
                     <div>
                         <h4>Bullish List</h4>

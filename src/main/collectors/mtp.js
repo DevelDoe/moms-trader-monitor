@@ -219,7 +219,7 @@ const fetchSymbolsFromServer = async () => {
     });
 };
 
-function startMockAlerts(baseInterval = 1000, fluctuation = 2000) {
+function startMockAlerts(baseInterval = 1500, fluctuation = 1000) {
     let currentIndex = 0;
     let wavePosition = 0;
 
@@ -229,6 +229,14 @@ function startMockAlerts(baseInterval = 1000, fluctuation = 2000) {
             log.warn('[MockAlerts] Scanner window not available to receive alerts');
         } else {
             windows.scanner.webContents.send("ws-alert", alert);
+        }
+
+         // frontline window check
+         if (!windows?.frontline?.webContents || windows.frontline.isDestroyed()) {
+            log.warn('[MockAlerts] frontline window not available to receive events');
+        } else {
+            const event = transformToFocusEvent(alert);
+            windows.frontline.webContents.send("ws-events", [event]);
         }
 
         // Focus window check
@@ -290,25 +298,110 @@ module.exports = { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startM
 
 
 // Predefined alerts
+// const predefinedAlerts = [
+//     { symbol: "AKAN", direction: "UP", price: 2.2, volume: 340000, change_percent: 1 },
+//     // Add as many predefined alert objects as you need
+// ];
+
+// Predefined alerts
 const predefinedAlerts = [
-    { symbol: "AKAN", direction: "UP", price: 2.20, volume: 120000, change_percent: 1 },
-    { symbol: "AKAN", direction: "UP", price: 2.40, volume: 120000, change_percent: 2 },
-    { symbol: "AKAN", direction: "DOWN", price: 2.20, volume: 120000, change_percent: 1 },
-    { symbol: "BOLD", direction: "UP", price: 7.3, volume: 80000, change_percent: -1.7 },
-    { symbol: "AKAN", direction: "DOWN", price: 10.4, volume: 22000, change_percent: 1.2 },
-    { symbol: "CREV", direction: "UP", price: 15.2, volume: 300000, change_percent: 2.5 },
-    // Add as many predefined alert objects as you need
+    // RADX alerts
+    { symbol: "RADX", direction: "UP", price: 1.85, volume: 1250000, change_percent: 3.2 },
+    { symbol: "RADX", direction: "DOWN", price: 1.72, volume: 980000, change_percent: -2.5 },
+    { symbol: "RADX", direction: "UP", price: 1.91, volume: 2100000, change_percent: 5.1 },
+
+    // NRXP alerts
+    { symbol: "NRXP", direction: "UP", price: 0.42, volume: 3500000, change_percent: 8.7 },
+    { symbol: "NRXP", direction: "DOWN", price: 0.38, volume: 2800000, change_percent: -4.3 },
+    { symbol: "NRXP", direction: "UP", price: 0.45, volume: 4200000, change_percent: 12.5 },
+
+    // DSWL alerts
+    { symbol: "DSWL", direction: "UP", price: 2.15, volume: 750000, change_percent: 2.8 },
+    { symbol: "DSWL", direction: "UP", price: 2.25, volume: 920000, change_percent: 4.1 },
+    { symbol: "DSWL", direction: "DOWN", price: 2.08, volume: 680000, change_percent: -3.2 },
+
+    // LTRN alerts
+    { symbol: "LTRN", direction: "UP", price: 3.40, volume: 450000, change_percent: 1.9 },
+    { symbol: "LTRN", direction: "UP", price: 3.55, volume: 520000, change_percent: 3.5 },
+    { symbol: "LTRN", direction: "DOWN", price: 3.32, volume: 410000, change_percent: -2.1 },
+
+    // FBRX alerts
+    { symbol: "FBRX", direction: "UP", price: 0.65, volume: 1800000, change_percent: 6.2 },
+    { symbol: "FBRX", direction: "DOWN", price: 0.59, volume: 1500000, change_percent: -4.8 },
+    { symbol: "FBRX", direction: "UP", price: 0.68, volume: 2200000, change_percent: 8.9 },
+
+    // BCG alerts
+    { symbol: "BCG", direction: "UP", price: 1.12, volume: 950000, change_percent: 2.3 },
+    { symbol: "BCG", direction: "UP", price: 1.18, volume: 1100000, change_percent: 4.7 },
+    { symbol: "BCG", direction: "DOWN", price: 1.09, volume: 850000, change_percent: -2.6 },
+
+    // CUPR alerts
+    { symbol: "CUPR", direction: "UP", price: 0.88, volume: 3200000, change_percent: 5.4 },
+    { symbol: "CUPR", direction: "DOWN", price: 0.82, volume: 2800000, change_percent: -3.8 },
+    { symbol: "CUPR", direction: "UP", price: 0.92, volume: 3800000, change_percent: 9.1 },
+
+    // SXTC alerts
+    { symbol: "SXTC", direction: "UP", price: 1.05, volume: 650000, change_percent: 3.7 },
+    { symbol: "SXTC", direction: "UP", price: 1.12, volume: 780000, change_percent: 6.2 },
+    { symbol: "SXTC", direction: "DOWN", price: 1.01, volume: 590000, change_percent: -3.1 },
+
+    // BWEN alerts
+    { symbol: "BWEN", direction: "UP", price: 2.75, volume: 420000, change_percent: 2.1 },
+    { symbol: "BWEN", direction: "DOWN", price: 2.65, volume: 380000, change_percent: -1.8 },
+    { symbol: "BWEN", direction: "UP", price: 2.85, volume: 510000, change_percent: 5.3 },
+
+    // BMR alerts
+    { symbol: "BMR", direction: "UP", price: 0.95, volume: 1200000, change_percent: 4.5 },
+    { symbol: "BMR", direction: "DOWN", price: 0.89, volume: 950000, change_percent: -3.2 },
+    { symbol: "BMR", direction: "UP", price: 1.02, volume: 1500000, change_percent: 8.7 },
+
+    // SPAI alerts
+    { symbol: "SPAI", direction: "UP", price: 0.48, volume: 2500000, change_percent: 7.3 },
+    { symbol: "SPAI", direction: "DOWN", price: 0.44, volume: 2100000, change_percent: -4.2 },
+    { symbol: "SPAI", direction: "UP", price: 0.52, volume: 3100000, change_percent: 10.6 },
+
+    // RAYA alerts
+    { symbol: "RAYA", direction: "UP", price: 1.22, volume: 850000, change_percent: 3.4 },
+    { symbol: "RAYA", direction: "UP", price: 1.28, volume: 980000, change_percent: 5.8 },
+    { symbol: "RAYA", direction: "DOWN", price: 1.18, volume: 720000, change_percent: -2.9 },
+
+    // UONE alerts
+    { symbol: "UONE", direction: "UP", price: 3.15, volume: 620000, change_percent: 2.7 },
+    { symbol: "UONE", direction: "DOWN", price: 3.05, volume: 550000, change_percent: -1.9 },
+    { symbol: "UONE", direction: "UP", price: 3.25, volume: 750000, change_percent: 4.8 },
+
+    // HHS alerts
+    { symbol: "HHS", direction: "UP", price: 1.45, volume: 1100000, change_percent: 3.9 },
+    { symbol: "HHS", direction: "DOWN", price: 1.38, volume: 950000, change_percent: -2.7 },
+    { symbol: "HHS", direction: "UP", price: 1.52, volume: 1300000, change_percent: 6.3 },
+
+    // STEC alerts
+    { symbol: "STEC", direction: "UP", price: 0.75, volume: 1800000, change_percent: 5.2 },
+    { symbol: "STEC", direction: "DOWN", price: 0.71, volume: 1500000, change_percent: -3.6 },
+    { symbol: "STEC", direction: "UP", price: 0.79, volume: 2100000, change_percent: 8.1 },
+
+    // GLE alerts
+    { symbol: "GLE", direction: "UP", price: 0.62, volume: 2900000, change_percent: 6.9 },
+    { symbol: "GLE", direction: "DOWN", price: 0.58, volume: 2400000, change_percent: -4.3 },
+    { symbol: "GLE", direction: "UP", price: 0.66, volume: 3400000, change_percent: 10.2 },
+
+    // NCEW alerts
+    { symbol: "NCEW", direction: "UP", price: 1.85, volume: 480000, change_percent: 2.6 },
+    { symbol: "NCEW", direction: "UP", price: 1.92, volume: 550000, change_percent: 4.3 },
+    { symbol: "NCEW", direction: "DOWN", price: 1.78, volume: 420000, change_percent: -3.1 },
+
+    // KPLT alerts
+    { symbol: "KPLT", direction: "UP", price: 0.28, volume: 4200000, change_percent: 7.5 },
+    { symbol: "KPLT", direction: "DOWN", price: 0.26, volume: 3800000, change_percent: -5.4 },
+    { symbol: "KPLT", direction: "UP", price: 0.31, volume: 5100000, change_percent: 12.8 },
+
+    // INKT alerts
+    { symbol: "INKT", direction: "UP", price: 1.15, volume: 950000, change_percent: 3.8 },
+    { symbol: "INKT", direction: "DOWN", price: 1.08, volume: 820000, change_percent: -2.9 },
+    { symbol: "INKT", direction: "UP", price: 1.22, volume: 1100000, change_percent: 7.4 },
+
+    // RAVE alerts
+    { symbol: "RAVE", direction: "UP", price: 0.95, volume: 1200000, change_percent: 4.6 },
+    { symbol: "RAVE", direction: "DOWN", price: 0.89, volume: 980000, change_percent: -3.5 },
+    { symbol: "RAVE", direction: "UP", price: 1.02, volume: 1500000, change_percent: 9.1 }
 ];
-
-function transformToFocusEvent(alert) {
-    const isUp = alert.direction.toUpperCase() === "UP";
-    const change = Math.abs(alert.change_percent || 0); // Keep as whole number
-
-    return {
-        hero: alert.symbol,
-        hp: isUp ? change : 0, // 5 = 5%
-        dp: isUp ? 0 : change, // 3 = 3%
-        strength: alert.volume,
-        price: alert.price,
-    };
-}

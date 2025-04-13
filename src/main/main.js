@@ -72,6 +72,7 @@ const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
 const { createLiveWindow } = require("./windows/live");
+const { createFrontlineWindow } = require("./windows/frontline");
 const { createFocusWindow } = require("./windows/focus");
 const { createDailyWindow } = require("./windows/daily");
 const { createActiveWindow } = require("./windows/active");
@@ -320,8 +321,6 @@ ipcMain.on("recreate-daily", async () => {
 });
 
 // live
-
-// When toggling, check if it's visible or not:
 ipcMain.on("toggle-live", () => {
     const live = windowManager.windows.live;
 
@@ -525,7 +524,6 @@ ipcMain.on("set-top-tickers", (event, newTickers) => {
 });
 
 // Progress
-// In your main process (electron.js or main.js)
 ipcMain.on("activate-progress", () => {
     const progressWindow = windowManager.windows.progress;
     
@@ -536,6 +534,29 @@ ipcMain.on("activate-progress", () => {
     } else if (!progressWindow.isVisible()) {
         log.log("[progress] Showing existing progress window");
         progressWindow.show();
+    }
+});
+
+ipcMain.on("deactivate-progress", () => {
+    const progressWindow = windowManager.windows.progress;
+    
+    if (progressWindow && !progressWindow.isDestroyed()) {
+        log.log("[progress] Hiding progress window");
+        destroyWindow("progress");
+    }
+});
+
+// Frontline
+ipcMain.on("activate-frontline", () => {
+    const frontlineWindow = windowManager.windows.frontline;
+    
+    if (!frontlineWindow || frontlineWindow.isDestroyed()) {
+        log.log("[frontline] Creating frontline window");
+        windows.frontline = createWindow("frontline", () => createFrontlineWindow(isDevelopment, buffs));
+        windows.frontline.show();
+    } else if (!frontlineWindow.isVisible()) {
+        log.log("[frontline] Showing existing frontline window");
+        frontlineWindow.show();
     }
 });
 
@@ -615,7 +636,6 @@ app.on("ready", async () => {
         if (windows.docker) {
             windows.docker.show();
         }
-
 
         const settings = loadSettings(); // load once, reuse
 
