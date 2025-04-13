@@ -32,7 +32,7 @@ function debounce(func, delay) {
 }
 
 // mtp.js - Fixed version
-const connectMTP = (scannerWindow, focusWindow) => {
+const connectMTP = () => {
     const clientId = "DEV";
     let ws;
 
@@ -93,7 +93,7 @@ const connectMTP = (scannerWindow, focusWindow) => {
                 if (focusWindow?.webContents && !focusWindow.webContents.isDestroyed()) {
                     const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
                     focusWindow.webContents.send("ws-events", [focusEvent]);
-                    console.log("sending message to focus:", focusEvent);
+                    log.log("sending message to focus:", focusEvent);
                 }
             }
 
@@ -219,104 +219,86 @@ const fetchSymbolsFromServer = async () => {
     });
 };
 
-function startMockAlerts(windows) {
-    simulateAlerts(["AKAN", "BOLD", "CREV", "MYSZ", "FOXX", "STEC", "RMTI", "MNDO", "CRWS", "NCEW", "SXTC", "SHLT"], (alert) => {
-        // 📡 Send raw alert to scanner
-        if (windows?.scanner?.webContents && !windows.scanner.webContents.isDestroyed()) {
+function startMockAlerts(baseInterval = 1000, fluctuation = 2000) {
+    let currentIndex = 0;
+    let wavePosition = 0;
+
+    function sendAlert(alert) {
+        // Scanner window check
+        if (!windows?.scanner?.webContents || windows.scanner.isDestroyed()) {
+            log.warn('[MockAlerts] Scanner window not available to receive alerts');
+        } else {
             windows.scanner.webContents.send("ws-alert", alert);
         }
 
-        // 🎯 Send transformed alert to focus window
-        if (windows?.focus?.webContents && !windows.focus.webContents.isDestroyed()) {
+        // Focus window check
+        if (!windows?.focus?.webContents || windows.focus.isDestroyed()) {
+            log.warn('[MockAlerts] Focus window not available to receive events');
+        } else {
             const event = transformToFocusEvent(alert);
             windows.focus.webContents.send("ws-events", [event]);
         }
 
-        // 🧠 Add raw alert to tickerStore
+        // progress window check
+        if (!windows?.progress?.webContents || windows.progress.isDestroyed()) {
+            log.warn('[MockAlerts] progress window not available to receive events');
+        } else {
+            const event = transformToFocusEvent(alert);
+            windows.progress.webContents.send("ws-events", [event]);
+        }
+
+        // Ticker store update (keeping your existing logic)
         const tickerStore = require("../store");
         if (tickerStore?.addMtpAlerts) {
             tickerStore.addMtpAlerts(JSON.stringify(alert));
         }
-    });
+    }
+
+    // Rest of your existing functions remain exactly the same
+    function transformToFocusEvent(alert) {
+        const isUp = alert.direction.toUpperCase() === "UP";
+        const change = Math.abs(alert.change_percent || 0);
+
+        return {
+            hero: alert.symbol,
+            hp: isUp ? change : 0,
+            dp: isUp ? 0 : change,
+            strength: alert.volume,
+            price: alert.price,
+        };
+    }
+
+    function getWaveInterval() {
+        wavePosition += 0.1;
+        const adjustment = Math.sin(wavePosition) * fluctuation;
+        return baseInterval + adjustment;
+    }
+
+    function scheduleNextAlert() {
+        const interval = getWaveInterval();
+        sendAlert(predefinedAlerts[currentIndex]);
+        currentIndex = (currentIndex + 1) % predefinedAlerts.length;
+        setTimeout(scheduleNextAlert, interval);
+    }
+
+    // Start the process
+    scheduleNextAlert();
 }
+
 
 module.exports = { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts };
 
-// 📡 Fake alert simulator (for development)
-function simulateAlerts(symbols, sendAlert, interval = 16000) {
-    const lastPrices = {};
 
-    symbols.forEach((symbol) => {
-        lastPrices[symbol] = +(Math.random() * 20 + 1).toFixed(2); // Initial price
-
-        const cycle = async () => {
-            while (true) {
-                const numUp = Math.floor(Math.random() * 2) + 1;
-                const numDown = Math.floor(Math.random() * 2) + 1;
-
-                for (let i = 0; i < numUp; i++) {
-                    const oldPrice = lastPrices[symbol];
-                    const percentChange = (Math.random() * 19 + 1) / 100;
-                    const newPrice = +(oldPrice * (1 + percentChange)).toFixed(2);
-                    const change_percent = ((newPrice - oldPrice) / oldPrice) * 100;
-
-                    lastPrices[symbol] = newPrice;
-                    const volume = Math.floor(Math.random() * (500_000 - 10_000 + 1)) + 10_000;
-
-                    sendAlert({
-                        symbol,
-                        direction: "UP", // 👈 must be uppercase
-                        price: newPrice,
-                        volume,
-                        change_percent,
-                        hp: change_percent,
-                        dp: 0,
-                    });
-
-                    await delay(randomDelay(1800, 11500));
-                }
-
-                for (let i = 0; i < numDown; i++) {
-                    const oldPrice = lastPrices[symbol];
-                    const percentChange = (Math.random() * 19 + 1) / 100;
-                    const newPrice = +(oldPrice * (1 - percentChange)).toFixed(2);
-                    const change_percent = ((newPrice - oldPrice) / oldPrice) * 100;
-
-                    lastPrices[symbol] = newPrice;
-                    const volume = Math.floor(Math.random() * (500_000 - 10_000 + 1)) + 10_000;
-
-                    sendAlert({
-                        symbol,
-                        direction: "DOWN",
-                        price: newPrice,
-                        volume,
-                        change_percent,
-                        hp: 0,
-                        dp: -change_percent, // ✅ only dp for down (convert to positive)
-                    });
-
-                    await delay(randomDelay(2000, 3000));
-                }
-
-                await delay(interval);
-            }
-        };
-
-        cycle();
-    });
-}
-
-function delay(ms) {
-    return new Promise((res) => setTimeout(res, ms));
-}
-
-function randomDelay(min = 400, max = 550) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// function randomDelay() {
-//     return Math.floor(Math.random() * 400 + 150); // 150–550ms
-// }
+// Predefined alerts
+const predefinedAlerts = [
+    { symbol: "AKAN", direction: "UP", price: 2.20, volume: 120000, change_percent: 1 },
+    { symbol: "AKAN", direction: "UP", price: 2.40, volume: 120000, change_percent: 2 },
+    { symbol: "AKAN", direction: "DOWN", price: 2.20, volume: 120000, change_percent: 1 },
+    { symbol: "BOLD", direction: "UP", price: 7.3, volume: 80000, change_percent: -1.7 },
+    { symbol: "AKAN", direction: "DOWN", price: 10.4, volume: 22000, change_percent: 1.2 },
+    { symbol: "CREV", direction: "UP", price: 15.2, volume: 300000, change_percent: 2.5 },
+    // Add as many predefined alert objects as you need
+];
 
 function transformToFocusEvent(alert) {
     const isUp = alert.direction.toUpperCase() === "UP";

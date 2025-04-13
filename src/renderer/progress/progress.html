@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../styles.css" />
+        <title>Market Sentiment Flow</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                background-color: white;
+            }
+
+            .sentiment-flow {
+                width: 100vw;
+                height: 30px;
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                z-index: 1000;
+            }
+
+            .flow-hp {
+                height: 100%;
+                background: linear-gradient(90deg, #155a15, #4caf50);
+                transition: width 0.7s cubic-bezier(0.33, 1, 0.68, 1);
+            }
+
+            .flow-dp {
+                height: 100%;
+                background: linear-gradient(90deg, #f44336, #5a1515);
+                transition: width 0.7s cubic-bezier(0.33, 1, 0.68, 1);
+            }
+
+            /* Sentiment intensity indicators */
+            .flow-hp::after,
+            .flow-dp::after {
+                content: "";
+                position: absolute;
+                height: 3px;
+                bottom: -3px;
+                left: 0;
+                right: 0;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            .flow-hp::after {
+                background: #8bc34a;
+                box-shadow: 0 0 10px #8bc34a;
+            }
+
+            .flow-dp::after {
+                background: #ff5252;
+                box-shadow: 0 0 10px #ff5252;
+            }
+
+            /* Active flow states */
+            .strong-hp .flow-hp::after,
+            .strong-dp .flow-dp::after {
+                opacity: 1;
+            }
+            .strong-hp .flow-hp::after {
+                background: #8bc34a; /* Fresh grass glow */
+                box-shadow: 0 0 10px #8bc34a; /* Ambient light */
+            }
+            .sentiment-flow {
+                --glow-opacity: 0; /* Animated variable */
+            }
+
+            .flow-hp,
+            .flow-dp {
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* Liquid Core (center fade) */
+            .flow-hp::before,
+            .flow-dp::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 100%;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 100%);
+                opacity: var(--glow-opacity);
+                transition: opacity 0.8s ease-out;
+            }
+
+            /* Swoosh Particles */
+            .flow-hp::after,
+            .flow-dp::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 20px;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+                transform: translateX(-100%);
+            }
+
+            /* HP-specific colors */
+            .flow-hp::after {
+                animation: swoosh-hp 3s infinite;
+            }
+
+            /* DP-specific colors */
+            .flow-dp::after {
+                animation: swoosh-dp 3s infinite;
+            }
+
+            @keyframes swoosh-hp {
+                0% {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+                20% {
+                    opacity: 0.7;
+                }
+                100% {
+                    transform: translateX(300%);
+                    opacity: 0;
+                }
+            }
+
+            @keyframes swoosh-dp {
+                0% {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+                20% {
+                    opacity: 0.7;
+                }
+                100% {
+                    transform: translateX(300%);
+                    opacity: 0;
+                }
+            }
+
+            /* Intensity triggers */
+            .strong-hp {
+                --glow-opacity: 0.7;
+                --swoosh-speed: 2.5s;
+            }
+
+            .strong-dp {
+                --glow-opacity: 0.7;
+                --swoosh-speed: 2.5s;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="sentiment-flow draggable">
+            <div class="flow-hp draggable" id="flow-hp"></div>
+            <div class="flow-dp draggable" id="flow-dp"></div>
+        </div>
+
+        <script src="./progress.js"></script>
+    </body>
+</html>

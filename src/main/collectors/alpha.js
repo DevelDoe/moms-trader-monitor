@@ -18,20 +18,20 @@ const CACHE_FILE = path.join(CACHE_DIR, "alpha_data.json");
 // ✅ Ensure cache directory exists
 fs.ensureDirSync(CACHE_DIR);
 
-console.log("[DEBUG] Using cache at:", CACHE_FILE);
+log.log("[DEBUG] Using cache at:", CACHE_FILE);
 
 // ✅ Load cache
 let cache = {};
 if (fs.existsSync(CACHE_FILE)) {
     try {
         cache = fs.readJsonSync(CACHE_FILE);
-        console.log("[DEBUG] Cache loaded successfully!");
+        log.log("[DEBUG] Cache loaded successfully!");
     } catch (error) {
-        console.error("Error reading Alpha Vantage cache:", error);
+        log.error("Error reading Alpha Vantage cache:", error);
         cache = {};
     }
 } else {
-    console.warn("[DEBUG] Cache file not found, creating new one...");
+    log.warn("[DEBUG] Cache file not found, creating new one...");
     fs.writeJsonSync(CACHE_FILE, {}, { spaces: 2 });
 }
 

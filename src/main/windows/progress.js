@@ -1,15 +1,15 @@
-// ./src/main/windows/focus.js
+// ./src/main/windows/progress.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createFocusWindow(isDevelopment, buffs) {
-    const state = getWindowState("focusWindow");
+function createProgressWindow(isDevelopment) {
+    const state = getWindowState("progressWindow");
 
     const window = new BrowserWindow({
-        width: state.width || 850,
-        height: state.height || 660,
+        width: state.width || 1440,
+        height: state.height || 30,
         x: state.x,
         y: state.y,
         frame: false,
@@ -19,19 +19,17 @@ function createFocusWindow(isDevelopment, buffs) {
         hasShadow: false,
         roundedCorners: false,
         backgroundColor: "#00000000",
+        transparent: true,
         useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,
             enableRemoteModule: false,
             nodeIntegration: false,
-            additionalArguments: [
-                `--buffs=${encodeURIComponent(JSON.stringify(buffs))}`
-            ]
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/focus/focus.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/progress/progress.html"));
 
     if (isDevelopment) {
         window.webContents.once("did-finish-load", () => {
@@ -41,16 +39,16 @@ function createFocusWindow(isDevelopment, buffs) {
     
     window.on("move", () => {
         const bounds = window.getBounds();
-        setWindowBounds("focusWindow", bounds);
+        setWindowBounds("progressWindow", bounds);
     });
 
     window.on("resize", () => {
         const bounds = window.getBounds();
-        setWindowBounds("focusWindow", bounds);
+        setWindowBounds("progressWindow", bounds);
     });
 
     return window;
 }
 
-module.exports = { createFocusWindow };
+module.exports = { createProgressWindow };
 

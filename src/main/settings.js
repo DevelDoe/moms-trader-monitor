@@ -7,12 +7,12 @@ const log = require("../hlps/logger")(__filename);
 
 // Use system settings file for production, separate file for development
 const isDevelopment = process.env.NODE_ENV === "development";
-console.log('Development:', isDevelopment);
+log.log('Development:', isDevelopment);
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
-console.log('Current working directory:', process.cwd());
-console.log('__dirname:', __dirname);
-console.log('Full settings path:', SETTINGS_FILE);
-console.log('File exists:', fs.existsSync(SETTINGS_FILE));
+log.log('Current working directory:', process.cwd());
+log.log('__dirname:', __dirname);
+log.log('Full settings path:', SETTINGS_FILE);
+log.log('File exists:', fs.existsSync(SETTINGS_FILE));
 const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock"); 
 
 const DEFAULT_SETTINGS = {

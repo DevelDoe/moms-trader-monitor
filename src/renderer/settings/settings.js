@@ -116,7 +116,17 @@ function initializeAdminSection() {
     document.getElementById("fetchNewsBtn").addEventListener("click", () => {
         console.log("📰 Fetch News button clicked");
         window.settingsAPI.fetchNews();
-        window.infobarAPI.refresh(); 
+        window.infobarAPI.refresh();
+    });
+
+    const showProgressToggle = document.getElementById("show-progress");
+
+    showProgressToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.progressAPI.activate();
+        } else {
+            window.progressAPI.deactivate();
+        }
     });
 }
 
@@ -517,7 +527,6 @@ async function updateAttributeFilters() {
             live: Object.fromEntries(Array.from(document.querySelectorAll("input[name='live']")).map((checkbox) => [checkbox.value, checkbox.checked])),
             focus: Object.fromEntries(Array.from(document.querySelectorAll("input[name='focus']")).map((checkbox) => [checkbox.value, checkbox.checked])),
             daily: Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-
         };
 
         // ✅ Spread everything and only update `lists`

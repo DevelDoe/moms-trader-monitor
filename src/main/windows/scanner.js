@@ -41,6 +41,7 @@ function createScannerWindow(isDevelopment) {
         const bounds = window.getBounds();
         setWindowBounds("scannerWindow", bounds);
     });
+
     
 
     return window; // ✅ Return the window instance

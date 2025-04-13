@@ -44,5 +44,82 @@
       "Downgrades to Sell"
     ],
     "allowMultiSymbols": false
+  },
+  "scanner": {
+    "minPrice": 0,
+    "maxPrice": 0,
+    "direction": null,
+    "minChangePercent": 0,
+    "minVolume": 0,
+    "maxAlerts": 50,
+    "scannerVolume": 0
+  },
+  "windows": {
+    "scannerWindow": {
+      "width": 173,
+      "height": 888,
+      "x": -250,
+      "y": -900,
+      "isOpen": true
+    },
+    "settingsWindow": {
+      "width": 1093,
+      "height": 660,
+      "x": 2808,
+      "y": -820,
+      "isOpen": false
+    },
+    "liveWindow": {
+      "width": 358,
+      "height": 481,
+      "x": -77,
+      "y": -494,
+      "isOpen": true
+    },
+    "focusWindow": {
+      "width": 515,
+      "height": 481,
+      "x": 281,
+      "y": -494,
+      "isOpen": true
+    },
+    "dailyWindow": {
+      "width": 394,
+      "height": 480,
+      "x": 796,
+      "y": -493,
+      "isOpen": true
+    },
+    "activeWindow": {
+      "width": 753,
+      "height": 406,
+      "x": -77,
+      "y": -900,
+      "isOpen": true
+    },
+    "infobarWindow": {
+      "width": 514,
+      "height": 39,
+      "x": 676,
+      "y": -840,
+      "isOpen": true
+    },
+    "wizardWindow": {
+      "width": 2400,
+      "height": 504,
+      "x": -945,
+      "y": -459,
+      "isOpen": true
+    },
+    "dockerWindow": {
+      "isOpen": true
+    },
+    "progressWindow": {
+      "width": 1442,
+      "height": 14,
+      "x": -253,
+      "y": -13,
+      "isOpen": true
+    }
   }
 }
