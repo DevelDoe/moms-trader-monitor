@@ -93,3 +93,12 @@ body::-webkit-scrollbar {
 .symbol{
     font-size: 11px !important;
 }
+
+.drag-area {
+    height: 30px;
+    -webkit-app-region: drag; /* Enable dragging */
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+}

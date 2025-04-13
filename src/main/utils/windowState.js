@@ -2,7 +2,9 @@
 
 const fs = require("fs");
 const path = require("path");
-const { app } = require("electron");
+const { app, BrowserWindow } = require("electron");
+const log = require("../../hlps/logger")(__filename);
+const { safeSend } = require("./safeSend");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 const SETTINGS_FILE = isDevelopment
@@ -10,22 +12,46 @@ const SETTINGS_FILE = isDevelopment
   : path.join(app.getPath("userData"), "settings.json");
 
 function loadSettings() {
-    if (!fs.existsSync(SETTINGS_FILE)) return {};
-    return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8"));
+    if (!fs.existsSync(SETTINGS_FILE)) {
+        log.log(`Settings file does not exist at ${SETTINGS_FILE}. Returning empty settings.`);
+        return {};
+    }
+    try {
+        const content = fs.readFileSync(SETTINGS_FILE, "utf8");
+        const settings = JSON.parse(content);
+        // log.log(`Loaded settings from ${SETTINGS_FILE}:`, settings);
+        return settings;
+    } catch (err) {
+        log.error(`Failed to load settings from ${SETTINGS_FILE}`, err);
+        return {};
+    }
 }
 
 function saveSettings(settings) {
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    try {
+        fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+        log.log(`Settings saved successfully to ${SETTINGS_FILE}.`);
+        BrowserWindow.getAllWindows().forEach((win) => {
+            safeSend(win, "settings-updated", settings);
+        });
+    } catch (err) {
+        log.error(`Failed to save settings to ${SETTINGS_FILE}`, err);
+    }
 }
 
 function getWindowState(name) {
     const settings = loadSettings();
-    return settings.windows?.[name] || {};
+    const state = settings.windows?.[name] || {};
+    log.log(`Retrieved window state for "${name}":`, state);
+    return state;
 }
 
 function saveWindowState(name, bounds, isOpen) {
     const settings = loadSettings();
-    if (!settings.windows) settings.windows = {};
+    if (!settings.windows) {
+        settings.windows = {};
+    }
+    log.log(`Saving window state for "${name}" with bounds:`, bounds, `and isOpen: ${isOpen}`);
     settings.windows[name] = {
         width: bounds.width,
         height: bounds.height,
@@ -36,26 +62,29 @@ function saveWindowState(name, bounds, isOpen) {
     saveSettings(settings);
 }
 
-/**
- * Saves just the window bounds (width, height, x, y) to the settings file.
- * Called during window move or resize events.
- *
- * @param {string} stateKey - The key used in the settings file, like "dailyWindow"
- * @param {object} bounds - Object containing { width, height, x, y }
- */
 function setWindowBounds(stateKey, bounds) {
-    saveWindowState(stateKey, {
-        width: bounds.width,
-        height: bounds.height,
-        x: bounds.x,
-        y: bounds.y,
-        // Don't touch isOpen here
-    });
+    log.log(`setWindowBounds called for key "${stateKey}" with bounds:`, bounds);
+
+    const settings = loadSettings();
+    const currentWindowState = settings.windows?.[stateKey] || {};
+    const isOpen = currentWindowState.isOpen ?? false;
+
+    saveWindowState(stateKey, { 
+        ...bounds,
+    }, isOpen);
 }
 
+
+function setWindowState(stateKey, isOpen) {
+    log.log(`setWindowState called for key "${stateKey}" with isOpen: ${isOpen}`);
+    const settings = loadSettings();
+    const currentBounds = settings.windows?.[stateKey] || {};
+    saveWindowState(stateKey, { ...currentBounds }, isOpen);
+}
 
 module.exports = {
     getWindowState,
     saveWindowState,
-    setWindowBounds
+    setWindowBounds,
+    setWindowState
 };

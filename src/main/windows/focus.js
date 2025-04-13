@@ -36,7 +36,6 @@ function createFocusWindow(isDevelopment, buffs) {
     if (isDevelopment) {
         window.webContents.once("did-finish-load", () => {
             window.webContents.openDevTools({ mode: "detach" });
-            console.log("[Focus] DevTools opened after did-finish-load");
         });
     }
     

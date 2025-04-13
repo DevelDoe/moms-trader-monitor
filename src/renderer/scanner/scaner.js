@@ -11,6 +11,7 @@ function parseVolumeValue(str) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
+    console.log("loaded settings: ", window.settings);
 
     const magicDustAudio = new Audio("./magic.mp3");
     // magicDustAudio.volume = 0.3; 
@@ -83,7 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             release = 0.03;
         } else if (volumeValue > 300000) {
             baseFreq = 432;
-            duration = 0.6;
+            duration = 0.4;
             attack = 0;
             decay = 0;
             sustain = 1;
@@ -101,7 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         oscillator.frequency.value = frequency;
 
         const volume = Math.max(0, Math.min(1, window.settings?.scanner?.scannerVolume ?? 0.5));
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
         oscillator.start();

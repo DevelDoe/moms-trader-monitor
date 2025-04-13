@@ -24,13 +24,17 @@ isLongBiased = true;
 
 const debug = true;
 const debugScoreCalc = true;
-const debugLimitSamples = 1300;
+const debugLimitSamples = 13000;
 let debugSamples = 0;
+const debugVolumeCal = false;
 
 let currentMaxScore = 0;
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ Loading live Window...");
+
+    window.settings = await window.settingsAPI.get();
+    console.log("laoded settings: ", window.settings);
 
     await applySavedFilters();
     await fetchAndUpdateTickers();
@@ -181,7 +185,7 @@ function updateTickers(rawTickers, newFilters, newMaxVisible = 10) {
 
 function calculateScoreWithDecay(ticker, decay) {
     const baseScore = calculateScore(ticker); // from live.js
-    const decayMultiplier = Math.pow(0.9, decay);
+    const decayMultiplier = Math.pow(0.95, decay);
     return applyMultiplier(baseScore, decay > 0 ? decayMultiplier : 1);
 }
 
@@ -201,7 +205,6 @@ function calculateScore(ticker) {
 
     const up = Math.floor(ticker.cumulativeUpChange || 0);
     const down = Math.floor(ticker.cumulativeDownChange || 0);
-    
 
     const floatValue = ticker.statistics?.floatShares != undefined ? parseHumanNumber(ticker.statistics?.floatShares) : 0;
     const price = ticker.Price || 0;
@@ -354,9 +357,9 @@ function calculateScore(ticker) {
     // // 5. Volume impact
     const prevScore = Score;
 
-    const { multiplier: volMult } = calculateVolumeImpact(parseVolumeValue(fiveMinVolume), ticker.Price || 1);
+    const volMult = calculateVolumeImpact(parseVolumeValue(fiveMinVolume), ticker.Price || 1);
     Score *= volMult;
-    if (debug && debugSamples < debugLimitSamples) console.log(`📢 Volume Mult (${fiveMinVolume})         ${volMult.toFixed(2)} → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
+    if (debug && debugSamples < debugLimitSamples) console.log(`📢 Volume Mult (${fiveMinVolume})         ${volMult} → ${prevScore.toFixed(2)} → ${Score.toFixed(2)}`);
 
     // Final score
     const finalScore = Math.floor(Score);
@@ -367,28 +370,60 @@ function calculateScore(ticker) {
     return finalScore;
 }
 
-const BASE_MULTIPLIER = 0.5; // Starting multiplier
-const VOLUME_SCALING = 100000; // Volume divisor for log2 scaling
-const PRICE_SCALING = 3; // Root type for price influence: 2 = square root, 3 = cube root
-const MAX_MULTIPLIER = 5; // Cap on the multiplier
-
 function calculateVolumeImpact(volume = 0, price = 1) {
-    // Adjust volume factor
-    const volumeFactor = Math.log2(1 + volume / VOLUME_SCALING);
+    // Filter buffs to only include those with category definitions
+    const categories = (window.buffs || []).filter(buff => 
+        buff.category &&
+        typeof buff.priceThreshold === "number" &&
+        Array.isArray(buff.volumeStages) && buff.volumeStages.length > 0
+    );
 
-    // Adjust price weight based on chosen scaling
-    const priceWeight = PRICE_SCALING === 3 ? Math.cbrt(price) : Math.sqrt(price);
-
-    // Compute multiplier with cap
-    const rawMultiplier = BASE_MULTIPLIER * volumeFactor * priceWeight;
-    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);
-
-    return {
-        multiplier,
-        icon: volumeFactor > 1.5 ? "🔥" : volumeFactor > 1.0 ? "🚛" : "💤",
-        label: `Volume (${volume.toLocaleString()})`,
+    // Initialize result
+    let result = {
+        multiplier: 1,
+        capAssigned: "None",
+        volumeStage: "None",
+        message: "No matching category found"
     };
+
+    if (categories.length === 0) {
+        return result.multiplier;
+    }
+
+    // Sort categories by priceThreshold (lowest to highest)
+    const sortedCategories = [...categories].sort((a, b) => a.priceThreshold - b.priceThreshold);
+
+    // Find the matching category by price
+    for (const category of sortedCategories) {
+        if (price <= category.priceThreshold) {
+            result.capAssigned = category.category;
+
+            // Sort volume stages by volumeThreshold (ascending order)
+            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
+
+            // If volume is below the lowest threshold, use that stage
+            if (volume < sortedStages[0].volumeThreshold) {
+                result.multiplier = sortedStages[0].multiplier;
+                result.volumeStage = sortedStages[0].key;
+                result.message = `${category.category} ${sortedStages[0].key} (below threshold)`;
+            } else {
+                // Loop through stages updating the stage if volume meets or exceeds the threshold
+                for (const stage of sortedStages) {
+                    if (volume >= stage.volumeThreshold) {
+                        result.multiplier = stage.multiplier;
+                        result.volumeStage = stage.key;
+                        result.message = `${category.category} ${stage.key}`;
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    console.log(`🛠️ ${result.message} x ${result.multiplier}`);
+    return result.multiplier;
 }
+
 
 function getScoreBreakdown(ticker) {
     let breakdown = [];

@@ -107,8 +107,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function initializeGeneralSection() {
     console.log("Initializing General Section");
-    document.getElementById("show-bonuses-legend-board").addEventListener("click", () => {
-        window.legendAPI.toggle();
+
+    // document.getElementById("show-bonuses-legend-board").addEventListener("click", () => {
+    //     window.legendAPI.toggle();
+    // });
+
+    const showProgressToggle = document.getElementById("show-progress");
+    const showFrontlineToggle = document.getElementById("show-frontline");
+
+    showProgressToggle.checked = window.settings.windows.progressWindow?.isOpen ?? false;
+    showFrontlineToggle.checked = window.settings.windows.frontlineWindow?.isOpen ?? false;
+
+    showProgressToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.progressAPI.activate();
+        } else {
+            window.progressAPI.deactivate();
+        }
+    });
+
+    showFrontlineToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.frontlineAPI.activate();
+        } else {
+            window.frontlineAPI.deactivate();
+        }
     });
 }
 
@@ -116,8 +139,10 @@ function initializeAdminSection() {
     document.getElementById("fetchNewsBtn").addEventListener("click", () => {
         console.log("📰 Fetch News button clicked");
         window.settingsAPI.fetchNews();
-        window.infobarAPI.refresh(); 
+        window.infobarAPI.refresh();
     });
+
+   
 }
 
 function initializeScannerSection() {
@@ -222,24 +247,6 @@ function initializeTopSection() {
     const focusLengthInput = document.getElementById("focus-length");
     const dailyLengthInput = document.getElementById("daily-length");
 
-    if (
-        !minPriceInput ||
-        !maxPriceInput ||
-        !minFloatInput ||
-        !maxFloatInput ||
-        !minScoreInput ||
-        !maxScoreInput ||
-        !minVolumeInput ||
-        !maxVolumeInput ||
-        // !topTransparentToggle ||
-        !liveLengthInput ||
-        !focusLengthInput ||
-        !dailyLengthInput
-    ) {
-        console.error("One or more input elements not found!");
-        return;
-    }
-
     // ✅ Set placeholder to reflect "No limit" if 0 is set
     minPriceInput.placeholder = minPriceInput.value === "0" ? "No limit" : "";
     maxPriceInput.placeholder = maxPriceInput.value === "0" ? "No limit" : "";
@@ -270,20 +277,6 @@ function initializeTopSection() {
     focusLengthInput.value = window.settings.top.focusListLength ?? 3;
     focusLengthInput.value = window.settings.top.focusListLength ?? 10;
 
-    console.log("✅ Applied topSettings:", {
-        minPrice: minPriceInput.value,
-        maxPrice: maxPriceInput.value,
-        minVolume: minVolumeInput.value,
-        maxVolume: maxVolumeInput.value,
-        minFloat: minFloatInput.value,
-        maxFloat: maxFloatInput.value,
-        minScore: minScoreInput.value,
-        maxScore: maxScoreInput.value,
-        // transparent: topTransparentToggle.checked,
-        liveLength: liveLengthInput.value,
-        focusLength: focusLengthInput.value,
-        dailyLength: dailyLengthInput.value,
-    });
 
     async function updatePriceFilter() {
         try {
@@ -456,6 +449,7 @@ function initializeTopSection() {
 
     // topTransparentToggle.addEventListener("change", updateTransparency);
     liveLengthInput.addEventListener("input", () => updateListLength("live", liveLengthInput));
+    liveLengthInput.addEventListener("input", () => updateListLength("frontline", liveLengthInput));
     focusLengthInput.addEventListener("input", () => updateListLength("focus", focusLengthInput));
     dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
 }
@@ -517,7 +511,6 @@ async function updateAttributeFilters() {
             live: Object.fromEntries(Array.from(document.querySelectorAll("input[name='live']")).map((checkbox) => [checkbox.value, checkbox.checked])),
             focus: Object.fromEntries(Array.from(document.querySelectorAll("input[name='focus']")).map((checkbox) => [checkbox.value, checkbox.checked])),
             daily: Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-
         };
 
         // ✅ Spread everything and only update `lists`

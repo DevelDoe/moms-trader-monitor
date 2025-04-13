@@ -1,11 +1,11 @@
-// ./src/main/windows/live.js
+// ./src/main/windows/frontline.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createLiveWindow(isDevelopment, buffs) {
-    const state = getWindowState("liveWindow");
+function createFrontlineWindow(isDevelopment, buffs) {
+    const state = getWindowState("frontlineWindow");
 
     const window = new BrowserWindow({
         width: state.width || 850,
@@ -31,23 +31,25 @@ function createLiveWindow(isDevelopment, buffs) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/live/live.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/frontline/frontline.html"));
 
-    if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
-
+    if (isDevelopment) {
+        window.webContents.once("did-finish-load", () => {
+            window.webContents.openDevTools({ mode: "detach" });
+        });
+    }
+    
     window.on("move", () => {
         const bounds = window.getBounds();
-        setWindowBounds("liveWindow", bounds);
-    });
-    
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("liveWindow", bounds);
+        setWindowBounds("frontlineWindow", bounds);
     });
 
-    
+    window.on("resize", () => {
+        const bounds = window.getBounds();
+        setWindowBounds("frontlineWindow", bounds);
+    });
 
     return window;
 }
 
-module.exports = { createLiveWindow };
+module.exports = { createFrontlineWindow };

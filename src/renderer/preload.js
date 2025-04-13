@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-const buffsArg = process.argv.find(arg => arg.startsWith("--buffs="));
+const buffsArg = process.argv.find((arg) => arg.startsWith("--buffs="));
 let buffs = [];
 
 if (buffsArg) {
@@ -46,7 +46,7 @@ contextBridge.exposeInMainWorld("focusAPI", {
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
     onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
     getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
-    calculateVolumeImpact: (volume, price) => ipcRenderer.invoke('calculate-volume-impact', { volume, price })
+    calculateVolumeImpact: (volume, price) => ipcRenderer.invoke("calculate-volume-impact", { volume, price }),
 });
 
 contextBridge.exposeInMainWorld("sessionAPI", {
@@ -94,4 +94,19 @@ contextBridge.exposeInMainWorld("traderviewAPI", {
     toggleWidget: () => ipcRenderer.send("toggle-traderview-widget"),
     toggleBrowser: () => ipcRenderer.send("toggle-traderview-browser"),
     setTopTickers: (tickers) => ipcRenderer.send("set-top-tickers", tickers),
+});
+
+contextBridge.exposeInMainWorld("progressAPI", {
+    activate: () => ipcRenderer.send("activate-progress"),
+    deactivate: () => ipcRenderer.send("deactivate-progress"),
+});
+
+contextBridge.exposeInMainWorld("alertAPI", {
+    onAlertEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
+});
+
+contextBridge.exposeInMainWorld("frontlineAPI", {
+    activate: () => ipcRenderer.send("activate-frontline"),
+    deactivate: () => ipcRenderer.send("deactivate-frontline"),
+    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
 });

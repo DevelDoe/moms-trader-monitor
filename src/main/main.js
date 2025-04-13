@@ -34,8 +34,19 @@ autoUpdater.setFeedURL({
     repo: "moms-trader-monitor",
 });
 
+
+
 ////////////////////////////////////////////////////////////////////////////////////
-// WINDOWS
+// SERVICES
+
+const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
+
+////////////////////////////////////////////////////////////////////////////////////
+// DATA
+
+const { loadSettings, saveSettings } = require("./settings"); 
+
+appSettings = loadSettings();
 
 // Buffs
 
@@ -45,10 +56,13 @@ let buffs = [];
 try {
     const raw = fs.readFileSync(buffsPath, "utf-8");
     buffs = JSON.parse(raw);
-    console.log("[Buffs] Loaded", buffs.length, "buffs");
+    log.log("[Buffs] Loaded", buffs.length, "buffs");
 } catch (err) {
-    console.error("[Buffs] Failed to load buffs.json:", err);
+    log.error("[Buffs] Failed to load buffs.json:", err);
 }
+
+////////////////////////////////////////////////////////////////////////////////////
+// WINDOWS
 
 const { createWindow, destroyWindow, restoreWindows } = require("./windowManager");
 
@@ -58,261 +72,17 @@ const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
 const { createLiveWindow } = require("./windows/live");
+const { createFrontlineWindow } = require("./windows/frontline");
 const { createFocusWindow } = require("./windows/focus");
 const { createDailyWindow } = require("./windows/daily");
 const { createActiveWindow } = require("./windows/active");
 const { createScannerWindow } = require("./windows/scanner");
 const { createInfobarWindow } = require("./windows/infobar");
 const { createTradingViewWindow } = require("./windows/traderview");
+const { createWizardWindow } = require("./windows/wizard");
+const { createProgressWindow } = require("./windows/progress");
 
 let windows = {};
-
-// function createWindow(name, createFn) {
-//     const win = createFn();
-
-//     win.windowName = name; // ✅ Tag the window with its name
-
-//     // 🧹 Cleanup on close
-//     win.on("closed", () => {
-//         if (windows[name]) {
-//             delete windows[name];
-//             log.log(`[WindowManager] Removed reference to closed window: ${name}`);
-//         }
-//     });
-
-//     windows[name] = win;
-//     return win;
-// }
-
-// global.sharedState = {
-//     activeTicker: "asdf", // Default fallback
-// };
-
-////////////////////////////////////////////////////////////////////////////////////
-// COLLECTORS
-
-const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
-
-////////////////////////////////////////////////////////////////////////////////////
-// DATA
-
-// Use system settings file for production, separate file for development
-const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
-const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock"); // used to determine if this is a fresh new install
-
-const DEFAULT_SETTINGS = {
-    top: {
-        minPrice: 0,
-        maxPrice: 100,
-        minFloat: 0,
-        maxFloat: 0,
-        minScore: 0,
-        maxScore: 0,
-        minVolume: 0,
-        maxVolume: 0,
-        lists: {
-            live: {
-                Price: false,
-                alertChangePercent: false,
-                cumulativeUpChange: true,
-                cumulativeDownChange: false,
-                Score: true,
-                Bonuses: true,
-                length: 3,
-            },
-            focus: {
-                Price: false,
-                alertChangePercent: false,
-                cumulativeUpChange: true,
-                cumulativeDownChange: false,
-                Score: true,
-                Bonuses: true,
-                length: 3,
-            },
-        },
-    },
-    news: {
-        showTrackedTickers: false,
-        filteredTickers: [],
-        blockList: [],
-        bullishList: [
-            "FDA Approves",
-            "Clinical Trials",
-            "Noteworthy Insider Activity",
-            "FDA Approval Granted",
-            "Drug Trial Success",
-            "Phase 3 Trial Results",
-            "Breakthrough Therapy Designation",
-            "Biotech Approval",
-            "Positive Data from Clinical Study",
-            "SEC Investigation Dropped",
-            "Regulatory Approval Granted",
-            "Government Contract Secured",
-            "Lawsuit Settlement Reached",
-            "Initiates Coverage",
-            "Buy Rating",
-            "Strong Buy",
-            "Price Target Raised",
-            "Upgrades to Buy",
-            "Raises Price Target",
-            "Maintains Overweight Rating",
-            "Reiterates Buy",
-            "New Wall Street Coverage",
-            "Stock Upgrade",
-            "Top Pick",
-            "Bullish Call",
-            "Underweight to Overweight",
-            "Hedge Fund Buys",
-            "Institutional Ownership Increases",
-            "Buffett Increases Stake",
-            "ARK Invest Adds",
-            "Large Insider Purchase",
-            "CEO Buys",
-            "10% Owner Acquires",
-            "Earnings Beat Expectations",
-            "Revenue Surprise",
-            "Raises Guidance",
-            "Record Revenue",
-            "Merger Announced",
-            "Strategic Partnership",
-            "Joint Venture Agreement",
-            "Government Contract Awarded",
-            "Short Interest at Record High",
-            "Short Squeeze Potential",
-            "Unusual Options Activity",
-            "Massive Call Buying",
-            "Dark Pool Order Detected",
-            "Unusual Trading Volume",
-        ],
-        bearishList: [
-            "Sell Alert",
-            "Stock Downgrade",
-            "Downgrades to Sell",
-            "Lowers Price Target",
-            "Underperform Rating",
-            "Bearish Call",
-            "To Acquire",
-            "Snaps Up",
-            "Takeover Attempt",
-            "Exploring Strategic Alternatives",
-            "CEO Sells",
-            "Large Insider Selling",
-            "Hedge Fund Exits",
-            "Institutional Ownership Decreases",
-            "Revenue Miss",
-            "Earnings Miss",
-            "Lowers Guidance",
-            "Regulatory Investigation",
-            "SEC Investigation Launched",
-            "Short Report Released",
-        ],
-        allowMultiSymbols: false,
-    },
-};
-
-function isFirstInstall() {
-    return !fs.existsSync(SETTINGS_FILE) && !fs.existsSync(FIRST_RUN_FILE);
-}
-
-function mergeSettingsWithDefaults(userSettings, defaultSettings) {
-    return {
-        ...defaultSettings,
-        ...userSettings,
-        top: {
-            ...defaultSettings.top,
-            ...userSettings.top,
-            lists: {
-                live: {
-                    ...defaultSettings.top.lists.live,
-                    ...userSettings.top?.lists?.live,
-                    length: userSettings.top?.lists?.live?.length ?? defaultSettings.top.lists.live.length,
-                },
-                focus: {
-                    ...defaultSettings.top.lists.focus,
-                    ...userSettings.top?.lists?.focus,
-                    length: userSettings.top?.lists?.focus?.length ?? defaultSettings.top.lists.focus.length,
-                },
-            },
-            minFloat: userSettings.top?.minFloat ?? defaultSettings.top.minFloat,
-            maxFloat: userSettings.top?.maxFloat ?? defaultSettings.top.maxFloat,
-            minScore: userSettings.top?.minScore ?? defaultSettings.top.minScore,
-            maxScore: userSettings.top?.maxScore ?? defaultSettings.top.maxScore,
-            minVolume: userSettings.top?.minVolume ?? defaultSettings.top.minVolume,
-            maxVolume: userSettings.top?.maxVolume ?? defaultSettings.top.maxVolume,
-        },
-        news: {
-            ...defaultSettings.news,
-            ...userSettings.news,
-            blockList: userSettings.news?.blockList || [],
-            bullishList: userSettings.news?.bullishList || [],
-            bearishList: userSettings.news?.bearishList || [],
-            allowMultiSymbols: userSettings.news?.allowMultiSymbols ?? false,
-        },
-    };
-}
-
-if (isDevelopment && !fs.existsSync(SETTINGS_FILE)) {
-    log.log("No `settings.dev.json` found, creating default dev settings...");
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
-}
-
-if (isFirstInstall()) {
-    log.log("Fresh install detected! Creating default settings...");
-
-    // Ensure the userData directory exists
-    const settingsDir = path.dirname(SETTINGS_FILE);
-    if (!fs.existsSync(settingsDir)) {
-        log.log(`Creating settings directory: ${settingsDir}`);
-        fs.mkdirSync(settingsDir, { recursive: true }); // ✅ Ensure all parent folders exist
-    }
-
-    // Write default settings
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
-
-    // Create marker file to prevent future resets
-    fs.writeFileSync(FIRST_RUN_FILE, "installed");
-
-    log.log("Settings file initialized:", SETTINGS_FILE);
-} else {
-    log.log("Keeping existing settings");
-}
-
-function loadSettings() {
-    try {
-        if (!fs.existsSync(SETTINGS_FILE)) {
-            log.warn("Settings file not found. Using default settings.");
-            return { ...DEFAULT_SETTINGS };
-        }
-
-        const data = fs.readFileSync(SETTINGS_FILE, "utf-8").trim();
-        if (!data) {
-            log.warn("Settings file is empty! Using default settings.");
-            return { ...DEFAULT_SETTINGS };
-        }
-
-        const parsedSettings = JSON.parse(data);
-
-        // ✅ Ensure missing attributes are merged
-        const mergedSettings = mergeSettingsWithDefaults(parsedSettings, DEFAULT_SETTINGS);
-
-        // ✅ Save back to file if any attributes were missing
-        saveSettings(mergedSettings);
-
-        return mergedSettings;
-    } catch (err) {
-        log.error("❌ Error loading settings, resetting to defaults.", err);
-        return { ...DEFAULT_SETTINGS };
-    }
-}
-
-function saveSettings(settingsToSave = appSettings) {
-    if (!settingsToSave) settingsToSave = { ...DEFAULT_SETTINGS };
-
-    log.log("Saving settings file...");
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsToSave, null, 2));
-}
-
-appSettings = loadSettings();
 
 ////////////////////////////////////////////////////////////////////////////////////
 // IPC COMM
@@ -326,7 +96,6 @@ function updateWindowVisibilityState(name, isOpen) {
 }
 
 // General
-
 ipcMain.on("exit-app", () => {
     log.log("Exiting the app...");
     isQuitting = true;
@@ -368,11 +137,15 @@ ipcMain.on("close-splash", () => {
 
 // Settings
 ipcMain.on("toggle-settings", () => {
-    const settings = windows.settings;
-    if (settings) {
-        const isVisible = settings.isVisible();
-        isVisible ? settings.hide() : settings.show();
-        updateWindowVisibilityState("settings", !isVisible);
+    const settings = windowManager.windows.settings;
+    
+    if (settings && !settings.isDestroyed()) {
+        log.log("[toggle-settings] Destroying settings window");
+        destroyWindow("settings"); // Destroy the window
+    } else {
+        log.log("[toggle-settings] Creating settings window");
+        windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment, buffs));
+        windows.settings.show();
     }
 });
 
@@ -391,6 +164,8 @@ ipcMain.on("update-settings", (event, newSettings) => {
         appSettings = { ...DEFAULT_SETTINGS };
     }
 
+    log.log(appSettings)
+
     // ✅ Merge all new settings dynamically
     Object.keys(newSettings).forEach((key) => {
         if (typeof newSettings[key] === "object") {
@@ -403,7 +178,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
         }
     });
 
-    saveSettings(); // ✅ Save settings after updates
+    saveSettings(appSettings); // ✅ Save settings after updates
 
     // ✅ Broadcast updated settings to all windows
     log.log("Broadcasting 'settings-updated' event...");
@@ -468,15 +243,14 @@ ipcMain.handle("fetch-news", async () => {
 });
 
 // focus
-
 ipcMain.on("toggle-focus", () => {
-    const focus = windows.focus;
+    const focus = windowManager.windows.focus;
     
     if (focus && !focus.isDestroyed()) {
-        console.log("[toggle-focus] Destroying focus window");
+        log.log("[toggle-focus] Destroying focus window");
         destroyWindow("focus"); // Destroy the window
     } else {
-        console.log("[toggle-focus] Creating focus window");
+        log.log("[toggle-focus] Creating focus window");
         windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
         windows.focus.show();
     }
@@ -509,7 +283,9 @@ ipcMain.handle("calculate-volume-impact", (_, { volume = 0, price = 1 }) => {
 
     // Compute multiplier with cap
     const rawMultiplier = BASE_MULTIPLIER * volumeFactor * priceWeight;
-    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);
+    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);const path = require("path");
+    const fs = require("fs");
+
 
     return {
         multiplier,
@@ -520,13 +296,13 @@ ipcMain.handle("calculate-volume-impact", (_, { volume = 0, price = 1 }) => {
 
 // daily
 ipcMain.on("toggle-daily", () => {
-    const daily = windows.daily;
+    const daily = windowManager.windows.daily;
    
     if (daily && !daily.isDestroyed()) {
-        console.log("[toggle-daily] Destroying daily window");
+        log.log("[toggle-daily] Destroying daily window");
         destroyWindow("daily"); // Destroy the window
     } else {
-        console.log("[toggle-daily] Creating daily window");
+        log.log("[toggle-daily] Creating daily window");
         windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
         windows.daily.show();
     }
@@ -545,17 +321,15 @@ ipcMain.on("recreate-daily", async () => {
 });
 
 // live
-
-// When toggling, check if it's visible or not:
 ipcMain.on("toggle-live", () => {
-    const live = windows.live;
+    const live = windowManager.windows.live;
 
     if (live && !live.isDestroyed()) {
-        console.log("[toggle-live] Destroying live window");
+        log.log("[toggle-live] Destroying live window");
         destroyWindow("live"); // Destroy the window
     } else {
-        console.log("[toggle-live] Creating live window");
-        windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
+        log.log("[toggle-live] Creating live window");
+        windows.live = createWindow("live", () => createLiveWindow(isDevelopment, buffs));
         windows.live.show();
     }
 });
@@ -574,13 +348,13 @@ ipcMain.on("recreate-live", async () => {
 
 // active
 ipcMain.on("toggle-active", () => {
-    const active = windows.active;
+    const active = windowManager.windows.active;
 
     if (active && !active.isDestroyed()) {
-        console.log("[toggle-active] Destroying active window");
+        log.log("[toggle-active] Destroying active window");
         destroyWindow("active"); // Destroy the window
     } else {
-        console.log("[toggle-live] Creating active window");
+        log.log("[toggle-live] Creating active window");
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
         windows.active.show();
     }
@@ -607,13 +381,13 @@ ipcMain.on("set-active-ticker", (event, ticker) => {
 
 // scanner
 ipcMain.on("toggle-scanner", () => {
-    const scanner = windows.scanner;
+    const scanner = windowManager.windows.scanner;
 
     if (scanner && !scanner.isDestroyed()) {
-        console.log("[toggle-scanner] Destroying scanner window");
+        log.log("[toggle-scanner] Destroying scanner window");
         destroyWindow("scanner"); // Destroy the window
     } else {
-        console.log("[toggle-scanner] Creating scanner window");
+        log.log("[toggle-scanner] Creating scanner window");
         windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
         windows.scanner.show();
     }
@@ -637,13 +411,13 @@ tickerStore.on("new-high-price", ({ symbol, price, direction, change_percent, fi
 
 // infobar
 ipcMain.on("toggle-infobar", () => {
-    const infobar = windows.infobar;
+    const infobar = windowManager.windows.infobar;
 
     if (infobar && !infobar.isDestroyed()) {
-        console.log("[toggle-infobar] Destroying infobar window");
+        log.log("[toggle-infobar] Destroying infobar window");
         destroyWindow("infobar"); // Destroy the window
     } else {
-        console.log("[toggle-infobar] Creating infobar window");
+        log.log("[toggle-infobar] Creating infobar window");
         windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
         windows.infobar.show();
     }
@@ -655,20 +429,7 @@ ipcMain.on("refresh-infobar", () => {
     }
 });
 
-// traderview
-ipcMain.on("toggle-traderview-widget", () => {
-    const traderviewWidget = windows.traderviewWidget;
-
-    if (traderviewWidget && !traderviewWidget.isDestroyed()) {
-        console.log("[toggle-traderviewWidget] Destroying traderviewWidget window");
-        destroyWindow("traderviewWidget"); // Destroy the window
-    } else {
-        console.log("[toggle-traderviewWidget] Creating traderviewWidget window");
-        windows.traderviewWidget = createWindow("traderviewWidget", () => createTraderWidgetViewWindow(isDevelopment));
-        windows.traderviewWidget.show();
-    }
-});
-
+// Traderview
 ipcMain.on("toggle-traderview-browser", async () => {
     // Ensure that the necessary global arrays exist.
     if (!global.traderviewWindows || !global.currentTopTickers) return;
@@ -762,13 +523,60 @@ ipcMain.on("set-top-tickers", (event, newTickers) => {
     global.currentTopTickers = updatedSymbols;
 });
 
+// Progress
+ipcMain.on("activate-progress", () => {
+    const progressWindow = windowManager.windows.progress;
+    
+    if (!progressWindow || progressWindow.isDestroyed()) {
+        log.log("[progress] Creating progress window");
+        windows.progress = createWindow("progress", () => createProgressWindow(isDevelopment));
+        windows.progress.show();
+    } else if (!progressWindow.isVisible()) {
+        log.log("[progress] Showing existing progress window");
+        progressWindow.show();
+    }
+});
+
+ipcMain.on("deactivate-progress", () => {
+    const progressWindow = windowManager.windows.progress;
+    
+    if (progressWindow && !progressWindow.isDestroyed()) {
+        log.log("[progress] Hiding progress window");
+        destroyWindow("progress");
+    }
+});
+
+// Frontline
+ipcMain.on("activate-frontline", () => {
+    const frontlineWindow = windowManager.windows.frontline;
+    
+    if (!frontlineWindow || frontlineWindow.isDestroyed()) {
+        log.log("[frontline] Creating frontline window");
+        windows.frontline = createWindow("frontline", () => createFrontlineWindow(isDevelopment, buffs));
+        windows.frontline.show();
+    } else if (!frontlineWindow.isVisible()) {
+        log.log("[frontline] Showing existing frontline window");
+        frontlineWindow.show();
+    }
+});
+
+ipcMain.on("deactivate-progress", () => {
+    const progressWindow = windowManager.windows.progress;
+    
+    if (progressWindow && !progressWindow.isDestroyed()) {
+        log.log("[progress] Hiding progress window");
+        destroyWindow("progress");
+    }
+});
+
 ////////////////////////////////////////////////////////////////////////////////////
 // START APP
 
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
 
-    windows.splash = createSplashWindow(isDevelopment);
+    windows.splash = createSplashWindow(isDevelopment);createWizardWindow
+    
 
     let symbolCount = 0;
 
@@ -802,54 +610,40 @@ app.on("ready", async () => {
         log.log("Splash screen closed. Loading main app...");
 
         // Create other windows if needed
-        windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
-        windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
-        windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
-        windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
-        windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
-        windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
-        windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
+        
+        // windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
+        // windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
+        // windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
+        // windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
+        // windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
+        // windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
 
         // Call restoreWindows to handle windows that should be restored
         restoreWindows();
 
-        windows.traderview_1 = createTradingViewWindow("AAPL", 0, isDevelopment);
-        windows.traderview_2 = createTradingViewWindow("TSLA", 1, isDevelopment);
-        windows.traderview_3 = createTradingViewWindow("NVDA", 2, isDevelopment);
-        windows.traderview_4 = createTradingViewWindow("GOOGL", 3, isDevelopment);
+        // windows.traderview_1 = createTradingViewWindow("AAPL", 0, isDevelopment);
+        // windows.traderview_2 = createTradingViewWindow("TSLA", 1, isDevelopment);
+        // windows.traderview_3 = createTradingViewWindow("NVDA", 2, isDevelopment);
+        // windows.traderview_4 = createTradingViewWindow("GOOGL", 3, isDevelopment);
 
         global.traderviewWindows = [windows.traderview_1, windows.traderview_2, windows.traderview_3, windows.traderview_4];
 
-        connectMTP(windows.scanner, windows.focus);
-        flushMessageQueue(windows.scanner);
+        connectMTP();
+        flushMessageQueue();
         connectBridge();
 
-        // Hide all windows by default
-        Object.values(windows).forEach((window) => window?.hide());
+        if (windows.docker) {
+            windows.docker.show();
+        }
 
-        // Mapping between window names and their windowState keys
-
-
-        Object.entries(windows).forEach(([name, win]) => {
-            const stateKey = windowKeyMap[name];
-            if (getWindowState(stateKey)?.isOpen) {
-                log.log(`Restoring '${name}' window`);
-                win.show();
-            }
-        });
-
-        // Always show docker if nothing else is visible
-        windows.docker.show();
-
-        // Send settings to all windows
         const settings = loadSettings(); // load once, reuse
 
         Object.values(windows).forEach((win) => {
             safeSend(win, "settings-updated", settings);
         });
 
-        // startMockAlerts(windows);
+        // startMockAlerts();
     });
 });
 
@@ -858,10 +652,10 @@ app.whenReady().then(() => {
     globalShortcut.register("Control+Shift+L", () => {
         const live = getWindow("live");
         if (live) {
-            console.log("[CrashTest] Crashing Live window renderer...");
+            log.log("[CrashTest] Crashing Live window renderer...");
             live.webContents.forcefullyCrashRenderer();
         } else {
-            console.warn("[CrashTest] Live window not found.");
+            log.warn("[CrashTest] Live window not found.");
         }
     });
 });
@@ -873,7 +667,7 @@ app.on("window-all-closed", () => {
 
 process.on("exit", () => {
     log.log("Saving settings before exit...");
-    saveSettings();
+    // saveSettings(appSettings);
 });
 
 ////////////////////////////////////////////////////////////////////////////////////

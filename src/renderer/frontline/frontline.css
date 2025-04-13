@@ -1,0 +1,331 @@
+/* Body Styles */
+body {
+    background-color: #1c1d23;
+    color: #fff;
+    /* font-family: "Press Start 2P", monospace;  */
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-x: hidden; /* Hide horizontal scrollbar */
+    overflow-y: scroll; /* Allow vertical scrolling */
+    scrollbar-width: none; /* For Firefox */
+    -ms-overflow-style: none; /* For Internet Explorer and Edge */
+}
+
+body::-webkit-scrollbar {
+    display: none; /* Hide scrollbar in WebKit browsers */
+}
+#frontline-window {
+    margin-top: -5px;
+}
+/* Ticker Card */
+.ticker-card {
+    background-color: transparent;
+    border: 0px solid #444;
+    border-radius: 8px;
+    padding: 0;
+    display: flex;
+    flex-direction: column; /* Changed to column for better alignment */
+    margin: 5px;
+    opacity: 0.8;
+}
+
+/* Full opacity for top 3 cards */
+.ticker-card:nth-child(-n + 3) {
+    opacity: 1;
+}
+
+.ticker-card:nth-child(-n + 3) .ticker-symbol {
+    font-size: 17px;
+    width: 58px;
+}
+
+/* Header Section with Sprite and Price */
+.ticker-header {
+    display: grid;
+    grid-template-columns: auto 1fr; /* 2 columns: sprite takes auto width, the rest takes the remaining space */
+    grid-gap: 10px; /* Space between columns */
+    align-items: left; /* Vertically center items */
+}
+
+h1,
+h2 {
+    font-size: 16px;
+    margin-top: -3px;
+    color: #595959;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h2 {
+    font-size: 10px;
+    margin-top: -12px;
+}
+
+.ticker-info {
+    display: flex;
+    flex-direction: row; /* This is default, can be omitted */
+    align-items: left; /* Align items vertically in center */
+    gap: 3px; /* Adds space between items */
+    flex-wrap: wrap; /* Allows items to wrap if needed */
+    font-size: 14px;
+}
+
+.ticker-symbol {
+    /* Your existing symbol styles */
+    white-space: nowrap; /* Prevents line breaks */
+    color: antiquewhite !important;
+    font-weight: 300;
+    width: 45px;
+    font-size: 13px;
+    padding: 3px;
+    border-radius: 1px;
+    cursor: pointer;
+}
+.ticker-symbol:hover {
+    color: #a6fcca !important;
+}
+
+.ticker-price {
+    color: #ddd;
+    margin-top: 4px;
+}
+
+/* Bars Section */
+.bar {
+    height: 8px;
+    /* background: rgba(0, 0, 0, 00); */
+    margin: 0px 0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.ticker-card:nth-child(-n+3) .bar {
+
+    margin: 1px 0;
+
+}
+
+.bar-fill {
+    height: 100%;
+    transition: width 0.3s ease-out;
+}
+
+.bar-fill.hp {
+    background: linear-gradient(90deg, #c20101, #fd5151);
+}
+
+.bar-fill.score {
+    background: linear-gradient(90deg, #faab00, #ffe499);
+}
+
+.bar-fill.strength {
+    background: linear-gradient(90deg, #263cff, #00aeff);
+}
+
+.hp-boost,
+.dp-damage {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    animation: fadeFloat 0.8s ease-out forwards;
+}
+
+.hp-boost {
+    color: #00ff00;
+}
+
+.dp-damage {
+    color: #ff0040;
+}
+
+@keyframes fadeFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Animation for HP and DP Boost */
+
+.hp-boost {
+    color: #00ff00;
+}
+
+.dp-damage {
+    color: #ff0040;
+}
+
+/* Boost Animation */
+
+.boost.hp {
+    color: #00ff00;
+}
+
+.boost.dp {
+    color: #ff3333;
+}
+.change {
+    position: absolute;
+    bottom: 50px;
+    right: 170px;
+    padding-right: 40px;
+}
+.hp-boost,
+.dp-damage {
+    position: absolute;
+    right: 30px; /* adjust as needed */
+    animation: floatUp 0.8s ease-out forwards;
+    /* transform will be added inline */
+}
+
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(0);
+    }
+}
+
+/* Draggable Area */
+.drag-area {
+    height: 3px;
+    -webkit-app-region: drag; /* Enable dragging */
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+}
+
+/* hp bar animatiion  */
+/* Smooth transitions for all bars */
+
+.bar-fill {
+    transition: width 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: width;
+    transform: translateZ(0); /* GPU acceleration */
+}
+
+/* Optional pulse animation */
+@keyframes barPulse {
+    0% {
+        transform: scaleX(1);
+    }
+    50% {
+        transform: scaleX(1.02);
+    }
+    100% {
+        transform: scaleX(1);
+    }
+}
+
+.bar-animate {
+    animation: barPulse 0.3s ease-out;
+}
+
+.ticker-header {
+    display: flex; /* Makes children align horizontally */
+    align-items: flex-start; /* Aligns items at the top */
+    gap: 3px; /* Space between symbol and info */
+}
+
+.ticker-info {
+    display: flex;
+    flex-direction: column; /* Stacks ticker-data and bars vertically */
+    gap: 0px; /* Space between the two rows */
+    flex-grow: 1; /* Allows it to take remaining space */
+    margin-bottom: 3px;
+}
+
+.ticker-data {
+    display: flex; /* Makes price, volume, change inline */
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.bars {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+}
+
+.bar {
+    height: 1px;
+    background: rgba(0, 0, 0, 0); /* Background for empty part of bar */
+    width: 100%;
+}
+
+/* stength text  */
+
+/* Volume text colors */
+.bar-text.volume-none {
+    color: #cccccc;
+} /* Default/gray when no volume */
+.bar-text.volume-lowvol {
+    color: #6b7280;
+} /* Gray for low volume */
+.bar-text.volume-mediumvol {
+    color: #3b82f6;
+} /* Blue for medium volume */
+.bar-text.volume-highvol {
+    color: #ef4444;
+} /* Red for high volume */
+.bar-text.volume-parabolicvol {
+    /* Amber with animation for parabolic */
+    color: #f59e0b;
+    animation: pulse 1.5s infinite;
+}
+
+/* Pulse animation for parabolic volume */
+@keyframes pulse {
+    0% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.8;
+    }
+}
+
+.ticker-card {
+    transition: opacity 0.3s ease;
+}
+
+
+/* update animation  */
+.ticker-card {
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.card-update-highlight {
+    animation: cardPulse 1s ease;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.091);
+}
+
+@keyframes cardPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 5px rgba(0, 255, 255, 0.091);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.091);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 5px rgba(0, 255, 255, 0.091);
+    }
+}

@@ -6,8 +6,8 @@ const path = require("path");
 
 function createDockerWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 500,
-        height: 80,
+        width: 550,
+        height: 60,
         frame: false,
         alwaysOnTop: true,
         resizable: true,
