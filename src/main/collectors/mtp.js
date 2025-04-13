@@ -32,7 +32,7 @@ function debounce(func, delay) {
 }
 
 // mtp.js - Fixed version
-const connectMTP = (scannerWindow, focusWindow) => {
+const connectMTP = (scannerWindow, focusWindow) => { 
     const clientId = "PRODUCTION";
     let ws;
 
