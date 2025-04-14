@@ -560,12 +560,12 @@ ipcMain.on("activate-frontline", () => {
     }
 });
 
-ipcMain.on("deactivate-progress", () => {
-    const progressWindow = windowManager.windows.progress;
+ipcMain.on("deactivate-frontline", () => {
+    const frontline = windowManager.windows.frontline;
     
-    if (progressWindow && !progressWindow.isDestroyed()) {
-        log.log("[progress] Hiding progress window");
-        destroyWindow("progress");
+    if (frontline && !frontline.isDestroyed()) {
+        log.log("[frontline] Hiding frontline window");
+        destroyWindow("frontline");
     }
 });
 
