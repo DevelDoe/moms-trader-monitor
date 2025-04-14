@@ -164,7 +164,7 @@ const fetchHistoricalNews = async (ticker) => {
     const encodedTicker = encodeURIComponent(ticker);
     const ALPACA_NEWS_URL = `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
 
-    // log.log(`[news.js] Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
+    log.log(`[news.js] Fetching historical news for ${ticker} (encoded: ${encodedTicker}) since ${start}...`);
 
     try {
         const response = await fetch(ALPACA_NEWS_URL, {

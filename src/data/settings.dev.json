@@ -66,13 +66,13 @@
       "height": 888,
       "x": -250,
       "y": -900,
-      "isOpen": false
+      "isOpen": true
     },
     "settingsWindow": {
       "width": 679,
       "height": 663,
-      "x": 1609,
-      "y": 1281,
+      "x": 2575,
+      "y": 826,
       "isOpen": false
     },
     "liveWindow": {
@@ -83,10 +83,10 @@
       "isOpen": false
     },
     "focusWindow": {
-      "width": 484,
-      "height": 523,
-      "x": 1884,
-      "y": 0,
+      "width": 515,
+      "height": 496,
+      "x": 281,
+      "y": -496,
       "isOpen": true
     },
     "dailyWindow": {
@@ -94,21 +94,21 @@
       "height": 483,
       "x": 796,
       "y": -496,
-      "isOpen": false
+      "isOpen": true
     },
     "activeWindow": {
       "width": 753,
       "height": 404,
       "x": -77,
       "y": -900,
-      "isOpen": false
+      "isOpen": true
     },
     "infobarWindow": {
       "width": 514,
       "height": 39,
       "x": 676,
       "y": -840,
-      "isOpen": false
+      "isOpen": true
     },
     "wizardWindow": {
       "width": 2400,

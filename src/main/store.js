@@ -50,7 +50,7 @@ class Store extends EventEmitter {
                     },
                 ];
             })
-        );
+        )
 
         log.log(`[updateSymbols] Symbols list updated. Total symbols:`, this.symbols.size);
 
