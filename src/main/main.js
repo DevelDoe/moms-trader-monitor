@@ -34,8 +34,6 @@ autoUpdater.setFeedURL({
     repo: "moms-trader-monitor",
 });
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////
 // SERVICES
 
@@ -44,7 +42,7 @@ const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts }
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
 
-const { loadSettings, saveSettings } = require("./settings"); 
+const { loadSettings, saveSettings } = require("./settings");
 
 appSettings = loadSettings();
 
@@ -138,7 +136,7 @@ ipcMain.on("close-splash", () => {
 // Settings
 ipcMain.on("toggle-settings", () => {
     const settings = windowManager.windows.settings;
-    
+
     if (settings && !settings.isDestroyed()) {
         log.log("[toggle-settings] Destroying settings window");
         destroyWindow("settings"); // Destroy the window
@@ -164,7 +162,7 @@ ipcMain.on("update-settings", (event, newSettings) => {
         appSettings = { ...DEFAULT_SETTINGS };
     }
 
-    log.log(appSettings)
+    log.log(appSettings);
 
     // ✅ Merge all new settings dynamically
     Object.keys(newSettings).forEach((key) => {
@@ -245,7 +243,7 @@ ipcMain.handle("fetch-news", async () => {
 // focus
 ipcMain.on("toggle-focus", () => {
     const focus = windowManager.windows.focus;
-    
+
     if (focus && !focus.isDestroyed()) {
         log.log("[toggle-focus] Destroying focus window");
         destroyWindow("focus"); // Destroy the window
@@ -258,14 +256,14 @@ ipcMain.on("toggle-focus", () => {
 
 ipcMain.on("recreate-focus", async () => {
     log.log("recreate focus window.");
-    
+
     if (windows.focus) {
-        windows.focus.close();  // Close the existing window
+        windows.focus.close(); // Close the existing window
     }
 
     // ✅ Recreate the window with updated settings
-    windows.focus = await createFocusWindow(isDevelopment);  // Recreate the window
-    windows.focus.show();  // Show the newly created window
+    windows.focus = await createFocusWindow(isDevelopment); // Recreate the window
+    windows.focus.show(); // Show the newly created window
 });
 
 // Constants to fine-tune the algorithm
@@ -283,9 +281,9 @@ ipcMain.handle("calculate-volume-impact", (_, { volume = 0, price = 1 }) => {
 
     // Compute multiplier with cap
     const rawMultiplier = BASE_MULTIPLIER * volumeFactor * priceWeight;
-    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);const path = require("path");
+    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);
+    const path = require("path");
     const fs = require("fs");
-
 
     return {
         multiplier,
@@ -297,7 +295,7 @@ ipcMain.handle("calculate-volume-impact", (_, { volume = 0, price = 1 }) => {
 // daily
 ipcMain.on("toggle-daily", () => {
     const daily = windowManager.windows.daily;
-   
+
     if (daily && !daily.isDestroyed()) {
         log.log("[toggle-daily] Destroying daily window");
         destroyWindow("daily"); // Destroy the window
@@ -312,12 +310,12 @@ ipcMain.on("recreate-daily", async () => {
     log.log("recreate daily window.");
 
     if (windows.daily) {
-        windows.daily.close();  // Close the existing window
+        windows.daily.close(); // Close the existing window
     }
 
     // ✅ Recreate the window with updated settings
-    windows.daily = await createDailyWindow(isDevelopment);  // Recreate the window
-    windows.daily.show();  // Show the newly created window
+    windows.daily = await createDailyWindow(isDevelopment); // Recreate the window
+    windows.daily.show(); // Show the newly created window
 });
 
 // live
@@ -338,12 +336,12 @@ ipcMain.on("recreate-live", async () => {
     log.log("Recreating live window.");
 
     if (windows.live) {
-        windows.live.close();  // Close the existing window
+        windows.live.close(); // Close the existing window
     }
 
     // ✅ Recreate the window with updated settings
-    windows.live = await createLiveWindow(isDevelopment);  // Recreate the window
-    windows.live.show();  // Show the newly created window
+    windows.live = await createLiveWindow(isDevelopment); // Recreate the window
+    windows.live.show(); // Show the newly created window
 });
 
 // active
@@ -526,7 +524,7 @@ ipcMain.on("set-top-tickers", (event, newTickers) => {
 // Progress
 ipcMain.on("activate-progress", () => {
     const progressWindow = windowManager.windows.progress;
-    
+
     if (!progressWindow || progressWindow.isDestroyed()) {
         log.log("[progress] Creating progress window");
         windows.progress = createWindow("progress", () => createProgressWindow(isDevelopment));
@@ -539,7 +537,7 @@ ipcMain.on("activate-progress", () => {
 
 ipcMain.on("deactivate-progress", () => {
     const progressWindow = windowManager.windows.progress;
-    
+
     if (progressWindow && !progressWindow.isDestroyed()) {
         log.log("[progress] Hiding progress window");
         destroyWindow("progress");
@@ -548,25 +546,24 @@ ipcMain.on("deactivate-progress", () => {
 
 // Frontline
 ipcMain.on("activate-frontline", () => {
-    const frontlineWindow = windowManager.windows.frontline;
-    
-    if (!frontlineWindow || frontlineWindow.isDestroyed()) {
-        log.log("[frontline] Creating frontline window");
-        windows.frontline = createWindow("frontline", () => createFrontlineWindow(isDevelopment, buffs));
-        windows.frontline.show();
-    } else if (!frontlineWindow.isVisible()) {
-        log.log("[frontline] Showing existing frontline window");
-        frontlineWindow.show();
-    }
+    log.log("[activate-frontline] Creating frontline window");
+
+    // Step 1: Create/recreate frontline
+    const frontlineWindow = createWindow("frontline", () => createFrontlineWindow(isDevelopment, buffs));
+    frontlineWindow.show();
+
+    // Step 2: Destroy active unconditionally
+    destroyWindow("active");
+
+    // Step 3: Recreate active after frontline is up
+    log.log("[activate-frontline] re-creating active window after frontline");
+    const newActiveWindow = createWindow("active", () => createActiveWindow(isDevelopment));
+    newActiveWindow.show();
 });
 
 ipcMain.on("deactivate-frontline", () => {
-    const frontline = windowManager.windows.frontline;
-    
-    if (frontline && !frontline.isDestroyed()) {
-        log.log("[frontline] Hiding frontline window");
-        destroyWindow("frontline");
-    }
+    log.log("[deactivate-frontline] Destroying frontline window");
+    destroyWindow("frontline");
 });
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -575,8 +572,8 @@ ipcMain.on("deactivate-frontline", () => {
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
 
-    windows.splash = createSplashWindow(isDevelopment);createWizardWindow
-    
+    windows.splash = createSplashWindow(isDevelopment);
+    createWizardWindow;
 
     let symbolCount = 0;
 
@@ -611,7 +608,7 @@ app.on("ready", async () => {
 
         // Create other windows if needed
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
-        
+
         // windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
         // windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
         // windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
@@ -631,7 +628,7 @@ app.on("ready", async () => {
 
         connectMTP();
         flushMessageQueue();
-        // connectBridge();
+        connectBridge();
 
         if (windows.docker) {
             windows.docker.show();

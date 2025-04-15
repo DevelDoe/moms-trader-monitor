@@ -1,7 +1,7 @@
 {
   "top": {
     "minPrice": 0,
-    "maxPrice": 100,
+    "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -57,8 +57,8 @@
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 50,
-    "scannerVolume": 0
+    "maxAlerts": 20,
+    "scannerVolume": 1
   },
   "windows": {
     "scannerWindow": {
@@ -71,9 +71,9 @@
     "settingsWindow": {
       "width": 679,
       "height": 663,
-      "x": 2434,
-      "y": 338,
-      "isOpen": false
+      "x": 1576,
+      "y": 20,
+      "isOpen": true
     },
     "liveWindow": {
       "width": 358,
@@ -99,9 +99,9 @@
     "activeWindow": {
       "width": 753,
       "height": 404,
-      "x": 648,
-      "y": 547,
-      "isOpen": false
+      "x": -77,
+      "y": -900,
+      "isOpen": true
     },
     "infobarWindow": {
       "width": 514,
@@ -125,7 +125,7 @@
       "height": 14,
       "x": -253,
       "y": -13,
-      "isOpen": false
+      "isOpen": true
     },
     "frontlineWindow": {
       "width": 359,

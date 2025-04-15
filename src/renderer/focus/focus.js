@@ -1,6 +1,6 @@
 const DECAY_INTERVAL_MS = 12000;
 const XP_DECAY_PER_TICK = 0.2; // Base decay per tick (you might lower this for longer duration)
-const SCORE_NORMALIZATION = 2; // Increase this value to reduce the impact of score on decay
+const SCORE_NORMALIZATION = 4; // Increase this value to reduce the impact of score on decay
 
 const focusState = {};
 let container;
@@ -525,6 +525,23 @@ function calculateScore(hero, event) {
         if (event.hp > 0) {
             baseScore += event.hp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
+
+            // Apply Float score
+            const floatScore = getFloatScore(hero.floatValue || 1);
+            if (debug && debugSamples < debugLimitSamples) {
+                const formattedFloat = hero.floatValue ? humanReadableNumbers(hero.floatValue) : "N/A";
+                logStep(hero.floatValue ? "🏷️" : "⚠️", `Float score (${formattedFloat})`, floatScore);
+            }
+            baseScore += floatScore;
+
+            // Apply Volume score
+            const volRes = calculateVolumeImpact(event.strength || 0, hero.price || 1);
+
+            // Debugging: log the multiplier and category assigned
+            if (debug && debugSamples < debugLimitSamples) {
+                logStep("📢", `${volRes.message}`, volRes.score);
+            }
+            baseScore += volRes.score;
         }
 
         // If it's a "down" event (dp > 0)
@@ -532,24 +549,6 @@ function calculateScore(hero, event) {
             baseScore -= event.dp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp);
         }
-
-        // Apply Float score
-        const floatScore = getFloatScore(hero.floatValue || 1);
-        if (debug && debugSamples < debugLimitSamples) {
-            const formattedFloat = hero.floatValue ? humanReadableNumbers(hero.floatValue) : "N/A";
-            logStep(hero.floatValue ? "🏷️" : "⚠️", `Float score (${formattedFloat})`, floatScore);
-        }
-        baseScore += floatScore;
-
-        // Apply Volume score
-        const volRes = calculateVolumeImpact(event.strength || 0, hero.price || 1);
-
-        // Debugging: log the multiplier and category assigned
-        if (debug && debugSamples < debugLimitSamples) {
-            logStep("📢", `${volRes.message}`, volRes.score);
-        }
-
-        baseScore += volRes.score;
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
         baseScore = 0; // Reset on error

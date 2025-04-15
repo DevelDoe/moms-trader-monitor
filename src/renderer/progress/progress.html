@@ -5,91 +5,35 @@
         <link rel="stylesheet" href="../styles.css" />
         <title>Market Sentiment Flow</title>
         <style>
-            body {
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                background-color: white;
-            }
-
             .sentiment-flow {
-                width: 100vw;
-                height: 30px;
-                display: flex;
                 position: fixed;
                 bottom: 0;
                 left: 0;
+                height: 8px;
+                width: 100%;
+                display: flex;
                 z-index: 1000;
-            }
-
-            .flow-hp {
-                height: 100%;
-                background: linear-gradient(90deg, #155a15, #4caf50);
-                transition: width 0.7s cubic-bezier(0.33, 1, 0.68, 1);
-            }
-
-            .flow-dp {
-                height: 100%;
-                background: linear-gradient(90deg, #f44336, #5a1515);
-                transition: width 0.7s cubic-bezier(0.33, 1, 0.68, 1);
-            }
-
-            /* Sentiment intensity indicators */
-            .flow-hp::after,
-            .flow-dp::after {
-                content: "";
-                position: absolute;
-                height: 3px;
-                bottom: -3px;
-                left: 0;
-                right: 0;
-                opacity: 0;
-                transition: opacity 0.3s;
-            }
-
-            .flow-hp::after {
-                background: #8bc34a;
-                box-shadow: 0 0 10px #8bc34a;
-            }
-
-            .flow-dp::after {
-                background: #ff5252;
-                box-shadow: 0 0 10px #ff5252;
-            }
-
-            /* Active flow states */
-            .strong-hp .flow-hp::after,
-            .strong-dp .flow-dp::after {
-                opacity: 1;
-            }
-            .strong-hp .flow-hp::after {
-                background: #8bc34a; /* Fresh grass glow */
-                box-shadow: 0 0 10px #8bc34a; /* Ambient light */
-            }
-            .sentiment-flow {
-                --glow-opacity: 0; /* Animated variable */
+                transition: box-shadow 0.4s ease;
+                transform-origin: bottom;
             }
 
             .flow-hp,
             .flow-dp {
+                height: 100%;
+                transition: width 0.25s ease;
                 position: relative;
                 overflow: hidden;
             }
 
-            /* Liquid Core (center fade) */
-            .flow-hp::before,
-            .flow-dp::before {
-                content: "";
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                width: 100%;
-                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 100%);
-                opacity: var(--glow-opacity);
-                transition: opacity 0.8s ease-out;
+            /* Gradients */
+            .flow-hp {
+                background: linear-gradient(90deg, #155a15, #4caf50);
+            }
+            .flow-dp {
+                background: linear-gradient(90deg, #f44336, #5a1515);
             }
 
-            /* Swoosh Particles */
+            /* Swoosh particle layer */
             .flow-hp::after,
             .flow-dp::after {
                 content: "";
@@ -99,18 +43,17 @@
                 width: 20px;
                 background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
                 transform: translateX(-100%);
+                animation: var(--swoosh-animation, none);
             }
 
-            /* HP-specific colors */
             .flow-hp::after {
-                animation: swoosh-hp 3s infinite;
+                --swoosh-animation: swoosh-hp var(--swoosh-speed, 3s) linear infinite;
             }
-
-            /* DP-specific colors */
             .flow-dp::after {
-                animation: swoosh-dp 3s infinite;
+                --swoosh-animation: swoosh-dp var(--swoosh-speed, 3s) linear infinite;
             }
 
+            /* Swoosh keyframes */
             @keyframes swoosh-hp {
                 0% {
                     transform: translateX(-100%);
@@ -124,7 +67,6 @@
                     opacity: 0;
                 }
             }
-
             @keyframes swoosh-dp {
                 0% {
                     transform: translateX(-100%);
@@ -139,15 +81,35 @@
                 }
             }
 
-            /* Intensity triggers */
-            .strong-hp {
-                --glow-opacity: 0.7;
-                --swoosh-speed: 2.5s;
+            /* Glow effect (imbalance-driven) */
+            .sentiment-flow.glow {
+                box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.1);
             }
 
-            .strong-dp {
-                --glow-opacity: 0.7;
-                --swoosh-speed: 2.5s;
+            /* Pulse animation (volume-driven) */
+            @keyframes barPulse {
+                0% {
+                    transform: scaleY(1);
+                }
+                50% {
+                    transform: scaleY(1.15);
+                }
+                100% {
+                    transform: scaleY(1);
+                }
+            }
+
+            .sentiment-flow.heartbeat {
+                animation: barPulse 1s ease-in-out;
+            }
+            .sentiment-flow.flash-green {
+                box-shadow: 0 0 12px 4px rgba(50, 255, 50, 0.4);
+                transition: box-shadow 0.15s ease-out;
+            }
+
+            .sentiment-flow.flash-red {
+                box-shadow: 0 0 12px 4px rgba(255, 50, 50, 0.4);
+                transition: box-shadow 0.15s ease-out;
             }
         </style>
     </head>

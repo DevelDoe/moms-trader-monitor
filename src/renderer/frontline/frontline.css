@@ -102,10 +102,8 @@ h2 {
     overflow: hidden;
 }
 
-.ticker-card:nth-child(-n+3) .bar {
-
+.ticker-card:nth-child(-n + 3) .bar {
     margin: 1px 0;
-
 }
 
 .bar-fill {
@@ -304,7 +302,6 @@ h2 {
     transition: opacity 0.3s ease;
 }
 
-
 /* update animation  */
 .ticker-card {
     transition: box-shadow 0.3s ease, transform 0.3s ease;
@@ -312,20 +309,16 @@ h2 {
 
 .card-update-highlight {
     animation: cardPulse 1s ease;
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.091);
 }
 
 @keyframes cardPulse {
     0% {
         transform: scale(1);
-        box-shadow: 0 0 5px rgba(0, 255, 255, 0.091);
     }
     50% {
         transform: scale(1.02);
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.091);
     }
     100% {
         transform: scale(1);
-        box-shadow: 0 0 5px rgba(0, 255, 255, 0.091);
     }
 }

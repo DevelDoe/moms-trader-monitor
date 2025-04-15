@@ -1,6 +1,6 @@
 const DECAY_INTERVAL_MS = 1000;
 const XP_DECAY_PER_TICK = 0.1; // Base decay per tick (you might lower this for longer duration)
-const SCORE_NORMALIZATION = 2; // Increase this value to reduce the impact of score on decay
+const SCORE_NORMALIZATION = 10; // Increase this value to reduce the impact of score on decay
 
 const frontlineState = {};
 let container;
@@ -333,8 +333,6 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const change = state.lastEvent.hp ? `+${state.lastEvent.hp.toFixed(2)}%` : state.lastEvent.dp ? `-${state.lastEvent.dp.toFixed(2)}%` : "";
     const changeClass = state.lastEvent.hp ? "hp-boost" : state.lastEvent.dp ? "dp-damage" : "";
 
-    const topPosition = 50;
-
     const volumeImpact = calculateVolumeImpact(strength, price);
 
     // Store initial values for animation
@@ -344,7 +342,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
         strength: strength,
     };
 
-    const opacity = state.score < 30 ? 0.5 : 1;
+    const opacity = state.score < 10 ? 0.5 : 1;
     const opacityStyle = `opacity: ${opacity}`;
 
     card.innerHTML = `
@@ -445,6 +443,19 @@ function calculateScore(hero, event) {
         if (event.hp > 0) {
             baseScore += event.hp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
+
+            // Apply Float Multiplier
+            const floatMult = getFloatMultiplier(hero.floatValue || 1);
+            if (debug && debugSamples < debugLimitSamples) logStep(hero.floatValue ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
+            baseScore *= floatMult;
+
+            // Apply Volume Multiplier
+            const volMult = calculateVolumeImpact(event.strength || 0, hero.price || 1);
+
+            // Debugging: log the multiplier and category assigned
+            if (debug && debugSamples < debugLimitSamples) logStep("📢", `${volMult.message}`, volMult.multiplier);
+
+            baseScore *= volMult.multiplier;
         }
 
         // If it's a "down" event (dp > 0)
@@ -452,19 +463,6 @@ function calculateScore(hero, event) {
             baseScore -= event.dp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp);
         }
-
-        // Apply Float Multiplier
-        const floatMult = getFloatMultiplier(hero.floatValue || 1);
-        if (debug && debugSamples < debugLimitSamples) logStep(hero.floatValue ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
-        baseScore *= floatMult;
-
-        // Apply Volume Multiplier
-        const volMult = calculateVolumeImpact(event.strength || 0, hero.price || 1);
-
-        // Debugging: log the multiplier and category assigned
-        if (debug && debugSamples < debugLimitSamples) logStep("📢", `${volMult.message}`, volMult.multiplier);
-
-        baseScore *= volMult.multiplier;
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
         baseScore = 0; // Reset on error

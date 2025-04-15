@@ -3,7 +3,7 @@
         "category": "pennyCap",
         "priceThreshold": 2,
         "volumeStages": [
-            { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 100000, "multiplier": 0.5, "score": -1500 },
+            { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 100000, "multiplier": 0.5, "score": -150 },
             { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 350000, "multiplier": 1, "score": 0 },
             { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 500000, "multiplier": 1.5, "score": 100 },
             { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 2.0, "score": 500 }

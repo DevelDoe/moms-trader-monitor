@@ -33,7 +33,7 @@ function debounce(func, delay) {
 
 // mtp.js - Fixed version
 const connectMTP = () => {
-    const clientId = "PROD";
+    const clientId = "DEV";
     let ws;
 
     // Helper function for safe JSON parsing

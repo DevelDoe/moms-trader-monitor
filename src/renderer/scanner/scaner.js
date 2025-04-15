@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("loaded settings: ", window.settings);
 
     const magicDustAudio = new Audio("./magic.mp3");
-    // magicDustAudio.volume = 0.3; 
-    magicDustAudio.volume = 0; 
+    // magicDustAudio.volume = 0.3;
+    magicDustAudio.volume = 0;
 
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
@@ -268,7 +268,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 symbolUpticks[symbol] = 0;
             }
 
-            if (alertData.direction === "UP" && alertData.volume >= 50000) {
+            if (alertData.direction === "UP" && alertData.volume >= 30000) {
                 playAudioAlert(symbol, alertType, alertData.volume);
             }
 
