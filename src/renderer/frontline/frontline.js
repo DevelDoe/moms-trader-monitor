@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 2. Create initial frontline state
     // Only init state if we didn't load one
-    if (restored) {
+    if (!restored) {
         storeSymbols.forEach((symbolData) => {
             frontlineState[symbolData.symbol] = {
                 hero: symbolData.symbol,
@@ -300,8 +300,8 @@ function updateCardDOM(hero) {
     });
 
     // Add highlight animation class before replacing
-    newCard.classList.add('card-update-highlight');
-    
+    newCard.classList.add("card-update-highlight");
+
     existing.replaceWith(newCard);
 
     // Animate to final values
@@ -310,10 +310,10 @@ function updateCardDOM(hero) {
         newCard.querySelector(".bar-fill.score").style.width = `${Math.min((state.score / maxScore) * 100, 100)}%`;
         newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
         newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / 400000) * 100, 100)}%`;
-        
+
         // Remove highlight after animation completes
         setTimeout(() => {
-            newCard.classList.remove('card-update-highlight');
+            newCard.classList.remove("card-update-highlight");
         }, 1000);
     });
 }
@@ -423,7 +423,7 @@ function getSymbolColor(symbol) {
 }
 
 function calculateScore(hero, event) {
-    if (event.strength < 10000) {
+    if (event.strength < 1000) {
         if (debug && debugSamples < debugLimitSamples) {
             console.log(`⚠️ Skipping event due to low volume (strength: ${event.strength})`);
         }
@@ -575,16 +575,10 @@ function startScoreDecay() {
                         console.log(`   🔻 Decay: ${decayAmount.toFixed(2)} (scale: ${(1 + hero.score / SCORE_NORMALIZATION).toFixed(2)}x)`);
                         console.log("─".repeat(50));
                     });
-            } else {
-                // Brief status for non-log ticks
-                console.log(`♻️  Tick #${decayTickCount}: ${heroesDecayed} heroes decayed (${totalDecay.toFixed(2)} total)`);
             }
 
             renderAll();
             saveState();
-        } else if (decayTickCount % 10 === 0) {
-            // Only log inactivity every 10 ticks
-            console.log(`🌵 Tick #${decayTickCount}: No scores needed decay`);
         }
     }, DECAY_INTERVAL_MS);
 }

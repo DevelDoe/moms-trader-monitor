@@ -64,27 +64,27 @@
     "scannerWindow": {
       "width": 173,
       "height": 888,
-      "x": -250,
-      "y": -900,
-      "isOpen": true
+      "x": 1090,
+      "y": 380,
+      "isOpen": false
     },
     "settingsWindow": {
       "width": 679,
       "height": 663,
-      "x": 2575,
-      "y": 826,
+      "x": 2434,
+      "y": 338,
       "isOpen": false
     },
     "liveWindow": {
       "width": 358,
       "height": 481,
-      "x": -77,
-      "y": -494,
+      "x": 884,
+      "y": 784,
       "isOpen": false
     },
     "focusWindow": {
       "width": 515,
-      "height": 496,
+      "height": 483,
       "x": 281,
       "y": -496,
       "isOpen": true
@@ -92,23 +92,23 @@
     "dailyWindow": {
       "width": 394,
       "height": 483,
-      "x": 796,
-      "y": -496,
-      "isOpen": true
+      "x": 1042,
+      "y": 710,
+      "isOpen": false
     },
     "activeWindow": {
       "width": 753,
       "height": 404,
-      "x": -77,
-      "y": -900,
-      "isOpen": true
+      "x": 648,
+      "y": 547,
+      "isOpen": false
     },
     "infobarWindow": {
       "width": 514,
-      "height": 39,
-      "x": 676,
-      "y": -840,
-      "isOpen": true
+      "height": 58,
+      "x": 1688,
+      "y": 316,
+      "isOpen": false
     },
     "wizardWindow": {
       "width": 2400,
@@ -128,10 +128,10 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 423,
-      "height": 521,
-      "x": 1461,
-      "y": 0,
+      "width": 359,
+      "height": 483,
+      "x": -77,
+      "y": -496,
       "isOpen": true
     }
   }

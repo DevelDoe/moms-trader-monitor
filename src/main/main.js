@@ -631,7 +631,7 @@ app.on("ready", async () => {
 
         connectMTP();
         flushMessageQueue();
-        connectBridge();
+        // connectBridge();
 
         if (windows.docker) {
             windows.docker.show();

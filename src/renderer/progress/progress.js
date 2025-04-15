@@ -1,5 +1,5 @@
 // Configuration
-const WINDOW_SIZE = 50; // How many events shape the sentiment
+const WINDOW_SIZE = 100; // How many events shape the sentiment
 const INTENSITY_THRESHOLD = 0.7; // 70% dominance triggers glow
 
 let flowHistory = [];

@@ -5,7 +5,7 @@ const log = createLogger(__filename);
 const dotenv = require("dotenv");
 const path = require("path");
 dotenv.config({ path: path.join(__dirname, "../../config/.env") });
-const { windows } = require("../windowManager"); 
+const { windows } = require("../windowManager");
 
 const SYMBOL_UPDATE_EXPIRY_MS = 60 * 1000; // 1 minute
 
@@ -82,18 +82,30 @@ const connectMTP = () => {
                     tickerStore.addMtpAlerts(JSON.stringify(msg.data));
                 }
 
-                const scannerWindow = windows.scanner
+                const scannerWindow = windows.scanner;
                 if (scannerWindow?.webContents && !scannerWindow.webContents.isDestroyed()) {
                     scannerWindow.webContents.send("ws-alert", msg.data);
                 } else {
                     messageQueue.push(msg.data);
                 }
 
-                const focusWindow = windows.focus; 
+                const focusWindow = windows.focus;
                 if (focusWindow?.webContents && !focusWindow.webContents.isDestroyed()) {
                     const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
                     focusWindow.webContents.send("ws-events", [focusEvent]);
                     log.log("sending message to focus:", focusEvent);
+                }
+                const frontlineWindow = windows.frontline;
+                if (frontlineWindow?.webContents && !frontlineWindow.webContents.isDestroyed()) {
+                    const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
+                    frontlineWindow.webContents.send("ws-events", [focusEvent]);
+                    log.log("sending message to frontline:", focusEvent);
+                }
+                const progressWindow = windows.progress;
+                if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
+                    const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
+                    progressWindow.webContents.send("ws-events", [focusEvent]);
+                    log.log("sending message to progress:", focusEvent);
                 }
             }
 
@@ -226,14 +238,14 @@ function startMockAlerts(baseInterval = 500, fluctuation = 1000) {
     function sendAlert(alert) {
         // Scanner window check
         if (!windows?.scanner?.webContents || windows.scanner.isDestroyed()) {
-            log.warn('[MockAlerts] Scanner window not available to receive alerts');
+            log.warn("[MockAlerts] Scanner window not available to receive alerts");
         } else {
             windows.scanner.webContents.send("ws-alert", alert);
         }
 
-         // frontline window check
-         if (!windows?.frontline?.webContents || windows.frontline.isDestroyed()) {
-            log.warn('[MockAlerts] frontline window not available to receive events');
+        // frontline window check
+        if (!windows?.frontline?.webContents || windows.frontline.isDestroyed()) {
+            log.warn("[MockAlerts] frontline window not available to receive events");
         } else {
             const event = transformToFocusEvent(alert);
             windows.frontline.webContents.send("ws-events", [event]);
@@ -241,7 +253,7 @@ function startMockAlerts(baseInterval = 500, fluctuation = 1000) {
 
         // Focus window check
         if (!windows?.focus?.webContents || windows.focus.isDestroyed()) {
-            log.warn('[MockAlerts] Focus window not available to receive events');
+            log.warn("[MockAlerts] Focus window not available to receive events");
         } else {
             const event = transformToFocusEvent(alert);
             windows.focus.webContents.send("ws-events", [event]);
@@ -249,7 +261,7 @@ function startMockAlerts(baseInterval = 500, fluctuation = 1000) {
 
         // progress window check
         if (!windows?.progress?.webContents || windows.progress.isDestroyed()) {
-            log.warn('[MockAlerts] progress window not available to receive events');
+            log.warn("[MockAlerts] progress window not available to receive events");
         } else {
             const event = transformToFocusEvent(alert);
             windows.progress.webContents.send("ws-events", [event]);
@@ -293,9 +305,21 @@ function startMockAlerts(baseInterval = 500, fluctuation = 1000) {
     scheduleNextAlert();
 }
 
-
 module.exports = { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts };
 
+// Rest of your existing functions remain exactly the same
+function transformToFocusEvent(alert) {
+    const isUp = alert.direction.toUpperCase() === "UP";
+    const change = Math.abs(alert.change_percent || 0);
+
+    return {
+        hero: alert.symbol,
+        hp: isUp ? change : 0,
+        dp: isUp ? 0 : change,
+        strength: alert.volume,
+        price: alert.price,
+    };
+}
 
 // Predefined alerts
 // const predefinedAlerts = [
@@ -321,7 +345,7 @@ const predefinedAlerts = [
     { symbol: "DSWL", direction: "DOWN", price: 2.08, volume: 68000, change_percent: 3.2 },
 
     // LTRN alerts
-    { symbol: "LTRN", direction: "UP", price: 3.40, volume: 45000, change_percent: 1.9 },
+    { symbol: "LTRN", direction: "UP", price: 3.4, volume: 45000, change_percent: 1.9 },
     { symbol: "LTRN", direction: "UP", price: 3.55, volume: 52000, change_percent: 3.5 },
     { symbol: "LTRN", direction: "DOWN", price: 3.32, volume: 41000, change_percent: 2.1 },
 
@@ -403,5 +427,5 @@ const predefinedAlerts = [
     // RAVE alerts
     { symbol: "RAVE", direction: "UP", price: 0.95, volume: 120000, change_percent: 4.6 },
     { symbol: "RAVE", direction: "DOWN", price: 0.89, volume: 98000, change_percent: 3.5 },
-    { symbol: "RAVE", direction: "UP", price: 1.02, volume: 150000, change_percent: 9.1 }
+    { symbol: "RAVE", direction: "UP", price: 1.02, volume: 150000, change_percent: 9.1 },
 ];
