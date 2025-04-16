@@ -19,7 +19,7 @@ function createTradingViewWindow(symbol = "AAPL", index = 0, isDevelopment) {
         height: state.height || 660,
         x: state.x,
         y: state.y,
-        frame: false,
+        frame: true,
         resizable: true,
         backgroundColor: "#00000000",
         webPreferences: {

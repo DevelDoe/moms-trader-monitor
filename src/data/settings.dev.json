@@ -38,7 +38,20 @@
   "news": {
     "showTrackedTickers": false,
     "filteredTickers": [],
-    "blockList": [],
+    "blockList": [
+      "nasdaq surges",
+      "Shares halted",
+      "shares resume",
+      "stocks moving in",
+      "earnings scheduled",
+      "Says experts",
+      "us stocks",
+      "futures waver",
+      "shares are trading",
+      "trading halt",
+      "crude oil moves lower",
+      "Market-moving news"
+    ],
     "bullishList": [
       "FDA Approves",
       "Clinical Trials",
@@ -58,22 +71,22 @@
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 20,
-    "scannerVolume": 1
+    "scannerVolume": 0
   },
   "windows": {
     "scannerWindow": {
       "width": 173,
-      "height": 888,
-      "x": 1090,
-      "y": 380,
-      "isOpen": false
+      "height": 893,
+      "x": -250,
+      "y": -900,
+      "isOpen": true
     },
     "settingsWindow": {
       "width": 679,
-      "height": 663,
-      "x": 1576,
-      "y": 20,
-      "isOpen": true
+      "height": 1006,
+      "x": 1643,
+      "y": 9,
+      "isOpen": false
     },
     "liveWindow": {
       "width": 358,
@@ -83,32 +96,25 @@
       "isOpen": false
     },
     "focusWindow": {
-      "width": 515,
-      "height": 483,
+      "width": 444,
+      "height": 489,
       "x": 281,
       "y": -496,
       "isOpen": true
     },
     "dailyWindow": {
-      "width": 394,
-      "height": 483,
-      "x": 1042,
-      "y": 710,
-      "isOpen": false
-    },
-    "activeWindow": {
-      "width": 753,
-      "height": 404,
-      "x": -77,
-      "y": -900,
+      "width": 465,
+      "height": 538,
+      "x": 725,
+      "y": -550,
       "isOpen": true
     },
     "infobarWindow": {
-      "width": 514,
-      "height": 58,
-      "x": 1688,
-      "y": 316,
-      "isOpen": false
+      "width": 465,
+      "height": 39,
+      "x": 725,
+      "y": -837,
+      "isOpen": true
     },
     "wizardWindow": {
       "width": 2400,
@@ -133,6 +139,19 @@
       "x": -77,
       "y": -496,
       "isOpen": true
+    },
+    "activeWindow": {
+      "width": 802,
+      "height": 404,
+      "x": -77,
+      "y": -900,
+      "isOpen": true
+    },
+    "traderviewWindow_0": {
+      "width": 1448,
+      "height": 1067,
+      "x": 2399,
+      "y": 0
     }
   }
 }

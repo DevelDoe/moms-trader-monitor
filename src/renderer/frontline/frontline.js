@@ -1,6 +1,6 @@
 const DECAY_INTERVAL_MS = 1000;
-const XP_DECAY_PER_TICK = 0.1; // Base decay per tick (you might lower this for longer duration)
-const SCORE_NORMALIZATION = 10; // Increase this value to reduce the impact of score on decay
+const XP_DECAY_PER_TICK = 0.05; // Base decay per tick (you might lower this for longer duration)
+const SCORE_NORMALIZATION = 3; // Increase this value to reduce the impact of score on decay
 
 const frontlineState = {};
 let container;
@@ -25,6 +25,67 @@ const debug = true;
 const debugScoreCalc = true;
 const debugLimitSamples = 6000;
 let debugSamples = 0;
+
+window.percs = [
+    {
+        category: "pennyCap",
+        priceThreshold: 2,
+        volumeStages: [
+            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 30000, multiplier: 0.01, score: -1500 },
+            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 100000, multiplier: 0.5, score: -150 },
+            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 350000, multiplier: 1.5, score: 100 },
+            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 500000, multiplier: 2, score: 200 },
+            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
+        ],
+    },
+    {
+        category: "tinyCap",
+        priceThreshold: 7,
+        volumeStages: [
+            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 25000, multiplier: 0.01, score: -1500 },
+            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 80000, multiplier: 0.5, score: -150 },
+            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 300000, multiplier: 1.5, score: 100 },
+            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 400000, multiplier: 2, score: 200 },
+            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
+        ],
+    },
+    {
+        category: "default",
+        priceThreshold: Infinity,
+        volumeStages: [
+            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 20000, multiplier: 0.01, score: -1500 },
+            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 80000, multiplier: 0.5, score: -150 },
+            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 300000, multiplier: 1.5, score: 100 },
+            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 400000, multiplier: 2, score: 200 },
+            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
+        ],
+    },
+
+    { key: "float1m", threshold: 2_000_000, icon: "1️⃣", desc: "Float around 1M", multiplier: 1.15, score: 300 },
+    { key: "float5m", threshold: 7_500_000, icon: "5️⃣", desc: "Float around 5M", multiplier: 1.1, score: 100 },
+    { key: "float10m", threshold: 13_000_000, icon: "🔟", desc: "Float around 10M", multiplier: 1.05, score: 50 },
+    { key: "float50m", threshold: 50_000_000, icon: "", desc: "Float around 50M", multiplier: 1, score: 0 },
+    { key: "float100m", threshold: 100_000_000, icon: "", desc: "Float around 100M", multiplier: 0.8, score: -50 },
+    { key: "float200m", threshold: 200_000_000, icon: "", desc: "Float around 200M", multiplier: 0.6, score: -100 },
+    { key: "float500m", threshold: 500_000_000, icon: "", desc: "Float around 500M", multiplier: 0.4, score: -300 },
+    { key: "float600m+", threshold: Infinity, icon: "", desc: "Float higher than 600M", multiplier: 0.1, score: -1000 },
+
+    { key: "lockedShares", icon: "💼", desc: "High insider/institutional/locked shares holders", score: 10 },
+
+    { key: "hasNews", icon: "😼", desc: "Has news", score: 15 },
+    { key: "newHigh", icon: "📈", desc: "New high", score: 10 },
+    { key: "bounceBack", icon: "🔁", desc: "Recovering — stock is bouncing back after a downtrend", score: 5 },
+
+    { key: "bio", icon: "🧬", desc: "Biotechnology stock", score: 5 },
+    { key: "weed", icon: "🌿", desc: "Cannabis stock", score: 5 },
+    { key: "space", icon: "🌌", desc: "Space industry stock", score: 5 },
+    { key: "china", icon: "🇨🇳/🇭🇰", desc: "China/Hong Kong-based company", score: 0 },
+
+    { key: "highShort", icon: "🩳", desc: "High short interest (more than 20% of float)", score: 10 },
+    { key: "netLoss", icon: "🥅", desc: "Company is currently running at a net loss", score: -5 },
+    { key: "hasS3", icon: "📂", desc: "Registered S-3 filing", score: -10 },
+    { key: "dilutionRisk", icon: "🚨", desc: "High dilution risk: Net loss + Registered S-3", score: -20 },
+];
 
 window.pauseEvents = () => {
     eventsPaused = true;
@@ -103,6 +164,14 @@ function clearState() {
     if (debug) console.log("🧹 Cleared saved and in-memory frontline state.");
 }
 
+window.clearState = () => {
+    localStorage.removeItem("focusState");
+    for (const key in focusState) {
+        delete focusState[key];
+    }
+    if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ DOMContentLoaded event fired!");
 
@@ -142,8 +211,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     dp: 0,
                     xp: 0,
                 },
-                percs: [],
                 floatValue: symbolData.statistics.floatShares,
+                buffs: getBuffsForHero(symbolData),
             };
         });
     }
@@ -158,6 +227,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     startScoreDecay();
 });
+
+function getBuffsForHero(symbolData) {
+    const buffsToApply = [];
+
+    const float = symbolData.statistics?.floatShares;
+    const floatBuffs = (window.percs || []).filter((b) => b.key?.startsWith("float") && "threshold" in b);
+
+    if (float !== undefined && floatBuffs.length) {
+        const floatBuff = floatBuffs.sort((a, b) => a.threshold - b.threshold).find((b) => float < b.threshold);
+
+        if (floatBuff) {
+            buffsToApply.push({
+                key: floatBuff.key,
+                icon: floatBuff.icon,
+                desc: floatBuff.desc,
+                score: floatBuff.score,
+                multiplier: floatBuff.multiplier,
+                threshold: floatBuff.threshold,
+            });
+        }
+    }
+
+    return buffsToApply;
+}
 
 function updateFrontlineStateFromEvent(event) {
     if (eventsPaused) return;
@@ -183,7 +276,7 @@ function updateFrontlineStateFromEvent(event) {
 
     // Apply HP changes
     if (event.hp > 0) hero.hp += event.hp;
-    if (event.dp > 0) hero.hp = Math.max(hero.hp - event.dp, 0);
+    if (event.dp > 0) hero.hp = Math.max(hero.hp - event.dp, 0); // Essence fades, but never extinguishes
 
     // Update score
     const scoreDelta = calculateScore(hero, event);
@@ -444,9 +537,14 @@ function calculateScore(hero, event) {
             baseScore += event.hp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
 
-            // Apply Float Multiplier
-            const floatMult = getFloatMultiplier(hero.floatValue || 1);
-            if (debug && debugSamples < debugLimitSamples) logStep(hero.floatValue ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
+            // ✅ Use float multiplier from buffs if present
+            const floatBuff = hero.buffs.find((b) => b.key?.startsWith("float"));
+            const floatMult = floatBuff?.multiplier ?? 1;
+
+            if (debug && debugSamples < debugLimitSamples) {
+                logStep(floatBuff ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
+            }
+
             baseScore *= floatMult;
 
             // Apply Volume Multiplier
@@ -474,35 +572,6 @@ function calculateScore(hero, event) {
     if (debug && debugSamples < debugLimitSamples) console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
 
     return baseScore;
-}
-
-function getFloatMultiplier(floatValue) {
-    if (!floatValue) {
-        return 1; // no multiplier if float data is missing or 0
-    }
-
-    let multiplier = 1;
-
-    if (floatValue < 2_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float1m")?.multiplier ?? 1;
-    } else if (floatValue < 7_500_000) {
-        multiplier = window.buffs.find((b) => b.key === "float5m")?.multiplier ?? 1;
-    } else if (floatValue < 13_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float10m")?.multiplier ?? 1;
-    } else if (floatValue < 65_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float50m")?.multiplier ?? 1;
-    } else if (floatValue < 125_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float100m")?.multiplier ?? 1;
-    } else if (floatValue < 250_000_000) {
-        // Added back (exists in your JSON)
-        multiplier = window.buffs.find((b) => b.key === "float200m")?.multiplier ?? 1;
-    } else if (floatValue < 600_000_000) {
-        multiplier = window.buffs.find((b) => b.key === "float500m")?.multiplier ?? 1;
-    } else {
-        multiplier = window.buffs.find((b) => b.key === "float600m+")?.multiplier ?? 0.01;
-    }
-
-    return multiplier;
 }
 
 function calculateXp(hero) {
@@ -538,8 +607,10 @@ function startScoreDecay() {
         Object.values(frontlineState).forEach((hero) => {
             if (hero.score > 0) {
                 const originalScore = hero.score;
-                const scalingFactor = 1 + hero.score / SCORE_NORMALIZATION;
-                const decayAmount = XP_DECAY_PER_TICK * scalingFactor;
+                const scale = 1 + hero.score / SCORE_NORMALIZATION;
+                const cling = 0.2;
+                const taper = Math.max(cling, Math.min(1, hero.score / 10)); // Tapers when score < 10
+                const decayAmount = XP_DECAY_PER_TICK * scale * taper;
                 const newScore = Math.max(0, hero.score - decayAmount);
 
                 if (hero.score !== newScore) {
@@ -609,9 +680,9 @@ function humanReadableNumbers(value) {
 }
 
 function calculateVolumeImpact(volume = 0, price = 1) {
-    const categories = (window.buffs || []).filter(
-        (buff) => buff.category && (typeof buff.priceThreshold === "number" || buff.priceThreshold === "Infinity") && Array.isArray(buff.volumeStages) && buff.volumeStages.length > 0
-    );
+    const categories = Object.entries(percs)
+        .map(([category, data]) => ({ category, ...data }))
+        .sort((a, b) => a.priceThreshold - b.priceThreshold);
 
     let result = {
         multiplier: 1,
@@ -627,55 +698,33 @@ function calculateVolumeImpact(volume = 0, price = 1) {
         },
     };
 
-    if (categories.length === 0) return result;
-
-    // Sort categories by price (lowest first, Infinity last)
-    const sortedCategories = [...categories].sort((a, b) => {
-        const aPrice = a.priceThreshold === "Infinity" ? Infinity : a.priceThreshold;
-        const bPrice = b.priceThreshold === "Infinity" ? Infinity : b.priceThreshold;
-        return aPrice - bPrice;
-    });
-
-    // Find matching category
-    for (const category of sortedCategories) {
-        const priceThreshold = category.priceThreshold === "Infinity" ? Infinity : category.priceThreshold;
-        if (price <= priceThreshold) {
+    for (const category of categories) {
+        if (price <= category.priceThreshold) {
             result.capAssigned = category.category;
 
-            // Sort stages by threshold (descending, highest first)
-            const sortedStages = [...category.volumeStages].sort((a, b) => {
-                const aThreshold = a.volumeThreshold === "Infinity" ? Infinity : a.volumeThreshold;
-                const bThreshold = b.volumeThreshold === "Infinity" ? Infinity : b.volumeThreshold;
-                return bThreshold - aThreshold; // Descending order
-            });
+            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
 
-            // Find the first stage where volume is <= threshold
-            let matchedStage = null;
-            for (const stage of sortedStages) {
-                const threshold = stage.volumeThreshold === "Infinity" ? Infinity : stage.volumeThreshold;
-                if (volume <= threshold) {
-                    matchedStage = stage;
-                } else {
-                    break; // Since we're going high to low, stop once volume exceeds threshold
-                }
-            }
+            let stageToUse =
+                sortedStages.find((stage, index) => {
+                    const current = stage.volumeThreshold;
+                    const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
+                    if (index === sortedStages.length - 1) {
+                        return volume >= prev;
+                    }
+                    return volume > prev && volume <= current;
+                }) || sortedStages[sortedStages.length - 1];
 
-            // If no stage matched (volume > all thresholds), use the highest threshold stage
-            const stageToUse = matchedStage || sortedStages[0];
+            result.multiplier = stageToUse.multiplier;
+            result.volumeStage = stageToUse.key;
+            result.message = `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`;
+            result.style = {
+                cssClass: `volume-${stageToUse.key.toLowerCase()}`,
+                icon: stageToUse.icon,
+                description: stageToUse.desc,
+                color: getColorForStage(stageToUse.key),
+                animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
+            };
 
-            if (stageToUse) {
-                result.multiplier = stageToUse.multiplier;
-                result.volumeStage = stageToUse.key;
-                result.message = `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`;
-
-                result.style = {
-                    cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-                    icon: stageToUse.icon || "",
-                    description: stageToUse.desc || stageToUse.key,
-                    color: getColorForStage(stageToUse.key),
-                    animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-                };
-            }
             break;
         }
     }

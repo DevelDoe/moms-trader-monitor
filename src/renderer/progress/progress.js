@@ -9,15 +9,18 @@ let dynamicWindowSize = 50; // adaptive window size
 // Update every second
 setInterval(() => {
     const minSize = 10;
-    const maxSize = 100;
+    const maxSize = 200;
 
-    const smoothing = 0.8; // Smoothing: keeps 80% of old value, adds 20% new — soft but not laggy
+    const smoothing = 0.94; // Higher = slower, smoother response (good for ketchup)
     tradeRate = tradeRate * smoothing + tradeRateRaw * (1 - smoothing);
-    const responseFactor = 15; // Response curve: caps out at 15 trades/sec
 
-    dynamicWindowSize = Math.floor(minSize + Math.min(tradeRate / responseFactor, 1) * (maxSize - minSize));
+    const normalizedRate = Math.min(tradeRate, 2) / 2;
+    dynamicWindowSize = Math.floor(minSize + normalizedRate * (maxSize - minSize));
 
-    tradeRateRaw = 0; // Reset for next interval
+    // Optional: decay further when idle
+    if (tradeRateRaw === 0) tradeRate *= 0.95;
+
+    tradeRateRaw = 0;
 }, 1000);
 
 let flowHistory = [];

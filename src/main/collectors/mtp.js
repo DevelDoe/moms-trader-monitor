@@ -93,19 +93,16 @@ const connectMTP = () => {
                 if (focusWindow?.webContents && !focusWindow.webContents.isDestroyed()) {
                     const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
                     focusWindow.webContents.send("ws-events", [focusEvent]);
-                    log.log("sending message to focus:", focusEvent);
                 }
                 const frontlineWindow = windows.frontline;
                 if (frontlineWindow?.webContents && !frontlineWindow.webContents.isDestroyed()) {
                     const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
                     frontlineWindow.webContents.send("ws-events", [focusEvent]);
-                    log.log("sending message to frontline:", focusEvent);
                 }
                 const progressWindow = windows.progress;
                 if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
                     const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
                     progressWindow.webContents.send("ws-events", [focusEvent]);
-                    log.log("sending message to progress:", focusEvent);
                 }
             }
 

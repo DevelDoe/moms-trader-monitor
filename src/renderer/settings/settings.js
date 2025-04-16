@@ -141,8 +141,6 @@ function initializeAdminSection() {
         window.settingsAPI.fetchNews();
         window.infobarAPI.refresh();
     });
-
-   
 }
 
 function initializeScannerSection() {
@@ -180,7 +178,7 @@ function initializeScannerSection() {
     minChangePercentInput.value = window.settings.scanner.minChangePercent ?? "";
     minVolumeInput.value = window.settings.scanner.minVolume ?? "";
     maxAlertsInput.value = window.settings.scanner.maxAlerts ?? 50;
-    volumeSlider.value = window.settings.scanner.scannerVolume ?? 0.5;
+    volumeSlider.value = window.settings.scanner.scannerVolume ?? 1;
     volumeValueDisplay.textContent = `${Math.round((window.settings.scanner.scannerVolume ?? 0.5) * 100)}%`;
 
     async function updateScannerSettings() {
@@ -276,7 +274,6 @@ function initializeTopSection() {
     liveLengthInput.value = window.settings.top.liveListLength ?? 10;
     focusLengthInput.value = window.settings.top.focusListLength ?? 3;
     focusLengthInput.value = window.settings.top.focusListLength ?? 10;
-
 
     async function updatePriceFilter() {
         try {

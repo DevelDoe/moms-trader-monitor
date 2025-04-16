@@ -247,11 +247,6 @@ function updateUI(symbolData) {
     const latestNewsDiv = document.getElementById("latest-news");
     latestNewsDiv.innerHTML = ""; // Clear existing
 
-    function truncateString(str, maxLength) {
-        if (typeof str !== "string") return "";
-        return str.length > maxLength ? str.slice(0, maxLength) + "…" : str;
-    }
-
     if (filteredNews.length > 0) {
         latestNewsDiv.style.display = "block"; // ✅ Show it
 
@@ -261,7 +256,9 @@ function updateUI(symbolData) {
         const latestDiv = document.createElement("div");
         latestDiv.className = "latest-news-item";
         latestDiv.innerHTML = `
-        <strong>📰 ${truncateString(latest.headline || "Untitled", 55)}</strong>
+        <div class="scroll-mask">
+  <div class="scrolling-text"><strong>📰 ${latest.headline}</strong></div>
+</div>
         <p>${latest.summary || ""}</p>
     `;
 

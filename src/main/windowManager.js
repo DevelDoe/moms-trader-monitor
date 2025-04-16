@@ -7,16 +7,16 @@ const { safeSend } = require("./utils/safeSend");
 const path = require("path");
 const fs = require("fs");
 
-const { createSettingsWindow }  = require("./windows/settings");
-const { createLiveWindow }      = require("./windows/live");
+const { createSettingsWindow } = require("./windows/settings");
+const { createLiveWindow } = require("./windows/live");
 const { createFrontlineWindow } = require("./windows/frontline");
-const { createFocusWindow }     = require("./windows/focus");
-const { createDailyWindow }     = require("./windows/daily");
-const { createActiveWindow }    = require("./windows/active");
-const { createScannerWindow }   = require("./windows/scanner");
-const { createInfobarWindow }   = require("./windows/infobar");
-const { createWizardWindow }    = require("./windows/wizard");
-const { createProgressWindow }  = require("./windows/progress");
+const { createFocusWindow } = require("./windows/focus");
+const { createDailyWindow } = require("./windows/daily");
+const { createActiveWindow } = require("./windows/active");
+const { createScannerWindow } = require("./windows/scanner");
+const { createInfobarWindow } = require("./windows/infobar");
+const { createWizardWindow } = require("./windows/wizard");
+const { createProgressWindow } = require("./windows/progress");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -44,7 +44,6 @@ function setQuitting(val) {
 function createWindow(name, createFn) {
     let win = windows[name];
     if (!win || win.isDestroyed()) {
-
         win = createFn();
         windows[name] = win;
 
@@ -136,7 +135,7 @@ function createWindowByName(name) {
         case "live":
             return createLiveWindow(isDevelopment, buffs);
         case "frontline":
-            return createFrontlineWindow(isDevelopment, buffs);
+            return createFrontlineWindow(isDevelopment);
         case "focus":
             return createFocusWindow(isDevelopment, buffs);
         case "daily":

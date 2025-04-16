@@ -1,19 +1,5 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-const buffsArg = process.argv.find((arg) => arg.startsWith("--buffs="));
-let buffs = [];
-
-if (buffsArg) {
-    try {
-        buffs = JSON.parse(decodeURIComponent(buffsArg.slice(8)));
-    } catch (err) {
-        console.error("[Preload] Failed to parse buffs:", err);
-    }
-}
-
-// Instead of exposing a function, directly attach to window
-contextBridge.exposeInMainWorld("buffs", buffs);
-
 contextBridge.exposeInMainWorld("electronAPI", {
     closeSplash: () => ipcRenderer.send("close-splash"),
     onSymbolsFetched: (callback) => ipcRenderer.on("symbols-fetched", callback),

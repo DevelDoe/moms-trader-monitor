@@ -327,7 +327,7 @@ ipcMain.on("toggle-live", () => {
         destroyWindow("live"); // Destroy the window
     } else {
         log.log("[toggle-live] Creating live window");
-        windows.live = createWindow("live", () => createLiveWindow(isDevelopment, buffs));
+        windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
         windows.live.show();
     }
 });
@@ -428,141 +428,85 @@ ipcMain.on("refresh-infobar", () => {
 });
 
 // Traderview
+global.traderviewWindowsVisible = false;
+
 ipcMain.on("toggle-traderview-browser", async () => {
-    // Ensure that the necessary global arrays exist.
-    if (!global.traderviewWindows || !global.currentTopTickers) return;
+    const fallback = ["AAPL"];
+    const newSymbols = (global.currentTopTickers?.length ? global.currentTopTickers : fallback).slice(0, 6);
 
-    const newSymbols = global.currentTopTickers;
-    // Determine if all current windows are visible.
-    const allVisible = global.traderviewWindows.every((win) => win?.isVisible());
-
-    // If all windows are currently visible, hide them and update their state.
-    if (allVisible) {
-        global.traderviewWindows.forEach((win, i) => {
+    if (global.traderviewWindowsVisible) {
+        // 🧨 Close/destroy all
+        global.traderviewWindows?.forEach((win, i) => {
             if (win) {
-                win.hide();
+                win.destroy();
                 updateWindowVisibilityState(`traderviewWindow_${i}`, false);
             }
         });
+
+        global.traderviewWindows = [];
+        global.traderviewWindowsVisible = false;
         return;
     }
 
-    // Loop over the list of new symbols.
+    // ✅ Create new ones
+    global.traderviewWindows = [];
     for (let i = 0; i < newSymbols.length; i++) {
         const symbol = newSymbols[i];
-        let win = global.traderviewWindows[i];
-
-        // If there's no window at this slot or the current window is showing a different symbol...
-        if (!win || win.symbolLoaded !== symbol) {
-            // If a window exists but with an incorrect symbol, destroy it.
-            if (win) {
-                win.destroy();
-            }
-            // Create a new window using your existing createTradingViewWindow function.
-            win = createTradingViewWindow(symbol, i);
-            // Mark the newly created window with the loaded symbol.
-            win.symbolLoaded = symbol;
-            // Save the new window in the appropriate slot.
-            global.traderviewWindows[i] = win;
-        } else {
-            // If the window is already showing the correct symbol, simply show it.
-            win.show();
-        }
-        // Update the visibility state for the window.
+        const win = createTradingViewWindow(symbol, i, isDevelopment);
+        win.symbolLoaded = symbol;
+        global.traderviewWindows.push(win);
         updateWindowVisibilityState(`traderviewWindow_${i}`, true);
     }
 
-    // If there are extra windows (i.e. the global window array has more windows than symbols),
-    // hide or clean them up.
-    if (global.traderviewWindows.length > newSymbols.length) {
-        for (let i = newSymbols.length; i < global.traderviewWindows.length; i++) {
-            const win = global.traderviewWindows[i];
-            if (win) {
-                win.hide();
-                updateWindowVisibilityState(`traderviewWindow_${i}`, false);
-            }
-        }
-    }
+    global.traderviewWindowsVisible = true;
 });
 
 ipcMain.on("set-top-tickers", (event, newTickers) => {
-    if (!global.traderviewWindows || global.traderviewWindows.length < 4) return;
+    global.currentTopTickers = [...newTickers];
 
-    // 🔒 Ensure currentTopTickers is initialized and padded to 4
-    global.currentTopTickers = global.currentTopTickers || [null, null, null, null];
-
-    // 📦 Ensure newTickers has exactly 4 elements
-    const paddedNewTickers = [...newTickers];
-    while (paddedNewTickers.length < 4) {
-        paddedNewTickers.push(null);
-    }
+    if (!global.traderviewWindowsVisible) return; // 🛑 Do nothing if windows are hidden
 
     const updatedSymbols = [...global.currentTopTickers];
 
-    for (let i = 0; i < 4; i++) {
-        const newSymbol = paddedNewTickers[i];
-        if (!newSymbol || updatedSymbols.includes(newSymbol)) continue;
+    for (let i = 0; i < newTickers.length; i++) {
+        const newSymbol = newTickers[i];
+        let win = global.traderviewWindows[i];
 
-        // 🔄 Find a window showing a ticker not in new top tickers
-        let replaceIndex = updatedSymbols.findIndex((s) => !paddedNewTickers.includes(s));
-        if (replaceIndex === -1) {
-            // Edge case fallback (force replacement)
-            replaceIndex = i;
-        }
+        if (!win) continue;
 
-        const win = global.traderviewWindows[replaceIndex];
-        if (win) {
-            const encoded = encodeURIComponent(newSymbol);
+        const encoded = encodeURIComponent(newSymbol);
+        if (win.symbolLoaded !== newSymbol) {
             win.loadURL(`https://www.tradingview.com/chart/?symbol=${encoded}`);
-            updatedSymbols[replaceIndex] = newSymbol;
+            win.symbolLoaded = newSymbol;
         }
     }
-
-    global.currentTopTickers = updatedSymbols;
 });
 
 // Progress
 ipcMain.on("activate-progress", () => {
-    const progressWindow = windowManager.windows.progress;
-
-    if (!progressWindow || progressWindow.isDestroyed()) {
-        log.log("[progress] Creating progress window");
-        windows.progress = createWindow("progress", () => createProgressWindow(isDevelopment));
-        windows.progress.show();
-    } else if (!progressWindow.isVisible()) {
-        log.log("[progress] Showing existing progress window");
-        progressWindow.show();
-    }
+    const progressWindow = createWindow("progress", () => createProgressWindow(isDevelopment));
+    progressWindow.show();
 });
 
 ipcMain.on("deactivate-progress", () => {
-    const progressWindow = windowManager.windows.progress;
-
-    if (progressWindow && !progressWindow.isDestroyed()) {
-        log.log("[progress] Hiding progress window");
-        destroyWindow("progress");
-    }
+    destroyWindow("progress");
 });
 
 // Frontline
 ipcMain.on("activate-frontline", () => {
-    log.log("[activate-frontline] Creating frontline window");
-
     // Step 1: Create/recreate frontline
-    const frontlineWindow = createWindow("frontline", () => createFrontlineWindow(isDevelopment, buffs));
+    const frontlineWindow = createWindow("frontline", () => createFrontlineWindow(isDevelopment));
     frontlineWindow.show();
 
     // Step 2: Destroy active unconditionally
     destroyWindow("active");
 
     // Step 3: Recreate active after frontline is up
-    log.log("[activate-frontline] re-creating active window after frontline");
     const newActiveWindow = createWindow("active", () => createActiveWindow(isDevelopment));
     newActiveWindow.show();
 });
 
 ipcMain.on("deactivate-frontline", () => {
-    log.log("[deactivate-frontline] Destroying frontline window");
     destroyWindow("frontline");
 });
 
@@ -619,12 +563,9 @@ app.on("ready", async () => {
         // Call restoreWindows to handle windows that should be restored
         restoreWindows();
 
-        // windows.traderview_1 = createTradingViewWindow("AAPL", 0, isDevelopment);
-        // windows.traderview_2 = createTradingViewWindow("TSLA", 1, isDevelopment);
-        // windows.traderview_3 = createTradingViewWindow("NVDA", 2, isDevelopment);
-        // windows.traderview_4 = createTradingViewWindow("GOOGL", 3, isDevelopment);
-
-        global.traderviewWindows = [windows.traderview_1, windows.traderview_2, windows.traderview_3, windows.traderview_4];
+        const presetSymbols = ["AAPL"];
+        global.traderviewWindows = presetSymbols.map((sym, i) => createTradingViewWindow(sym, i));
+        global.currentTopTickers = [...presetSymbols];
 
         connectMTP();
         flushMessageQueue();
