@@ -32,8 +32,8 @@ function debounce(func, delay) {
 }
 
 // mtp.js - Fixed version
-const connectMTP = (scannerWindow, focusWindow) => { 
-    const clientId = "PRODUCTION";
+const connectMTP = () => {
+    const clientId = process.env.NODE_ENV === "production" ? "PROD" : "DEV";
     let ws;
 
     // Helper function for safe JSON parsing
