@@ -86,3 +86,35 @@ graph LR
 ```
 
 _Visualizing branch flow with MermaidJS_
+
+# 🔢 Semantic Versioning (SemVer) Guide
+
+## 🏷️ Version Format: `MAJOR.MINOR.PATCH`
+
+| Increment When...       | Example Change                   | Command             |
+| ----------------------- | -------------------------------- | ------------------- |
+| `MAJOR` (1.0.0 → 2.0.0) | Breaking API changes             | `npm version major` |
+| `MINOR` (1.2.0 → 1.3.0) | New backward-compatible features | `npm version minor` |
+| `PATCH` (1.2.1 → 1.2.2) | Bug fixes, no new features       | `npm version patch` |
+
+## 🚦 Release Flow
+
+```bash
+# 1. Bump version (creates git tag + commit)
+npm version patch|minor|major
+
+# 2. Push to GitHub (include tags!)
+git push --follow-tags
+
+
+# Delete the local tag
+git tag -d v3.8.0
+
+# Optionally delete from remote if pushed
+git push origin :refs/tags/v3.8.0
+
+# Retry version bump
+npm version minor
+
+npm version minor --no-git-tag-version
+```
