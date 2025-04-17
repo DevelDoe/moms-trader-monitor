@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const alertDiv = document.createElement("li");
 
         if (type === "new-high-price") {
-            // 🚫 Skip if volume is too low
+            console.log("🔥 New High Alert Volume Check:", alertData.fiveMinVolume);
             if (parseVolumeValue(alertData?.fiveMinVolume || 0) < 10_000) {
                 console.log(`⏩ Skipping new-high alert for ${symbol} due to low volume (${alertData?.fiveMinVolume})`);
                 return null;

@@ -54,14 +54,16 @@ class Store extends EventEmitter {
 
         log.log(`[updateSymbols] Symbols list updated. Total symbols:`, this.symbols.size);
 
-        subscribeToSymbolNews(Array.from(this.symbols.keys()));
+        if (!isDev) {
+            subscribeToSymbolNews(Array.from(this.symbols.keys()));
 
-        (async () => {
-            for (const symbol of this.symbols.keys()) {
-                await fetchHistoricalNews(symbol);
-                await sleep(200); // ⏳ Add 500ms delay between requests
-            }
-        })();
+            (async () => {
+                for (const symbol of this.symbols.keys()) {
+                    await fetchHistoricalNews(symbol);
+                    await sleep(200); // ⏳ Add 500ms delay between requests
+                }
+            })();
+        }
     }
 
     addMtpAlerts(jsonString) {
