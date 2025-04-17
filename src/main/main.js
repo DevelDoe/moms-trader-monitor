@@ -550,7 +550,7 @@ ipcMain.on("active-window-ready", () => {
 // Events
 ipcMain.on("activate-events", () => {
     try {
-        const win = createWindow("scanner", () => createProgressWindow(isDevelopment));
+        const win = createWindow("scanner", () => createScannerWindow(isDevelopment));
         if (win) win.show();
     } catch (err) {
         log.error("Failed to activate events window:", err.message);
