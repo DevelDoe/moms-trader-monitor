@@ -34,8 +34,6 @@ autoUpdater.setFeedURL({
     repo: "moms-trader-monitor",
 });
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////
 // SERVICES
 
@@ -44,7 +42,7 @@ const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts }
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
 
-const { loadSettings, saveSettings } = require("./settings"); 
+const { loadSettings, saveSettings } = require("./settings");
 
 appSettings = loadSettings();
 
@@ -61,10 +59,9 @@ try {
     log.error("[Buffs] Failed to load buffs.json:", err);
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// WINDOWS
+////////////////////////////////////////////////////////////////////////////////////// WINDOWS
 
-const { createWindow, destroyWindow, restoreWindows } = require("./windowManager");
+const { createWindow, destroyWindow, restoreWindows, registerTradingViewWindow, destroyTradingViewWindows, updateTradingViewWindows, getWindow } = require("./windowManager");
 
 const { getWindowState, saveWindowState } = require("./utils/windowState");
 
@@ -78,505 +75,18 @@ const { createDailyWindow } = require("./windows/daily");
 const { createActiveWindow } = require("./windows/active");
 const { createScannerWindow } = require("./windows/scanner");
 const { createInfobarWindow } = require("./windows/infobar");
-const { createTradingViewWindow } = require("./windows/traderview");
 const { createWizardWindow } = require("./windows/wizard");
 const { createProgressWindow } = require("./windows/progress");
 
 let windows = {};
 
-////////////////////////////////////////////////////////////////////////////////////
-// IPC COMM
-
-let isQuitting = false;
-
-function updateWindowVisibilityState(name, isOpen) {
-    if (isQuitting || !windows[name]) return;
-    const bounds = windows[name].getBounds();
-    saveWindowState(`${name}Window`, bounds, isOpen);
-}
-
-// General
-ipcMain.on("exit-app", () => {
-    log.log("Exiting the app...");
-    isQuitting = true;
-    app.quit();
-});
-
-ipcMain.on("restart-app", () => {
-    log.log("Restarting the app...");
-    isQuitting = true;
-    app.relaunch();
-    app.exit(0);
-});
-
-app.on("before-quit", () => {
-    isQuitting = true;
-    windowManager.setQuitting(true); // ✅ sync with internal state
-});
-
-ipcMain.on("resize-window-to-content", (event, { width, height }) => {
-    const senderWindow = BrowserWindow.fromWebContents(event.sender);
-    if (senderWindow) {
-        senderWindow.setBounds({
-            x: senderWindow.getBounds().x,
-            y: senderWindow.getBounds().y,
-            width: Math.max(width, 1),
-            height: Math.max(height, 1),
-        });
-    }
-});
-
-// Splash
-ipcMain.on("close-splash", () => {
-    if (windows.splash) {
-        log.log("Closing Splash Screen");
-        windows.splash.close();
-        delete windows.splash; // ✅ Ensure reference is cleared
-    }
-});
-
-// Settings
-ipcMain.on("toggle-settings", () => {
-    const settings = windowManager.windows.settings;
-    
-    if (settings && !settings.isDestroyed()) {
-        log.log("[toggle-settings] Destroying settings window");
-        destroyWindow("settings"); // Destroy the window
-    } else {
-        log.log("[toggle-settings] Creating settings window");
-        windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment, buffs));
-        windows.settings.show();
-    }
-});
-
-ipcMain.handle("get-settings", () => {
-    log.log("Returning settings"); // ✅ Only logs once per second
-    return appSettings;
-});
-
-ipcMain.on("update-settings", (event, newSettings) => {
-    const now = Date.now();
-
-    log.log("Updating Settings...");
-
-    // ✅ Ensure `appSettings` exists
-    if (!appSettings || typeof appSettings !== "object") {
-        appSettings = { ...DEFAULT_SETTINGS };
-    }
-
-    log.log(appSettings)
-
-    // ✅ Merge all new settings dynamically
-    Object.keys(newSettings).forEach((key) => {
-        if (typeof newSettings[key] === "object") {
-            appSettings[key] = {
-                ...appSettings[key], // Preserve existing settings
-                ...newSettings[key], // Merge new properties
-            };
-        } else {
-            log.warn(`Ignoring invalid setting update for key: ${key} (Expected an object)`);
-        }
-    });
-
-    saveSettings(appSettings); // ✅ Save settings after updates
-
-    // ✅ Broadcast updated settings to all windows
-    log.log("Broadcasting 'settings-updated' event...");
-
-    BrowserWindow.getAllWindows().forEach((win) => {
-        safeSend(win, "settings-updated", appSettings);
-    });
-});
-
-// Store
-ipcMain.handle("get-all-symbols", () => {
-    return tickerStore.getAllSymbols(); // Fetch all stored symbols
-});
-
-ipcMain.handle("get-symbol", (event, symbol) => {
-    return tickerStore.getSymbol(symbol);
-});
-
-ipcMain.handle("get-tickers", (event, listType = "session") => {
-    return tickerStore.getAllTickers(listType); // Fetch based on the requested type
-});
-
-ipcMain.handle("get-news", (event, ticker) => {
-    return tickerStore.getTickerNews(ticker); // Fetch news for a specific ticker
-});
-
-ipcMain.handle("get-all-news", () => {
-    return tickerStore.getAllNews(); // Fetch all news for tickers that have news
-});
-
-tickerStore.on("newsUpdated", (update) => {
-    const { ticker, newsItems } = update;
-
-    if (!Array.isArray(newsItems) || newsItems.length === 0) {
-        log.warn(`❌ No news to broadcast for ticker: ${ticker}`);
-        return; // Prevents unnecessary events
-    }
-
-    log.log(`Broadcasting ${newsItems.length} new articles`);
-
-    broadcast("news-updated", { newsItems });
-});
-
-tickerStore.on("lists-update", () => {
-    log.log("Broadcasting store update");
-    broadcast("lists-updated");
-});
-
-ipcMain.on("clear-live", () => {
-    log.log("🔄 Received 'clear-live' event in main.js. ✅ CALLING STORE...");
-
-    tickerStore.clearLiveData();
-
-    setTimeout(() => {
-        log.log("📢 Broadcasting clear live event to all windows... ✅");
-        broadcast("live-cleared");
-    }, 500); // ✅ Give store time to clear live
-});
-
-ipcMain.handle("fetch-news", async () => {
-    tickerStore.fetchNews();
-});
-
-// focus
-ipcMain.on("toggle-focus", () => {
-    const focus = windowManager.windows.focus;
-    
-    if (focus && !focus.isDestroyed()) {
-        log.log("[toggle-focus] Destroying focus window");
-        destroyWindow("focus"); // Destroy the window
-    } else {
-        log.log("[toggle-focus] Creating focus window");
-        windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
-        windows.focus.show();
-    }
-});
-
-ipcMain.on("recreate-focus", async () => {
-    log.log("recreate focus window.");
-    
-    if (windows.focus) {
-        windows.focus.close();  // Close the existing window
-    }
-
-    // ✅ Recreate the window with updated settings
-    windows.focus = await createFocusWindow(isDevelopment);  // Recreate the window
-    windows.focus.show();  // Show the newly created window
-});
-
-// Constants to fine-tune the algorithm
-const BASE_MULTIPLIER = 0.5; // Starting multiplier
-const VOLUME_SCALING = 50000; // Volume divisor for log2 scaling
-const PRICE_SCALING = 3; // Root type for price influence: 2 = square root, 3 = cube root
-const MAX_MULTIPLIER = 2.5; // Cap on the multiplier
-
-ipcMain.handle("calculate-volume-impact", (_, { volume = 0, price = 1 }) => {
-    // Adjust volume factor
-    const volumeFactor = Math.log2(1 + volume / VOLUME_SCALING);
-
-    // Adjust price weight based on chosen scaling
-    const priceWeight = PRICE_SCALING === 3 ? Math.cbrt(price) : Math.sqrt(price);
-
-    // Compute multiplier with cap
-    const rawMultiplier = BASE_MULTIPLIER * volumeFactor * priceWeight;
-    const multiplier = Math.min(rawMultiplier, MAX_MULTIPLIER);const path = require("path");
-    const fs = require("fs");
-
-
-    return {
-        multiplier,
-        icon: volumeFactor > 1.5 ? "🔥" : volumeFactor > 1.0 ? "🚛" : "💤",
-        label: `Volume (${volume.toLocaleString()})`,
-    };
-});
-
-// daily
-ipcMain.on("toggle-daily", () => {
-    const daily = windowManager.windows.daily;
-   
-    if (daily && !daily.isDestroyed()) {
-        log.log("[toggle-daily] Destroying daily window");
-        destroyWindow("daily"); // Destroy the window
-    } else {
-        log.log("[toggle-daily] Creating daily window");
-        windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
-        windows.daily.show();
-    }
-});
-
-ipcMain.on("recreate-daily", async () => {
-    log.log("recreate daily window.");
-
-    if (windows.daily) {
-        windows.daily.close();  // Close the existing window
-    }
-
-    // ✅ Recreate the window with updated settings
-    windows.daily = await createDailyWindow(isDevelopment);  // Recreate the window
-    windows.daily.show();  // Show the newly created window
-});
-
-// live
-ipcMain.on("toggle-live", () => {
-    const live = windowManager.windows.live;
-
-    if (live && !live.isDestroyed()) {
-        log.log("[toggle-live] Destroying live window");
-        destroyWindow("live"); // Destroy the window
-    } else {
-        log.log("[toggle-live] Creating live window");
-        windows.live = createWindow("live", () => createLiveWindow(isDevelopment, buffs));
-        windows.live.show();
-    }
-});
-
-ipcMain.on("recreate-live", async () => {
-    log.log("Recreating live window.");
-
-    if (windows.live) {
-        windows.live.close();  // Close the existing window
-    }
-
-    // ✅ Recreate the window with updated settings
-    windows.live = await createLiveWindow(isDevelopment);  // Recreate the window
-    windows.live.show();  // Show the newly created window
-});
-
-// active
-ipcMain.on("toggle-active", () => {
-    const active = windowManager.windows.active;
-
-    if (active && !active.isDestroyed()) {
-        log.log("[toggle-active] Destroying active window");
-        destroyWindow("active"); // Destroy the window
-    } else {
-        log.log("[toggle-live] Creating active window");
-        windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
-        windows.active.show();
-    }
-});
-
-ipcMain.on("set-active-ticker", (event, ticker) => {
-    if (typeof ticker !== "string") {
-        ticker = String(ticker);
-    }
-
-    ticker = ticker.trim().toUpperCase();
-
-    global.sharedState = global.sharedState || {};
-    global.sharedState.activeTicker = ticker;
-
-    // Send to static windows
-    if (windows.active) {
-        windows.active.webContents.send("update-active-ticker", ticker);
-    }
-
-    // 🔥 NEW: Send to MTT
-    sendActiveSymbol(ticker);
-});
-
-// scanner
-ipcMain.on("toggle-scanner", () => {
-    const scanner = windowManager.windows.scanner;
-
-    if (scanner && !scanner.isDestroyed()) {
-        log.log("[toggle-scanner] Destroying scanner window");
-        destroyWindow("scanner"); // Destroy the window
-    } else {
-        log.log("[toggle-scanner] Creating scanner window");
-        windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
-        windows.scanner.show();
-    }
-});
-
-tickerStore.on("new-high-price", ({ symbol, price, direction, change_percent, fiveMinVolume }) => {
-    if (windows.scanner && windows.scanner.webContents) {
-        log.log(`Sending new high price alert to scanner window: ${symbol} - ${price}`);
-        windows.scanner.webContents.send("ws-alert", {
-            symbol,
-            price,
-            direction: direction || "UP",
-            change_percent: change_percent || 0,
-            fiveMinVolume: fiveMinVolume || 0, // ✅ Corrected
-            type: "new-high-price",
-        });
-    } else {
-        log.warn("Scanner window not available.");
-    }
-});
-
-// infobar
-ipcMain.on("toggle-infobar", () => {
-    const infobar = windowManager.windows.infobar;
-
-    if (infobar && !infobar.isDestroyed()) {
-        log.log("[toggle-infobar] Destroying infobar window");
-        destroyWindow("infobar"); // Destroy the window
-    } else {
-        log.log("[toggle-infobar] Creating infobar window");
-        windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
-        windows.infobar.show();
-    }
-});
-
-ipcMain.on("refresh-infobar", () => {
-    if (windows.infobar && windows.infobar.webContents) {
-        windows.infobar.webContents.send("trigger-window-refresh");
-    }
-});
-
-// Traderview
-ipcMain.on("toggle-traderview-browser", async () => {
-    // Ensure that the necessary global arrays exist.
-    if (!global.traderviewWindows || !global.currentTopTickers) return;
-
-    const newSymbols = global.currentTopTickers;
-    // Determine if all current windows are visible.
-    const allVisible = global.traderviewWindows.every((win) => win?.isVisible());
-
-    // If all windows are currently visible, hide them and update their state.
-    if (allVisible) {
-        global.traderviewWindows.forEach((win, i) => {
-            if (win) {
-                win.hide();
-                updateWindowVisibilityState(`traderviewWindow_${i}`, false);
-            }
-        });
-        return;
-    }
-
-    // Loop over the list of new symbols.
-    for (let i = 0; i < newSymbols.length; i++) {
-        const symbol = newSymbols[i];
-        let win = global.traderviewWindows[i];
-
-        // If there's no window at this slot or the current window is showing a different symbol...
-        if (!win || win.symbolLoaded !== symbol) {
-            // If a window exists but with an incorrect symbol, destroy it.
-            if (win) {
-                win.destroy();
-            }
-            // Create a new window using your existing createTradingViewWindow function.
-            win = createTradingViewWindow(symbol, i);
-            // Mark the newly created window with the loaded symbol.
-            win.symbolLoaded = symbol;
-            // Save the new window in the appropriate slot.
-            global.traderviewWindows[i] = win;
-        } else {
-            // If the window is already showing the correct symbol, simply show it.
-            win.show();
-        }
-        // Update the visibility state for the window.
-        updateWindowVisibilityState(`traderviewWindow_${i}`, true);
-    }
-
-    // If there are extra windows (i.e. the global window array has more windows than symbols),
-    // hide or clean them up.
-    if (global.traderviewWindows.length > newSymbols.length) {
-        for (let i = newSymbols.length; i < global.traderviewWindows.length; i++) {
-            const win = global.traderviewWindows[i];
-            if (win) {
-                win.hide();
-                updateWindowVisibilityState(`traderviewWindow_${i}`, false);
-            }
-        }
-    }
-});
-
-ipcMain.on("set-top-tickers", (event, newTickers) => {
-    if (!global.traderviewWindows || global.traderviewWindows.length < 4) return;
-
-    // 🔒 Ensure currentTopTickers is initialized and padded to 4
-    global.currentTopTickers = global.currentTopTickers || [null, null, null, null];
-
-    // 📦 Ensure newTickers has exactly 4 elements
-    const paddedNewTickers = [...newTickers];
-    while (paddedNewTickers.length < 4) {
-        paddedNewTickers.push(null);
-    }
-
-    const updatedSymbols = [...global.currentTopTickers];
-
-    for (let i = 0; i < 4; i++) {
-        const newSymbol = paddedNewTickers[i];
-        if (!newSymbol || updatedSymbols.includes(newSymbol)) continue;
-
-        // 🔄 Find a window showing a ticker not in new top tickers
-        let replaceIndex = updatedSymbols.findIndex((s) => !paddedNewTickers.includes(s));
-        if (replaceIndex === -1) {
-            // Edge case fallback (force replacement)
-            replaceIndex = i;
-        }
-
-        const win = global.traderviewWindows[replaceIndex];
-        if (win) {
-            const encoded = encodeURIComponent(newSymbol);
-            win.loadURL(`https://www.tradingview.com/chart/?symbol=${encoded}`);
-            updatedSymbols[replaceIndex] = newSymbol;
-        }
-    }
-
-    global.currentTopTickers = updatedSymbols;
-});
-
-// Progress
-ipcMain.on("activate-progress", () => {
-    const progressWindow = windowManager.windows.progress;
-    
-    if (!progressWindow || progressWindow.isDestroyed()) {
-        log.log("[progress] Creating progress window");
-        windows.progress = createWindow("progress", () => createProgressWindow(isDevelopment));
-        windows.progress.show();
-    } else if (!progressWindow.isVisible()) {
-        log.log("[progress] Showing existing progress window");
-        progressWindow.show();
-    }
-});
-
-ipcMain.on("deactivate-progress", () => {
-    const progressWindow = windowManager.windows.progress;
-    
-    if (progressWindow && !progressWindow.isDestroyed()) {
-        log.log("[progress] Hiding progress window");
-        destroyWindow("progress");
-    }
-});
-
-// Frontline
-ipcMain.on("activate-frontline", () => {
-    const frontlineWindow = windowManager.windows.frontline;
-    
-    if (!frontlineWindow || frontlineWindow.isDestroyed()) {
-        log.log("[frontline] Creating frontline window");
-        windows.frontline = createWindow("frontline", () => createFrontlineWindow(isDevelopment, buffs));
-        windows.frontline.show();
-    } else if (!frontlineWindow.isVisible()) {
-        log.log("[frontline] Showing existing frontline window");
-        frontlineWindow.show();
-    }
-});
-
-ipcMain.on("deactivate-progress", () => {
-    const progressWindow = windowManager.windows.progress;
-    
-    if (progressWindow && !progressWindow.isDestroyed()) {
-        log.log("[progress] Hiding progress window");
-        destroyWindow("progress");
-    }
-});
-
-////////////////////////////////////////////////////////////////////////////////////
-// START APP
+////////////////////////////////////////////////////////////////////////////////////// START APP
 
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
 
-    windows.splash = createSplashWindow(isDevelopment);createWizardWindow
-    
+    windows.splash = createSplashWindow(isDevelopment);
+    createWizardWindow;
 
     let symbolCount = 0;
 
@@ -594,40 +104,24 @@ app.on("ready", async () => {
 
     // ✅ Set scannerVolume to 0 before creating windows
     try {
-        log.log("🔄 Loading settings...");
+        log.log("Loading settings...");
         let settings = loadSettings();
 
         if (!settings.scanner) settings.scanner = {};
         settings.scanner.scannerVolume = 0; // ✅ Ensure volume starts muted
         saveSettings(settings); // ✅ Persist the settings before windows load
 
-        log.log("🔇 Scanner volume initialized to 0 (muted)");
+        log.log("Scanner volume initialized to 0 (muted)");
     } catch (error) {
-        log.error("❌ Failed to initialize scanner volume:", error);
+        log.error("Failed to initialize scanner volume:", error);
     }
 
     windows.splash.once("closed", async () => {
         log.log("Splash screen closed. Loading main app...");
 
-        // Create other windows if needed
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
-        
-        // windows.live = createWindow("live", () => createLiveWindow(isDevelopment));
-        // windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
-        // windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
-        // windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
-        // windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
-        // windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
 
-        // Call restoreWindows to handle windows that should be restored
         restoreWindows();
-
-        // windows.traderview_1 = createTradingViewWindow("AAPL", 0, isDevelopment);
-        // windows.traderview_2 = createTradingViewWindow("TSLA", 1, isDevelopment);
-        // windows.traderview_3 = createTradingViewWindow("NVDA", 2, isDevelopment);
-        // windows.traderview_4 = createTradingViewWindow("GOOGL", 3, isDevelopment);
-
-        global.traderviewWindows = [windows.traderview_1, windows.traderview_2, windows.traderview_3, windows.traderview_4];
 
         connectMTP();
         flushMessageQueue();
@@ -670,8 +164,7 @@ process.on("exit", () => {
     // saveSettings(appSettings);
 });
 
-////////////////////////////////////////////////////////////////////////////////////
-// UPDATES
+////////////////////////////////////////////////////////////////////////////////////// UPDATES
 
 if (!isDevelopment || forceUpdate) {
     if (forceUpdate) {
@@ -798,6 +291,419 @@ function updateShortcutIcon() {
         }
     });
 }
+
+////////////////////////////////////////////////////////////////////////////////////// IPC COMM
+
+let isQuitting = false;
+
+// General
+ipcMain.on("exit-app", () => {
+    log.log("Exiting the app...");
+    isQuitting = true;
+    app.quit();
+});
+
+ipcMain.on("restart-app", () => {
+    log.log("Restarting the app...");
+    isQuitting = true;
+    app.relaunch();
+    app.exit(0);
+});
+
+app.on("before-quit", () => {
+    isQuitting = true;
+    windowManager.setQuitting(true);
+});
+
+ipcMain.on("resize-window-to-content", (event, { width, height }) => {
+    const senderWindow = BrowserWindow.fromWebContents(event.sender);
+    if (senderWindow) {
+        senderWindow.setBounds({
+            x: senderWindow.getBounds().x,
+            y: senderWindow.getBounds().y,
+            width: Math.max(width, 1),
+            height: Math.max(height, 1),
+        });
+    }
+});
+
+// Splash
+ipcMain.on("close-splash", () => {
+    if (windows.splash) {
+        log.log("Closing Splash Screen");
+        windows.splash.close();
+        delete windows.splash;
+    }
+});
+
+// Settings
+ipcMain.on("toggle-settings", () => {
+    const settings = windowManager.windows.settings;
+
+    if (settings && !settings.isDestroyed()) {
+        log.log("[toggle-settings] Destroying settings window");
+        destroyWindow("settings"); // Destroy the window
+    } else {
+        log.log("[toggle-settings] Creating settings window");
+        windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment, buffs));
+        windows.settings.show();
+    }
+});
+
+ipcMain.handle("get-settings", () => {
+    log.log("Returning settings"); // ✅ Only logs once per second
+    return appSettings;
+});
+
+ipcMain.on("update-settings", (event, newSettings) => {
+    const now = Date.now();
+
+    log.log("Updating Settings...");
+
+    // ✅ Ensure `appSettings` exists
+    if (!appSettings || typeof appSettings !== "object") {
+        appSettings = { ...DEFAULT_SETTINGS };
+    }
+
+    log.log(appSettings);
+
+    // ✅ Merge all new settings dynamically
+    Object.keys(newSettings).forEach((key) => {
+        if (typeof newSettings[key] === "object") {
+            appSettings[key] = {
+                ...appSettings[key], // Preserve existing settings
+                ...newSettings[key], // Merge new properties
+            };
+        } else {
+            log.warn(`Ignoring invalid setting update for key: ${key} (Expected an object)`);
+        }
+    });
+
+    saveSettings(appSettings); // ✅ Save settings after updates
+
+    // ✅ Broadcast updated settings to all windows
+    log.log("Broadcasting 'settings-updated' event...");
+
+    BrowserWindow.getAllWindows().forEach((win) => {
+        safeSend(win, "settings-updated", appSettings);
+    });
+});
+
+// Store
+ipcMain.handle("get-all-symbols", () => {
+    return tickerStore.getAllSymbols();
+});
+
+ipcMain.handle("get-symbol", (event, symbol) => {
+    return tickerStore.getSymbol(symbol);
+});
+
+ipcMain.handle("get-tickers", (event, listType = "session") => {
+    return tickerStore.getAllTickers(listType);
+});
+
+ipcMain.handle("get-news", (event, ticker) => {
+    return tickerStore.getTickerNews(ticker);
+});
+
+ipcMain.handle("get-all-news", () => {
+    return tickerStore.getAllNews();
+});
+
+tickerStore.on("newsUpdated", (update) => {
+    const { ticker, newsItems } = update;
+
+    if (!Array.isArray(newsItems) || newsItems.length === 0) {
+        log.warn(`❌ No news to broadcast for ticker: ${ticker}`);
+        return; // Prevents unnecessary events
+    }
+
+    log.log(`Broadcasting ${newsItems.length} new articles`);
+
+    broadcast("news-updated", { newsItems });
+});
+
+tickerStore.on("lists-update", () => {
+    log.log("Broadcasting store update");
+    broadcast("lists-updated");
+});
+
+ipcMain.on("clear-live", () => {
+    log.log("🔄 Received 'clear-live' event in main.js. ✅ CALLING STORE...");
+
+    tickerStore.clearLiveData();
+
+    setTimeout(() => {
+        log.log("📢 Broadcasting clear live event to all windows... ✅");
+        broadcast("live-cleared");
+    }, 500); // ✅ Give store time to clear live
+});
+
+ipcMain.handle("fetch-news", async () => {
+    tickerStore.fetchNews();
+});
+
+// focus
+ipcMain.on("toggle-focus", () => {
+    const focus = windowManager.windows.focus;
+
+    if (focus && !focus.isDestroyed()) {
+        log.log("[toggle-focus] Destroying focus window");
+        destroyWindow("focus"); // Destroy the window
+    } else {
+        log.log("[toggle-focus] Creating focus window");
+        windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
+        windows.focus.show();
+    }
+});
+
+ipcMain.on("recreate-focus", async () => {
+    log.log("recreate focus window.");
+
+    if (windows.focus) {
+        windows.focus.close(); // Close the existing window
+    }
+
+    // ✅ Recreate the window with updated settings
+    windows.focus = await createFocusWindow(isDevelopment); // Recreate the window
+    windows.focus.show(); // Show the newly created window
+});
+
+// daily
+ipcMain.on("toggle-daily", () => {
+    const daily = windowManager.windows.daily;
+
+    if (daily && !daily.isDestroyed()) {
+        log.log("[toggle-daily] Destroying daily window");
+        destroyWindow("daily"); // Destroy the window
+    } else {
+        log.log("[toggle-daily] Creating daily window");
+        windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
+        windows.daily.show();
+    }
+});
+
+ipcMain.on("recreate-daily", async () => {
+    log.log("recreate daily window.");
+
+    if (windows.daily) {
+        windows.daily.close(); // Close the existing window
+    }
+
+    // ✅ Recreate the window with updated settings
+    windows.daily = await createDailyWindow(isDevelopment); // Recreate the window
+    windows.daily.show(); // Show the newly created window
+});
+
+// active
+ipcMain.on("toggle-active", () => {
+    const active = windowManager.windows.active;
+
+    if (active && !active.isDestroyed()) {
+        log.log("[toggle-active] Destroying active window");
+        destroyWindow("active"); // Destroy the window
+    } else {
+        log.log("[toggle-live] Creating active window");
+        windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
+        windows.active.show();
+    }
+});
+
+let activeWindowReady = false;
+let pendingActiveSymbol = null;
+
+ipcMain.on("set-active-ticker", (event, ticker) => {
+    ticker = typeof ticker === "string" ? ticker.trim().toUpperCase() : String(ticker).toUpperCase();
+
+    // Update global state
+    global.sharedState = global.sharedState || {};
+    global.sharedState.activeTicker = ticker;
+
+    // Case 1: Active window exists & is ready → Send immediately
+    if (windows.active && !windows.active.isDestroyed() && activeWindowReady) {
+        safeSend(windows.active, "update-active-ticker", ticker);
+        log.log(`✅ Active ticker updated (live): ${ticker}`);
+    }
+    // Case 2: Window is being restored → Buffer until ready
+    else if (windows.active && !activeWindowReady) {
+        pendingActiveSymbol = ticker;
+        log.log(`⏳ Buffering ticker (window loading): ${ticker}`);
+    }
+    // Case 3: No active window → Store in global state
+    else {
+        pendingActiveSymbol = ticker;
+        log.log(`📦 Storing ticker (no window): ${ticker}`);
+    }
+
+    // Send to MTT (or other systems)
+    sendActiveSymbol(ticker);
+});
+
+ipcMain.on("active-window-ready", () => {
+    activeWindowReady = true;
+    if (pendingActiveSymbol) {
+        safeSend(getWindow("active"), "update-active-ticker", pendingActiveSymbol);
+        pendingActiveSymbol = null;
+    }
+});
+
+// Events
+ipcMain.on("activate-events", () => {
+    try {
+        const win = createWindow("scanner", () => createProgressWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate events window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-events", () => {
+    destroyWindow("scanner");
+});
+
+ipcMain.on("toggle-scanner", () => {
+    const scanner = windowManager.windows.scanner;
+
+    if (scanner && !scanner.isDestroyed()) {
+        log.log("[toggle-scanner] Destroying scanner window");
+        destroyWindow("scanner"); // Destroy the window
+    } else {
+        log.log("[toggle-scanner] Creating scanner window");
+        windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
+        windows.scanner.show();
+    }
+});
+
+tickerStore.on("new-high-price", ({ symbol, price, direction, change_percent, fiveMinVolume }) => {
+    if (windows.scanner && windows.scanner.webContents) {
+        log.log(`Sending new high price alert to scanner window: ${symbol} - ${price}`);
+        windows.scanner.webContents.send("ws-alert", {
+            symbol,
+            price,
+            direction: direction || "UP",
+            change_percent: change_percent || 0,
+            fiveMinVolume: fiveMinVolume || 0, // ✅ Corrected
+            type: "new-high-price",
+        });
+    } else {
+        log.warn("Scanner window not available.");
+    }
+});
+
+// infobar
+ipcMain.on("toggle-infobar", () => {
+    const infobar = windowManager.windows.infobar;
+
+    if (infobar && !infobar.isDestroyed()) {
+        log.log("[toggle-infobar] Destroying infobar window");
+        destroyWindow("infobar"); // Destroy the window
+    } else {
+        log.log("[toggle-infobar] Creating infobar window");
+        windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
+        windows.infobar.show();
+    }
+});
+
+ipcMain.on("refresh-infobar", () => {
+    if (windows.infobar && windows.infobar.webContents) {
+        windows.infobar.webContents.send("trigger-window-refresh");
+    }
+});
+
+// Traderview
+ipcMain.on("toggle-traderview-browser", () => {
+    const settings = loadSettings();
+    const showTraderViews = settings.traderview?.visibility ?? false;
+
+    if (!showTraderViews) {
+        console.log("[Traderview] Dynamic traderview creation is disabled.");
+        return;
+    }
+
+    if (global.traderviewWindowsVisible) {
+        destroyTradingViewWindows();
+        global.traderviewWindowsVisible = false;
+        return;
+    }
+
+    const fallback = ["AAPL"];
+    const symbols = global.currentTopTickers?.length ? global.currentTopTickers : [];
+    if (symbols.length === 0) {
+        console.log("⚠️ No top tickers set, skipping traderview window creation.");
+        return;
+    }
+
+    symbols.forEach((symbol) => {
+        registerTradingViewWindow(symbol, isDevelopment);
+    });
+
+    global.traderviewWindowsVisible = true;
+});
+
+ipcMain.on("set-top-tickers", (event, newTickers) => {
+    global.currentTopTickers = [...newTickers];
+
+    const settings = loadSettings();
+    const showTraderViews = settings.traderview?.visibility ?? false;
+
+    if (!showTraderViews) return;
+
+    // ✅ If not visible, we need to register them
+    if (!global.traderviewWindowsVisible) {
+        newTickers.forEach((symbol) => {
+            registerTradingViewWindow(symbol, isDevelopment);
+        });
+        global.traderviewWindowsVisible = true;
+    } else {
+        updateTradingViewWindows(newTickers);
+    }
+});
+
+// Progress
+ipcMain.on("activate-progress", () => {
+    try {
+        const win = createWindow("progress", () => createProgressWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate events window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-progress", () => {
+    destroyWindow("progress");
+});
+
+// Frontline
+ipcMain.on("activate-frontline", () => {
+    // Step 1: Create or show the frontline window
+    const frontlineWindow = createWindow("frontline", () => createFrontlineWindow(isDevelopment));
+    if (frontlineWindow) frontlineWindow.show();
+
+    // Step 2: Destroy any existing active window
+    destroyWindow("active");
+
+    // Step 3: Recreate active window (ensure clean state)
+    const newActiveWindow = createWindow("active", () => createActiveWindow(isDevelopment));
+    if (newActiveWindow) newActiveWindow.show();
+});
+
+ipcMain.on("deactivate-frontline", () => {
+    destroyWindow("frontline");
+});
+
+// Wizard
+ipcMain.on("activate-wizard", () => {
+    try {
+        const win = createWindow("wizard", () => createWizardWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate events window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-wizard", () => {
+    destroyWindow("wizard");
+});
 
 module.exports = {
     getWindowState,

@@ -4,7 +4,8 @@ window.ownershipCharts = {};
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
-    window.activeAPI.setActiveTicker("TEST");
+    console.log("🟢 Notifying active-window-ready");
+    window.activeAPI.notifyActiveWindowReady();
 
     // Load settings globally
     try {
@@ -162,21 +163,32 @@ function updateUI(symbolData) {
     const sharesOutstanding = symbolData.statistics?.sharesOutstanding ?? 0;
     const floatShares = symbolData.statistics?.floatShares ?? 0;
 
-    const dataIsCorrupted = floatShares > sharesOutstanding * 1.05; // Lower tolerance
+    let dataIsCorrupted = false;
+
+    if (
+        !floatShares || // missing
+        !sharesOutstanding || // missing
+        floatShares <= 0 || // invalid
+        sharesOutstanding <= 0 || // invalid
+        floatShares > 1_000_000_000 || // absurdly large float
+        sharesOutstanding > 5_000_000_000 || // also absurd
+        floatShares / sharesOutstanding > 1.2 || // more float than shares? lol
+        floatShares / sharesOutstanding < 0.01 // too little float, likely wrong too
+    ) {
+        dataIsCorrupted = true;
+
+        console.warn("⚠️ Float data appears inconsistent:", {
+            floatShares,
+            sharesOutstanding,
+            ratio: sharesOutstanding > 0 ? (floatShares / sharesOutstanding).toFixed(2) : "N/A",
+        });
+    }
 
     document.getElementById("data-warning-summary").style.display = dataIsCorrupted ? "block" : "none";
     document.getElementById("section-float-summary").style.display = "flex";
 
     document.getElementById("data-warning-stats").style.display = dataIsCorrupted ? "block" : "none";
     document.getElementById("section-float-stats").style.display = "flex";
-
-    if (dataIsCorrupted) {
-        console.warn("⚠️ Float data appears inconsistent:", {
-            floatShares,
-            sharesOutstanding,
-            ratio: (floatShares / sharesOutstanding).toFixed(2),
-        });
-    }
 
     const insidersHeld = Math.round(sharesOutstanding * (symbolData.ownership?.insidersPercentHeld || 0));
     const institutionsHeld = Math.round(sharesOutstanding * (symbolData.ownership?.institutionsPercentHeld || 0));
@@ -247,11 +259,6 @@ function updateUI(symbolData) {
     const latestNewsDiv = document.getElementById("latest-news");
     latestNewsDiv.innerHTML = ""; // Clear existing
 
-    function truncateString(str, maxLength) {
-        if (typeof str !== "string") return "";
-        return str.length > maxLength ? str.slice(0, maxLength) + "…" : str;
-    }
-
     if (filteredNews.length > 0) {
         latestNewsDiv.style.display = "block"; // ✅ Show it
 
@@ -261,7 +268,9 @@ function updateUI(symbolData) {
         const latestDiv = document.createElement("div");
         latestDiv.className = "latest-news-item";
         latestDiv.innerHTML = `
-        <strong>📰 ${truncateString(latest.headline || "Untitled", 55)}</strong>
+        <div class="scroll-mask">
+  <div class="scrolling-text"><strong>📰 ${latest.headline}</strong></div>
+</div>
         <p>${latest.summary || ""}</p>
     `;
 

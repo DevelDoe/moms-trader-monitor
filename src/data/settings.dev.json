@@ -1,7 +1,7 @@
 {
   "top": {
-    "minPrice": 0,
-    "maxPrice": 100,
+    "minPrice": 1,
+    "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
     "minScore": 0,
@@ -33,12 +33,25 @@
     "liveListLength": 9,
     "frontlineListLength": 14,
     "focusListLength": 3,
-    "dailyListLength": 13
+    "dailyListLength": 15
   },
   "news": {
     "showTrackedTickers": false,
     "filteredTickers": [],
-    "blockList": [],
+    "blockList": [
+      "nasdaq surges",
+      "Shares halted",
+      "shares resume",
+      "stocks moving in",
+      "earnings scheduled",
+      "Says experts",
+      "us stocks",
+      "futures waver",
+      "shares are trading",
+      "trading halt",
+      "crude oil moves lower",
+      "Market-moving news"
+    ],
     "bullishList": [
       "FDA Approves",
       "Clinical Trials",
@@ -52,62 +65,55 @@
     "allowMultiSymbols": false
   },
   "scanner": {
-    "minPrice": 0,
+    "minPrice": 1,
     "maxPrice": 0,
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 50,
+    "maxAlerts": 20,
     "scannerVolume": 0
   },
   "windows": {
     "scannerWindow": {
       "width": 173,
-      "height": 888,
+      "height": 893,
       "x": -250,
       "y": -900,
       "isOpen": true
     },
     "settingsWindow": {
-      "width": 1093,
-      "height": 736,
-      "x": 2808,
-      "y": -820,
+      "width": 907,
+      "height": 562,
+      "x": 1461,
+      "y": 0,
       "isOpen": false
     },
     "liveWindow": {
       "width": 358,
       "height": 481,
-      "x": -77,
-      "y": -494,
+      "x": 884,
+      "y": 784,
       "isOpen": false
     },
     "focusWindow": {
-      "width": 515,
-      "height": 483,
+      "width": 444,
+      "height": 484,
       "x": 281,
       "y": -496,
       "isOpen": true
     },
     "dailyWindow": {
-      "width": 394,
-      "height": 483,
-      "x": 796,
-      "y": -496,
-      "isOpen": true
-    },
-    "activeWindow": {
-      "width": 753,
-      "height": 404,
-      "x": -77,
-      "y": -900,
+      "width": 469,
+      "height": 538,
+      "x": 725,
+      "y": -550,
       "isOpen": true
     },
     "infobarWindow": {
-      "width": 514,
+      "width": 465,
       "height": 39,
-      "x": 676,
-      "y": -840,
+      "x": 725,
+      "y": -837,
       "isOpen": true
     },
     "wizardWindow": {
@@ -128,11 +134,247 @@
       "isOpen": true
     },
     "frontlineWindow": {
-      "width": 358,
-      "height": 482,
+      "width": 359,
+      "height": 483,
       "x": -77,
       "y": -496,
       "isOpen": true
+    },
+    "activeWindow": {
+      "width": 802,
+      "height": 404,
+      "x": -77,
+      "y": -900,
+      "isOpen": true
+    },
+    "traderviewWindow_MULN": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_STBX": {
+      "width": 1475,
+      "height": 1067,
+      "x": -7,
+      "y": 1060,
+      "isOpen": false
+    },
+    "traderviewWindow_IRBT": {
+      "width": 1475,
+      "height": 1067,
+      "x": -7,
+      "y": 1060,
+      "isOpen": false
+    },
+    "traderviewWindow_RILY": {
+      "isOpen": false
+    },
+    "traderviewWindow_BCTX": {
+      "width": 1475,
+      "height": 1067,
+      "x": -7,
+      "y": 1060,
+      "isOpen": false
+    },
+    "traderviewWindow_NTWK": {
+      "width": 1486,
+      "height": 1068,
+      "x": 2361,
+      "y": 1059,
+      "isOpen": false
+    },
+    "traderviewWindow_WIMI": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_AMPG": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_ZEO": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_TGL": {
+      "width": 1486,
+      "height": 1068,
+      "x": 2361,
+      "y": 1059,
+      "isOpen": false
+    },
+    "traderviewWindow_ELWS": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_HNNA": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_ZURA": {
+      "isOpen": false
+    },
+    "traderviewWindow_ABTS": {
+      "isOpen": false
+    },
+    "traderviewWindow_PN": {
+      "width": 1475,
+      "height": 1067,
+      "x": -7,
+      "y": 1060,
+      "isOpen": false
+    },
+    "traderviewWindow_MURA": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_CLIK": {
+      "width": 1486,
+      "height": 1068,
+      "x": 2361,
+      "y": 1059,
+      "isOpen": false
+    },
+    "traderviewWindow_ZCAR": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_OST": {
+      "isOpen": false
+    },
+    "traderviewWindow_MIRA": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_RIME": {
+      "width": 1475,
+      "height": 1067,
+      "x": -7,
+      "y": 1060,
+      "isOpen": false
+    },
+    "traderviewWindow_MBOT": {
+      "width": 1486,
+      "height": 1068,
+      "x": 2355,
+      "y": 1117,
+      "isOpen": false
+    },
+    "traderviewWindow_NUKK": {
+      "width": 1475,
+      "height": 1067,
+      "x": -7,
+      "y": 1060,
+      "isOpen": false
+    },
+    "traderviewWindow_FFAI": {
+      "width": 1475,
+      "height": 1067,
+      "x": -7,
+      "y": 1060,
+      "isOpen": false
+    },
+    "traderviewWindow_ICCT": {
+      "width": 1475,
+      "height": 1067,
+      "x": -7,
+      "y": 1060,
+      "isOpen": false
+    },
+    "traderviewWindow_WNW": {
+      "width": 1486,
+      "height": 1066,
+      "x": 2361,
+      "y": 0,
+      "isOpen": false
+    },
+    "traderviewWindow_XHLD": {
+      "isOpen": false
+    },
+    "traderviewWindow_KITT": {
+      "isOpen": false
+    },
+    "traderviewWindow_MBRX": {
+      "isOpen": false
+    },
+    "traderviewWindow_MGNX": {
+      "isOpen": false
+    },
+    "traderviewWindow_CTHR": {
+      "isOpen": false
+    },
+    "traderviewWindow_VEEE": {
+      "isOpen": false
+    },
+    "traderviewWindow_SMX": {
+      "isOpen": false
+    },
+    "traderviewWindow_ICAD": {
+      "width": 850,
+      "height": 660,
+      "x": 2354,
+      "y": 880,
+      "isOpen": false
+    },
+    "traderviewWindow_SXTC": {
+      "width": 850,
+      "height": 660,
+      "x": 474,
+      "y": 616,
+      "isOpen": false
+    },
+    "traderviewWindow_BCG": {
+      "isOpen": false
+    },
+    "traderviewWindow_ALLR": {
+      "isOpen": false
+    },
+    "traderviewWindow_MTVA": {
+      "isOpen": true
+    },
+    "traderviewWindow_REKR": {
+      "width": 850,
+      "height": 660,
+      "x": 1495,
+      "y": 730,
+      "isOpen": false
+    },
+    "traderviewWindow_CDT": {
+      "isOpen": false
+    },
+    "traderviewWindow_PYXS": {
+      "isOpen": false
+    },
+    "traderviewWindow_ARBB": {
+      "isOpen": false
     }
+  },
+  "traderview": {
+    "visibility": false
   }
 }

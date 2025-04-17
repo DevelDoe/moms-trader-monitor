@@ -3,114 +3,83 @@
     <head>
         <meta charset="UTF-8" />
         <link rel="stylesheet" href="../styles.css" />
-        <title>Market Sentiment Flow</title>
+        <title>Progress</title>
         <style>
-            body {
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                background-color: white;
-            }
-
             .sentiment-flow {
-                width: 100vw;
-                height: 30px;
-                display: flex;
                 position: fixed;
                 bottom: 0;
                 left: 0;
+                height: 8px;
+                width: 100%;
+                display: flex;
                 z-index: 1000;
-            }
-
-            .flow-hp {
-                height: 100%;
-                background: linear-gradient(90deg, #155a15, #4caf50);
-                transition: width 0.7s cubic-bezier(0.33, 1, 0.68, 1);
-            }
-
-            .flow-dp {
-                height: 100%;
-                background: linear-gradient(90deg, #f44336, #5a1515);
-                transition: width 0.7s cubic-bezier(0.33, 1, 0.68, 1);
-            }
-
-            /* Sentiment intensity indicators */
-            .flow-hp::after,
-            .flow-dp::after {
-                content: "";
-                position: absolute;
-                height: 3px;
-                bottom: -3px;
-                left: 0;
-                right: 0;
-                opacity: 0;
-                transition: opacity 0.3s;
-            }
-
-            .flow-hp::after {
-                background: #8bc34a;
-                box-shadow: 0 0 10px #8bc34a;
-            }
-
-            .flow-dp::after {
-                background: #ff5252;
-                box-shadow: 0 0 10px #ff5252;
-            }
-
-            /* Active flow states */
-            .strong-hp .flow-hp::after,
-            .strong-dp .flow-dp::after {
-                opacity: 1;
-            }
-            .strong-hp .flow-hp::after {
-                background: #8bc34a; /* Fresh grass glow */
-                box-shadow: 0 0 10px #8bc34a; /* Ambient light */
-            }
-            .sentiment-flow {
-                --glow-opacity: 0; /* Animated variable */
+                transition: box-shadow 0.4s ease;
+                transform-origin: bottom;
             }
 
             .flow-hp,
             .flow-dp {
+                height: 100%;
+                transition: width 0.25s ease;
                 position: relative;
                 overflow: hidden;
             }
 
-            /* Liquid Core (center fade) */
+            /* Gradients */
+            .flow-hp {
+                background: linear-gradient(90deg, #3e8d6f, #3ca17a);
+                background: linear-gradient(to right, rgba(71, 160, 115, 0.9), rgba(2, 51, 36, 0.9));
+            }
+            .flow-dp {
+                background: linear-gradient(90deg, #5a1712, #cc2e2e);
+                border-left: 1px solid #000000;
+                background: linear-gradient(to right, rgba(80, 18, 18, 0.9), rgba(155, 65, 65, 0.9));
+            }
+
+            /* Swoosh particle layer */
+            .flow-hp::after,
+            .flow-dp::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 200px;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 100%);
+                transform: translateX(-100%);
+                animation: var(--swoosh-animation, none);
+            }
+
+            .flow-hp::after {
+                --swoosh-animation: swoosh-hp var(--swoosh-speed, 3s) linear infinite;
+            }
+            .flow-dp::after {
+                --swoosh-animation: swoosh-dp var(--swoosh-speed, 3s) linear infinite;
+            }
+
+            /* Optional secondary swoosh or effect layer */
             .flow-hp::before,
             .flow-dp::before {
                 content: "";
                 position: absolute;
                 top: 0;
                 bottom: 0;
-                width: 100%;
-                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 100%);
-                opacity: var(--glow-opacity);
-                transition: opacity 0.8s ease-out;
-            }
-
-            /* Swoosh Particles */
-            .flow-hp::after,
-            .flow-dp::after {
-                content: "";
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                width: 20px;
-                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+                width: 200px;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 100%);
                 transform: translateX(-100%);
+                animation: var(--swoosh-before-animation, none);
+                pointer-events: none;
+                z-index: 1; /* ensures it's below the ::after if you want a stacking order */
             }
 
-            /* HP-specific colors */
-            .flow-hp::after {
-                animation: swoosh-hp 3s infinite;
+            .flow-hp::before {
+                --swoosh-before-animation: swoosh-reverse-hp var(--swoosh-speed, 5s) linear infinite;
             }
 
-            /* DP-specific colors */
-            .flow-dp::after {
-                animation: swoosh-dp 3s infinite;
+            .flow-dp::before {
+                --swoosh-before-animation: swoosh-reverse-dp var(--swoosh-speed, 5s) linear infinite;
             }
 
+            /* Swoosh keyframes */
             @keyframes swoosh-hp {
                 0% {
                     transform: translateX(-100%);
@@ -124,7 +93,6 @@
                     opacity: 0;
                 }
             }
-
             @keyframes swoosh-dp {
                 0% {
                     transform: translateX(-100%);
@@ -139,15 +107,63 @@
                 }
             }
 
-            /* Intensity triggers */
-            .strong-hp {
-                --glow-opacity: 0.7;
-                --swoosh-speed: 2.5s;
+            @keyframes swoosh-reverse-hp {
+                0% {
+                    transform: translateX(300%);
+                    opacity: 0;
+                }
+                20% {
+                    opacity: 0.7;
+                }
+                100% {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
             }
 
-            .strong-dp {
-                --glow-opacity: 0.7;
-                --swoosh-speed: 2.5s;
+            @keyframes swoosh-reverse-dp {
+                0% {
+                    transform: translateX(300%);
+                    opacity: 0;
+                }
+                20% {
+                    opacity: 0.7;
+                }
+                100% {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
+
+            /* Glow effect (imbalance-driven) */
+            .sentiment-flow.glow {
+                box-shadow: 0 0 10px 1px rgba(255, 255, 255, 0.05);
+            }
+
+            /* Pulse animation (volume-driven) */
+            @keyframes barPulse {
+                0% {
+                    transform: scaleY(1);
+                }
+                50% {
+                    transform: scaleY(1.05);
+                }
+                100% {
+                    transform: scaleY(1);
+                }
+            }
+
+            .sentiment-flow.heartbeat {
+                animation: barPulse 1s ease-in-out;
+            }
+            .sentiment-flow.flash-green {
+                box-shadow: 0 0 12px 4px rgba(50, 255, 50, 0.4);
+                transition: box-shadow 0.15s ease-out;
+            }
+
+            .sentiment-flow.flash-red {
+                box-shadow: 0 0 12px 4px rgba(255, 50, 50, 0.4);
+                transition: box-shadow 0.15s ease-out;
             }
         </style>
     </head>

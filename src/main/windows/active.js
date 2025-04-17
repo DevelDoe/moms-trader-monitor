@@ -1,7 +1,7 @@
-// ./src/main/windows/active.js
-const { BrowserWindow } = require("electron");
+const { BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const log = require("../../hlps/logger")(__filename);
 
 function createActiveWindow(isDevelopment) {
     const state = getWindowState("activeWindow");
@@ -25,22 +25,63 @@ function createActiveWindow(isDevelopment) {
             enableRemoteModule: false,
             nodeIntegration: false,
         },
+        show: false, // Don't show until fully initialized
     });
 
+    // Load the window content
     window.loadFile(path.join(__dirname, "../../renderer/active/active.html"));
 
-    if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
+    // Track initialization state
+    let isWindowReady = false;
+    let pendingTicker = global.sharedState?.activeTicker || null;
+
+    window.webContents.once("did-finish-load", () => {
+        log.log("✅ activeWindow finished loading");
+
+        // Notify main process that window is ready
+        ipcMain.emit("active-window-ready");
+
+        // Send any pending ticker immediately
+        if (pendingTicker) {
+            window.webContents.send("update-active-ticker", pendingTicker);
+            log.log(`📨 Sent buffered activeTicker: ${pendingTicker}`);
+            pendingTicker = null;
+        }
+
+        isWindowReady = true;
+        window.show(); // Now show the window
+    });
+
+    // Handle ticker updates from main process
+    ipcMain.on("set-active-ticker", (event, ticker) => {
+        if (!isWindowReady) {
+            pendingTicker = ticker;
+            return;
+        }
+
+        if (!window.isDestroyed()) {
+            window.webContents.send("update-active-ticker", ticker);
+        }
+    });
+
+    if (isDevelopment) {
+        window.webContents.openDevTools({ mode: "detach" });
+    }
 
     window.on("move", () => {
         const bounds = window.getBounds();
         setWindowBounds("activeWindow", bounds);
     });
-    
+
     window.on("resize", () => {
         const bounds = window.getBounds();
         setWindowBounds("activeWindow", bounds);
     });
-    
+
+    window.on("close", () => {
+        // Clean up listeners
+        ipcMain.removeAllListeners("set-active-ticker");
+    });
 
     return window;
 }

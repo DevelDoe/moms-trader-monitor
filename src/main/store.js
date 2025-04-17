@@ -175,9 +175,6 @@ class Store extends EventEmitter {
             // Emit store update event
             log.log("[addMtpAlerts] store update!");
             this.emit("lists-update");
-
-            // **Trigger metadata update**
-            // this.updateMeta(symbol, { meta: baseData.meta || {} });
         } catch (error) {
             log.error(`[addMtpAlerts] Failed to process MTP alert: ${error.message}`);
         }

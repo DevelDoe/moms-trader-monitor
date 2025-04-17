@@ -3,11 +3,10 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 
-
 function createDockerWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 550,
-        height: 60,
+        width: 400,
+        height: 85,
         frame: false,
         alwaysOnTop: true,
         resizable: true,
@@ -32,4 +31,3 @@ function createDockerWindow(isDevelopment) {
 }
 
 module.exports = { createDockerWindow };
-

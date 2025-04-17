@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("loaded settings: ", window.settings);
 
     const magicDustAudio = new Audio("./magic.mp3");
-    // magicDustAudio.volume = 0.3; 
-    magicDustAudio.volume = 0; 
+    magicDustAudio.volume = 0.3;
+    // magicDustAudio.volume = 0;
 
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
@@ -101,7 +101,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const frequency = baseFreq + uptickCount * 50;
         oscillator.frequency.value = frequency;
 
-        const volume = Math.max(0, Math.min(1, window.settings?.scanner?.scannerVolume ?? 0.5));
+        // const volume = Math.max(0, Math.min(1, window.settings?.scanner?.scannerVolume ?? 0.5));
+        const volume = Math.max(0, Math.min(1, 1));
         gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
@@ -240,12 +241,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         return alertDiv;
     }
 
-    window.scannerAPI.onAlert((alertData) => {
+    window.eventsAPI.onAlert((alertData) => {
         try {
             console.log("[CLIENT] Received via IPC:", alertData);
 
-            // ✅ Scanner filters from settings
-            const { minPrice = 0, maxPrice = Infinity, minChangePercent = 0, minVolume = 0, direction = null } = window.settings?.scanner || {};
+            // ✅ Use scanner filters from settings
+            const scannerSettings = window.settings?.scanner || {};
+            const topSettings = window.settings?.top || {};
+
+            const { minPrice = topSettings.minPrice ?? 0, maxPrice = topSettings.maxPrice ?? Infinity, minChangePercent = 0, minVolume = 0, direction = null } = scannerSettings;
 
             const passesFilters =
                 (minPrice === 0 || alertData.price >= minPrice) &&
@@ -254,10 +258,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 (minVolume === 0 || alertData.volume >= minVolume) &&
                 (!direction || alertData.direction === direction);
 
-            if (!passesFilters) return; // ❌ Skip alert if it doesn't match filters
+            if (!passesFilters) {
+                if (debug) console.log(`⛔ Skipping alert for ${alertData.symbol} — filter mismatch.`);
+                return;
+            }
 
             // 🔔 Logic continues as normal
-            const currentMaxAlerts = window.settings?.scanner?.maxAlerts ?? 50;
+            const currentMaxAlerts = scannerSettings.maxAlerts ?? 50;
             const alertType = alertData.type || "standard";
             const symbol = alertData.symbol;
             const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
@@ -268,7 +275,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 symbolUpticks[symbol] = 0;
             }
 
-            if (alertData.direction === "UP" && alertData.volume >= 50000) {
+            if (alertData.direction === "UP" && alertData.volume >= 30000) {
                 playAudioAlert(symbol, alertType, alertData.volume);
             }
 

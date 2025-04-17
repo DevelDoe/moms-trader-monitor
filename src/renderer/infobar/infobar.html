@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <link rel="stylesheet" href="../styles.css" />
-        <title>Bonus Ticker</title>
+        <title>Infobar</title>
         <style>
             /* Container styling */
             body {
@@ -209,7 +209,7 @@
                         const type = getSentimentClass(newsItem.headline);
 
                         // Truncate headline to 90 characters
-                        const maxLength = 55;
+                        const maxLength = 50;
                         let truncated = newsItem.headline;
                         if (truncated.length > maxLength) {
                             truncated = truncated.slice(0, maxLength - 1).trimEnd() + "…";

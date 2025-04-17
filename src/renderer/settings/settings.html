@@ -14,7 +14,6 @@
             <h1 class="draggable" style="width: 90%">Settings</h1>
 
             <div class="tab">
-                
                 <button class="tablinks" onclick="openTab(event, 'admin')">Admin</button>
                 <button class="tablinks active" onclick="openTab(event, 'general')">General</button>
                 <button class="tablinks" onclick="openTab(event, 'scanner')">Alerts</button>
@@ -22,65 +21,98 @@
                 <button class="tablinks" onclick="openTab(event, 'news')">News</button>
             </div>
 
-            <div id="admin" class="tabcontent">
-                <button id="fetchNewsBtn">Fetch News</button><br><br>
-            </div>
+            <div id="admin" class="tabcontent"><button id="fetchNewsBtn">Fetch News</button><br /><br /></div>
 
             <div id="general" class="tabcontent active">
-                <h2>Windows</h2>
+                <section id="section-windows">
+                    <h2>Windows</h2>
 
-                <label class="switch">
-                    <input type="checkbox" id="show-frontline" />
-                    <span class="slider round"></span>
-                </label>
-                <span>Frontline</span>
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="show-events" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Events</span>
+                    </div>
 
-                <label class="switch">
-                    <input type="checkbox" id="show-progress" />
-                    <span class="slider round"></span>
-                </label>
-                <span>Show Market Sentiment Flow</span>
-                <!-- <button id="show-bonuses-legend-board">Toggle Bonuses Legend</button> -->
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="show-frontline" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Frontline</span>
+                    </div>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="show-traderviews" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Traderview Charts</span>
+                    </div>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="show-progress" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Market Direction Flow</span>
+                    </div>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="show-wizard" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Arcane Wizard</span>
+                    </div>
+                </section>
             </div>
 
             <div id="scanner" class="tabcontent">
                 <section id="min-max-filters" class="filter-section">
                     <div class="filter-container">
-                        <label title="Enter 0 to disable limit">Min Price:
-                            <input type="number" id="alerts-min-price" step="0.01" placeholder="No limit">
+                        <label title="Enter 0 to disable limit"
+                            >Min Price:
+                            <input type="number" id="alerts-min-price" step="0.01" placeholder="No limit" />
                         </label>
-                        <label title="Enter 0 to disable limit">Max Price:
-                            <input type="number" id="alerts-max-price" step="0.01" placeholder="No limit">
+                        <label title="Enter 0 to disable limit"
+                            >Max Price:
+                            <input type="number" id="alerts-max-price" step="0.01" placeholder="No limit" />
                         </label>
-            
-                        <label for="filter-direction">Direction:
+
+                        <label for="filter-direction"
+                            >Direction:
                             <select id="filter-direction" class="form-select">
                                 <option value="">Any</option>
                                 <option value="UP">Up</option>
                                 <option value="DOWN">Down</option>
                             </select>
                         </label>
-            
-                        <label for="filter-change-percent">Min % Change:
-                            <input type="number" id="filter-change-percent" step="0.1" placeholder="0 = Any">
+
+                        <label for="filter-change-percent"
+                            >Min % Change:
+                            <input type="number" id="filter-change-percent" step="0.1" placeholder="0 = Any" />
                         </label>
-            
-                        <label for="filter-volume">Min Volume:
-                            <input type="number" id="filter-volume" step="1" placeholder="0 = Any">
+
+                        <label for="filter-volume"
+                            >Min Volume:
+                            <input type="number" id="filter-volume" step="1" placeholder="0 = Any" />
                         </label>
-            
-                        <label for="max-alerts">Max Alerts:
-                            <input type="number" id="max-alerts" step="1" placeholder="50">
+
+                        <label for="max-alerts"
+                            >Max Alerts:
+                            <input type="number" id="max-alerts" step="1" placeholder="50" />
                         </label>
-                        <label for="scanner-volume">Scanner Volume:
-                            <input type="range" id="scanner-volume" min="0" max="1" step="0.05">
+                        <label for="scanner-volume"
+                            >Scanner Volume:
+                            <input type="range" id="scanner-volume" min="0" max="1" step="0.05" />
                             <span id="scanner-volume-value">50%</span>
                         </label>
                     </div>
                 </section>
             </div>
-        
-        
+
             <div id="top" class="tabcontent">
                 <!-- <div>
                     <label>
@@ -160,8 +192,8 @@
                 <div class="keyword-lists">
                     <div>
                         <h4>Block List</h4>
-                        <ul id="block-list"></ul>frontline
-                        
+                        <ul id="block-list"></ul>
+                        frontline
                     </div>
                     <div>
                         <h4>Bullish List</h4>
