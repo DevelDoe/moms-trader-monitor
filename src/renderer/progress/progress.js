@@ -8,10 +8,10 @@ let dynamicWindowSize = 50; // adaptive window size
 
 // Update every second
 setInterval(() => {
-    const minSize = 10;
-    const maxSize = 200;
+    const minSize = 0;
+    const maxSize = 300;
 
-    const smoothing = 0.94; // Higher = slower, smoother response (good for ketchup)
+    const smoothing = 0.98; // Higher = slower, smoother response (good for ketchup)
     tradeRate = tradeRate * smoothing + tradeRateRaw * (1 - smoothing);
 
     const normalizedRate = Math.min(tradeRate, 2) / 2;
@@ -97,7 +97,7 @@ function updateFlowVisual() {
 }
 
 // Connect to your event stream
-window.alertAPI.onAlertEvents((events) => {
+window.eventsAPI.onAlertEvents((events) => {
     events.forEach(processMarketFlow);
 });
 

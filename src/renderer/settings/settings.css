@@ -360,27 +360,25 @@ input:checked + .slider:before {
   <span class="slider round"></span>
 </label> */
 
-
 section#min-max-filters {
     display: flex;
     flex-wrap: wrap;
     gap: 10px; /* Adjust spacing between pairs */
     margin-bottom: 10px;
-  }
+}
 
-  section#min-max-filters label {
+section#min-max-filters label {
     display: flex;
     align-items: center;
     gap: 5px;
     width: 250px; /* Set a fixed width to align inputs */
-  }
+}
 
-  section#min-max-filters input {
+section#min-max-filters input {
     flex: 1; /* Make input take up remaining space */
-  }
+}
 
-
- /* ✅ Style the keyword controls */
+/* ✅ Style the keyword controls */
 .keyword-controls {
     display: flex;
     gap: 10px;
@@ -450,4 +448,30 @@ section#min-max-filters {
 
 .keyword-lists li button:hover {
     background: darkred;
+}
+
+/* Section windows  */
+
+#section-windows {
+    margin-top: 10px;
+}
+
+#section-windows h2 {
+    font-size: 16px;
+    color: #aaa;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.toggle-label {
+    font-size: 14px;
+    color: #fff;
 }

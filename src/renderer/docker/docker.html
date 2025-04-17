@@ -29,14 +29,12 @@
                 justify-content: center;
                 align-items: flex-end;
                 font-family: sans-serif;
-                background: rgba(248, 248, 229, 0.95);
-                border-radius: 5px;
             }
             .dock {
                 display: flex;
                 padding: 12px 24px;
-
-                border-radius: 12px;
+                background: rgba(248, 248, 229, 0.95);
+                border-radius: 5px;
                 /* backdrop-filter: blur(10px); */
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                 gap: 12px;
@@ -121,7 +119,7 @@
             }
             /* Draggable Area */
             .drag-area {
-                height: 15px;
+                height: 30px;
                 -webkit-app-region: drag; /* Enable dragging */
                 position: absolute;
                 top: 0px;
@@ -134,12 +132,10 @@
         <div class="drag-area"></div>
         <div class="dock" id="dock">
             <a href="#" id="scanner-btn" class="no-drag" onclick="window.scannerAPI.toggle()" title="Scanner"><i class="fas fa-search"></i></a>
-            <a href="#" id="live-btn" class="no-drag" onclick="window.sessionAPI.toggle()" title="Live"><i class="fas fa-bolt"></i></a>
             <a href="#" id="focus-btn" class="no-drag" onclick="window.focusAPI.toggle()" title="Focus"><i class="fas fa-crosshairs"></i></a>
             <a href="#" id="daily-btn" class="no-drag" onclick="window.dailyAPI.toggle()" title="Daily"><i class="fas fa-calendar-day"></i></a>
             <a href="#" id="active-btn" class="no-drag" onclick="window.activeAPI.toggle()" title="Active"><i class="fas fa-fire"></i></a>
             <a href="#" id="inforbar-btn" class="no-drag" onclick="window.infobarAPI.toggle()" title="Info Bar"><i class="fas fa-newspaper"></i></a>
-            <a href="#" id="traderview-btn" class="no-drag" onclick="window.traderviewAPI.toggleBrowser();" title="Trader View"><i class="fas fa-chart-line"></i></a>
             <a href="#" id="settings-btn" class="no-drag" onclick="window.settingsAPI.toggle()" title="Settings"><i class="fas fa-cog"></i></a>
             <a href="#" id="exit-btn" class="no-drag" onclick="window.electronAPI.exitApp()" title="Exit"><i class="fas fa-power-off"></i></a>
         </div>

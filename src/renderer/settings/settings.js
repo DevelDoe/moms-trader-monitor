@@ -112,11 +112,25 @@ function initializeGeneralSection() {
     //     window.legendAPI.toggle();
     // });
 
-    const showProgressToggle = document.getElementById("show-progress");
+    const showEventsToggle = document.getElementById("show-events");
     const showFrontlineToggle = document.getElementById("show-frontline");
+    const showProgressToggle = document.getElementById("show-progress");
+    const showWizardToggle = document.getElementById("show-wizard");
+    const showTraderviewsToggle = document.getElementById("show-traderviews");
 
+    showEventsToggle.checked = window.settings.windows.scannerWindow?.isOpen ?? false;
     showProgressToggle.checked = window.settings.windows.progressWindow?.isOpen ?? false;
     showFrontlineToggle.checked = window.settings.windows.frontlineWindow?.isOpen ?? false;
+    showWizardToggle.checked = window.settings.windows.wizardWindow?.isOpen ?? false;
+    showTraderviewsToggle.checked = window.settings.traderview?.visibility ?? false;
+
+    showEventsToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.eventsAPI.activate();
+        } else {
+            window.eventsAPI.deactivate();
+        }
+    });
 
     showProgressToggle.addEventListener("change", (event) => {
         if (event.target.checked) {
@@ -132,6 +146,33 @@ function initializeGeneralSection() {
         } else {
             window.frontlineAPI.deactivate();
         }
+    });
+
+    showWizardToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.wizardAPI.activate();
+        } else {
+            window.wizardAPI.deactivate();
+        }
+    });
+
+    showTraderviewsToggle.addEventListener("change", async (event) => {
+        const visibility = event.target.checked;
+
+        // 1. Update runtime behavior
+        window.traderviewAPI.setVisibility(visibility);
+
+        // 2. Save to settings
+        const latestSettings = await window.settingsAPI.get();
+        const newSettings = {
+            ...latestSettings,
+            traderview: {
+                ...(latestSettings.traderview || {}),
+                visibility,
+            },
+        };
+
+        await window.settingsAPI.update(newSettings);
     });
 }
 

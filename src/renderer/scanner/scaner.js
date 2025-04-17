@@ -241,12 +241,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         return alertDiv;
     }
 
-    window.scannerAPI.onAlert((alertData) => {
+    window.eventsAPI.onAlert((alertData) => {
         try {
             console.log("[CLIENT] Received via IPC:", alertData);
 
-            // ✅ Scanner filters from settings
-            const { minPrice = 0, maxPrice = Infinity, minChangePercent = 0, minVolume = 0, direction = null } = window.settings?.scanner || {};
+            // ✅ Use scanner filters from settings
+            const scannerSettings = window.settings?.scanner || {};
+            const topSettings = window.settings?.top || {};
+
+            const { minPrice = topSettings.minPrice ?? 0, maxPrice = topSettings.maxPrice ?? Infinity, minChangePercent = 0, minVolume = 0, direction = null } = scannerSettings;
 
             const passesFilters =
                 (minPrice === 0 || alertData.price >= minPrice) &&
@@ -255,10 +258,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 (minVolume === 0 || alertData.volume >= minVolume) &&
                 (!direction || alertData.direction === direction);
 
-            if (!passesFilters) return; // ❌ Skip alert if it doesn't match filters
+            if (!passesFilters) {
+                if (debug) console.log(`⛔ Skipping alert for ${alertData.symbol} — filter mismatch.`);
+                return;
+            }
 
             // 🔔 Logic continues as normal
-            const currentMaxAlerts = window.settings?.scanner?.maxAlerts ?? 50;
+            const currentMaxAlerts = scannerSettings.maxAlerts ?? 50;
             const alertType = alertData.type || "standard";
             const symbol = alertData.symbol;
             const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;

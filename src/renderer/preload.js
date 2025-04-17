@@ -56,6 +56,7 @@ contextBridge.exposeInMainWorld("activeAPI", {
             callback(ticker);
         });
     },
+    notifyActiveWindowReady: () => ipcRenderer.send("active-window-ready"), // ✅ This line
 });
 
 contextBridge.exposeInMainWorld("newsAPI", {
@@ -65,20 +66,29 @@ contextBridge.exposeInMainWorld("newsAPI", {
     setBounds: (bounds) => ipcRenderer.send("set-window-bounds", bounds),
 });
 
-contextBridge.exposeInMainWorld("scannerAPI", {
-    toggle: () => ipcRenderer.send("toggle-scanner"),
-    onAlert: (callback) => ipcRenderer.on("ws-alert", (_, data) => callback(data)),
-});
-
 contextBridge.exposeInMainWorld("infobarAPI", {
     toggle: () => ipcRenderer.send("toggle-infobar"),
     refresh: () => ipcRenderer.send("refresh-infobar"),
     onForceRefresh: (callback) => ipcRenderer.on("trigger-window-refresh", () => callback()),
 });
 
+// Modern
+
+contextBridge.exposeInMainWorld("eventsAPI", {
+    activate: () => ipcRenderer.send("activate-events"),
+    deactivate: () => ipcRenderer.send("deactivate-events"),
+    onAlert: (callback) => ipcRenderer.on("ws-alert", (_, data) => callback(data)),
+    onAlertEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
+});
+
+contextBridge.exposeInMainWorld("frontlineAPI", {
+    activate: () => ipcRenderer.send("activate-frontline"),
+    deactivate: () => ipcRenderer.send("deactivate-frontline"),
+    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+});
+
 contextBridge.exposeInMainWorld("traderviewAPI", {
-    toggleWidget: () => ipcRenderer.send("toggle-traderview-widget"),
-    toggleBrowser: () => ipcRenderer.send("toggle-traderview-browser"),
+    setVisibility: (enabled) => ipcRenderer.send("set-traderview-visibility", enabled),
     setTopTickers: (tickers) => ipcRenderer.send("set-top-tickers", tickers),
 });
 
@@ -87,12 +97,7 @@ contextBridge.exposeInMainWorld("progressAPI", {
     deactivate: () => ipcRenderer.send("deactivate-progress"),
 });
 
-contextBridge.exposeInMainWorld("alertAPI", {
-    onAlertEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
-});
-
-contextBridge.exposeInMainWorld("frontlineAPI", {
-    activate: () => ipcRenderer.send("activate-frontline"),
-    deactivate: () => ipcRenderer.send("deactivate-frontline"),
-    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+contextBridge.exposeInMainWorld("wizardAPI", {
+    activate: () => ipcRenderer.send("activate-wizard"),
+    deactivate: () => ipcRenderer.send("deactivate-wizard"),
 });

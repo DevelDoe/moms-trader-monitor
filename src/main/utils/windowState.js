@@ -7,9 +7,7 @@ const log = require("../../hlps/logger")(__filename);
 const { safeSend } = require("./safeSend");
 
 const isDevelopment = process.env.NODE_ENV === "development";
-const SETTINGS_FILE = isDevelopment
-  ? path.join(__dirname, "../../data/settings.dev.json")
-  : path.join(app.getPath("userData"), "settings.json");
+const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../../data/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
 
 function loadSettings() {
     if (!fs.existsSync(SETTINGS_FILE)) {
@@ -69,11 +67,14 @@ function setWindowBounds(stateKey, bounds) {
     const currentWindowState = settings.windows?.[stateKey] || {};
     const isOpen = currentWindowState.isOpen ?? false;
 
-    saveWindowState(stateKey, { 
-        ...bounds,
-    }, isOpen);
+    saveWindowState(
+        stateKey,
+        {
+            ...bounds,
+        },
+        isOpen
+    );
 }
-
 
 function setWindowState(stateKey, isOpen) {
     log.log(`setWindowState called for key "${stateKey}" with isOpen: ${isOpen}`);
@@ -82,9 +83,24 @@ function setWindowState(stateKey, isOpen) {
     saveWindowState(stateKey, { ...currentBounds }, isOpen);
 }
 
+function nukeTradingViewWindowStates() {
+    const settings = loadSettings();
+    if (!settings.windows) return;
+
+    const keysToDelete = Object.keys(settings.windows).filter((key) => key.startsWith("traderviewWindow_"));
+
+    for (const key of keysToDelete) {
+        delete settings.windows[key];
+        log.log(`🧨 Nuked window state for "${key}"`);
+    }
+
+    saveSettings(settings);
+}
+
 module.exports = {
     getWindowState,
     saveWindowState,
     setWindowBounds,
-    setWindowState
+    setWindowState,
+    nukeTradingViewWindowStates,
 };

@@ -16,8 +16,6 @@ let maxHP = BASE_MAX_HP;
 let maxScore = BASE_MAX_SCORE;
 let lastTopHeroes = [];
 
-isLongBiased = true;
-
 let eventsPaused = false;
 
 const debug = true;
@@ -27,6 +25,26 @@ const debugLimitSamples = 6000;
 let debugSamples = 0;
 
 window.percs = [
+    { key: "float1m", threshold: 2_000_000, icon: "1️⃣", desc: "Float around 1M", multiplier: 1.15, score: 300 },
+    { key: "float5m", threshold: 7_500_000, icon: "5️⃣", desc: "Float around 5M", multiplier: 1.1, score: 100 },
+    { key: "float10m", threshold: 13_000_000, icon: "🔟", desc: "Float around 10M", multiplier: 1.05, score: 50 },
+    { key: "float50m", threshold: 50_000_000, icon: "", desc: "Float around 50M", multiplier: 1, score: 0 },
+    { key: "float100m", threshold: 100_000_000, icon: "", desc: "Float around 100M", multiplier: 0.8, score: -50 },
+    { key: "float200m", threshold: 200_000_000, icon: "", desc: "Float around 200M", multiplier: 0.6, score: -100 },
+    { key: "float500m", threshold: 500_000_000, icon: "", desc: "Float around 500M", multiplier: 0.4, score: -300 },
+    { key: "float600m+", threshold: Infinity, icon: "", desc: "Float higher than 600M", multiplier: 0.1, score: -1000 },
+
+    {
+        category: "subCap",
+        priceThreshold: 1,
+        volumeStages: [
+            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 40000, multiplier: 0.01, score: -1500 },
+            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 120000, multiplier: 0.5, score: -150 },
+            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 400000, multiplier: 1.5, score: 0 },
+            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 550000, multiplier: 2, score: 100 },
+            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: "Infinity", multiplier: 4, score: 200 },
+        ],
+    },
     {
         category: "pennyCap",
         priceThreshold: 2,
@@ -60,15 +78,6 @@ window.percs = [
             { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
         ],
     },
-
-    { key: "float1m", threshold: 2_000_000, icon: "1️⃣", desc: "Float around 1M", multiplier: 1.15, score: 300 },
-    { key: "float5m", threshold: 7_500_000, icon: "5️⃣", desc: "Float around 5M", multiplier: 1.1, score: 100 },
-    { key: "float10m", threshold: 13_000_000, icon: "🔟", desc: "Float around 10M", multiplier: 1.05, score: 50 },
-    { key: "float50m", threshold: 50_000_000, icon: "", desc: "Float around 50M", multiplier: 1, score: 0 },
-    { key: "float100m", threshold: 100_000_000, icon: "", desc: "Float around 100M", multiplier: 0.8, score: -50 },
-    { key: "float200m", threshold: 200_000_000, icon: "", desc: "Float around 200M", multiplier: 0.6, score: -100 },
-    { key: "float500m", threshold: 500_000_000, icon: "", desc: "Float around 500M", multiplier: 0.4, score: -300 },
-    { key: "float600m+", threshold: Infinity, icon: "", desc: "Float higher than 600M", multiplier: 0.1, score: -1000 },
 
     { key: "lockedShares", icon: "💼", desc: "High insider/institutional/locked shares holders", score: 10 },
 
@@ -130,7 +139,7 @@ function saveState() {
     localStorage.setItem("frontlineState", JSON.stringify(payload));
 }
 
-function loadState() {
+async function loadState() {
     const saved = localStorage.getItem("frontlineState");
     if (!saved) return false;
 
@@ -139,9 +148,7 @@ function loadState() {
         const today = getMarketDateString();
 
         if (parsed.date === today) {
-            Object.entries(parsed.state).forEach(([symbol, data]) => {
-                frontlineState[symbol] = data;
-            });
+            Object.assign(frontlineState, parsed.state); // More efficient than forEach
             if (debug) console.log("🔄 Restored frontline state from earlier session.");
             return true;
         } else {
@@ -164,92 +171,120 @@ function clearState() {
     if (debug) console.log("🧹 Cleared saved and in-memory frontline state.");
 }
 
-window.clearState = () => {
-    localStorage.removeItem("focusState");
-    for (const key in focusState) {
-        delete focusState[key];
-    }
-    if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
-};
-
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ DOMContentLoaded event fired!");
 
-    const restored = loadState(); // ✅ returns true if valid state loadedloadState();
+    container = document.getElementById("frontline");
 
-    if (debug) console.log();
+    try {
+        // Load everything in parallel
+        const [settings, storeSymbols, restored] = await Promise.all([
+            window.settingsAPI.get(),
+            window.frontlineAPI.getSymbols(),
+            loadState(), // Now async
+        ]);
 
-    container = document.getElementById("frontline"); // frontline div is where the cards will be injected
+        window.settings = settings;
 
-    // 1. Get symbols from preload store
-    const storeSymbols = await window.frontlineAPI.getSymbols();
-    window.settings = await window.settingsAPI.get();
-    console.log("laoded settings: ", window.settings);
+        // Initialize state if not restored
+        if (!restored) {
+            storeSymbols.forEach((symbolData) => {
+                if (!frontlineState[symbolData.symbol]) {
+                    frontlineState[symbolData.symbol] = {
+                        hero: symbolData.symbol,
+                        price: symbolData.price || 1,
+                        hp: 0,
+                        dp: 0,
+                        strength: 0,
+                        xp: 0,
+                        lv: 0,
+                        score: 0,
+                        lastEvent: {
+                            hp: 0,
+                            dp: 0,
+                            xp: 0,
+                        },
+                        floatValue: symbolData.statistics?.floatShares || 0, // Safe access
+                        buffs: getBuffsForHero(symbolData),
+                    };
+                }
+            });
+        }
 
-    // ✅ Listen for settings updates globally
-    window.settingsAPI.onUpdate(async (updatedSettings) => {
-        if (debug) console.log("🎯 Settings updated, applying changes...", updatedSettings);
-        window.settings = updatedSettings;
-        renderAll();
-    });
-
-    // 2. Create initial frontline state
-    // Only init state if we didn't load one
-    if (!restored) {
-        storeSymbols.forEach((symbolData) => {
-            frontlineState[symbolData.symbol] = {
-                hero: symbolData.symbol,
-                price: symbolData.price || 1,
-                hp: 0,
-                dp: 0,
-                strength: 0,
-                xp: 0,
-                lv: 0,
-                score: 0,
-                lastEvent: {
-                    hp: 0,
-                    dp: 0,
-                    xp: 0,
-                },
-                floatValue: symbolData.statistics.floatShares,
-                buffs: getBuffsForHero(symbolData),
-            };
+        // Set up listeners after initialization
+        window.settingsAPI.onUpdate(async (updatedSettings) => {
+            if (debug) console.log("🎯 Settings updated, applying changes...", updatedSettings);
+            window.settings = updatedSettings;
+            renderAll();
         });
+
+        window.eventsAPI.onAlertEvents((events) => {
+            const minPrice = window.settings?.top?.minPrice ?? 0;
+            const maxPrice = window.settings?.top?.maxPrice ?? Infinity;
+
+            events.forEach((event) => {
+                if (event.price < minPrice || (maxPrice > 0 && event.price > maxPrice)) {
+                    if (debug) console.log(`🚫 ${event.hero} skipped — price $${event.price} outside range $${minPrice}-$${maxPrice}`);
+                    return;
+                }
+                updateFrontlineStateFromEvent(event);
+            });
+        });
+
+        renderAll();
+        startScoreDecay();
+    } catch (error) {
+        console.error("Frontline initialization failed:", error);
+        // Add error recovery here if needed
     }
-
-    renderAll();
-
-    // 3. Listen for incoming alerts
-    window.alertAPI.onAlertEvents((events) => {
-        events.forEach(updateFrontlineStateFromEvent);
-        // if(debug) console.log("⚡ Received frontline events:", events);
-    });
-
-    startScoreDecay();
 });
 
 function getBuffsForHero(symbolData) {
-    const buffsToApply = [];
+    const buffs = {};
 
+    const floatBuff = getFloatBuff(symbolData);
+    if (floatBuff) buffs.float = floatBuff;
+
+    // You can add more categories here later like:
+    // buffs.news = getNewsBuff(...)
+
+    return buffs;
+}
+
+function getFloatBuff(symbolData) {
     const float = symbolData.statistics?.floatShares;
-    const floatBuffs = (window.percs || []).filter((b) => b.key?.startsWith("float") && "threshold" in b);
+    const shares = symbolData.statistics?.sharesOutstanding;
 
-    if (float !== undefined && floatBuffs.length) {
-        const floatBuff = floatBuffs.sort((a, b) => a.threshold - b.threshold).find((b) => float < b.threshold);
+    const isCorrupt = !float || !shares || float <= 0 || shares <= 0 || float > 1e9 || shares > 5e9 || float / shares > 1.2 || float / shares < 0.01;
 
-        if (floatBuff) {
-            buffsToApply.push({
-                key: floatBuff.key,
-                icon: floatBuff.icon,
-                desc: floatBuff.desc,
-                score: floatBuff.score,
-                multiplier: floatBuff.multiplier,
-                threshold: floatBuff.threshold,
-            });
-        }
+    if (isCorrupt) {
+        return {
+            key: "floatCorrupt",
+            icon: "🧨",
+            desc: "Corrupted float data",
+            multiplier: 1,
+            score: 0,
+        };
     }
 
-    return buffsToApply;
+    const floatBuffs = (window.percs || []).filter((b) => b.key?.startsWith("float") && "threshold" in b);
+    const selected = floatBuffs.sort((a, b) => a.threshold - b.threshold).find((b) => float < b.threshold);
+
+    return selected
+        ? {
+              key: selected.key,
+              icon: selected.icon,
+              desc: selected.desc,
+              multiplier: selected.multiplier,
+              score: selected.score,
+          }
+        : {
+              key: "floatUnranked",
+              icon: "❔",
+              desc: "Float does not match any buff",
+              multiplier: 1,
+              score: 0,
+          };
 }
 
 function updateFrontlineStateFromEvent(event) {
@@ -524,7 +559,6 @@ function calculateScore(hero, event) {
     debugSamples++;
     const currentScore = Number(hero.score) || 0;
 
-    // Logging initial state
     if (debug && debugSamples < debugLimitSamples) console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
     if (debug && debugSamples < debugLimitSamples) console.log(`📜 INITIAL STATE → Price: ${hero.price} | Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
 
@@ -532,41 +566,35 @@ function calculateScore(hero, event) {
     const logStep = (emoji, message, value) => console.log(`${emoji} ${message.padEnd(30)} ${(Number(value) || 0).toFixed(2)}`);
 
     try {
-        // If it's an "up" event (hp > 0)
         if (event.hp > 0) {
             baseScore += event.hp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
-
-            // ✅ Use float multiplier from buffs if present
-            const floatBuff = hero.buffs.find((b) => b.key?.startsWith("float"));
+            const floatBuff = hero.buffs?.float;
             const floatMult = floatBuff?.multiplier ?? 1;
 
             if (debug && debugSamples < debugLimitSamples) {
-                logStep(floatBuff ? "🏷️" : "⚠️", `Float Mult (${humanReadableNumbers(hero.floatValue) || "N/A"})`, floatMult);
+                const label = floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️";
+                const formattedFloat = humanReadableNumbers(hero.floatValue) || "N/A";
+                logStep(label, `Float Mult (${formattedFloat})`, floatMult);
             }
 
             baseScore *= floatMult;
 
-            // Apply Volume Multiplier
             const volMult = calculateVolumeImpact(event.strength || 0, hero.price || 1);
-
-            // Debugging: log the multiplier and category assigned
             if (debug && debugSamples < debugLimitSamples) logStep("📢", `${volMult.message}`, volMult.multiplier);
 
             baseScore *= volMult.multiplier;
         }
 
-        // If it's a "down" event (dp > 0)
         if (event.dp > 0) {
             baseScore -= event.dp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp);
         }
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
-        baseScore = 0; // Reset on error
+        baseScore = 0;
     }
 
-    // Final log and result
     if (debug && debugSamples < debugLimitSamples) console.log("━".repeat(50));
     if (debug && debugSamples < debugLimitSamples) logStep("🎯", "TOTAL SCORE CHANGE", baseScore);
     if (debug && debugSamples < debugLimitSamples) console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
@@ -732,7 +760,6 @@ function calculateVolumeImpact(volume = 0, price = 1) {
     return result;
 }
 
-// Placeholder for getColorForStage (since it wasn't provided)
 function getColorForStage(stageKey) {
     const colors = {
         lowVol: "#cccccc",
@@ -743,21 +770,8 @@ function getColorForStage(stageKey) {
     return colors[stageKey] || "#cccccc";
 }
 
-// Placeholder for humanReadableNumbers (since it wasn't provided)
 function humanReadableNumbers(num) {
     if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
     if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
     return num.toString();
-}
-
-// Helper function to get colors for each stage
-function getColorForStage(stageKey) {
-    const colors = {
-        lowVol: "#6b7280",
-        mediumVol: "#3b82f6",
-        highVol: "#ef4444",
-        parabolicVol: "#f59e0b",
-        default: "#cccccc",
-    };
-    return colors[stageKey] || colors.default;
 }

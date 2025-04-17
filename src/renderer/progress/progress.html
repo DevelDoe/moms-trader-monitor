@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <link rel="stylesheet" href="../styles.css" />
-        <title>Market Sentiment Flow</title>
+        <title>Progress</title>
         <style>
             .sentiment-flow {
                 position: fixed;
@@ -27,10 +27,13 @@
 
             /* Gradients */
             .flow-hp {
-                background: linear-gradient(90deg, #155a15, #4caf50);
+                background: linear-gradient(90deg, #3e8d6f, #3ca17a);
+                background: linear-gradient(to right, rgba(71, 160, 115, 0.9), rgba(2, 51, 36, 0.9));
             }
             .flow-dp {
-                background: linear-gradient(90deg, #f44336, #5a1515);
+                background: linear-gradient(90deg, #5a1712, #cc2e2e);
+                border-left: 1px solid #000000;
+                background: linear-gradient(to right, rgba(80, 18, 18, 0.9), rgba(155, 65, 65, 0.9));
             }
 
             /* Swoosh particle layer */
@@ -40,8 +43,8 @@
                 position: absolute;
                 top: 0;
                 bottom: 0;
-                width: 20px;
-                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+                width: 200px;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 100%);
                 transform: translateX(-100%);
                 animation: var(--swoosh-animation, none);
             }
@@ -51,6 +54,29 @@
             }
             .flow-dp::after {
                 --swoosh-animation: swoosh-dp var(--swoosh-speed, 3s) linear infinite;
+            }
+
+            /* Optional secondary swoosh or effect layer */
+            .flow-hp::before,
+            .flow-dp::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 200px;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 100%);
+                transform: translateX(-100%);
+                animation: var(--swoosh-before-animation, none);
+                pointer-events: none;
+                z-index: 1; /* ensures it's below the ::after if you want a stacking order */
+            }
+
+            .flow-hp::before {
+                --swoosh-before-animation: swoosh-reverse-hp var(--swoosh-speed, 5s) linear infinite;
+            }
+
+            .flow-dp::before {
+                --swoosh-before-animation: swoosh-reverse-dp var(--swoosh-speed, 5s) linear infinite;
             }
 
             /* Swoosh keyframes */
@@ -81,9 +107,37 @@
                 }
             }
 
+            @keyframes swoosh-reverse-hp {
+                0% {
+                    transform: translateX(300%);
+                    opacity: 0;
+                }
+                20% {
+                    opacity: 0.7;
+                }
+                100% {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
+
+            @keyframes swoosh-reverse-dp {
+                0% {
+                    transform: translateX(300%);
+                    opacity: 0;
+                }
+                20% {
+                    opacity: 0.7;
+                }
+                100% {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
+
             /* Glow effect (imbalance-driven) */
             .sentiment-flow.glow {
-                box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.1);
+                box-shadow: 0 0 10px 1px rgba(255, 255, 255, 0.05);
             }
 
             /* Pulse animation (volume-driven) */
@@ -92,7 +146,7 @@
                     transform: scaleY(1);
                 }
                 50% {
-                    transform: scaleY(1.15);
+                    transform: scaleY(1.05);
                 }
                 100% {
                     transform: scaleY(1);

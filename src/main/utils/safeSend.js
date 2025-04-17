@@ -1,6 +1,5 @@
 // ./src/utils/safeSend.js
 
-
 function safeSend(win, channel, payload) {
     try {
         if (!win || win.isDestroyed()) return;

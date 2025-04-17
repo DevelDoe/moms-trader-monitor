@@ -141,7 +141,7 @@ async function fetchAndUpdateTickers() {
                         (minVolume === 0 || (ticker.Volume !== null && ticker.Volume >= minVolume)) && // ✅ Only check if Volume exists
                         (maxVolume === 0 || (ticker.Volume !== null && ticker.Volume <= maxVolume)) // ✅ Only check if Volume exists
                 )
-                .sort((a, b) => b.Score - a.Score);
+                .sort((a, b) => b.cumulativeUpChange - a.cumulativeUpChange);
 
         const filteredDaily = applyFilters(dailyData);
         console.log("✅ Filtered daily Data:", filteredDaily);
@@ -218,34 +218,34 @@ function updateTickersList(tickers, listId, prevTickers) {
 
     // ✅ Determine which columns should be displayed
     const listType = "daily";
-    const allColumns = ["Symbol", "Score", "Bonuses"];
+    const allColumns = ["Symbol", "cumulativeUpChange"];
 
     // ✅ Populate list items
     tickers.forEach((ticker, index) => {
         const li = document.createElement("li");
         li.classList.add("ticker-item");
-    
+
         // 🔆 Brightness based on position
         // const brightness = Math.max(0, 90 - index * 6); // 0–90 range over 15 items
         // li.style.filter = `brightness(${brightness}%)`;
-    
+
         // 🔍 **Detect new or updated tickers**
         const prevTicker = prevTickers[ticker.Symbol];
-    
+
         let isNew = !prevTicker;
         let isUpdated = prevTicker && (prevTicker.Price !== ticker.Price || prevTicker.Count !== ticker.Count || prevTicker.Score !== ticker.Score);
-    
+
         if (isNew) {
             li.classList.add("highlight-new"); // 🟢 Apply new ticker highlight
         } else if (isUpdated) {
             li.classList.add("highlight-updated"); // 🟠 Apply update highlight
         }
-    
+
         // ✅ Construct ticker row
         allColumns.forEach((key) => {
             const span = document.createElement("span");
             span.className = "ticker-data";
-    
+
             if (key === "Symbol") {
                 span.textContent = ticker[key];
                 span.classList.add("symbol");
@@ -285,7 +285,7 @@ function updateTickersList(tickers, listId, prevTickers) {
                 span.textContent = scoreValue.toFixed(0) + "%";
                 span.classList.add("Score-tooltip", "no-drag");
                 span.title = `Momentum Score: ${scoreValue.toFixed(1)}%\n` + getScoreBreakdown(ticker);
-    
+
                 if (scoreValue > 0) {
                     span.classList.add("up");
                 } else if (scoreValue < 0) {
@@ -296,15 +296,14 @@ function updateTickersList(tickers, listId, prevTickers) {
             } else {
                 span.textContent = ticker[key];
             }
-    
+
             li.appendChild(span);
         });
-    
+
         ul.appendChild(li);
     });
-    
+
     console.log(`✅ Finished updating list: ${listId}`);
-    
 
     console.log(`✅ Finished updating list: ${listId}`);
 }

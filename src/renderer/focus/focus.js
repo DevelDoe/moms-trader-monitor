@@ -32,11 +32,31 @@ const debugLimitSamples = 1500;
 let debugSamples = 0;
 
 window.percs = [
+    { key: "float1m", threshold: 2_000_000, icon: "1️⃣", desc: "Float around 1M", multiplier: 1.15, score: 300 },
+    { key: "float5m", threshold: 7_500_000, icon: "5️⃣", desc: "Float around 5M", multiplier: 1.1, score: 100 },
+    { key: "float10m", threshold: 13_000_000, icon: "🔟", desc: "Float around 10M", multiplier: 1.05, score: 50 },
+    { key: "float50m", threshold: 50_000_000, icon: "", desc: "Float around 50M", multiplier: 1, score: 0 },
+    { key: "float100m", threshold: 100_000_000, icon: "", desc: "Float around 100M", multiplier: 0.8, score: -50 },
+    { key: "float200m", threshold: 200_000_000, icon: "", desc: "Float around 200M", multiplier: 0.6, score: -100 },
+    { key: "float500m", threshold: 500_000_000, icon: "", desc: "Float around 500M", multiplier: 0.4, score: -300 },
+    { key: "float600m+", threshold: Infinity, icon: "", desc: "Float higher than 600M", multiplier: 0.1, score: -1000 },
+
+    {
+        category: "subCap",
+        priceThreshold: 1,
+        volumeStages: [
+            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 40000, multiplier: 0.01, score: -1500 },
+            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 120000, multiplier: 0.5, score: -150 },
+            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 400000, multiplier: 1.5, score: 0 },
+            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 550000, multiplier: 2, score: 100 },
+            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: "Infinity", multiplier: 4, score: 200 },
+        ],
+    },
     {
         category: "pennyCap",
         priceThreshold: 2,
         volumeStages: [
-            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 300000, multiplier: 0.01, score: -1500 },
+            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 30000, multiplier: 0.01, score: -1500 },
             { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 100000, multiplier: 0.5, score: -150 },
             { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 350000, multiplier: 1.5, score: 100 },
             { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 500000, multiplier: 2, score: 200 },
@@ -47,7 +67,7 @@ window.percs = [
         category: "tinyCap",
         priceThreshold: 7,
         volumeStages: [
-            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 250000, multiplier: 0.01, score: -1500 },
+            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 25000, multiplier: 0.01, score: -1500 },
             { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 80000, multiplier: 0.5, score: -150 },
             { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 300000, multiplier: 1.5, score: 100 },
             { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 400000, multiplier: 2, score: 200 },
@@ -58,22 +78,13 @@ window.percs = [
         category: "default",
         priceThreshold: Infinity,
         volumeStages: [
-            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 200000, multiplier: 0.01, score: -1500 },
+            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 20000, multiplier: 0.01, score: -1500 },
             { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 80000, multiplier: 0.5, score: -150 },
             { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 300000, multiplier: 1.5, score: 100 },
             { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 400000, multiplier: 2, score: 200 },
             { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
         ],
     },
-
-    { key: "float1m", threshold: 2_000_000, icon: "1️⃣", desc: "Float around 1M", multiplier: 1.15, score: 300 },
-    { key: "float5m", threshold: 7_500_000, icon: "5️⃣", desc: "Float around 5M", multiplier: 1.1, score: 100 },
-    { key: "float10m", threshold: 13_000_000, icon: "🔟", desc: "Float around 10M", multiplier: 1.05, score: 50 },
-    { key: "float50m", threshold: 50_000_000, icon: "", desc: "Float around 50M", multiplier: 1, score: 0 },
-    { key: "float100m", threshold: 100_000_000, icon: "", desc: "Float around 100M", multiplier: 0.8, score: -50 },
-    { key: "float200m", threshold: 200_000_000, icon: "", desc: "Float around 200M", multiplier: 0.6, score: -100 },
-    { key: "float500m", threshold: 500_000_000, icon: "", desc: "Float around 500M", multiplier: 0.4, score: -300 },
-    { key: "float600m+", threshold: Infinity, icon: "", desc: "Float higher than 600M", multiplier: 0.1, score: -1000 },
 
     { key: "lockedShares", icon: "💼", desc: "High insider/institutional/locked shares holders", score: 10 },
 
@@ -135,7 +146,7 @@ function saveState() {
     localStorage.setItem("focusState", JSON.stringify(payload));
 }
 
-function loadState() {
+async function loadState() {
     const saved = localStorage.getItem("focusState");
     if (!saved) return false;
 
@@ -144,9 +155,7 @@ function loadState() {
         const today = getMarketDateString();
 
         if (parsed.date === today) {
-            Object.entries(parsed.state).forEach(([symbol, data]) => {
-                focusState[symbol] = data;
-            });
+            Object.assign(focusState, parsed.state);
             if (debug) console.log("🔄 Restored focus state from earlier session.");
             return true;
         } else {
@@ -180,58 +189,121 @@ window.clearState = () => {
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ DOMContentLoaded event fired!");
 
-    const restored = loadState(); // ✅ returns true if valid state loadedloadState();
+    container = document.getElementById("focus");
 
-    if (debug) console.log();
+    try {
+        // Load settings and symbols in parallel
+        const [settings, storeSymbols, restored] = await Promise.all([
+            window.settingsAPI.get(),
+            window.focusAPI.getSymbols(),
+            loadState(), // Make loadState async (see below)
+        ]);
 
-    container = document.getElementById("focus"); // Focus div is where the cards will be injected
+        window.settings = settings;
+        console.log("Loaded settings: ", window.settings);
 
-    // 1. Get symbols from preload store
-    const storeSymbols = await window.focusAPI.getSymbols();
-    window.settings = await window.settingsAPI.get();
-    console.log("laoded settings: ", window.settings);
+        // Initialize focus state (only if not restored)
+        if (!restored) {
+            storeSymbols.forEach((symbolData) => {
+                // Skip if already exists (just in case)
+                if (!focusState[symbolData.symbol]) {
+                    focusState[symbolData.symbol] = {
+                        hero: symbolData.symbol,
+                        price: symbolData.price || 1,
+                        hp: 0,
+                        dp: 0,
+                        strength: 0,
+                        xp: 0,
+                        lv: 0,
+                        score: 0,
+                        lastEvent: {
+                            hp: 0,
+                            dp: 0,
+                            xp: 0,
+                        },
+                        percs: [],
+                        floatValue: symbolData.statistics?.floatShares || 0, // Added optional chaining
+                        buffs: getBuffsForHero(symbolData),
+                    };
+                }
+            });
+        }
 
-    // ✅ Listen for settings updates globally
-    window.settingsAPI.onUpdate(async (updatedSettings) => {
-        if (debug) console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
-        window.settings = updatedSettings;
-        renderAll();
-    });
-
-    // 2. Create initial focus state
-    // Only init state if we didn't load one
-    if (!restored) {
-        storeSymbols.forEach((symbolData) => {
-            focusState[symbolData.symbol] = {
-                hero: symbolData.symbol,
-                price: symbolData.price || 1,
-                hp: 0,
-                dp: 0,
-                strength: 0,
-                xp: 0,
-                lv: 0,
-                score: 0,
-                lastEvent: {
-                    hp: 0,
-                    dp: 0,
-                    xp: 0,
-                },
-                percs: [],
-                floatValue: symbolData.statistics.floatShares,
-            };
+        // Set up event listeners AFTER initialization
+        window.settingsAPI.onUpdate(async (updatedSettings) => {
+            if (debug) console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
+            window.settings = updatedSettings;
+            renderAll();
         });
+
+        window.focusAPI.onFocusEvents((events) => {
+            const minPrice = window.settings?.top?.minPrice ?? 0;
+            const maxPrice = window.settings?.top?.maxPrice ?? Infinity;
+
+            events.forEach((event) => {
+                if (event.price < minPrice || (maxPrice > 0 && event.price > maxPrice)) {
+                    if (debug) console.log(`🚫 ${event.hero} skipped — price $${event.price} outside range $${minPrice}-$${maxPrice}`);
+                    return;
+                }
+                updateFocusStateFromEvent(event);
+            });
+        });
+
+        renderAll();
+        startScoreDecay();
+    } catch (error) {
+        console.error("Initialization failed:", error);
+        // Fallback or error handling here
+    }
+});
+
+function getBuffsForHero(symbolData) {
+    const buffs = {};
+
+    const floatBuff = getFloatBuff(symbolData);
+    if (floatBuff) buffs.float = floatBuff;
+
+    // You can add more categories here later like:
+    // buffs.news = getNewsBuff(...)
+
+    return buffs;
+}
+
+function getFloatBuff(symbolData) {
+    const float = symbolData.statistics?.floatShares;
+    const shares = symbolData.statistics?.sharesOutstanding;
+
+    const isCorrupt = !float || !shares || float <= 0 || shares <= 0 || float > 1e9 || shares > 5e9 || float / shares > 1.2 || float / shares < 0.01;
+
+    if (isCorrupt) {
+        return {
+            key: "floatCorrupt",
+            icon: "🧨",
+            desc: "Corrupted float data",
+            multiplier: 1,
+            score: 0,
+        };
     }
 
-    renderAll();
+    const floatBuffs = (window.percs || []).filter((b) => b.key?.startsWith("float") && "threshold" in b);
+    const selected = floatBuffs.sort((a, b) => a.threshold - b.threshold).find((b) => float < b.threshold);
 
-    // 3. Listen for incoming alerts
-    window.focusAPI.onFocusEvents((events) => {
-        events.forEach(updateFocusStateFromEvent);
-        // if(debug) console.log("⚡ Received focus events:", events);
-    });
-
-    startScoreDecay();
-});
+    return selected
+        ? {
+              key: selected.key,
+              icon: selected.icon,
+              desc: selected.desc,
+              multiplier: selected.multiplier,
+              score: selected.score,
+          }
+        : {
+              key: "floatUnranked",
+              icon: "❔",
+              desc: "Float does not match any buff",
+              multiplier: 1,
+              score: 0,
+          };
+}
 
 let lastTickerSetAt = 0;
 const MIN_UPDATE_INTERVAL = 5000; // 3 seconds
@@ -613,11 +685,21 @@ function calculateScore(hero, event) {
             }
 
             // Apply Float score
-            const floatScore = getFloatScore(hero.floatValue || 1);
+            let floatScore = 0;
+
+            if (hero.floatValue && hero.floatValue < 1_000_000_000) {
+                floatScore = getFloatScore(hero.floatValue);
+            } else {
+                if (debug && debugSamples < debugLimitSamples) {
+                    console.warn(`⚠️ Skipping float score due to invalid floatValue: ${hero.floatValue}`);
+                }
+            }
+
             if (debug && debugSamples < debugLimitSamples) {
                 const formattedFloat = hero.floatValue ? humanReadableNumbers(hero.floatValue) : "N/A";
                 logStep(hero.floatValue ? "🏷️" : "⚠️", `Float score (${formattedFloat})`, floatScore);
             }
+
             baseScore += floatScore;
 
             // Apply Volume score
@@ -628,6 +710,9 @@ function calculateScore(hero, event) {
                 logStep("📢", `${volRes.message}`, volRes.score);
             }
             baseScore += volRes.score;
+
+            // Only add to baseScore if hpScore is positive
+            baseScore += Math.max(0, baseScore);
         }
 
         // If it's a "down" event (dp > 0)
@@ -737,50 +822,8 @@ function startScoreDecay() {
     }, DECAY_INTERVAL_MS);
 }
 
-function humanReadableNumbers(value) {
-    if (!value || isNaN(value)) return "-";
-    const num = Number(value);
-    if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
-    if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
-    if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
-    return num.toLocaleString(); // For values smaller than 1,000
-}
-
 function calculateVolumeImpact(volume = 0, price = 1) {
-    const buffs = {
-        pennyCap: {
-            priceThreshold: 2,
-            volumeStages: [
-                { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 30000, multiplier: 0.01, score: -1500 },
-                { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 100000, multiplier: 0.5, score: -150 },
-                { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 350000, multiplier: 1.5, score: 100 },
-                { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 500000, multiplier: 2, score: 200 },
-                { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
-            ],
-        },
-        tinyCap: {
-            priceThreshold: 7,
-            volumeStages: [
-                { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 25000, multiplier: 0.01, score: -1500 },
-                { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 80000, multiplier: 0.5, score: -150 },
-                { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 300000, multiplier: 1.5, score: 100 },
-                { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 400000, multiplier: 2, score: 200 },
-                { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
-            ],
-        },
-        default: {
-            priceThreshold: Infinity,
-            volumeStages: [
-                { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 20000, multiplier: 0.01, score: -1500 },
-                { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 80000, multiplier: 0.5, score: -150 },
-                { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 300000, multiplier: 1.5, score: 100 },
-                { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 400000, multiplier: 2, score: 200 },
-                { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
-            ],
-        },
-    };
-
-    const categories = Object.entries(buffs)
+    const categories = Object.entries(percs)
         .map(([category, data]) => ({ category, ...data }))
         .sort((a, b) => a.priceThreshold - b.priceThreshold);
 
@@ -796,7 +839,7 @@ function calculateVolumeImpact(volume = 0, price = 1) {
             color: "#cccccc",
             animation: "none",
         },
-        score,
+        score: 0,
     };
 
     for (const category of categories) {
@@ -842,4 +885,13 @@ function getColorForStage(stageKey) {
         parabolicVol: "#f44336",
     };
     return colors[stageKey] || "#cccccc";
+}
+
+function humanReadableNumbers(value) {
+    if (!value || isNaN(value)) return "-";
+    const num = Number(value);
+    if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
+    return num.toLocaleString(); // For values smaller than 1,000
 }

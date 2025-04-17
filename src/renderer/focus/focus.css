@@ -2,7 +2,7 @@
 body {
     background-color: #1c1d23;
     color: #fff;
-    font-family: "Press Start 2P", monospace; 
+    font-family: "Press Start 2P", monospace;
     /* font-family: Arial, Helvetica, sans-serif; */
     margin: 0;
     padding: 1rem;
@@ -19,7 +19,7 @@ body {
 body::-webkit-scrollbar {
     display: none; /* Hide scrollbar in WebKit browsers */
 }
-#focus-window{
+#focus-window {
     margin-top: -5px;
 }
 /* Ticker Card */
@@ -41,7 +41,8 @@ body::-webkit-scrollbar {
     align-items: center; /* Vertically center items */
 }
 
-h1, h2 {
+h1,
+h2 {
     font-size: 16px;
     margin-top: -3px;
     color: #595959;
@@ -71,7 +72,6 @@ h2 {
     color: #a6fcca !important;
 }
 
-
 .ticker-symbol .lv {
     font-size: 0.5em;
     margin-left: 0;
@@ -97,7 +97,7 @@ h2 {
 /* Individual Bar */
 .bar {
     height: 12px;
-    background: rgba(0,0,0,0.09);
+    background: rgba(0, 0, 0, 0.09);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -121,8 +121,6 @@ h2 {
     text-overflow: ellipsis;
 }
 
-
-
 /* Bar Color Classes */
 .xp {
     background: linear-gradient(90deg, #01831d, #04f370);
@@ -132,13 +130,13 @@ h2 {
     background: linear-gradient(90deg, #c20101, #fd5151);
 }
 
-
 .strength {
     background: linear-gradient(90deg, #263cff, #00aeff);
 }
 
 /* Animation for HP and DP Boost */
-.hp-boost, .dp-damage {
+.hp-boost,
+.dp-damage {
     font-size: 12px;
     position: absolute;
     left: 280px;
@@ -163,7 +161,7 @@ h2 {
     padding: 2px 4px;
     border-radius: 4px;
     opacity: 1;
-    animation: floatOut 1.2s ease-out forwards;
+    animation: floatOut 5s ease-out forwards;
     pointer-events: none;
 }
 
@@ -180,6 +178,10 @@ h2 {
     0% {
         opacity: 1;
         transform: translateY(20px); /* Start 20px below its final position */
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(20px); /* End at its original position */
     }
     100% {
         opacity: 0;
@@ -201,7 +203,7 @@ h2 {
     height: 79px;
     background-image: url("./sprite/Soldier.png");
     background-repeat: no-repeat;
-    animation: soldier-walk 1s steps(10) ;
+    animation: soldier-walk 1s steps(10);
     background-position-x: 0;
     opacity: 0;
     transition: opacity 0.01s ease;
@@ -241,9 +243,15 @@ h2 {
 
 /* Optional pulse animation */
 @keyframes barPulse {
-    0% { transform: scaleX(1); }
-    50% { transform: scaleX(1.02); }
-    100% { transform: scaleX(1); }
+    0% {
+        transform: scaleX(1);
+    }
+    50% {
+        transform: scaleX(1.02);
+    }
+    100% {
+        transform: scaleX(1);
+    }
 }
 
 .bar-animate {
