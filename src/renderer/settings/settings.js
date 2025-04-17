@@ -162,17 +162,13 @@ function initializeGeneralSection() {
         // 1. Update runtime behavior
         window.traderviewAPI.setVisibility(visibility);
 
-        // 2. Save to settings
-        const latestSettings = await window.settingsAPI.get();
-        const newSettings = {
-            ...latestSettings,
-            traderview: {
-                ...(latestSettings.traderview || {}),
-                visibility,
-            },
+        // 2. Modify in-memory settings and persist
+        window.settings.traderview = {
+            ...(window.settings.traderview || {}),
+            visibility,
         };
 
-        await window.settingsAPI.update(newSettings);
+        await window.settingsAPI.update(window.settings);
     });
 }
 

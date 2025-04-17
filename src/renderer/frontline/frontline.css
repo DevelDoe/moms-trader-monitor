@@ -200,12 +200,12 @@ h2 {
 
 /* Draggable Area */
 .drag-area {
-    height: 3px;
+    height: 30px;
     -webkit-app-region: drag; /* Enable dragging */
     position: absolute;
     top: 0;
     width: 100%;
-    z-index: 10;
+    z-index: 999;
 }
 
 /* hp bar animatiion  */

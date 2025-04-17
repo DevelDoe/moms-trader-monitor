@@ -7,18 +7,18 @@ const log = require("../hlps/logger")(__filename);
 
 // Use system settings file for production, separate file for development
 const isDevelopment = process.env.NODE_ENV === "development";
-log.log('Development:', isDevelopment);
+log.log("Development:", isDevelopment);
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
-log.log('Current working directory:', process.cwd());
-log.log('__dirname:', __dirname);
-log.log('Full settings path:', SETTINGS_FILE);
-log.log('File exists:', fs.existsSync(SETTINGS_FILE));
-const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock"); 
+log.log("Current working directory:", process.cwd());
+log.log("__dirname:", __dirname);
+log.log("Full settings path:", SETTINGS_FILE);
+log.log("File exists:", fs.existsSync(SETTINGS_FILE));
+const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock");
 
 const DEFAULT_SETTINGS = {
     top: {
-        minPrice: 0,
-        maxPrice: 100,
+        minPrice: 1,
+        maxPrice: 0,
         minFloat: 0,
         maxFloat: 0,
         minScore: 0,
@@ -34,6 +34,7 @@ const DEFAULT_SETTINGS = {
                 Score: true,
                 Bonuses: true,
                 length: 3,
+                fiveMinVolume: false,
             },
             focus: {
                 Price: false,
@@ -43,20 +44,121 @@ const DEFAULT_SETTINGS = {
                 Score: true,
                 Bonuses: true,
                 length: 3,
+                fiveMinVolume: false,
             },
         },
+        liveListLength: 9,
+        frontlineListLength: 14,
+        focusListLength: 3,
+        dailyListLength: 15,
     },
     news: {
         showTrackedTickers: false,
         filteredTickers: [],
-        blockList: [],
-        bullishList: [
-            "FDA Approves", "Clinical Trials", "Noteworthy Insider Activity", // Add more items...
+        blockList: [
+            "nasdaq surges",
+            "Shares halted",
+            "shares resume",
+            "stocks moving in",
+            "earnings scheduled",
+            "Says experts",
+            "us stocks",
+            "futures waver",
+            "shares are trading",
+            "trading halt",
+            "crude oil moves lower",
+            "Market-moving news",
         ],
-        bearishList: [
-            "Sell Alert", "Stock Downgrade", "Downgrades to Sell", // Add more items...
-        ],
+        bullishList: ["FDA Approves", "Clinical Trials", "Noteworthy Insider Activity"],
+        bearishList: ["Sell Alert", "Stock Downgrade", "Downgrades to Sell"],
         allowMultiSymbols: false,
+    },
+    scanner: {
+        minPrice: 1,
+        maxPrice: 0,
+        direction: null,
+        minChangePercent: 0,
+        minVolume: 0,
+        maxAlerts: 20,
+        scannerVolume: 0,
+    },
+    windows: {
+        scannerWindow: {
+            width: 167,
+            height: 479,
+            x: 1461,
+            y: 0,
+            isOpen: true,
+        },
+        settingsWindow: {
+            width: 907,
+            height: 562,
+            x: 1495,
+            y: 990,
+            isOpen: true,
+        },
+        liveWindow: {
+            width: 358,
+            height: 481,
+            x: 884,
+            y: 784,
+            isOpen: false,
+        },
+        focusWindow: {
+            width: 419,
+            height: 479,
+            x: 1949,
+            y: 0,
+            isOpen: true,
+        },
+        dailyWindow: {
+            width: 469,
+            height: 538,
+            x: 725,
+            y: -550,
+            isOpen: false,
+        },
+        infobarWindow: {
+            width: 465,
+            height: 39,
+            x: 725,
+            y: -837,
+            isOpen: false,
+        },
+        wizardWindow: {
+            width: 2400,
+            height: 504,
+            x: -945,
+            y: -459,
+            isOpen: false,
+        },
+        dockerWindow: {
+            isOpen: true,
+        },
+        progressWindow: {
+            width: 1442,
+            height: 14,
+            x: -253,
+            y: -13,
+            isOpen: false,
+        },
+        frontlineWindow: {
+            width: 321,
+            height: 479,
+            x: 1628,
+            y: 0,
+            isOpen: true,
+        },
+        activeWindow: {
+            width: 802,
+            height: 404,
+            x: 1553,
+            y: 667,
+            isOpen: false,
+        },
+    },
+    traderview: {
+        visibility: false,
     },
 };
 

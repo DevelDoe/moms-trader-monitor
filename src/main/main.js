@@ -12,15 +12,22 @@ const forceUpdate = process.env.forceUpdate === "true";
 log.log("Init app");
 
 const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require("electron");
+const path = require("path");
+const fs = require("fs");
+
+// 🧠 Set unique userData path for dev builds to avoid cache conflict
+if (process.env.NODE_ENV === "development") {
+    const devPath = path.join(app.getPath("appData"), "Moms_Trader_Monitor_Dev");
+    app.setPath("userData", devPath);
+    app.setName("Moms Trader Monitor Dev");
+    log.log(`[main.js] Running in dev mode with userData path: ${devPath}`);
+}
 const { connectBridge, sendActiveSymbol } = require("../bridge");
 const { autoUpdater } = require("electron-updater");
 const tickerStore = require("./store");
 const { safeSend } = require("./utils/safeSend");
 const { broadcast } = require("./utils/broadcast");
 const windowManager = require("./windowManager");
-
-const path = require("path");
-const fs = require("fs");
 
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch("disable-gpu-shader-disk-cache");

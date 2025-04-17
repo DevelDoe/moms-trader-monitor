@@ -75,18 +75,18 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 173,
-      "height": 893,
-      "x": -250,
-      "y": -900,
+      "width": 167,
+      "height": 479,
+      "x": 1461,
+      "y": 0,
       "isOpen": true
     },
     "settingsWindow": {
       "width": 907,
       "height": 562,
-      "x": 1461,
-      "y": 0,
-      "isOpen": false
+      "x": 2502,
+      "y": 306,
+      "isOpen": true
     },
     "liveWindow": {
       "width": 358,
@@ -96,10 +96,10 @@
       "isOpen": false
     },
     "focusWindow": {
-      "width": 444,
-      "height": 484,
-      "x": 281,
-      "y": -496,
+      "width": 419,
+      "height": 479,
+      "x": 1949,
+      "y": 0,
       "isOpen": true
     },
     "dailyWindow": {
@@ -107,21 +107,21 @@
       "height": 538,
       "x": 725,
       "y": -550,
-      "isOpen": true
+      "isOpen": false
     },
     "infobarWindow": {
       "width": 465,
       "height": 39,
       "x": 725,
       "y": -837,
-      "isOpen": true
+      "isOpen": false
     },
     "wizardWindow": {
       "width": 2400,
       "height": 504,
       "x": -945,
       "y": -459,
-      "isOpen": true
+      "isOpen": false
     },
     "dockerWindow": {
       "isOpen": true
@@ -131,21 +131,21 @@
       "height": 14,
       "x": -253,
       "y": -13,
-      "isOpen": true
+      "isOpen": false
     },
     "frontlineWindow": {
-      "width": 359,
-      "height": 483,
-      "x": -77,
-      "y": -496,
+      "width": 321,
+      "height": 479,
+      "x": 1628,
+      "y": 0,
       "isOpen": true
     },
     "activeWindow": {
       "width": 802,
       "height": 404,
-      "x": -77,
-      "y": -900,
-      "isOpen": true
+      "x": 1553,
+      "y": 667,
+      "isOpen": false
     },
     "traderviewWindow_MULN": {
       "width": 1486,
@@ -371,6 +371,9 @@
       "isOpen": false
     },
     "traderviewWindow_ARBB": {
+      "isOpen": false
+    },
+    "traderviewWindow_CMND": {
       "isOpen": false
     }
   },
