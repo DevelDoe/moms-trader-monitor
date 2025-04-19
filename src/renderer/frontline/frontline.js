@@ -24,155 +24,19 @@ const debugScoreCalc = true;
 const debugLimitSamples = 6000;
 let debugSamples = 0;
 
-window.percs = [
-    { key: "float1m", threshold: 2_000_000, icon: "1️⃣", desc: "Float around 1M", multiplier: 1.15, score: 300 },
-    { key: "float5m", threshold: 7_500_000, icon: "5️⃣", desc: "Float around 5M", multiplier: 1.1, score: 100 },
-    { key: "float10m", threshold: 13_000_000, icon: "🔟", desc: "Float around 10M", multiplier: 1.05, score: 50 },
-    { key: "float50m", threshold: 50_000_000, icon: "", desc: "Float around 50M", multiplier: 1, score: 0 },
-    { key: "float100m", threshold: 100_000_000, icon: "", desc: "Float around 100M", multiplier: 0.8, score: -50 },
-    { key: "float200m", threshold: 200_000_000, icon: "", desc: "Float around 200M", multiplier: 0.6, score: -100 },
-    { key: "float500m", threshold: 500_000_000, icon: "", desc: "Float around 500M", multiplier: 0.4, score: -300 },
-    { key: "float600m+", threshold: Infinity, icon: "", desc: "Float higher than 600M", multiplier: 0.1, score: -1000 },
-
-    {
-        category: "subCap",
-        priceThreshold: 1,
-        volumeStages: [
-            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 40000, multiplier: 0.01, score: -1500 },
-            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 120000, multiplier: 0.5, score: -150 },
-            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 400000, multiplier: 1.5, score: 0 },
-            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 550000, multiplier: 2, score: 100 },
-            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: "Infinity", multiplier: 4, score: 200 },
-        ],
-    },
-    {
-        category: "pennyCap",
-        priceThreshold: 2,
-        volumeStages: [
-            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 30000, multiplier: 0.01, score: -1500 },
-            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 100000, multiplier: 0.5, score: -150 },
-            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 350000, multiplier: 1.5, score: 100 },
-            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 500000, multiplier: 2, score: 200 },
-            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
-        ],
-    },
-    {
-        category: "tinyCap",
-        priceThreshold: 7,
-        volumeStages: [
-            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 25000, multiplier: 0.01, score: -1500 },
-            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 80000, multiplier: 0.5, score: -150 },
-            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 300000, multiplier: 1.5, score: 100 },
-            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 400000, multiplier: 2, score: 200 },
-            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
-        ],
-    },
-    {
-        category: "default",
-        priceThreshold: Infinity,
-        volumeStages: [
-            { key: "minVol", icon: "💭", desc: "Low Volume", volumeThreshold: 20000, multiplier: 0.01, score: -1500 },
-            { key: "lowVol", icon: "💤", desc: "Low Volume", volumeThreshold: 80000, multiplier: 0.5, score: -150 },
-            { key: "mediumVol", icon: "🚛", desc: "Medium Volume", volumeThreshold: 300000, multiplier: 1.5, score: 100 },
-            { key: "highVol", icon: "🔥", desc: "High Volume", volumeThreshold: 400000, multiplier: 2, score: 200 },
-            { key: "parabolicVol", icon: "🚀", desc: "Parabolic Volume", volumeThreshold: Infinity, multiplier: 4, score: 400 },
-        ],
-    },
-
-    { key: "lockedShares", icon: "💼", desc: "High insider/institutional/locked shares holders", score: 10 },
-
-    { key: "hasNews", icon: "😼", desc: "Has news", score: 15 },
-    { key: "newHigh", icon: "📈", desc: "New high", score: 10 },
-    { key: "bounceBack", icon: "🔁", desc: "Recovering — stock is bouncing back after a downtrend", score: 5 },
-
-    { key: "bio", icon: "🧬", desc: "Biotechnology stock", score: 5 },
-    { key: "weed", icon: "🌿", desc: "Cannabis stock", score: 5 },
-    { key: "space", icon: "🌌", desc: "Space industry stock", score: 5 },
-    { key: "china", icon: "🇨🇳/🇭🇰", desc: "China/Hong Kong-based company", score: 0 },
-
-    { key: "highShort", icon: "🩳", desc: "High short interest (more than 20% of float)", score: 10 },
-    { key: "netLoss", icon: "🥅", desc: "Company is currently running at a net loss", score: -5 },
-    { key: "hasS3", icon: "📂", desc: "Registered S-3 filing", score: -10 },
-    { key: "dilutionRisk", icon: "🚨", desc: "High dilution risk: Net loss + Registered S-3", score: -20 },
-];
-
-window.pauseEvents = () => {
-    eventsPaused = true;
-    if (debug) console.log("Events are now paused");
-};
-
-window.resumeEvents = () => {
-    eventsPaused = false;
-    if (debug) console.log("Events are now resumed");
-};
-
-function getMarketDateString() {
-    const now = new Date();
-    const offset = -5 * 60; // EST offset in minutes (adjust for DST if needed)
-    const localOffset = now.getTimezoneOffset();
-    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
-    return estDate.toISOString().split("T")[0];
-}
-
-function saveState() {
-    const existing = localStorage.getItem("frontlineState");
-    let sessionDate = getMarketDateString();
-
-    if (existing) {
-        try {
-            const parsed = JSON.parse(existing);
-            if (parsed.date && parsed.date !== sessionDate) {
-                if (debug) console.log("🧼 Overwriting old session from", parsed.date);
-            } else {
-                sessionDate = parsed.date || sessionDate;
-            }
-        } catch {
-            console.warn("⚠️ Invalid existing frontline state. Overwriting.");
-        }
-    }
-
-    const payload = {
-        date: sessionDate,
-        state: frontlineState,
-    };
-
-    localStorage.setItem("frontlineState", JSON.stringify(payload));
-}
-
-async function loadState() {
-    const saved = localStorage.getItem("frontlineState");
-    if (!saved) return false;
-
-    try {
-        const parsed = JSON.parse(saved);
-        const today = getMarketDateString();
-
-        if (parsed.date === today) {
-            Object.assign(frontlineState, parsed.state); // More efficient than forEach
-            if (debug) console.log("🔄 Restored frontline state from earlier session.");
-            return true;
-        } else {
-            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
-            localStorage.removeItem("frontlineState");
-            return false;
-        }
-    } catch (err) {
-        console.warn("⚠️ Could not parse frontline state. Clearing.");
-        localStorage.removeItem("frontlineState");
-        return false;
-    }
-}
-
-function clearState() {
-    localStorage.removeItem("frontlineState");
-    for (const key in frontlineState) {
-        delete frontlineState[key];
-    }
-    if (debug) console.log("🧹 Cleared saved and in-memory frontline state.");
-}
+let buffs = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ DOMContentLoaded event fired!");
+
+    window.addEventListener("DOMContentLoaded", async () => {
+        buffs = await window.electronAPI.getBuffs(); // ✅ assign to global
+
+        window.electronAPI.onBuffsUpdate((updatedBuffs) => {
+            console.log("🔄 Buffs updated via IPC:", updatedBuffs);
+            buffs = updatedBuffs; // ✅ update global
+        });
+    });
 
     container = document.getElementById("frontline");
 
@@ -267,7 +131,7 @@ function getFloatBuff(symbolData) {
         };
     }
 
-    const floatBuffs = (window.percs || []).filter((b) => b.key?.startsWith("float") && "threshold" in b);
+    const floatBuffs = (window.buffs || []).filter((b) => b.key?.startsWith("float") && "threshold" in b);
     const selected = floatBuffs.sort((a, b) => a.threshold - b.threshold).find((b) => float < b.threshold);
 
     return selected
@@ -536,17 +400,7 @@ function getSpriteRowFromState({ hp, strength, lastEvent }) {
     return 0; // Idle
 }
 
-function getSymbolColor(symbol) {
-    if (!symbolColors[symbol]) {
-        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const hue = (hash * 37) % 360;
-        const saturation = 80;
-        const lightness = 50;
-        const alpha = 0.5;
-        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
-    }
-    return symbolColors[symbol];
-}
+/////////////////////////////////// Calculations
 
 function calculateScore(hero, event) {
     if (event.strength < 1000) {
@@ -569,8 +423,11 @@ function calculateScore(hero, event) {
         if (event.hp > 0) {
             baseScore += event.hp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
+
+            // Apply Float score
             const floatBuff = hero.buffs?.float;
             const floatMult = floatBuff?.multiplier ?? 1;
+            baseScore *= floatMult;
 
             if (debug && debugSamples < debugLimitSamples) {
                 const label = floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️";
@@ -578,8 +435,7 @@ function calculateScore(hero, event) {
                 logStep(label, `Float Mult (${formattedFloat})`, floatMult);
             }
 
-            baseScore *= floatMult;
-
+            // Apply Volume score
             const volMult = calculateVolumeImpact(event.strength || 0, hero.price || 1);
             if (debug && debugSamples < debugLimitSamples) logStep("📢", `${volMult.message}`, volMult.multiplier);
 
@@ -708,7 +564,7 @@ function humanReadableNumbers(value) {
 }
 
 function calculateVolumeImpact(volume = 0, price = 1) {
-    const categories = Object.entries(percs)
+    const categories = Object.entries(buffs)
         .map(([category, data]) => ({ category, ...data }))
         .sort((a, b) => a.priceThreshold - b.priceThreshold);
 
@@ -760,6 +616,18 @@ function calculateVolumeImpact(volume = 0, price = 1) {
     return result;
 }
 
+function getSymbolColor(symbol) {
+    if (!symbolColors[symbol]) {
+        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hue = (hash * 37) % 360;
+        const saturation = 80;
+        const lightness = 50;
+        const alpha = 0.5;
+        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    }
+    return symbolColors[symbol];
+}
+
 function getColorForStage(stageKey) {
     const colors = {
         lowVol: "#cccccc",
@@ -774,4 +642,81 @@ function humanReadableNumbers(num) {
     if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
     if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
     return num.toString();
+}
+
+/////////////////////////////////// state
+
+window.pauseEvents = () => {
+    eventsPaused = true;
+    if (debug) console.log("Events are now paused");
+};
+
+window.resumeEvents = () => {
+    eventsPaused = false;
+    if (debug) console.log("Events are now resumed");
+};
+
+function getMarketDateString() {
+    const now = new Date();
+    const offset = -5 * 60; // EST offset in minutes (adjust for DST if needed)
+    const localOffset = now.getTimezoneOffset();
+    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
+    return estDate.toISOString().split("T")[0];
+}
+
+function saveState() {
+    const existing = localStorage.getItem("frontlineState");
+    let sessionDate = getMarketDateString();
+
+    if (existing) {
+        try {
+            const parsed = JSON.parse(existing);
+            if (parsed.date && parsed.date !== sessionDate) {
+                if (debug) console.log("🧼 Overwriting old session from", parsed.date);
+            } else {
+                sessionDate = parsed.date || sessionDate;
+            }
+        } catch {
+            console.warn("⚠️ Invalid existing frontline state. Overwriting.");
+        }
+    }
+
+    const payload = {
+        date: sessionDate,
+        state: frontlineState,
+    };
+
+    localStorage.setItem("frontlineState", JSON.stringify(payload));
+}
+
+async function loadState() {
+    const saved = localStorage.getItem("frontlineState");
+    if (!saved) return false;
+
+    try {
+        const parsed = JSON.parse(saved);
+        const today = getMarketDateString();
+
+        if (parsed.date === today) {
+            Object.assign(frontlineState, parsed.state); // More efficient than forEach
+            if (debug) console.log("🔄 Restored frontline state from earlier session.");
+            return true;
+        } else {
+            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
+            localStorage.removeItem("frontlineState");
+            return false;
+        }
+    } catch (err) {
+        console.warn("⚠️ Could not parse frontline state. Clearing.");
+        localStorage.removeItem("frontlineState");
+        return false;
+    }
+}
+
+function clearState() {
+    localStorage.removeItem("frontlineState");
+    for (const key in frontlineState) {
+        delete frontlineState[key];
+    }
+    if (debug) console.log("🧹 Cleared saved and in-memory frontline state.");
 }

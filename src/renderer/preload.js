@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronAPI", {
     closeSplash: () => ipcRenderer.send("close-splash"),
     onSymbolsFetched: (callback) => ipcRenderer.on("symbols-fetched", callback),
+    getBuffs: () => ipcRenderer.invoke("buffs:get"),
+    onBuffsUpdate: (callback) => ipcRenderer.on("buffs:update", (_, buffs) => callback(buffs)),
     exitApp: () => ipcRenderer.send("exit-app"),
 });
 

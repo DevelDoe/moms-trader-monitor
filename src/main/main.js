@@ -66,6 +66,8 @@ try {
     log.error("[Buffs] Failed to load buffs.json:", err);
 }
 
+const buffManager = require("./data/buffsManager");
+
 ////////////////////////////////////////////////////////////////////////////////////// WINDOWS
 
 const { createWindow, destroyWindow, restoreWindows, registerTradingViewWindow, destroyTradingViewWindows, updateTradingViewWindows, getWindow } = require("./windowManager");
@@ -341,6 +343,19 @@ ipcMain.on("close-splash", () => {
         windows.splash.close();
         delete windows.splash;
     }
+});
+
+// Shared data
+ipcMain.handle("buffs:get", () => {
+    return buffManager.getBuffs();
+});
+
+buffManager.on("update", (buffs) => {
+    BrowserWindow.getAllWindows().forEach((win) => {
+        if (win.webContents && !win.webContents.isDestroyed()) {
+            win.webContents.send("buffs:update", buffs);
+        }
+    });
 });
 
 // Settings

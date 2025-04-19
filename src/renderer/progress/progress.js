@@ -9,7 +9,7 @@ let dynamicWindowSize = 50; // adaptive window size
 // Update every second
 setInterval(() => {
     const minSize = 0;
-    const maxSize = 300;
+    const maxSize = 400;
 
     const smoothing = 0.98; // Higher = slower, smoother response (good for ketchup)
     tradeRate = tradeRate * smoothing + tradeRateRaw * (1 - smoothing);
