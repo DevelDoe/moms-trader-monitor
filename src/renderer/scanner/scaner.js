@@ -8,7 +8,7 @@ function parseVolumeValue(str) {
 
     return value;
 }
-
+const debug = true;
 document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
     console.log("loaded settings: ", window.settings);
@@ -101,8 +101,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const frequency = baseFreq + uptickCount * 50;
         oscillator.frequency.value = frequency;
 
-        // const volume = Math.max(0, Math.min(1, window.settings?.scanner?.scannerVolume ?? 0.5));
-        const volume = Math.max(0, Math.min(1, 1));
+        const volume = Math.max(0, Math.min(1, window.settings?.scanner?.scannerVolume ?? 0.5));
+        // const volume = Math.max(0, Math.min(1, 1));
         gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 

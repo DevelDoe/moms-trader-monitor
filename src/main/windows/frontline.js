@@ -4,7 +4,7 @@ const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createFrontlineWindow(isDevelopment, buffs) {
+function createFrontlineWindow(isDevelopment) {
     const state = getWindowState("frontlineWindow");
 
     const window = new BrowserWindow({
@@ -25,9 +25,6 @@ function createFrontlineWindow(isDevelopment, buffs) {
             contextIsolation: true,
             enableRemoteModule: false,
             nodeIntegration: false,
-            additionalArguments: [
-                `--buffs=${encodeURIComponent(JSON.stringify(buffs))}`
-            ]
         },
     });
 
@@ -38,7 +35,7 @@ function createFrontlineWindow(isDevelopment, buffs) {
             window.webContents.openDevTools({ mode: "detach" });
         });
     }
-    
+
     window.on("move", () => {
         const bounds = window.getBounds();
         setWindowBounds("frontlineWindow", bounds);

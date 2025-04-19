@@ -135,6 +135,10 @@ h2 {
 }
 
 /* Animation for HP and DP Boost */
+#change {
+    position: absolute;
+    left: -110px;
+}
 .hp-boost,
 .dp-damage {
     font-size: 12px;
@@ -155,13 +159,13 @@ h2 {
 /* Boost Animation */
 .boost {
     position: absolute;
-    left: 200%;
+    left: opx;
     top: -6px;
     font-size: 10px;
     padding: 2px 4px;
     border-radius: 4px;
     opacity: 1;
-    animation: floatOut 5s ease-out forwards;
+    animation: floatOut 6s ease-out forwards;
     pointer-events: none;
 }
 
@@ -256,4 +260,81 @@ h2 {
 
 .bar-animate {
     animation: barPulse 0.3s ease-out;
+}
+
+/* buffs  */
+.ticker-header-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+/* Buffs aligned to the right */
+.buff-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    padding-top: 0px;
+}
+
+.buff-row {
+    display: flex;
+    gap: 2px;
+    font-size: 12px;
+    /* box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); */
+
+    margin-bottom: 2px;
+}
+
+.buff-icon {
+    /* background-color: #333; */
+    padding: 2px 4px;
+    cursor: help;
+    opacity: 0.91;
+}
+
+.buff-row.positive {
+    /* border-bottom: 1px solid rgba(0, 255, 221, 0.2); */
+}
+
+.buff-row.negative {
+    /* border-bottom: 1px solid rgba(128, 0, 0, 0.8); */
+}
+
+/* score animations */
+
+.score-flash-up {
+    color: #00ffaa !important;
+    animation: flashColorUp 0.4s ease-out;
+}
+
+.score-flash-down {
+    color: #ffcdcd !important;
+    animation: flashColorDown 0.4s ease-out;
+}
+
+@keyframes flashColorUp {
+    0% {
+        color: #00ff00;
+    }
+    100% {
+        color: inherit;
+    }
+}
+
+@keyframes flashColorDown {
+    0% {
+        color: #ff3333;
+    }
+    100% {
+        color: inherit;
+    }
+}
+
+.buff-negative {
+    color: red;
+    opacity: 0.9;
+    font-weight: bold;
 }

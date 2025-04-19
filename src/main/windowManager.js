@@ -22,19 +22,6 @@ const isDevelopment = process.env.NODE_ENV === "development";
 
 const windows = {};
 
-// Buffs
-
-const buffsPath = path.join(__dirname, "../data/buffs.json");
-let buffs = [];
-
-try {
-    const raw = fs.readFileSync(buffsPath, "utf-8");
-    buffs = JSON.parse(raw);
-    log.log("[Buffs] Loaded", buffs.length, "buffs");
-} catch (err) {
-    log.error("[Buffs] Failed to load buffs.json:", err);
-}
-
 let quitting = false;
 
 function setQuitting(val) {
@@ -152,11 +139,11 @@ function createWindowByName(name) {
         case "settings":
             return createSettingsWindow(isDevelopment);
         case "live":
-            return createLiveWindow(isDevelopment, buffs);
+            return createLiveWindow(isDevelopment);
         case "frontline":
             return createFrontlineWindow(isDevelopment);
         case "focus":
-            return createFocusWindow(isDevelopment, buffs);
+            return createFocusWindow(isDevelopment);
         case "daily":
             return createDailyWindow(isDevelopment);
         case "active":

@@ -43,7 +43,6 @@
       "Shares halted",
       "shares resume",
       "stocks moving in",
-      "earnings scheduled",
       "Says experts",
       "us stocks",
       "futures waver",
@@ -55,7 +54,8 @@
     "bullishList": [
       "FDA Approves",
       "Clinical Trials",
-      "Noteworthy Insider Activity"
+      "Noteworthy Insider Activity",
+      "Earnings Scheduled"
     ],
     "bearishList": [
       "Sell Alert",
@@ -75,17 +75,17 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 167,
-      "height": 479,
-      "x": 1461,
-      "y": 0,
+      "width": 173,
+      "height": 900,
+      "x": -250,
+      "y": -900,
       "isOpen": true
     },
     "settingsWindow": {
       "width": 907,
       "height": 562,
-      "x": 2502,
-      "y": 306,
+      "x": 2593,
+      "y": 632,
       "isOpen": true
     },
     "liveWindow": {
@@ -96,18 +96,18 @@
       "isOpen": false
     },
     "focusWindow": {
-      "width": 419,
-      "height": 479,
-      "x": 1949,
-      "y": 0,
+      "width": 444,
+      "height": 496,
+      "x": 281,
+      "y": -496,
       "isOpen": true
     },
     "dailyWindow": {
-      "width": 469,
-      "height": 538,
+      "width": 465,
+      "height": 553,
       "x": 725,
-      "y": -550,
-      "isOpen": false
+      "y": -553,
+      "isOpen": true
     },
     "infobarWindow": {
       "width": 465,
@@ -134,18 +134,18 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 321,
-      "height": 479,
-      "x": 1628,
-      "y": 0,
+      "width": 358,
+      "height": 496,
+      "x": -77,
+      "y": -496,
       "isOpen": true
     },
     "activeWindow": {
       "width": 802,
       "height": 404,
-      "x": 1553,
-      "y": 667,
-      "isOpen": false
+      "x": -77,
+      "y": -900,
+      "isOpen": true
     },
     "traderviewWindow_MULN": {
       "width": 1486,

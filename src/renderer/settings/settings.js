@@ -216,9 +216,9 @@ function initializeScannerSection() {
     minVolumeInput.value = window.settings.scanner.minVolume ?? "";
     maxAlertsInput.value = window.settings.scanner.maxAlerts ?? 50;
     volumeSlider.value = window.settings.scanner.scannerVolume ?? 1;
-    volumeValueDisplay.textContent = `${Math.round((window.settings.scanner.scannerVolume ?? 0.5) * 100)}%`;
 
     async function updateScannerSettings() {
+        0;
         try {
             const latestSettings = await window.settingsAPI.get();
             if (!latestSettings) {
@@ -235,7 +235,7 @@ function initializeScannerSection() {
                     minChangePercent: parseFloat(minChangePercentInput.value) || 0,
                     minVolume: parseInt(minVolumeInput.value, 10) || 0,
                     maxAlerts: parseInt(maxAlertsInput.value, 10) || 50,
-                    scannerVolume: parseFloat(volumeSlider.value) || 0.5, // ✅ Volume setting added
+                    scannerVolume: parseFloat(volumeSlider.value) ?? 0.5, // ✅ Volume setting added
                 },
             };
 
