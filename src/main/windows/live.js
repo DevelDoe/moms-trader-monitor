@@ -4,7 +4,7 @@ const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
-function createLiveWindow(isDevelopment, buffs) {
+function createLiveWindow(isDevelopment) {
     const state = getWindowState("liveWindow");
 
     const window = new BrowserWindow({
@@ -25,9 +25,6 @@ function createLiveWindow(isDevelopment, buffs) {
             contextIsolation: true,
             enableRemoteModule: false,
             nodeIntegration: false,
-            additionalArguments: [
-                `--buffs=${encodeURIComponent(JSON.stringify(buffs))}`
-            ]
         },
     });
 
@@ -39,13 +36,11 @@ function createLiveWindow(isDevelopment, buffs) {
         const bounds = window.getBounds();
         setWindowBounds("liveWindow", bounds);
     });
-    
+
     window.on("resize", () => {
         const bounds = window.getBounds();
         setWindowBounds("liveWindow", bounds);
     });
-
-    
 
     return window;
 }

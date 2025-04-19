@@ -8,6 +8,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     exitApp: () => ipcRenderer.send("exit-app"),
 });
 
+contextBridge.exposeInMainWorld("appFlags", {
+    isDev: process.env.NODE_ENV === "development",
+});
+
 contextBridge.exposeInMainWorld("settingsAPI", {
     toggle: () => ipcRenderer.send("toggle-settings"),
     get: () => ipcRenderer.invoke("get-settings"),

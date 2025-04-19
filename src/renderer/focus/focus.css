@@ -333,4 +333,8 @@ h2 {
     }
 }
 
-/* adding removeing  */
+.buff-negative {
+    color: red;
+    opacity: 0.9;
+    font-weight: bold;
+}

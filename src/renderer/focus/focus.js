@@ -21,112 +21,36 @@ let currentActiveTicker = null;
 
 let lastTopHeroes = [];
 
-isLongBiased = true;
-
 let eventsPaused = false;
 
-const debug = true;
+const { isDev } = window.appFlags;
 
-const debugScoreCalc = true;
+const freshStart = isDev;
+const debug = isDev;
+const debugScoreCalc = isDev;
+
+console.log("🎯 Fresh start mode:", freshStart);
+console.log("🐛 Debug mode:", debug);
+
 const debugLimitSamples = 1500;
 let debugSamples = 0;
 
 let buffs = [];
 
-window.pauseEvents = () => {
-    eventsPaused = true;
-    if (debug) console.log("Events are now paused");
-};
-
-window.resumeEvents = () => {
-    eventsPaused = false;
-    if (debug) console.log("Events are now resumed");
-};
-
-function getMarketDateString() {
-    const now = new Date();
-    const offset = -5 * 60; // EST offset in minutes (adjust for DST if needed)
-    const localOffset = now.getTimezoneOffset();
-    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
-    return estDate.toISOString().split("T")[0];
-}
-
-function saveState() {
-    const existing = localStorage.getItem("focusState");
-    let sessionDate = getMarketDateString();
-
-    if (existing) {
-        try {
-            const parsed = JSON.parse(existing);
-            if (parsed.date && parsed.date !== sessionDate) {
-                if (debug) console.log("🧼 Overwriting old session from", parsed.date);
-            } else {
-                sessionDate = parsed.date || sessionDate;
-            }
-        } catch {
-            console.warn("⚠️ Invalid existing focus state. Overwriting.");
-        }
-    }
-
-    const payload = {
-        date: sessionDate,
-        state: focusState,
-    };
-
-    localStorage.setItem("focusState", JSON.stringify(payload));
-}
-
-async function loadState() {
-    const saved = localStorage.getItem("focusState");
-    if (!saved) return false;
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("⚡ Hero window loaded");
 
     try {
-        const parsed = JSON.parse(saved);
-        const today = getMarketDateString();
-
-        if (parsed.date === today) {
-            Object.assign(focusState, parsed.state);
-            if (debug) console.log("🔄 Restored focus state from earlier session.");
-            return true;
-        } else {
-            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
-            localStorage.removeItem("focusState");
-            return false;
-        }
-    } catch (err) {
-        console.warn("⚠️ Could not parse focus state. Clearing.");
-        localStorage.removeItem("focusState");
-        return false;
-    }
-}
-
-function clearState() {
-    localStorage.removeItem("focusState");
-    for (const key in focusState) {
-        delete focusState[key];
-    }
-    if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
-}
-
-window.clearState = () => {
-    localStorage.removeItem("focusState");
-    for (const key in focusState) {
-        delete focusState[key];
-    }
-    if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
-};
-
-document.addEventListener("DOMContentLoaded", async () => {
-    if (debug) console.log("⚡ DOMContentLoaded event fired!");
-
-    window.addEventListener("DOMContentLoaded", async () => {
-        buffs = await window.electronAPI.getBuffs(); // ✅ assign to global
+        const fetchedBuffs = await window.electronAPI.getBuffs(); // ✅ pull buffs from preload
+        window.buffs = fetchedBuffs; // ✅ set to global
 
         window.electronAPI.onBuffsUpdate((updatedBuffs) => {
-            console.log("🔄 Buffs updated via IPC:", updatedBuffs);
-            buffs = updatedBuffs; // ✅ update global
+            if (debug) console.log("🔄 Buffs updated via IPC:", updatedBuffs);
+            window.buffs = updatedBuffs; // ✅ update global
         });
-    });
+    } catch (err) {
+        console.error("❌ Failed to load buffs:", err);
+    }
 
     container = document.getElementById("focus");
 
@@ -139,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         ]);
 
         window.settings = settings;
-        console.log("Loaded settings: ", window.settings);
+        if (debug) console.log("Loaded settings: ", window.settings);
 
         // Initialize focus state (only if not restored)
         if (!restored) {
@@ -201,8 +125,29 @@ function getBuffsForHero(symbolData) {
     const floatBuff = getFloatBuff(symbolData);
     if (floatBuff) buffs.float = floatBuff;
 
-    // You can add more categories here later like:
-    // buffs.news = getNewsBuff(...)
+    const newsBuff = getNewsBuff(symbolData);
+    if (newsBuff) buffs.news = newsBuff;
+
+    const ownershipBuff = getOwnershipBuff(symbolData);
+    if (ownershipBuff) buffs.ownership = ownershipBuff;
+
+    const industryBuff = getIndustryBuff(symbolData);
+    if (industryBuff) buffs.industry = industryBuff;
+
+    const countryBuff = getCountryBuff(symbolData);
+    if (countryBuff) buffs.country = countryBuff;
+
+    const shortBuff = getShortInterestBuff(symbolData);
+    if (shortBuff) buffs.highShort = shortBuff;
+
+    const netLossBuff = getNetLossBuff(symbolData);
+    if (netLossBuff) buffs.netLoss = netLossBuff;
+
+    const s3Buff = getS3FilingBuff(symbolData);
+    if (s3Buff) buffs.hasS3 = s3Buff;
+
+    const dilutionBuff = getDilutionRiskBuff(symbolData);
+    if (dilutionBuff) buffs.dilutionRisk = dilutionBuff;
 
     return buffs;
 }
@@ -220,11 +165,20 @@ function getFloatBuff(symbolData) {
             desc: "Corrupted float data",
             multiplier: 1,
             score: 0,
+            isBuff: false,
         };
     }
 
-    const floatBuffs = (window.buffs || []).filter((b) => b.key?.startsWith("float") && "threshold" in b);
-    const selected = floatBuffs.sort((a, b) => a.threshold - b.threshold).find((b) => float < b.threshold);
+    const floatBuffs = (window.buffs || [])
+        .filter((b) => b.key?.startsWith("float") && b.threshold != null)
+        .map((b) => ({
+            ...b,
+            threshold: Number(b.threshold),
+        }))
+        .filter((b) => !isNaN(b.threshold))
+        .sort((a, b) => a.threshold - b.threshold);
+
+    const selected = floatBuffs.find((b) => float < b.threshold);
 
     return selected
         ? {
@@ -233,6 +187,7 @@ function getFloatBuff(symbolData) {
               desc: selected.desc,
               multiplier: selected.multiplier,
               score: selected.score,
+              isBuff: selected.isBuff ?? selected.score >= 0,
           }
         : {
               key: "floatUnranked",
@@ -240,7 +195,219 @@ function getFloatBuff(symbolData) {
               desc: "Float does not match any buff",
               multiplier: 1,
               score: 0,
+              isBuff: false,
           };
+}
+
+function getNewsBuff(symbolData) {
+    const blockList = window.settings?.news?.blockList || [];
+    const news = symbolData.News || [];
+
+    if (!Array.isArray(news) || news.length === 0) return null;
+
+    const hasGoodNews = news.some((item) => {
+        const headline = sanitize(item.headline || "");
+        return !blockList.some((b) => headline.includes(sanitize(b)));
+    });
+
+    if (!hasGoodNews) return null;
+
+    return {
+        key: "news",
+        icon: "😼",
+        desc: "Has positive/unblocked news",
+        score: 150, // Up to you if you want to affect score
+        multiplier: 1.1, // Optional if you plan on scoring via buffs
+        isBuff: true,
+    };
+}
+
+function getOwnershipBuff(symbolData) {
+    const stats = symbolData.statistics || {};
+    const ownership = symbolData.ownership || {};
+
+    const floatShares = stats.floatShares || 0;
+    const sharesOutstanding = stats.sharesOutstanding || 0;
+    const insidersPercentHeld = ownership.insidersPercentHeld || 0;
+    const institutionsPercentHeld = ownership.institutionsPercentHeld || 0;
+
+    if (!sharesOutstanding) return null;
+
+    const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
+    const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
+    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0);
+
+    const totalHeld = insiderShares + institutionalShares + remainingShares;
+
+    if (totalHeld > 0.5 * sharesOutstanding) {
+        // Load matching buff from global list by key to retain proper flags
+        const defined = (window.buffsArray || []).find((b) => b.key === "lockedShares");
+        return (
+            defined || {
+                key: "lockedShares",
+                icon: "💼",
+                desc: "High insider/institutional/locked shares holders",
+                score: 10,
+                isBuff: false, // explicitly false
+            }
+        );
+    }
+
+    return null;
+}
+
+function getNewHighBuff(hero) {
+    const price = hero.price ?? 0;
+    const highest = hero.highestPrice ?? 0;
+
+    if (price > highest) {
+        return {
+            key: "newHigh",
+            icon: "📈",
+            desc: "New high",
+            score: 10,
+            isBuff: true,
+        };
+    }
+
+    return null;
+}
+
+function getIndustryBuff(symbolData) {
+    const profile = symbolData.profile || {};
+    const summary = profile.longBusinessSummary?.toLowerCase() || "";
+    const companyName = profile.companyName?.toLowerCase() || "";
+    const industry = profile.industry || "";
+
+    if (industry === "Biotechnology" || summary.includes("biotech") || summary.includes("biotechnology") || companyName.includes("biopharma")) {
+        return {
+            key: "bio",
+            icon: "🧬",
+            desc: "Biotechnology stock",
+            score: 5,
+            isBuff: true,
+        };
+    }
+
+    if (summary.includes("cannabis")) {
+        return {
+            key: "weed",
+            icon: "🌿",
+            desc: "Cannabis stock",
+            score: 5,
+            isBuff: true,
+        };
+    }
+
+    if (summary.includes("space")) {
+        return {
+            key: "space",
+            icon: "🌌",
+            desc: "Space industry stock",
+            score: 5,
+            isBuff: true,
+        };
+    }
+
+    return null;
+}
+
+function getBounceBackBuff(hero, event) {
+    if (hero.lastEvent.dp > 0 && event.hp > 0) {
+        return {
+            key: "bounceBack",
+            icon: "🔁",
+            desc: "Recovering — stock is bouncing back after a downtrend",
+            score: 5,
+            isBuff: true,
+        };
+    }
+    return null;
+}
+
+function getCountryBuff(symbolData) {
+    const country = symbolData.profile?.country?.toLowerCase();
+
+    if (country === "china" || country === "cn" || country === "hk" || country === "hong kong") {
+        return {
+            key: "china",
+            icon: "🇨🇳",
+            desc: "China/Hong Kong-based company",
+            score: 0,
+            isBuff: false,
+        };
+    }
+
+    return null;
+}
+
+function getNetLossBuff(symbolData) {
+    const netIncome = symbolData.financials?.cashflowStatement?.netIncome;
+
+    if (typeof netIncome === "number" && netIncome < 0) {
+        return {
+            key: "netLoss",
+            icon: "🥅",
+            desc: "Company is currently running at a net loss",
+            score: -5,
+            isBuff: false,
+        };
+    }
+
+    return null;
+}
+
+function getShortInterestBuff(symbolData) {
+    const floatShares = symbolData.statistics?.floatShares || 0;
+    const sharesShort = symbolData.statistics?.sharesShort || 0;
+
+    if (!floatShares || floatShares <= 0) return null;
+
+    const shortRatio = sharesShort / floatShares;
+
+    if (shortRatio > 0.2) {
+        return {
+            key: "highShort",
+            icon: "🩳",
+            desc: "High short interest (more than 20% of float)",
+            score: 10,
+            isBuff: true,
+        };
+    }
+
+    return null;
+}
+
+function getS3FilingBuff(symbolData) {
+    if (symbolData.offReg) {
+        return {
+            key: "hasS3",
+            icon: "📂",
+            desc: `Registered S-3 filing (${symbolData.offReg})`,
+            score: -10,
+            isBuff: false,
+        };
+    }
+
+    return null;
+}
+
+function getDilutionRiskBuff(symbolData) {
+    const hasS3 = !!symbolData.offReg;
+    const netIncome = symbolData.financials?.cashflowStatement?.netIncome;
+    const isNetNegative = typeof netIncome === "number" && netIncome < 0;
+
+    if (hasS3 && isNetNegative) {
+        return {
+            key: "dilutionRisk",
+            icon: "🚨",
+            desc: "High dilution risk: Net loss + Registered S-3",
+            score: -20,
+            isBuff: false,
+        };
+    }
+
+    return null;
 }
 
 let lastTickerSetAt = 0;
@@ -257,6 +424,9 @@ function updateFocusStateFromEvent(event) {
 
     let hero = focusState[event.hero];
 
+    if (!hero.highestPrice || event.price > hero.highestPrice) {
+        hero.highestPrice = event.price;
+    }
     hero.price = event.price;
 
     // 1. FIRST check for resurrection BEFORE changing HP
@@ -295,6 +465,26 @@ function updateFocusStateFromEvent(event) {
     };
 
     hero.strength = event.strength;
+
+    // 🔁 Update volume buff dynamically based on current event
+    const volumeBuff = calculateVolumeImpact(event.strength || 0, event.price || 1);
+    hero.buffs.volume = volumeBuff;
+    console.log("hero, ", hero);
+
+    // Evaluate bounce back condition
+    const bounceBuff = getBounceBackBuff(hero, event);
+    if (bounceBuff) {
+        hero.buffs.bounceBack = bounceBuff;
+    } else {
+        delete hero.buffs.bounceBack;
+    }
+
+    const newHighBuff = getNewHighBuff(hero);
+    if (newHighBuff) {
+        hero.buffs.newHigh = newHighBuff;
+    } else {
+        delete hero.buffs.newHigh;
+    }
 
     calculateXp(hero);
 
@@ -501,6 +691,37 @@ function renderCard({ hero, price, hp, dp, strength }) {
         strength: strength,
     };
 
+    console.log(state.buffs);
+
+    // Buffs
+    // Define sort order across both positive and negative buffs
+    const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
+
+    // Sort helper
+    const sortBuffs = (arr) =>
+        arr.sort((a, b) => {
+            const aIndex = sortOrder.indexOf(a.key);
+            const bIndex = sortOrder.indexOf(b.key);
+            return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+        });
+
+    // Extract buffs
+    const buffsArray = Object.values(state.buffs || {});
+    const positiveBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === true));
+    const negativeBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === false));
+
+    // Render
+    const buffHtml = `
+<div class="buff-container">
+    <div class="buff-row positive">
+        ${positiveBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+    </div>
+    <div class="buff-row negative">
+        ${negativeBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+    </div>
+</div>
+`;
+
     card.innerHTML = `
     <div class="ticker-header-grid">
         <div class="ticker-info">
@@ -513,18 +734,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
             <div id="score"><span class="bar-text score" style="font-size: 6px; margin-top:4px">SCORE: ${state.score.toFixed(0)}</span></div>
         </div>
     
-        <div class="buff-container">
-            <div class="buff-row positive">
-                <span class="buff-icon" title="Low Float">🔥</span>
-                <span class="buff-icon" title="High Volume">📈</span>
-                <span class="buff-icon" title="Catalyst">✨</span>
-            </div>
-            <div class="buff-row negative">
-                <span class="buff-icon" title="Dilution Risk">⚠️</span>
-                <span class="buff-icon" title="Shelf Offering">📉</span>
-                <span class="buff-icon" title="High Float">💀</span>
-            </div>
-        </div>
+        ${buffHtml}
     </div>
     
     <div class="bars">
@@ -629,6 +839,7 @@ function getSymbolColor(symbol) {
     return symbolColors[symbol];
 }
 
+////////////////////////////////////////////////////// Calculations
 function calculateScore(hero, event) {
     if (event.strength < 1000) {
         if (debug && debugSamples < debugLimitSamples) {
@@ -662,7 +873,7 @@ function calculateScore(hero, event) {
             }
 
             // Apply Float score
-            const floatBuff = hero.buffs?.float;
+            const floatBuff = getHeroBuff(hero, "float");
             const floatScore = floatBuff?.score ?? 0;
             baseScore += floatScore;
 
@@ -672,23 +883,35 @@ function calculateScore(hero, event) {
                 logStep(label, `Float Score (${formattedFloat})`, floatScore);
             }
 
-            // Apply Volume score
-            const volRes = calculateVolumeImpact(event.strength || 0, hero.price || 1);
+            // Apply Volume score from precomputed buff
+            const volumeBuff = getHeroBuff(hero, "volume");
+            const volScore = volumeBuff?.score ?? 0;
+            baseScore += volScore;
 
-            // Debugging: log the multiplier and category assigned
             if (debug && debugSamples < debugLimitSamples) {
-                logStep("📢", `${volRes.message}`, volRes.score);
+                const volUsed = event.strength || 0;
+                const volMsg = volumeBuff?.message ?? `No volume buff (${humanReadableNumbers(volUsed)})`;
+                logStep("📢", volMsg, volScore);
             }
-            baseScore += volRes.score;
-
-            // Only add to baseScore if hpScore is positive
-            baseScore += Math.max(0, baseScore);
+            // Clamp total baseScore to positive only (no negative scoring on "up" events)
+            baseScore = Math.max(0, baseScore);
         }
 
-        // If it's a "down" event (dp > 0)
         if (event.dp > 0) {
             baseScore -= event.dp * 10;
-            if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp);
+
+            const volumeBuff = getHeroBuff(hero, "volume");
+            const volPenalty = volumeBuff?.score ?? 0;
+
+            // Only apply negative volume scores for down events
+            if (volPenalty < 0) {
+                baseScore += volPenalty; // subtract more
+                if (debug && debugSamples < debugLimitSamples) {
+                    logStep("📉", `Volume Penalty (${humanReadableNumbers(event.strength || 0)})`, volPenalty);
+                }
+            }
+
+            if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp * 10);
         }
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
@@ -701,6 +924,10 @@ function calculateScore(hero, event) {
     if (debug && debugSamples < debugLimitSamples) console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
 
     return baseScore;
+}
+
+function getHeroBuff(hero, key) {
+    return hero?.buffs?.[key] ?? {};
 }
 
 function getFloatScore(floatValue) {
@@ -793,11 +1020,41 @@ function startScoreDecay() {
 }
 
 function calculateVolumeImpact(volume = 0, price = 1) {
-    const categories = Object.entries(buffs)
+    const categories = Object.entries(window.buffs)
         .map(([category, data]) => ({ category, ...data }))
         .sort((a, b) => a.priceThreshold - b.priceThreshold);
 
-    let result = {
+    for (const category of categories) {
+        if (price <= category.priceThreshold) {
+            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
+
+            const stageToUse =
+                sortedStages.find((stage, index) => {
+                    const current = stage.volumeThreshold;
+                    const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
+                    if (index === sortedStages.length - 1) {
+                        return volume >= prev;
+                    }
+                    return volume > prev && volume <= current;
+                }) || sortedStages[sortedStages.length - 1];
+
+            // ✅ Only now we can safely use stageToUse
+            return {
+                ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
+                capAssigned: category.category,
+                volumeStage: stageToUse.key,
+                message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
+                style: {
+                    cssClass: `volume-${stageToUse.key.toLowerCase()}`,
+                    color: getColorForStage(stageToUse.key),
+                    animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
+                },
+            };
+        }
+    }
+
+    // Fallback if no category matched
+    return {
         multiplier: 1,
         capAssigned: "None",
         volumeStage: "None",
@@ -811,40 +1068,6 @@ function calculateVolumeImpact(volume = 0, price = 1) {
         },
         score: 0,
     };
-
-    for (const category of categories) {
-        if (price <= category.priceThreshold) {
-            result.capAssigned = category.category;
-
-            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
-
-            const stageToUse =
-                sortedStages.find((stage, index) => {
-                    const current = stage.volumeThreshold;
-                    const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
-                    if (index === sortedStages.length - 1) {
-                        return volume >= prev;
-                    }
-                    return volume > prev && volume <= current;
-                }) || sortedStages[sortedStages.length - 1];
-
-            result.multiplier = stageToUse.multiplier;
-            result.volumeStage = stageToUse.key;
-            result.score = stageToUse.score ?? 0;
-            result.message = `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`;
-            result.style = {
-                cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-                icon: stageToUse.icon,
-                description: stageToUse.desc,
-                color: getColorForStage(stageToUse.key),
-                animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-            };
-
-            break;
-        }
-    }
-
-    return result;
 }
 
 function getColorForStage(stageKey) {
@@ -865,3 +1088,92 @@ function humanReadableNumbers(value) {
     if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
     return num.toLocaleString(); // For values smaller than 1,000
 }
+
+////////////////////////////////////// State
+window.pauseEvents = () => {
+    eventsPaused = true;
+    if (debug) console.log("Events are now paused");
+};
+
+window.resumeEvents = () => {
+    eventsPaused = false;
+    if (debug) console.log("Events are now resumed");
+};
+
+function getMarketDateString() {
+    const now = new Date();
+    const offset = -5 * 60; // EST offset in minutes (adjust for DST if needed)
+    const localOffset = now.getTimezoneOffset();
+    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
+    return estDate.toISOString().split("T")[0];
+}
+
+function saveState() {
+    const existing = localStorage.getItem("focusState");
+    let sessionDate = getMarketDateString();
+
+    if (existing) {
+        try {
+            const parsed = JSON.parse(existing);
+            if (parsed.date && parsed.date !== sessionDate) {
+                if (debug) console.log("🧼 Overwriting old session from", parsed.date);
+            } else {
+                sessionDate = parsed.date || sessionDate;
+            }
+        } catch {
+            console.warn("⚠️ Invalid existing focus state. Overwriting.");
+        }
+    }
+
+    const payload = {
+        date: sessionDate,
+        state: focusState,
+    };
+
+    localStorage.setItem("focusState", JSON.stringify(payload));
+}
+
+async function loadState() {
+    if (freshStart) {
+        console.log("🧪 loadState() overridden for testing — skipping restore");
+        return false;
+    }
+
+    const saved = localStorage.getItem("focusState");
+    if (!saved) return false;
+
+    try {
+        const parsed = JSON.parse(saved);
+        const today = getMarketDateString();
+
+        if (parsed.date === today) {
+            Object.assign(focusState, parsed.state);
+            if (debug) console.log("🔄 Restored focus state from earlier session.");
+            return true;
+        } else {
+            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
+            localStorage.removeItem("focusState");
+            return false;
+        }
+    } catch (err) {
+        console.warn("⚠️ Could not parse focus state. Clearing.");
+        localStorage.removeItem("focusState");
+        return false;
+    }
+}
+
+function clearState() {
+    localStorage.removeItem("focusState");
+    for (const key in focusState) {
+        delete focusState[key];
+    }
+    if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
+}
+
+window.clearState = () => {
+    localStorage.removeItem("focusState");
+    for (const key in focusState) {
+        delete focusState[key];
+    }
+    if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
+};

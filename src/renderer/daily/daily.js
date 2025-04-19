@@ -218,7 +218,7 @@ function updateTickersList(tickers, listId, prevTickers) {
 
     // ✅ Determine which columns should be displayed
     const listType = "daily";
-    const allColumns = ["Symbol", "cumulativeUpChange"];
+    const allColumns = ["Symbol", "Price", "cumulativeUpChange"];
 
     // ✅ Populate list items
     tickers.forEach((ticker, index) => {

@@ -53,19 +53,6 @@ const { loadSettings, saveSettings } = require("./settings");
 
 appSettings = loadSettings();
 
-// Buffs
-
-const buffsPath = path.join(__dirname, "../data/buffs.json");
-let buffs = [];
-
-try {
-    const raw = fs.readFileSync(buffsPath, "utf-8");
-    buffs = JSON.parse(raw);
-    log.log("[Buffs] Loaded", buffs.length, "buffs");
-} catch (err) {
-    log.error("[Buffs] Failed to load buffs.json:", err);
-}
-
 const buffManager = require("./data/buffsManager");
 
 ////////////////////////////////////////////////////////////////////////////////////// WINDOWS
@@ -77,7 +64,6 @@ const { getWindowState, saveWindowState } = require("./utils/windowState");
 const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
-const { createLiveWindow } = require("./windows/live");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createFocusWindow } = require("./windows/focus");
 const { createDailyWindow } = require("./windows/daily");
@@ -146,7 +132,7 @@ app.on("ready", async () => {
             safeSend(win, "settings-updated", settings);
         });
 
-        // startMockAlerts();
+        if (isDevelopment) startMockAlerts();
     });
 });
 
@@ -367,7 +353,7 @@ ipcMain.on("toggle-settings", () => {
         destroyWindow("settings"); // Destroy the window
     } else {
         log.log("[toggle-settings] Creating settings window");
-        windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment, buffs));
+        windows.settings = createWindow("settings", () => createSettingsWindow(isDevelopment));
         windows.settings.show();
     }
 });
@@ -474,7 +460,7 @@ ipcMain.on("toggle-focus", () => {
         destroyWindow("focus"); // Destroy the window
     } else {
         log.log("[toggle-focus] Creating focus window");
-        windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment, buffs));
+        windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment));
         windows.focus.show();
     }
 });
@@ -597,9 +583,10 @@ ipcMain.on("toggle-scanner", () => {
 });
 
 tickerStore.on("new-high-price", ({ symbol, price, direction, change_percent, fiveMinVolume }) => {
-    if (windows.scanner && windows.scanner.webContents) {
+    const eventWindow = windowManager.windows.scanner;
+    if (eventWindow && eventWindow.webContents) {
         log.log(`Sending new high price alert to scanner window: ${symbol} - ${price}`);
-        windows.scanner.webContents.send("ws-alert", {
+        eventWindow.webContents.send("ws-alert", {
             symbol,
             price,
             direction: direction || "UP",

@@ -326,3 +326,16 @@ h2 {
         transform: scale(1);
     }
 }
+
+/* buff icons  */
+.ticker-data .buff-icon {
+    font-size: 10px;
+    margin-left: 2px;
+    margin-bottom: 3px;
+}
+
+.buff-negative {
+    color: red;
+    opacity: 0.9;
+    font-weight: bold;
+}

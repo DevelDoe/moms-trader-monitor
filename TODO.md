@@ -9,7 +9,7 @@ Fix the existing buffs system, ensuring accurate logic and visuals, then refacto
 ## ✅ Phase 1: Buffs System Fix
 
 -   [x] Load buffs from shared external JSON (`buffs.json`)
--   [ ] Create the ui
+-   [x] Create the ui
 -   [ ] Validate structure: each buff must include:
     -   [ ] `icon` (string)
     -   [ ] `desc` (string)

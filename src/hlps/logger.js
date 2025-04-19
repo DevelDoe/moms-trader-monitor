@@ -16,7 +16,7 @@ if (!fs.existsSync(logDir)) {
 }
 
 // ✅ List of scripts to allow logging from
-const ALLOWED_LOGGING_FROM = new Set([]); // Add scripts here
+const ALLOWED_LOGGING_FROM = new Set(["main.js"]); // Add scripts here
 
 /**
  * Writes log messages to a file in production mode.
@@ -101,10 +101,10 @@ function createLogger(modulePath) {
             if (level === "DATA") return logger.data(...args);
             return;
         }
-    
+
         const now = Date.now();
         let key;
-    
+
         if (level === "DATA" && args.length >= 2) {
             // For "DATA" logs, use only the second argument (message) as the key
             key = `${fileName}:${level}:${args[1]}`;
@@ -112,15 +112,15 @@ function createLogger(modulePath) {
             // For other log levels, use the full message
             key = `${fileName}:${level}:${args.join(" ")}`;
         }
-    
+
         // If the message has been logged before and is within the bounce interval, suppress it
         if (lastLogTimestamps.has(key) && now - lastLogTimestamps.get(key) < BOUNCE_INTERVAL) {
             return; // Ignore duplicate logs
         }
-    
+
         // Store the timestamp for future duplicate suppression
         lastLogTimestamps.set(key, now);
-    
+
         // Log the message normally
         if (level === "INFO") {
             logger.log(...args);
@@ -132,7 +132,6 @@ function createLogger(modulePath) {
             logger.data(...args);
         }
     };
-    
 
     return logger;
 }
