@@ -86,6 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         },
                         floatValue: symbolData.statistics?.floatShares || 0, // Added optional chaining
                         buffs: getBuffsForHero(symbolData),
+                        highestPrice: symbolData.price || 1,
                     };
                 }
             });
@@ -161,7 +162,7 @@ function getFloatBuff(symbolData) {
     if (isCorrupt) {
         return {
             key: "floatCorrupt",
-            icon: "🧨",
+            icon: "⚠️",
             desc: "Corrupted float data",
             multiplier: 1,
             score: 0,
@@ -424,9 +425,6 @@ function updateFocusStateFromEvent(event) {
 
     let hero = focusState[event.hero];
 
-    if (!hero.highestPrice || event.price > hero.highestPrice) {
-        hero.highestPrice = event.price;
-    }
     hero.price = event.price;
 
     // 1. FIRST check for resurrection BEFORE changing HP
@@ -469,7 +467,6 @@ function updateFocusStateFromEvent(event) {
     // 🔁 Update volume buff dynamically based on current event
     const volumeBuff = calculateVolumeImpact(event.strength || 0, event.price || 1);
     hero.buffs.volume = volumeBuff;
-    console.log("hero, ", hero);
 
     // Evaluate bounce back condition
     const bounceBuff = getBounceBackBuff(hero, event);
@@ -484,6 +481,10 @@ function updateFocusStateFromEvent(event) {
         hero.buffs.newHigh = newHighBuff;
     } else {
         delete hero.buffs.newHigh;
+    }
+
+    if (!hero.highestPrice || event.price > hero.highestPrice) {
+        hero.highestPrice = event.price;
     }
 
     calculateXp(hero);

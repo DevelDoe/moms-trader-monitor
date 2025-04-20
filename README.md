@@ -33,8 +33,8 @@ git checkout -b feature/your-feature-name
 git add .
 git commit -m "feat: added cool stuff"
 
-# 3. Merge to development
-git checkout development
+# 3. Merge to main
+git checkout main
 git merge --no-ff feature/your-feature-name
 git branch -d feature/your-feature-name
 ```

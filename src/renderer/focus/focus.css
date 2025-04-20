@@ -282,7 +282,7 @@ h2 {
 .buff-row {
     display: flex;
     gap: 2px;
-    font-size: 12px;
+    font-size: 14px;
     /* box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); */
 
     margin-bottom: 2px;
@@ -333,7 +333,7 @@ h2 {
     }
 }
 
-.buff-negative {
+.negative {
     color: red;
     opacity: 0.9;
     font-weight: bold;
