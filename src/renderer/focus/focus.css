@@ -63,7 +63,7 @@ h2 {
 }
 
 .ticker-symbol {
-    font-size: 16px;
+    font-size: 20px;
     font-weight: bold;
     color: antiquewhite;
     padding: 3px;
@@ -75,16 +75,21 @@ h2 {
 
 .ticker-symbol .lv {
     font-size: 0.5em;
-    margin-left: 0;
+    margin-left: 2px;
     color: white;
     font-weight: 300;
-    background-color: #1c1d23;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .ticker-price {
-    font-size: 12px;
+    font-size: 14px;
     color: #ddd;
-    margin-top: 4px;
+    margin-top: 8px;
+}
+
+#score {
+    font-size: 16px !important;
+    margin-top: -4px;
 }
 
 /* Bars Section */
@@ -278,15 +283,16 @@ h2 {
     align-items: flex-end;
     gap: 3px;
     padding-top: 0px;
+    height: 65px;
 }
 
 .buff-row {
     display: flex;
     gap: 2px;
-    font-size: 14px;
+    font-size: 12px;
     /* box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); */
 
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 
 .buff-icon {

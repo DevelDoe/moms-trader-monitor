@@ -70,7 +70,6 @@ body {
 }
 
 .about {
-    color: #cfa862 !important;
     font: menu;
     font-size: 15px;
     scrollbar-width: none;
@@ -156,10 +155,8 @@ body {
 }
 
 .news-item {
-    padding: 10px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background-color: #1e1e1e;
+    margin-bottom: 10px;
+    padding-bottom: 0px;
 }
 
 .news-item h5 {
@@ -171,6 +168,18 @@ body {
     margin: 0;
     font-size: 0.9em;
     color: #ccc;
+}
+
+.news-item.bullish h5 {
+    color: #2ecc71; /* green */
+}
+
+.news-item.bearish h5 {
+    color: #ff4d4f; /* red */
+}
+
+.news-item.neutral h5 {
+    color: #aaa;
 }
 
 /* Active ticker symbol input  */
@@ -195,7 +204,7 @@ body {
 }
 
 #symbol span {
-    font-size: 16px;
+    font-size: 14px;
     align-items: flex-start;
     display: flex;
     padding-bottom: 5;

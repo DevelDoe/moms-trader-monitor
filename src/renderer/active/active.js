@@ -2,6 +2,22 @@
 window.ownershipCharts = {};
 const symbolColors = {};
 
+const { isDev } = window.appFlags;
+
+function getNewsSentimentClass(newsItem) {
+    const lowerHeadline = (newsItem.headline || "").toLowerCase();
+    const bullishList = window.settings?.news?.bullishList || [];
+    const bearishList = window.settings?.news?.bearishList || [];
+
+    if (bullishList.some((term) => lowerHeadline.includes(term.toLowerCase()))) {
+        return "bullish";
+    }
+    if (bearishList.some((term) => lowerHeadline.includes(term.toLowerCase()))) {
+        return "bearish";
+    }
+    return "neutral";
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
@@ -251,40 +267,43 @@ function updateUI(symbolData) {
         newsContainer.innerHTML = "<p>No recent news available</p>";
     } else {
         filteredNews.forEach((newsItem) => {
+            const sentimentClass = getNewsSentimentClass(newsItem);
+
             const itemDiv = document.createElement("div");
-            itemDiv.className = "news-item";
+            itemDiv.className = `news-item ${sentimentClass}`;
 
             itemDiv.innerHTML = `
-            <h5>${newsItem.headline || "Untitled"}</h5>
-            <p>${newsItem.summary || ""}</p>
-        `;
+                <h5>${newsItem.headline || "Untitled"}</h5>
+                <p>${newsItem.summary || ""}</p>
+            `;
 
             newsContainer.appendChild(itemDiv);
         });
     }
 
-    const latestNewsDiv = document.getElementById("latest-news");
-    latestNewsDiv.innerHTML = ""; // Clear existing
+    // news banner
+    //     const latestNewsDiv = document.getElementById("latest-news");
+    //     latestNewsDiv.innerHTML = ""; // Clear existing
 
-    if (filteredNews.length > 0) {
-        latestNewsDiv.style.display = "block"; // ✅ Show it
+    //     if (filteredNews.length > 0) {
+    //         latestNewsDiv.style.display = "block"; // ✅ Show it
 
-        const sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        const latest = sortedNews[0];
+    //         const sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    //         const latest = sortedNews[0];
 
-        const latestDiv = document.createElement("div");
-        latestDiv.className = "latest-news-item";
-        latestDiv.innerHTML = `
-        <div class="scroll-mask">
-  <div class="scrolling-text"><strong>📰 ${latest.headline}</strong></div>
-</div>
-        <p>${latest.summary || ""}</p>
-    `;
+    //         const latestDiv = document.createElement("div");
+    //         latestDiv.className = "latest-news-item";
+    //         latestDiv.innerHTML = `
+    //         <div class="scroll-mask">
+    //   <div class="scrolling-text"><strong>📰 ${latest.headline}</strong></div>
+    // </div>
+    //         <p>${latest.summary || ""}</p>
+    //     `;
 
-        latestNewsDiv.appendChild(latestDiv);
-    } else {
-        latestNewsDiv.style.display = "none"; // ✅ Hide completely if no news
-    }
+    //         latestNewsDiv.appendChild(latestDiv);
+    //     } else {
+    //         latestNewsDiv.style.display = "none"; // ✅ Hide completely if no news
+    //     }
 
     renderOwnershipChart(symbolData, "ownershipChart-summary");
     renderOwnershipChart(symbolData, "ownershipChart-stats");

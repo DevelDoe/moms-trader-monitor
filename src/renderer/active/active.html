@@ -7,6 +7,7 @@
 
         <title>Active</title>
         <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="../flat.css" />
         <link rel="stylesheet" href="./active.css" />
         <link rel="stylesheet" href="./tailwind.css" />
     </head>
@@ -75,25 +76,14 @@
                         <!-- Right Column -->
                         <div class="space-y-4">
                             <div class="bg-zinc-800 p-4 rounded-xl scroll-vertical-mask">
-                                <div class="scroll-vertical-text about" data-id="profile-longBusinessSummary"></div>
+                                <div class="scroll-vertical-text about text-tertiary" data-id="profile-longBusinessSummary"></div>
                             </div>
-                            <!-- Row 2: Two Panels -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-0">
-                                <div class="bg-zinc-800 p-4 rounded-xl">
-                                    <div id="news-container" class="news-list no-drag">
-                                        <!-- Dynamically filled -->
-                                    </div>
-                                </div>
-                                <div class="bg-zinc-800 p-4 rounded-xl"></div>
+
+                            <div class="bg-zinc-800 p-4 rounded-xl">
+                                <div id="news-container" class="news-list no-drag"></div>
                             </div>
                         </div>
                     </div>
-
-                    <section class="two-column-layout"></section>
-
-                    <div></div>
-
-                    <div id="latest-news" style="display: none"></div>
                 </div>
 
                 <!-- News -->

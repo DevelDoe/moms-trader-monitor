@@ -57,7 +57,10 @@
 
     { "key": "lockedShares", "icon": "💼", "desc": "High insider/institutional/locked shares holders", "score": 10, "isBuff": false },
 
-    { "key": "hasNews", "icon": "😼", "desc": "Has news", "score": 15, "isBuff": true },
+    { "key": "hasNews", "icon": "😼", "desc": "Catalyst in play — recent news may affect momentum", "score": 0 },
+    { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news - may affect momentum", "score": 100, "isBuff": true },
+    { "key": "hasBearishNews", "icon": "🙀", "desc": "Bearish news - may affect momentum", "score": -100, "isBuff": false },
+
     { "key": "newHigh", "icon": "📈", "desc": "New high", "score": 10, "isBuff": true },
     { "key": "bounceBack", "icon": "🔁", "desc": "Recovering — stock is bouncing back after a downtrend", "score": 5, "isBuff": true },
 

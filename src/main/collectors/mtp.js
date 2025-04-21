@@ -7,6 +7,8 @@ const path = require("path");
 dotenv.config({ path: path.join(__dirname, "../../config/.env") });
 const { windows } = require("../windowManager");
 
+const isDevelopment = process.env.NODE_ENV === "development";
+
 const SYMBOL_UPDATE_EXPIRY_MS = 60 * 1000; // 1 minute
 
 let lastSymbolUpdate = ""; // Cache last symbol list
@@ -33,7 +35,7 @@ function debounce(func, delay) {
 
 // mtp.js - Fixed version
 const connectMTP = () => {
-    const clientId = process.env.NODE_ENV === "production" ? "PROD" : "DEV";
+    const clientId = isDevelopment ? "DEVELOPMENT" : "PRODUCTION";
     let ws;
 
     // Helper function for safe JSON parsing

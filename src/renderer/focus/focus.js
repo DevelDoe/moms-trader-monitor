@@ -432,24 +432,28 @@ function renderCard({ hero, price, hp, dp, strength }) {
 
     const positiveBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === true));
     const negativeBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === false));
+    const neutralBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === undefined));
 
     // Render
     const buffHtml = `
-<div class="buff-container">
-    <div class="buff-row positive">
-        ${positiveBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+    <div class="buff-container">
+        <div class="buff-row positive">
+            ${positiveBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+        </div>
+        <div class="buff-row neutral">
+            ${neutralBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+        </div>
+        <div class="buff-row negative">
+            ${negativeBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+        </div>
     </div>
-    <div class="buff-row negative">
-        ${negativeBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
-    </div>
-</div>
-`;
+    `;
 
     card.innerHTML = `
     <div class="ticker-header-grid">
         <div class="ticker-info">
             <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}">
-                $${hero} <span class="lv">LV${state.lv}</span>
+                $${hero}<span class="lv">${state.lv}</span>
             </div>
             <div class="ticker-price">$<span class="price">${price.toFixed(2)}</span></div>
             <div id="change" style="top: 0 + ${topPosition}px;">${change ? `<div class="${changeClass}" >${change}</div>` : ""}</div>

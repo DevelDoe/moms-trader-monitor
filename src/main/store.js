@@ -16,15 +16,21 @@ const BUFFS_FILE = path.join(__dirname, "../data/buffs.json");
 
 let buffs = [];
 let blockList = [];
+let bullishList = [];
+let bearishList = [];
 
 function loadSettingsAndBuffs() {
     try {
         const settingsRaw = fs.readFileSync(SETTINGS_FILE, "utf-8");
         const settings = JSON.parse(settingsRaw);
         blockList = settings.news?.blockList || [];
+        bullishList = settings.news?.bullishList || [];
+        bearishList = settings.news?.bearishList || [];
     } catch (err) {
         console.warn("⚠️ Failed to load settings:", err.message);
         blockList = [];
+        bullishList = [];
+        bearishList = [];
     }
 
     try {
@@ -34,6 +40,22 @@ function loadSettingsAndBuffs() {
         console.warn("⚠️ Failed to load buffs:", err.message);
         buffs = [];
     }
+}
+
+function getNewsSentimentBuff(headline) {
+    const lower = headline.toLowerCase();
+    console.log("🧪 Checking sentiment for:", headline);
+
+    if (bullishList.some((term) => lower.includes(term.toLowerCase()))) {
+        console.log("🟢 Matched bullish term!");
+        return buffs.find((b) => b.key === "hasBullishNews");
+    }
+    if (bearishList.some((term) => lower.includes(term.toLowerCase()))) {
+        console.log("🔴 Matched bearish term!");
+        return buffs.find((b) => b.key === "hasBearishNews");
+    }
+    console.log("⚪ No sentiment match — using neutral buff.");
+    return buffs.find((b) => b.key === "hasNews");
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -323,7 +345,27 @@ class Store extends EventEmitter {
     addNews(newsItems, symbol) {
         log.log(`[addNews] called for ${symbol}`);
 
-        const timestampedNews = newsItems.map((news) => ({
+        const existingIds = new Set(this.newsList.map((n) => n.id));
+        const existingHeadlines = new Set(this.newsList.map((n) => n.headline));
+
+        const filteredNews = newsItems.filter((news) => {
+            if (existingIds.has(news.id)) {
+                log.log(`[addNews] Skipping duplicate by ID: ${news.id}`);
+                return false;
+            }
+            if (existingHeadlines.has(news.headline)) {
+                log.log(`[addNews] Skipping duplicate by headline: "${news.headline}"`);
+                return false;
+            }
+            return true;
+        });
+
+        if (filteredNews.length === 0) {
+            log.log("[addNews] No new news items to process.");
+            return;
+        }
+
+        const timestampedNews = filteredNews.map((news) => ({
             ...news,
             storedAt: Date.now(),
             symbols: Array.isArray(news.symbols) ? news.symbols : [],
@@ -332,29 +374,41 @@ class Store extends EventEmitter {
         this.newsList.push(...timestampedNews);
 
         timestampedNews.forEach((newsItem) => {
+            // Attach news to daily/session data if it matches the incoming symbol
             if (newsItem.symbols.includes(symbol)) {
-                // ✅ Only mutate if symbol already exists in dailyData
                 const dailyTicker = this.dailyData.get(symbol);
                 if (dailyTicker) {
                     dailyTicker.News = dailyTicker.News || [];
-                    if (!dailyTicker.News.some((existingNews) => existingNews.id === newsItem.id)) {
-                        dailyTicker.News.push(newsItem);
-                    }
+                    dailyTicker.News.push(newsItem);
                 }
 
-                // ✅ Same for sessionData
                 const sessionTicker = this.sessionData.get(symbol);
                 if (sessionTicker) {
                     sessionTicker.News = sessionTicker.News || [];
-                    if (!sessionTicker.News.some((existingNews) => existingNews.id === newsItem.id)) {
-                        sessionTicker.News.push(newsItem);
-                    }
+                    sessionTicker.News.push(newsItem);
                 }
             }
 
-            // ✅ Only attach to existing tickers — don't create new ones accidentally
+            // 🎯 Check sentiment and attach buff
+            const newsBuff = getNewsSentimentBuff(newsItem.headline);
             newsItem.symbols.forEach((sym) => {
                 if (this.dailyData.has(sym) || this.sessionData.has(sym) || this.symbols.has(sym)) {
+                    const ticker = this.symbols.get(sym);
+                    if (!ticker) return;
+
+                    ticker.buffs = ticker.buffs || {};
+                    ticker.buffs[newsBuff.key] = newsBuff;
+
+                    this.emit("buffs-updated", [
+                        {
+                            symbol: sym,
+                            buffs: ticker.buffs,
+                            highestPrice: ticker.highestPrice,
+                            lastEvent: ticker.lastEvent,
+                        },
+                    ]);
+                    log.log(`[buffs] ${newsBuff.icon} ${newsBuff.key} added for: ${sym}`);
+
                     this.attachNews(sym);
                 } else {
                     log.log(`[addNews] Skipping symbol '${sym}' — not found in store`);
@@ -363,6 +417,7 @@ class Store extends EventEmitter {
         });
 
         this.emit("newsUpdated", { newsItems: timestampedNews });
+        this.emit("lists-update");
     }
 
     getAllNews() {

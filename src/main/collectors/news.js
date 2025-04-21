@@ -193,4 +193,68 @@ const fetchHistoricalNews = async (ticker) => {
     }
 };
 
-module.exports = { fetchHistoricalNews, subscribeToSymbolNews };
+const startMockNews = () => {
+    const symbols = ["RADX", "LTRN", "INKT"];
+    const mockHeadlines = [
+        {
+            headline: "RADX Surges After Positive Trial Data, FDA Approves",
+            summary: "RADX announced positive Phase 2 results for its lead candidate. ",
+            symbols: ["RADX"],
+        },
+        {
+            headline: "LTRN Jumps on FDA Fast Track Designation, Sell Alert",
+            summary: "LTRN granted fast track status for its lung cancer therapy. ",
+            symbols: ["LTRN"],
+        },
+        {
+            headline: "This is an bullish healine, FDA Approves",
+            summary: "LTRN granted fast track status for its lung cancer therapy. ",
+            symbols: ["LTRN"],
+        },
+        {
+            headline: "And a neurtral headline for completeness.",
+            summary: "LTRN granted fast track status for its lung cancer therapy. ",
+            symbols: ["LTRN"],
+        },
+        {
+            headline: "INKT Shares Climb After Patent Approval",
+            summary: "INKT secures new patent for AI-driven diagnostic tech.",
+            symbols: ["INKT"],
+        },
+    ];
+
+    const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+    const injectSequentially = async () => {
+        log.log("🕒 Waiting 5 seconds before starting mock news injection...");
+        await delay(5000); // give app time to load
+
+        for (let idx = 0; idx < mockHeadlines.length; idx++) {
+            const item = mockHeadlines[idx];
+            const mockNews = {
+                T: "n",
+                id: 90000000 + idx,
+                headline: item.headline,
+                summary: item.summary,
+                author: "Simulated Bot",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                url: `https://news.simulator.com/story/${item.symbols[0].toLowerCase()}`,
+                content: `<p>${item.summary}</p>`,
+                symbols: item.symbols,
+                source: "simulator",
+            };
+
+            log.log(`🧪 Injecting mock news for ${item.symbols[0]}: "${item.headline}"`);
+            handleNewsData(mockNews);
+
+            await delay(3000); // 3 seconds between each news injection
+        }
+
+        log.log("✅ Mock news injection complete.");
+    };
+
+    injectSequentially();
+};
+
+module.exports = { fetchHistoricalNews, subscribeToSymbolNews, startMockNews };

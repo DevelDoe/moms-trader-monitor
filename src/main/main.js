@@ -45,6 +45,7 @@ autoUpdater.setFeedURL({
 // SERVICES
 
 const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
+const { startMockNews } = require("./collectors/news");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -120,6 +121,7 @@ app.on("ready", async () => {
 
         connectMTP();
         flushMessageQueue();
+
         if (!isDevelopment) connectBridge();
 
         if (windows.docker) {
@@ -132,7 +134,10 @@ app.on("ready", async () => {
             safeSend(win, "settings-updated", settings);
         });
 
-        // if (isDevelopment) startMockAlerts();
+        if (isDevelopment) {
+            startMockAlerts();
+            startMockNews();
+        }
     });
 });
 
