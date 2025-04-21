@@ -623,8 +623,9 @@ function calculateScore(hero, event) {
         if (event.dp > 0) {
             baseScore -= event.dp * 10;
 
+            // Volume
             // const volumeBuff = getHeroBuff(hero, "volume");
-            // const volPenalty = volumeBuff?.score ?? 0;
+            // const volPenalty = volumeBuff?.score * 0.5 ?? 0;
 
             // // Only apply negative volume scores for down events
             // if (volPenalty < 0) {

@@ -91,7 +91,7 @@ class Store extends EventEmitter {
 
         log.log(`[updateSymbols] Symbols list updated. Total symbols:`, this.symbols.size);
 
-        if (!isDev) {
+        if (!isDevelopment) {
             subscribeToSymbolNews(Array.from(this.symbols.keys()));
 
             (async () => {
