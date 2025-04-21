@@ -10,6 +10,8 @@ const fs = require("fs");
 const os = require("os");
 
 const isDevelopment = process.env.NODE_ENV === "development";
+
+// ✅ Declare SETTINGS_FILE before logging it
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(require("electron").app.getPath("userData"), "settings.json");
 
 const BUFFS_FILE = path.join(__dirname, "../data/buffs.json");
@@ -23,6 +25,7 @@ function loadSettingsAndBuffs() {
     try {
         const settingsRaw = fs.readFileSync(SETTINGS_FILE, "utf-8");
         const settings = JSON.parse(settingsRaw);
+
         blockList = settings.news?.blockList || [];
         bullishList = settings.news?.bullishList || [];
         bearishList = settings.news?.bearishList || [];
@@ -42,19 +45,15 @@ function loadSettingsAndBuffs() {
     }
 }
 
-function getNewsSentimentBuff(headline) {
+function getNewsSentimentBuff(headline, buffs, bullishList, bearishList) {
     const lower = headline.toLowerCase();
-    console.log("🧪 Checking sentiment for:", headline);
 
     if (bullishList.some((term) => lower.includes(term.toLowerCase()))) {
-        console.log("🟢 Matched bullish term!");
         return buffs.find((b) => b.key === "hasBullishNews");
     }
     if (bearishList.some((term) => lower.includes(term.toLowerCase()))) {
-        console.log("🔴 Matched bearish term!");
         return buffs.find((b) => b.key === "hasBearishNews");
     }
-    console.log("⚪ No sentiment match — using neutral buff.");
     return buffs.find((b) => b.key === "hasNews");
 }
 
@@ -390,7 +389,7 @@ class Store extends EventEmitter {
             }
 
             // 🎯 Check sentiment and attach buff
-            const newsBuff = getNewsSentimentBuff(newsItem.headline);
+            const newsBuff = getNewsSentimentBuff(newsItem.headline, buffs, bullishList, bearishList);
             newsItem.symbols.forEach((sym) => {
                 if (this.dailyData.has(sym) || this.sessionData.has(sym) || this.symbols.has(sym)) {
                     const ticker = this.symbols.get(sym);
