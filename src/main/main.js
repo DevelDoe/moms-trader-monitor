@@ -451,6 +451,12 @@ ipcMain.handle("fetch-news", async () => {
     tickerStore.fetchNews();
 });
 
+tickerStore.on("buffs-updated", (payload = []) => {
+    const updates = Array.isArray(payload) ? payload : [payload];
+    log.log(`📢 Broadcasting buffs update for: ${updates.map((u) => u.symbol).join(", ")}`);
+    broadcast("buffs-updated", { symbols: updates }); // ✅ always send as array
+});
+
 // focus
 ipcMain.on("toggle-focus", () => {
     const focus = windowManager.windows.focus;

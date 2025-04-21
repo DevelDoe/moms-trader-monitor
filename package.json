@@ -11,7 +11,7 @@
         "package-linux": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --platform=linux --arch=x64 --out=dist --overwrite",
         "publish": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-builder -p always"
     },
-    "author": "Morgan A Ray",
+    "author": "Morgan A Ray & Fouro (chatGPT)",
     "license": "MIT",
     "dependencies": {
         "async": "^3.2.6",

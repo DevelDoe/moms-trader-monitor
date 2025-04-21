@@ -1,5 +1,6 @@
 // Global object to store chart instances
 window.ownershipCharts = {};
+const symbolColors = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
@@ -210,7 +211,13 @@ function updateUI(symbolData) {
     if (symbolInput) {
         symbolInput.value = symbolData.symbol;
 
-        // Handle user setting a new symbol
+        const color = getSymbolColor(symbolData.symbol);
+        symbolInput.style.color = color; // 🎨 Colorize input text
+
+        // Apply color to any elements with data-id="symbol"
+        const symbolLabels = document.querySelectorAll('[data-id="symbol"]');
+        symbolLabels.forEach((el) => (el.style.color = color));
+
         symbolInput.onkeydown = (e) => {
             if (e.key === "Enter") {
                 const newSymbol = symbolInput.value.trim().toUpperCase();
@@ -475,4 +482,16 @@ function renderOwnershipChart(symbolData, chartId) {
             cutout: "80%", // ✅ Makes it a more distinct double-ring chart
         },
     });
+}
+
+function getSymbolColor(symbol) {
+    if (!symbolColors[symbol]) {
+        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hue = (hash * 37) % 360;
+        const saturation = 80;
+        const lightness = 50;
+        const alpha = 0.5;
+        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    }
+    return symbolColors[symbol];
 }

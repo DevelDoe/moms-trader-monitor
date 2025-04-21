@@ -40,18 +40,6 @@ let buffs = [];
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Hero window loaded");
 
-    try {
-        const fetchedBuffs = await window.electronAPI.getBuffs(); // ✅ pull buffs from preload
-        window.buffs = fetchedBuffs; // ✅ set to global
-
-        window.electronAPI.onBuffsUpdate((updatedBuffs) => {
-            if (debug) console.log("🔄 Buffs updated via IPC:", updatedBuffs);
-            window.buffs = updatedBuffs; // ✅ update global
-        });
-    } catch (err) {
-        console.error("❌ Failed to load buffs:", err);
-    }
-
     container = document.getElementById("focus");
 
     try {
@@ -85,8 +73,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                             xp: 0,
                         },
                         floatValue: symbolData.statistics?.floatShares || 0, // Added optional chaining
-                        buffs: getBuffsForHero(symbolData),
-                        highestPrice: symbolData.price || 1,
+                        buffs: symbolData.buffs || {},
+                        highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
                     };
                 }
             });
@@ -112,6 +100,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
 
+        window.storeAPI.onBuffsUpdate((updatedSymbols) => {
+            updatedSymbols.forEach((updatedSymbol) => {
+                const hero = focusState[updatedSymbol.symbol];
+                if (!hero) return;
+
+                hero.buffs = updatedSymbol.buffs || hero.buffs;
+
+                console.log("hero after buff: ", hero);
+
+                if (updatedSymbol.highestPrice > (hero.highestPrice || 0)) {
+                    hero.highestPrice = updatedSymbol.highestPrice;
+                }
+
+                if (updatedSymbol.lastEvent) {
+                    hero.lastEvent = updatedSymbol.lastEvent;
+                }
+
+                updateCardDOM(hero.hero);
+            });
+        });
+
         renderAll();
         startScoreDecay();
     } catch (error) {
@@ -119,297 +128,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Fallback or error handling here
     }
 });
-
-function getBuffsForHero(symbolData) {
-    const buffs = {};
-
-    const floatBuff = getFloatBuff(symbolData);
-    if (floatBuff) buffs.float = floatBuff;
-
-    const newsBuff = getNewsBuff(symbolData);
-    if (newsBuff) buffs.news = newsBuff;
-
-    const ownershipBuff = getOwnershipBuff(symbolData);
-    if (ownershipBuff) buffs.ownership = ownershipBuff;
-
-    const industryBuff = getIndustryBuff(symbolData);
-    if (industryBuff) buffs.industry = industryBuff;
-
-    const countryBuff = getCountryBuff(symbolData);
-    if (countryBuff) buffs.country = countryBuff;
-
-    const shortBuff = getShortInterestBuff(symbolData);
-    if (shortBuff) buffs.highShort = shortBuff;
-
-    const netLossBuff = getNetLossBuff(symbolData);
-    if (netLossBuff) buffs.netLoss = netLossBuff;
-
-    const s3Buff = getS3FilingBuff(symbolData);
-    if (s3Buff) buffs.hasS3 = s3Buff;
-
-    const dilutionBuff = getDilutionRiskBuff(symbolData);
-    if (dilutionBuff) buffs.dilutionRisk = dilutionBuff;
-
-    return buffs;
-}
-
-function getFloatBuff(symbolData) {
-    const float = symbolData.statistics?.floatShares;
-    const shares = symbolData.statistics?.sharesOutstanding;
-
-    const isCorrupt = !float || !shares || float <= 0 || shares <= 0 || float > 1e9 || shares > 5e9 || float / shares > 1.2 || float / shares < 0.01;
-
-    if (isCorrupt) {
-        return {
-            key: "floatCorrupt",
-            icon: "⚠️",
-            desc: "Corrupted float data",
-            multiplier: 1,
-            score: 0,
-            isBuff: false,
-        };
-    }
-
-    const floatBuffs = (window.buffs || [])
-        .filter((b) => b.key?.startsWith("float") && b.threshold != null)
-        .map((b) => ({
-            ...b,
-            threshold: Number(b.threshold),
-        }))
-        .filter((b) => !isNaN(b.threshold))
-        .sort((a, b) => a.threshold - b.threshold);
-
-    const selected = floatBuffs.find((b) => float < b.threshold);
-
-    return selected
-        ? {
-              key: selected.key,
-              icon: selected.icon,
-              desc: selected.desc,
-              multiplier: selected.multiplier,
-              score: selected.score,
-              isBuff: selected.isBuff ?? selected.score >= 0,
-          }
-        : {
-              key: "floatUnranked",
-              icon: "❔",
-              desc: "Float does not match any buff",
-              multiplier: 1,
-              score: 0,
-              isBuff: false,
-          };
-}
-
-function getNewsBuff(symbolData) {
-    const blockList = window.settings?.news?.blockList || [];
-    const news = symbolData.News || [];
-
-    if (!Array.isArray(news) || news.length === 0) return null;
-
-    const hasGoodNews = news.some((item) => {
-        const headline = sanitize(item.headline || "");
-        return !blockList.some((b) => headline.includes(sanitize(b)));
-    });
-
-    if (!hasGoodNews) return null;
-
-    return {
-        key: "news",
-        icon: "😼",
-        desc: "Has positive/unblocked news",
-        score: 150, // Up to you if you want to affect score
-        multiplier: 1.1, // Optional if you plan on scoring via buffs
-        isBuff: true,
-    };
-}
-
-function getOwnershipBuff(symbolData) {
-    const stats = symbolData.statistics || {};
-    const ownership = symbolData.ownership || {};
-
-    const floatShares = stats.floatShares || 0;
-    const sharesOutstanding = stats.sharesOutstanding || 0;
-    const insidersPercentHeld = ownership.insidersPercentHeld || 0;
-    const institutionsPercentHeld = ownership.institutionsPercentHeld || 0;
-
-    if (!sharesOutstanding) return null;
-
-    const insiderShares = Math.round(sharesOutstanding * insidersPercentHeld);
-    const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
-    const remainingShares = Math.max(sharesOutstanding - (floatShares + insiderShares + institutionalShares), 0);
-
-    const totalHeld = insiderShares + institutionalShares + remainingShares;
-
-    if (totalHeld > 0.5 * sharesOutstanding) {
-        // Load matching buff from global list by key to retain proper flags
-        const defined = (window.buffsArray || []).find((b) => b.key === "lockedShares");
-        return (
-            defined || {
-                key: "lockedShares",
-                icon: "💼",
-                desc: "High insider/institutional/locked shares holders",
-                score: 10,
-                isBuff: false, // explicitly false
-            }
-        );
-    }
-
-    return null;
-}
-
-function getNewHighBuff(hero) {
-    const price = hero.price ?? 0;
-    const highest = hero.highestPrice ?? 0;
-
-    if (price > highest) {
-        return {
-            key: "newHigh",
-            icon: "📈",
-            desc: "New high",
-            score: 10,
-            isBuff: true,
-        };
-    }
-
-    return null;
-}
-
-function getIndustryBuff(symbolData) {
-    const profile = symbolData.profile || {};
-    const summary = profile.longBusinessSummary?.toLowerCase() || "";
-    const companyName = profile.companyName?.toLowerCase() || "";
-    const industry = profile.industry || "";
-
-    if (industry === "Biotechnology" || summary.includes("biotech") || summary.includes("biotechnology") || companyName.includes("biopharma")) {
-        return {
-            key: "bio",
-            icon: "🧬",
-            desc: "Biotechnology stock",
-            score: 5,
-            isBuff: true,
-        };
-    }
-
-    if (summary.includes("cannabis")) {
-        return {
-            key: "weed",
-            icon: "🌿",
-            desc: "Cannabis stock",
-            score: 5,
-            isBuff: true,
-        };
-    }
-
-    if (summary.includes("space")) {
-        return {
-            key: "space",
-            icon: "🌌",
-            desc: "Space industry stock",
-            score: 5,
-            isBuff: true,
-        };
-    }
-
-    return null;
-}
-
-function getBounceBackBuff(hero, event) {
-    if (hero.lastEvent.dp > 0 && event.hp > 0) {
-        return {
-            key: "bounceBack",
-            icon: "🔁",
-            desc: "Recovering — stock is bouncing back after a downtrend",
-            score: 5,
-            isBuff: true,
-        };
-    }
-    return null;
-}
-
-function getCountryBuff(symbolData) {
-    const country = symbolData.profile?.country?.toLowerCase();
-
-    if (country === "china" || country === "cn" || country === "hk" || country === "hong kong") {
-        return {
-            key: "china",
-            icon: "🇨🇳",
-            desc: "China/Hong Kong-based company",
-            score: 0,
-            isBuff: false,
-        };
-    }
-
-    return null;
-}
-
-function getNetLossBuff(symbolData) {
-    const netIncome = symbolData.financials?.cashflowStatement?.netIncome;
-
-    if (typeof netIncome === "number" && netIncome < 0) {
-        return {
-            key: "netLoss",
-            icon: "🥅",
-            desc: "Company is currently running at a net loss",
-            score: -5,
-            isBuff: false,
-        };
-    }
-
-    return null;
-}
-
-function getShortInterestBuff(symbolData) {
-    const floatShares = symbolData.statistics?.floatShares || 0;
-    const sharesShort = symbolData.statistics?.sharesShort || 0;
-
-    if (!floatShares || floatShares <= 0) return null;
-
-    const shortRatio = sharesShort / floatShares;
-
-    if (shortRatio > 0.2) {
-        return {
-            key: "highShort",
-            icon: "🩳",
-            desc: "High short interest (more than 20% of float)",
-            score: 10,
-            isBuff: true,
-        };
-    }
-
-    return null;
-}
-
-function getS3FilingBuff(symbolData) {
-    if (symbolData.offReg) {
-        return {
-            key: "hasS3",
-            icon: "📂",
-            desc: `Registered S-3 filing (${symbolData.offReg})`,
-            score: -10,
-            isBuff: false,
-        };
-    }
-
-    return null;
-}
-
-function getDilutionRiskBuff(symbolData) {
-    const hasS3 = !!symbolData.offReg;
-    const netIncome = symbolData.financials?.cashflowStatement?.netIncome;
-    const isNetNegative = typeof netIncome === "number" && netIncome < 0;
-
-    if (hasS3 && isNetNegative) {
-        return {
-            key: "dilutionRisk",
-            icon: "🚨",
-            desc: "High dilution risk: Net loss + Registered S-3",
-            score: -20,
-            isBuff: false,
-        };
-    }
-
-    return null;
-}
 
 let lastTickerSetAt = 0;
 const MIN_UPDATE_INTERVAL = 5000; // 3 seconds
@@ -464,28 +182,28 @@ function updateFocusStateFromEvent(event) {
 
     hero.strength = event.strength;
 
-    // 🔁 Update volume buff dynamically based on current event
-    const volumeBuff = calculateVolumeImpact(event.strength || 0, event.price || 1);
-    hero.buffs.volume = volumeBuff;
+    // // 🔁 Update volume buff dynamically based on current event
+    // const volumeBuff = calculateVolumeImpact(event.strength || 0, event.price || 1);
+    // hero.buffs.volume = volumeBuff;
 
-    // Evaluate bounce back condition
-    const bounceBuff = getBounceBackBuff(hero, event);
-    if (bounceBuff) {
-        hero.buffs.bounceBack = bounceBuff;
-    } else {
-        delete hero.buffs.bounceBack;
-    }
+    // // Evaluate bounce back condition
+    // const bounceBuff = getBounceBackBuff(hero, event);
+    // if (bounceBuff) {
+    //     hero.buffs.bounceBack = bounceBuff;
+    // } else {
+    //     delete hero.buffs.bounceBack;
+    // }
 
-    const newHighBuff = getNewHighBuff(hero);
-    if (newHighBuff) {
-        hero.buffs.newHigh = newHighBuff;
-    } else {
-        delete hero.buffs.newHigh;
-    }
+    // const newHighBuff = getNewHighBuff(hero);
+    // if (newHighBuff) {
+    //     hero.buffs.newHigh = newHighBuff;
+    // } else {
+    //     delete hero.buffs.newHigh;
+    // }
 
-    if (!hero.highestPrice || event.price > hero.highestPrice) {
-        hero.highestPrice = event.price;
-    }
+    // if (!hero.highestPrice || event.price > hero.highestPrice) {
+    //     hero.highestPrice = event.price;
+    // }
 
     calculateXp(hero);
 
@@ -695,19 +413,23 @@ function renderCard({ hero, price, hp, dp, strength }) {
     console.log(state.buffs);
 
     // Buffs
-    // Define sort order across both positive and negative buffs
     const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
+
+    // Extract buffs
+    const buffsArray = Object.entries(state.buffs || {}).map(([originalKey, b]) => ({
+        ...b,
+        key: originalKey, // <- for display (icon, tooltip)
+        _sortKey: originalKey.toLowerCase().includes("vol") ? "volume" : originalKey, // <- for sorting
+    }));
 
     // Sort helper
     const sortBuffs = (arr) =>
         arr.sort((a, b) => {
-            const aIndex = sortOrder.indexOf(a.key);
-            const bIndex = sortOrder.indexOf(b.key);
+            const aIndex = sortOrder.indexOf(a._sortKey);
+            const bIndex = sortOrder.indexOf(b._sortKey);
             return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
         });
 
-    // Extract buffs
-    const buffsArray = Object.values(state.buffs || {});
     const positiveBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === true));
     const negativeBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === false));
 
@@ -1020,66 +742,66 @@ function startScoreDecay() {
     }, DECAY_INTERVAL_MS);
 }
 
-function calculateVolumeImpact(volume = 0, price = 1) {
-    const categories = Object.entries(window.buffs)
-        .map(([category, data]) => ({ category, ...data }))
-        .sort((a, b) => a.priceThreshold - b.priceThreshold);
+// function calculateVolumeImpact(volume = 0, price = 1) {
+//     const categories = Object.entries(window.buffs)
+//         .map(([category, data]) => ({ category, ...data }))
+//         .sort((a, b) => a.priceThreshold - b.priceThreshold);
 
-    for (const category of categories) {
-        if (price <= category.priceThreshold) {
-            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
+//     for (const category of categories) {
+//         if (price <= category.priceThreshold) {
+//             const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
 
-            const stageToUse =
-                sortedStages.find((stage, index) => {
-                    const current = stage.volumeThreshold;
-                    const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
-                    if (index === sortedStages.length - 1) {
-                        return volume >= prev;
-                    }
-                    return volume > prev && volume <= current;
-                }) || sortedStages[sortedStages.length - 1];
+//             const stageToUse =
+//                 sortedStages.find((stage, index) => {
+//                     const current = stage.volumeThreshold;
+//                     const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
+//                     if (index === sortedStages.length - 1) {
+//                         return volume >= prev;
+//                     }
+//                     return volume > prev && volume <= current;
+//                 }) || sortedStages[sortedStages.length - 1];
 
-            // ✅ Only now we can safely use stageToUse
-            return {
-                ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
-                capAssigned: category.category,
-                volumeStage: stageToUse.key,
-                message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
-                style: {
-                    cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-                    color: getColorForStage(stageToUse.key),
-                    animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-                },
-            };
-        }
-    }
+//             // ✅ Only now we can safely use stageToUse
+//             return {
+//                 ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
+//                 capAssigned: category.category,
+//                 volumeStage: stageToUse.key,
+//                 message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
+//                 style: {
+//                     cssClass: `volume-${stageToUse.key.toLowerCase()}`,
+//                     color: getColorForStage(stageToUse.key),
+//                     animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
+//                 },
+//             };
+//         }
+//     }
 
-    // Fallback if no category matched
-    return {
-        multiplier: 1,
-        capAssigned: "None",
-        volumeStage: "None",
-        message: "No matching category found",
-        style: {
-            cssClass: "volume-none",
-            icon: "",
-            description: "No volume",
-            color: "#cccccc",
-            animation: "none",
-        },
-        score: 0,
-    };
-}
+//     // Fallback if no category matched
+//     return {
+//         multiplier: 1,
+//         capAssigned: "None",
+//         volumeStage: "None",
+//         message: "No matching category found",
+//         style: {
+//             cssClass: "volume-none",
+//             icon: "",
+//             description: "No volume",
+//             color: "#cccccc",
+//             animation: "none",
+//         },
+//         score: 0,
+//     };
+// }
 
-function getColorForStage(stageKey) {
-    const colors = {
-        lowVol: "#cccccc",
-        mediumVol: "#4caf50",
-        highVol: "#ff9800",
-        parabolicVol: "#f44336",
-    };
-    return colors[stageKey] || "#cccccc";
-}
+// function getColorForStage(stageKey) {
+//     const colors = {
+//         lowVol: "#cccccc",
+//         mediumVol: "#4caf50",
+//         highVol: "#ff9800",
+//         parabolicVol: "#f44336",
+//     };
+//     return colors[stageKey] || "#cccccc";
+// }
 
 function humanReadableNumbers(value) {
     if (!value || isNaN(value)) return "-";

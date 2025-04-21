@@ -80,6 +80,21 @@ contextBridge.exposeInMainWorld("infobarAPI", {
 
 // Modern
 
+contextBridge.exposeInMainWorld("storeAPI", {
+    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+    getSymbol: (symbol) => ipcRenderer.invoke("get-symbol", symbol),
+    getTickers: (listType = "session") => ipcRenderer.invoke("get-tickers", listType),
+    getAllNews: () => ipcRenderer.invoke("get-all-news"),
+    getTickerNews: (ticker) => ipcRenderer.invoke("get-news", ticker),
+
+    onUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
+    onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
+    onBuffsUpdate: (callback) =>
+        ipcRenderer.on("buffs-updated", (event, data) => {
+            callback(data.symbols || []);
+        }),
+});
+
 contextBridge.exposeInMainWorld("eventsAPI", {
     activate: () => ipcRenderer.send("activate-events"),
     deactivate: () => ipcRenderer.send("deactivate-events"),

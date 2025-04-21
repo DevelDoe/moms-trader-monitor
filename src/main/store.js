@@ -2,6 +2,39 @@ const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews, subscribeToSymbolNews } = require("./collectors/news");
+const { computeBuffsForSymbol, calculateVolumeImpact } = require("./utils/buffLogic");
+const { getNewHighBuff, getBounceBackBuff } = require("./utils/eventBuffs");
+
+const path = require("path");
+const fs = require("fs");
+const os = require("os");
+
+const isDevelopment = process.env.NODE_ENV === "development";
+const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(require("electron").app.getPath("userData"), "settings.json");
+
+const BUFFS_FILE = path.join(__dirname, "../data/buffs.json");
+
+let buffs = [];
+let blockList = [];
+
+function loadSettingsAndBuffs() {
+    try {
+        const settingsRaw = fs.readFileSync(SETTINGS_FILE, "utf-8");
+        const settings = JSON.parse(settingsRaw);
+        blockList = settings.news?.blockList || [];
+    } catch (err) {
+        console.warn("⚠️ Failed to load settings:", err.message);
+        blockList = [];
+    }
+
+    try {
+        const buffsRaw = fs.readFileSync(BUFFS_FILE, "utf-8");
+        buffs = JSON.parse(buffsRaw);
+    } catch (err) {
+        console.warn("⚠️ Failed to load buffs:", err.message);
+        buffs = [];
+    }
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -9,6 +42,8 @@ class Store extends EventEmitter {
     constructor() {
         super();
         log.log("Store instance initialized");
+
+        loadSettingsAndBuffs();
 
         this.symbols = new Map();
         this.sessionData = new Map(); // Resets on clear
@@ -31,11 +66,12 @@ class Store extends EventEmitter {
                 const floatShares = s.statistics?.floatShares ?? 0;
                 const institutionsFloatPercentHeld = s.ownership?.institutionsFloatPercentHeld ?? 0;
 
-                // ✅ Compute `shortPercentOfFloat`
+                // ✅ Compute `shortPercentOfFloat ^ floatHeldByInstitutions
                 const shortPercentOfFloat = floatShares > 0 ? parseFloat(((sharesShort / floatShares) * 100).toFixed(2)) : 0.0;
-
-                // ✅ Compute `floatHeldByInstitutions`
                 const floatHeldByInstitutions = parseFloat((floatShares * institutionsFloatPercentHeld).toFixed(2));
+
+                // ✅ Compute buffs
+                const computedBuffs = computeBuffsForSymbol(s, buffs, blockList);
 
                 // ✅ Attach computed values before storing
                 return [
@@ -47,6 +83,7 @@ class Store extends EventEmitter {
                             shortPercentOfFloat,
                             floatHeldByInstitutions,
                         },
+                        buffs: computedBuffs, // ⬅️ Inject here
                     },
                 ];
             })
@@ -132,8 +169,9 @@ class Store extends EventEmitter {
 
             // **Update sessionData**
             if (!this.sessionData.has(symbol)) {
-                log.log(`[addMtpAlerts] Adding new ticker to sessionData: ${symbol}`);
-                this.sessionData.set(symbol, mergedData);
+                // log.log(`[addMtpAlerts] Adding new ticker to sessionData: ${symbol}`);
+                // this.sessionData.set(symbol, mergedData);
+                log.log("attacing news");
                 this.attachNews(symbol);
             } else {
                 let existingTicker = this.sessionData.get(symbol);
@@ -162,6 +200,17 @@ class Store extends EventEmitter {
                 log.log(`[addMtpAlerts] Updated ${symbol} in sessionData.`);
             }
 
+            // ✅ Sync symbol map if not already there
+            if (!this.symbols.has(symbol)) {
+                this.symbols.set(symbol, {
+                    symbol,
+                    price,
+                    statistics: {}, // or fetched later
+                    ownership: {},
+                    profile: {},
+                });
+            }
+
             // Emit update event for new high
             if (isNewHigh) {
                 this.emit("new-high-price", {
@@ -169,12 +218,63 @@ class Store extends EventEmitter {
                     price,
                     direction: direction || "UP",
                     change_percent: change_percent || 0,
-                    fiveMinVolume: volume || 0, // ✅ correct attr
+                    fiveMinVolume: volume || 0,
                     type: "new-high-price",
                 });
             }
 
-            // Emit store update event
+            // 🔁 Update dynamic buffs
+            const ticker = this.symbols.get(symbol);
+            if (ticker) {
+                ticker.buffs = ticker.buffs || {};
+
+                // 🧠 Save last event
+                ticker.lastEvent = {
+                    hp: direction === "UP" ? change_percent : 0,
+                    dp: direction === "DOWN" ? change_percent : 0,
+                    xp: volume || 0,
+                };
+
+                ticker.buffs.volume = calculateVolumeImpact(volume, price, buffs);
+
+                // 🔁 Bounce Back Buff (inline)
+                if (ticker.lastEvent.dp > 0 && ticker.lastEvent.hp > 0) {
+                    ticker.buffs.bounceBack = {
+                        key: "bounceBack",
+                        icon: "🔁",
+                        desc: "Recovering — stock is bouncing back after a downtrend",
+                        score: 5,
+                        isBuff: true,
+                    };
+                } else {
+                    delete ticker.buffs.bounceBack;
+                }
+
+                // 📈 New High Buff (inline)
+                if (isNewHigh) {
+                    ticker.buffs.newHigh = {
+                        key: "newHigh",
+                        icon: "📈",
+                        desc: "New high",
+                        score: 10,
+                        isBuff: true,
+                    };
+                } else {
+                    delete ticker.buffs.newHigh;
+                }
+
+                this.emit("buffs-updated", [
+                    {
+                        symbol,
+                        buffs: ticker.buffs,
+                        highestPrice: ticker.highestPrice,
+                        lastEvent: ticker.lastEvent,
+                    },
+                ]);
+                log.log(`[buffs] Emitted buffs-updated for: ${symbol}`);
+            }
+
+            // 📢 Store update
             log.log("[addMtpAlerts] store update!");
             this.emit("lists-update");
         } catch (error) {
@@ -294,8 +394,25 @@ class Store extends EventEmitter {
 
     getAllTickers(listType) {
         log.bounce("INFO", `[getAllTickers] called (List type: ${listType})`);
-        const data = listType === "session" ? this.sessionData : this.dailyData;
-        return Array.from(data.values());
+
+        if (listType === "symbols") {
+            return this.getAllSymbols();
+        }
+
+        // 🟡 Warn on deprecated usage
+        if (listType === "session") {
+            log.warn("[getAllTickers] ⚠️ 'session' listType is deprecated and will be removed soon. Use 'symbols' instead.");
+            return Array.from(this.sessionData.values());
+        }
+
+        if (listType === "daily") {
+            log.warn("[getAllTickers] ⚠️ 'daily' listType is deprecated and will be removed soon. Use 'symbols' instead.");
+            return Array.from(this.dailyData.values());
+        }
+
+        // 🟥 Unknown type
+        log.error(`[getAllTickers] ❌ Unknown listType '${listType}' — expected 'symbols'`);
+        return [];
     }
 
     clearSessionData() {

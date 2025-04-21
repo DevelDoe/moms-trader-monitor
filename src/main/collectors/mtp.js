@@ -328,8 +328,8 @@ function transformToFocusEvent(alert) {
 const predefinedAlerts = [
     // RADX alerts
     { symbol: "RADX", direction: "UP", price: 1.85, volume: 125000, change_percent: 3.2 },
-    { symbol: "RADX", direction: "DOWN", price: 1.72, volume: 98000, change_percent: 2.5 },
-    { symbol: "RADX", direction: "UP", price: 1.91, volume: 21000, change_percent: 5.1 },
+    { symbol: "RADX", direction: "DOWN", price: 1.72, volume: 120000, change_percent: 2.5 },
+    { symbol: "RADX", direction: "UP", price: 1.91, volume: 140000, change_percent: 5.1 },
 
     // NRXP alerts
     { symbol: "NRXP", direction: "UP", price: 0.42, volume: 35000, change_percent: 8.7 },
@@ -342,9 +342,9 @@ const predefinedAlerts = [
     { symbol: "DSWL", direction: "DOWN", price: 2.08, volume: 68000, change_percent: 3.2 },
 
     // LTRN alerts
-    { symbol: "LTRN", direction: "UP", price: 3.4, volume: 45000, change_percent: 1.9 },
-    { symbol: "LTRN", direction: "UP", price: 3.55, volume: 52000, change_percent: 3.5 },
-    { symbol: "LTRN", direction: "DOWN", price: 3.32, volume: 41000, change_percent: 2.1 },
+    { symbol: "LTRN", direction: "UP", price: 3.4, volume: 450000, change_percent: 1.9 },
+    { symbol: "LTRN", direction: "UP", price: 3.55, volume: 520000, change_percent: 3.5 },
+    { symbol: "LTRN", direction: "DOWN", price: 3.32, volume: 410000, change_percent: 2.1 },
 
     // FBRX alerts
     { symbol: "FBRX", direction: "UP", price: 0.65, volume: 180000, change_percent: 6.2 },
@@ -377,8 +377,8 @@ const predefinedAlerts = [
     { symbol: "BMR", direction: "UP", price: 1.02, volume: 1500, change_percent: 8.7 },
 
     // SPAI alerts
-    { symbol: "SPAI", direction: "UP", price: 0.48, volume: 25000, change_percent: 7.3 },
-    { symbol: "SPAI", direction: "DOWN", price: 0.44, volume: 21000, change_percent: 4.2 },
+    { symbol: "SPAI", direction: "UP", price: 0.48, volume: 250000, change_percent: 7.3 },
+    { symbol: "SPAI", direction: "DOWN", price: 0.44, volume: 210000, change_percent: 4.2 },
     { symbol: "SPAI", direction: "UP", price: 0.52, volume: 3100000, change_percent: 10.6 },
 
     // RAYA alerts
@@ -412,14 +412,14 @@ const predefinedAlerts = [
     { symbol: "NCEW", direction: "DOWN", price: 1.78, volume: 4200, change_percent: 3.1 },
 
     // KPLT alerts
-    { symbol: "KPLT", direction: "UP", price: 0.28, volume: 420000, change_percent: 7.5 },
-    { symbol: "KPLT", direction: "DOWN", price: 0.26, volume: 380000, change_percent: 5.4 },
-    { symbol: "KPLT", direction: "UP", price: 0.31, volume: 510000, change_percent: 12.8 },
+    { symbol: "KPLT", direction: "UP", price: 3.28, volume: 420000, change_percent: 7.5 },
+    { symbol: "KPLT", direction: "DOWN", price: 3.26, volume: 380000, change_percent: 5.4 },
+    { symbol: "KPLT", direction: "UP", price: 3.31, volume: 510000, change_percent: 12.8 },
 
     // INKT alerts
-    { symbol: "INKT", direction: "UP", price: 1.15, volume: 95000, change_percent: 3.8 },
-    { symbol: "INKT", direction: "DOWN", price: 1.08, volume: 82000, change_percent: 2.9 },
-    { symbol: "INKT", direction: "UP", price: 1.22, volume: 110000, change_percent: 7.4 },
+    { symbol: "INKT", direction: "UP", price: 2.15, volume: 95000, change_percent: 3.8 },
+    { symbol: "INKT", direction: "DOWN", price: 2.08, volume: 82000, change_percent: 2.9 },
+    { symbol: "INKT", direction: "UP", price: 2.22, volume: 110000, change_percent: 7.4 },
 
     // RAVE alerts
     { symbol: "RAVE", direction: "UP", price: 0.95, volume: 120000, change_percent: 4.6 },

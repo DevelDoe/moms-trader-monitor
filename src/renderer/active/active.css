@@ -22,13 +22,13 @@ body {
 #symbol {
     padding-top: 0;
     margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 35w !important; /* ✅ Keeps it small */
-    height: 35vw !important;
-    margin-left: 10px;
+    width: 36vw !important; /* you wrote 35w, fixed it to 35vw */
+    height: 36vw !important;
 }
 
 /* Two-column layout using Flexbox */
@@ -38,21 +38,29 @@ body {
     align-items: flex-start; /* Align items to the top */
 }
 
-.data-column {
-    flex: 1; /* Takes up 50% of the available space */
-    max-width: 50%; /* Ensures it doesn't grow beyond half */
-    font-size: 12px;
+/* Legends  */
+
+#section-float-summary {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-align: center;
+    font-size: 1.5vw !important;
+    pointer-events: none; /* so you can interact with the chart behind */
 }
 
-.chart-column {
+.data-column {
     flex: 1; /* Takes up 50% of the available space */
-    max-width: 50%; /* Ensures it doesn't grow beyond half */
+    max-width: 100%; /* Ensures it doesn't grow beyond half */
 }
 
 /* Ensure the chart container is responsive */
 .chart-container {
-    width: 100%;
-    height: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Optional: Add some spacing and alignment */
@@ -62,44 +70,32 @@ body {
 }
 
 .about {
-    margin-top: -111px;
-    color: #696050 !important;
+    color: #cfa862 !important;
     font: menu;
     font-size: 15px;
-
-    /* ✅ Fixed height with scrolling */
-    height: 10px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    /* white-space: nowrap; */
+    max-height: 150px;
+    overflow-x: auto;
     overflow-y: hidden;
-
-    /* ✅ Hide scrollbar in Chrome/Electron */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-
-    padding-bottom: 130px;
-    margin-bottom: 23px;
-    max-width: 40%;
+    text-overflow: ellipsis;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
 }
 
-/* ✅ Gradient fade effect at the bottom */
 .about {
-    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 100%, rgba(0, 0, 0, 0));
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 100%, rgba(0, 0, 0, 0));
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0.1));
 }
 
 .about::-webkit-scrollbar {
-    width: 0px; /* ✅ Ensures scrollbar is hidden */
+    width: 0px;
     height: 0px !important;
     display: none !important;
 }
 
-/* ✅ Hide scrollbar for WebKit browsers (Chrome, Safari) */
 .about::-webkit-scrollbar {
     display: none !important;
-}
-
-#section-float-summary,
-#section-float-stats {
-    font-size: 15px !important;
 }
 
 /* Hide all tab content by default */
@@ -186,8 +182,25 @@ body {
     border: none;
     outline: none;
     width: auto;
-    max-width: 40px;
+    max-width: 95px;
     cursor: default;
+    font-family: "Press Start 2P", monospace;
+    font-size: 23px;
+}
+
+#symbol {
+    display: flex;
+    align-items: baseline; /* 👈 aligns text elements by their bottom */
+    gap: 10px; /* optional: space between input and spans */
+}
+
+#symbol span {
+    font-size: 16px;
+    align-items: flex-start;
+    display: flex;
+    padding-bottom: 5;
+
+    gap: 3px;
 }
 
 .editable-symbol:hover,
@@ -265,4 +278,40 @@ body {
     100% {
         transform: translateX(-100%);
     }
+}
+
+/* new grid  */
+
+.active-ticker-layout {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    flex-wrap: wrap;
+}
+
+.left-column,
+.right-column {
+    flex: 1 1 300px;
+    min-width: 280px;
+}
+
+/* 👇 Inner grid per side (Buffs + Float, News + Momentum) */
+.inner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.panel {
+    background: #111;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+    min-width: 150px;
+}
+
+/* Stack layout on narrow screens */
+.p-4 {
+    padding: 0.1rem !important;
 }
