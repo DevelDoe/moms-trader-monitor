@@ -623,16 +623,16 @@ function calculateScore(hero, event) {
         if (event.dp > 0) {
             baseScore -= event.dp * 10;
 
-            const volumeBuff = getHeroBuff(hero, "volume");
-            const volPenalty = volumeBuff?.score ?? 0;
+            // const volumeBuff = getHeroBuff(hero, "volume");
+            // const volPenalty = volumeBuff?.score ?? 0;
 
-            // Only apply negative volume scores for down events
-            if (volPenalty < 0) {
-                baseScore += volPenalty; // subtract more
-                if (debug && debugSamples < debugLimitSamples) {
-                    logStep("📉", `Volume Penalty (${humanReadableNumbers(event.strength || 0)})`, volPenalty);
-                }
-            }
+            // // Only apply negative volume scores for down events
+            // if (volPenalty < 0) {
+            //     baseScore += volPenalty; // subtract more
+            //     if (debug && debugSamples < debugLimitSamples) {
+            //         logStep("📉", `Volume Penalty (${humanReadableNumbers(event.strength || 0)})`, volPenalty);
+            //     }
+            // }
 
             if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp * 10);
         }
