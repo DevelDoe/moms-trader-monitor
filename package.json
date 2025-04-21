@@ -1,6 +1,6 @@
 {
     "name": "Moms-Trader-Monitor",
-    "version": "3.9.0",
+    "version": "3.10.0",
     "description": "Moms Traders Monitor is a tool designed to track high-potential stocks in real-time, using automated web scraping and scoring to identify actionable trade opportunities.",
     "main": "src/main/main.js",
     "scripts": {
