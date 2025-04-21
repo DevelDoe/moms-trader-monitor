@@ -120,7 +120,7 @@ app.on("ready", async () => {
 
         connectMTP();
         flushMessageQueue();
-        connectBridge();
+        if (!isDevelopment) connectBridge();
 
         if (windows.docker) {
             windows.docker.show();
@@ -132,7 +132,7 @@ app.on("ready", async () => {
             safeSend(win, "settings-updated", settings);
         });
 
-        if (isDevelopment) startMockAlerts();
+        // if (isDevelopment) startMockAlerts();
     });
 });
 
