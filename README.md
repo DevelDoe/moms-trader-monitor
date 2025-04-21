@@ -118,3 +118,5 @@ npm version minor
 
 npm version minor --no-git-tag-version
 ```
+
+npm version minor --preid=next
