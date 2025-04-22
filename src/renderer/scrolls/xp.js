@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         container.innerHTML = sorted
             .map((h, i) => {
                 const required = (h.lv + 1) * 1000;
-                const xpPercent = Math.round((h.xp / required) * 100);
+                const xpPercent = Math.round((h.xp / required) * 100).toFixed(0);
                 const bg = getSymbolColor(h.hero);
 
                 const age = now - (h.lastUpdate || 0);
