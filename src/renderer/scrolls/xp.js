@@ -23,7 +23,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         container.innerHTML = sorted
             .map((h, i) => {
                 const required = (h.lv + 1) * 1000;
-                const xpPercent = Math.round((h.xp / required) * 100).toFixed(0);
                 const bg = getSymbolColor(h.hero);
 
                 const age = now - (h.lastUpdate || 0);
@@ -34,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <div class="xp-line" style="${dullStyle}">
                        
                         <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</span></strong>
-                         XP ${h.xp}
+                         XP ${Math.floor(h.xp)}
                     </div>
                 `;
             })
