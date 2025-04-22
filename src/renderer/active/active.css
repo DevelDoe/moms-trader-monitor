@@ -98,7 +98,7 @@ body {
 }
 
 .scroll-container {
-    max-height: 668px; /* Or whatever fits your layout */
+    max-height: 66px; /* Or whatever fits your layout */
     overflow: hidden;
     position: relative;
     margin-top: 10px;
