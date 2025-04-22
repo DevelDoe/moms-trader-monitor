@@ -625,7 +625,11 @@ function calculateScore(hero, event) {
         }
 
         if (event.dp > 0) {
-            baseScore -= event.dp * 10;
+            // gainers can be removed from the heroes list if we reduce the score with dp....
+            // it just did not feel natural when a gapper suddenly just gets pushed out suddenly
+            // we are degrading the score on time and both here and the time based did not feel natural..
+
+            // baseScore -= event.dp * 5;
 
             // Volume
             // const volumeBuff = getHeroBuff(hero, "volume");
@@ -703,7 +707,7 @@ function startScoreDecay() {
             if (hero.score > 0) {
                 const originalScore = hero.score;
                 const scale = 1 + hero.score / SCORE_NORMALIZATION;
-                const cling = 0.5;
+                const cling = 0.2;
                 const taper = Math.max(cling, Math.min(1, hero.score / 10)); // Tapers when score < 10
                 const decayAmount = XP_DECAY_PER_TICK * scale * taper;
                 const newScore = Math.max(0, hero.score - decayAmount);

@@ -27,8 +27,8 @@ body {
 
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 36vw !important; /* you wrote 35w, fixed it to 35vw */
-    height: 36vw !important;
+    width: 34vw !important; /* you wrote 35w, fixed it to 35vw */
+    height: 34vw !important;
 }
 
 /* Two-column layout using Flexbox */

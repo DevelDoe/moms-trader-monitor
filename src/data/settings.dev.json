@@ -134,17 +134,17 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 338,
-      "height": 553,
-      "x": 1463,
+      "width": 358,
+      "height": 496,
+      "x": 1560,
       "y": 0,
       "isOpen": true
     },
     "activeWindow": {
       "width": 802,
       "height": 404,
-      "x": 1526,
-      "y": -479,
+      "x": 1510,
+      "y": -446,
       "isOpen": true
     },
     "traderviewWindow_MULN": {

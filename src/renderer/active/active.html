@@ -79,7 +79,7 @@
                                 <div class="scroll-container text-tertiary no-drag">
                                     <div class="scroll-content no-drag" data-id="profile-longBusinessSummary"></div>
                                     <!-- <div class="scroll-content no-drag" >China SXT Pharmaceuticals, Inc., a pharmaceutical company, engages in the research, development, manufacture, marketing, and sale of traditional Chinese medicine pieces (TCMP) in China. The company offers advanced, fine, and regular TCMP products, and raw medicinal material, such as SanQiFen, HongQi, SuMu, JiangXiang, CuYanHuSuo, XiaTianWu, LuXueJing, XueJie, ChaoSuanZaoRen, HongQuMi, ChuanBeiMu, HuangShuKuiHua, WuWeiZi, DingXiang, RenShen, QingGuo, JueMingZi, ShaRen, and ChenXiang. It provides its products under the Suxuantang, Hui Chun Tang, and Tong Ren Tang brands. The company had an end-customer base of pharmaceutical companies, chain pharmacies, and hospitals, as well as pharmaceutical distributors. China SXT Pharmaceuticals, Inc. was founded in 2005 and is headquartered in Taizhou, China. -->
-                                    </div>
+                                    <!-- </div> -->
                                 </div>
                             </div>
 
@@ -211,19 +211,19 @@
         <script src="./active.js"></script>
         <script>
             const container = document.querySelector(".scroll-content.no-drag");
-        
+
             if (container) {
                 const downSpeed = 1;
                 const upSpeed = 10;
-                const delay = 50;
-                const pauseTop = 2000; // ms to pause at the top
+                const delay = 30;
+                const pauseTop = 3000; // ms to pause at the top
                 const pauseBottom = 1500; // ms to pause at the bottom
                 let direction = 0; // 0 = idle, 1 = down, -1 = up
-        
+
                 const scrollLoop = () => {
                     if (direction === 1) {
                         container.scrollTop += downSpeed;
-        
+
                         if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
                             direction = 0;
                             setTimeout(() => {
@@ -234,7 +234,7 @@
                         }
                     } else if (direction === -1) {
                         container.scrollTop -= upSpeed;
-        
+
                         if (container.scrollTop <= 0) {
                             direction = 0;
                             setTimeout(() => {
@@ -244,10 +244,10 @@
                             return;
                         }
                     }
-        
+
                     setTimeout(scrollLoop, delay);
                 };
-        
+
                 // Start paused at top
                 setTimeout(() => {
                     direction = 1;
@@ -255,8 +255,5 @@
                 }, pauseTop);
             }
         </script>
-        
-        
-        
     </body>
 </html>
