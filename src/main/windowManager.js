@@ -8,7 +8,6 @@ const path = require("path");
 const fs = require("fs");
 
 const { createSettingsWindow } = require("./windows/settings");
-const { createLiveWindow } = require("./windows/live");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createFocusWindow } = require("./windows/focus");
 const { createDailyWindow } = require("./windows/daily");
@@ -17,6 +16,7 @@ const { createScannerWindow } = require("./windows/scanner");
 const { createInfobarWindow } = require("./windows/infobar");
 const { createWizardWindow } = require("./windows/wizard");
 const { createProgressWindow } = require("./windows/progress");
+const { createScrollXpWindow } = require("./windows/scrollXp");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -76,7 +76,6 @@ async function restoreWindows() {
 
     const windowKeyMap = {
         settings: "settingsWindow",
-        live: "liveWindow",
         frontline: "frontlineWindow",
         focus: "focusWindow",
         daily: "dailyWindow",
@@ -86,7 +85,7 @@ async function restoreWindows() {
         traderview: "traderviewWindow",
         wizard: "wizardWindow",
         progress: "progressWindow",
-        // activeWindow handled separately
+        scrollXp: "scrollXpWindow",
     };
 
     // First, restore all non-dependent windows
@@ -138,8 +137,6 @@ function createWindowByName(name) {
     switch (name) {
         case "settings":
             return createSettingsWindow(isDevelopment);
-        case "live":
-            return createLiveWindow(isDevelopment);
         case "frontline":
             return createFrontlineWindow(isDevelopment);
         case "focus":
@@ -156,6 +153,8 @@ function createWindowByName(name) {
             return createWizardWindow(isDevelopment);
         case "progress":
             return createProgressWindow(isDevelopment);
+        case "scrollXp":
+            return createScrollXpWindow(isDevelopment);
         default:
             throw new Error(`No creator function for window: ${name}`);
     }

@@ -49,12 +49,12 @@
                                 </div>
                             </div>
 
-                            <div class="bg-zinc-800 p-4 rounded-xl" style="position: relative">
+                            <div class="bg-zinc-800 p-4 rounded-xl chart" style="position: relative; padding-top: 0 !important; margin-top: 0 !important">
                                 <div id="section-float-summary" class="grid grid-cols-1 sm:grid-cols-2 gap-0">
                                     <div class="data-column no-drag">
                                         <p><strong title="Total Shares Outstanding">Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
                                         <p><strong title="🔵 Public Float">🔵 Float:</strong> <span data-id="statistics-float"></span></p>
-                                        <p><strong title="🟡 Total Shorted Shares">🟡 Short:</strong><span data-id="statistics-sharesShort"></span></p>
+                                        <p><strong title="🟡 Total Shorted Shares">🟡 Short:</strong> <span data-id="statistics-sharesShort"></span></p>
                                         <p><strong title="🔴 Held by Insiders">🔴 Inside:</strong> <span data-id="statistics-insidersHeld"></span></p>
                                         <p><strong title="🟠 Held by Institutions">🟠 Insti:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
                                         <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remain:</strong> <span data-id="statistics-remainingShares"></span></p>
@@ -69,7 +69,7 @@
                             <!-- Row 2: Two Panels -->
 
                             <div id="data-warning-summary" class="bg-zinc-800 p-4 rounded-xl" style="color: #aa9c4c; display: none">
-                                🧙‍♂️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden in the mist.
+                                🧙‍♂️ Fog of uncertainty — true ownership remains hidden in the mist.
                             </div>
                         </div>
 
@@ -215,9 +215,9 @@
             if (container) {
                 const downSpeed = 1;
                 const upSpeed = 10;
-                const delay = 30;
-                const pauseTop = 3000; // ms to pause at the top
-                const pauseBottom = 1500; // ms to pause at the bottom
+                const delay = 60;
+                const pauseTop = 8000; // ms to pause at the top
+                const pauseBottom = 3000; // ms to pause at the bottom
                 let direction = 0; // 0 = idle, 1 = down, -1 = up
 
                 const scrollLoop = () => {

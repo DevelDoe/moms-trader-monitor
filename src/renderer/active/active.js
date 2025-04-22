@@ -272,7 +272,7 @@ function updateUI(symbolData) {
     });
 
     if (filteredNews.length === 0) {
-        newsContainer.innerHTML = "<p>No recent news available</p>";
+        newsContainer.innerHTML = '<p style="opacity:0.1; color: white">No recent news available</p>';
     } else {
         filteredNews.forEach((newsItem) => {
             const sentimentClass = getNewsSentimentClass(newsItem);
@@ -280,10 +280,12 @@ function updateUI(symbolData) {
             const itemDiv = document.createElement("div");
             itemDiv.className = `news-item ${sentimentClass}`;
 
-            itemDiv.innerHTML = `
-                <h5>${newsItem.headline || "Untitled"}</h5>
-                <p>${newsItem.summary || ""}</p>
-            `;
+            itemDiv.innerHTML = `<h5>${newsItem.headline || "Untitled"}</h5>`;
+
+            //     itemDiv.innerHTML = `
+            //     <h5>${newsItem.headline || "Untitled"}</h5>
+            //     <p>${newsItem.summary || ""}</p>
+            // `;
 
             newsContainer.appendChild(itemDiv);
         });
@@ -331,8 +333,14 @@ function sanitize(str) {
  * @param {string|number} value - The value to set.
  */
 function setText(id, value) {
-    const elements = document.querySelectorAll(`[data-id="${id}"]`); // ✅ Selects all elements with matching `data-id`
-    elements.forEach((el) => (el.innerText = value ?? "N/A")); // ✅ Update all instances
+    const elements = document.querySelectorAll(`[data-id="${id}"]`);
+    elements.forEach((el) => {
+        let text = value ?? "N/A";
+        if (id === "industry" && typeof text === "string" && text.length > 30) {
+            text = text.slice(0, 27) + "...";
+        }
+        el.innerText = text;
+    });
 }
 /**
  * Formats a large number with abbreviations (K, M, B).

@@ -7,7 +7,7 @@ let container;
 
 const symbolColors = {};
 
-let maxXP = 100;
+let maxXP = 1000;
 let maxHP = 10;
 
 const BASE_MAX_HP = 300;
@@ -28,6 +28,7 @@ const { isDev } = window.appFlags;
 const freshStart = isDev;
 const debug = isDev;
 const debugScoreCalc = isDev;
+const debugXp = isDev;
 
 console.log("🎯 Fresh start mode:", freshStart);
 console.log("🐛 Debug mode:", debug);
@@ -121,6 +122,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
 
+        window.electronAPI.onXpUpdate(({ symbol, xp, lv }) => {
+            const hero = focusState[symbol];
+            if (!hero) return;
+
+            hero.xp = xp;
+            hero.lv = lv;
+
+            if (debugXp) console.log(`🎮 ${symbol} XP update → LV ${lv}, XP ${xp}`);
+
+            updateCardDOM(symbol); // 🖼️ Refresh just this card
+        });
+
         renderAll();
         startScoreDecay();
     } catch (error) {
@@ -181,31 +194,6 @@ function updateFocusStateFromEvent(event) {
     };
 
     hero.strength = event.strength;
-
-    // // 🔁 Update volume buff dynamically based on current event
-    // const volumeBuff = calculateVolumeImpact(event.strength || 0, event.price || 1);
-    // hero.buffs.volume = volumeBuff;
-
-    // // Evaluate bounce back condition
-    // const bounceBuff = getBounceBackBuff(hero, event);
-    // if (bounceBuff) {
-    //     hero.buffs.bounceBack = bounceBuff;
-    // } else {
-    //     delete hero.buffs.bounceBack;
-    // }
-
-    // const newHighBuff = getNewHighBuff(hero);
-    // if (newHighBuff) {
-    //     hero.buffs.newHigh = newHighBuff;
-    // } else {
-    //     delete hero.buffs.newHigh;
-    // }
-
-    // if (!hero.highestPrice || event.price > hero.highestPrice) {
-    //     hero.highestPrice = event.price;
-    // }
-
-    calculateXp(hero);
 
     let needsFullRender = false;
     if (hero.hp > maxHP) {
@@ -356,7 +344,7 @@ function updateCardDOM(hero) {
         const state = focusState[hero];
         const strengthCap = state.price < 1.5 ? 800000 : 400000;
 
-        newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 100)) * 100, 100)}%`;
+        newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 1000)) * 100, 100)}%`;
 
         newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
 
@@ -374,7 +362,7 @@ function updateCardDOM(hero) {
             const state = focusState[hero];
             const strengthCap = state.price < 1.5 ? 800000 : 400000;
 
-            newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 100)) * 100, 100)}%`;
+            newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 1000)) * 100, 100)}%`;
             newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
             newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / strengthCap) * 100, 100)}%`;
         });
@@ -399,7 +387,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const yOffset = row * 100;
 
     const topPosition = 200;
-    const requiredXp = (state.lv + 1) * 100;
+    const requiredXp = (state.lv + 1) * 1000;
     const xpProgress = Math.min((state.xp / requiredXp) * 100, 100);
     const strengthCap = price < 1.5 ? 800000 : 400000;
 
@@ -671,20 +659,6 @@ function getFloatScore(floatValue) {
         .find((b) => floatValue < b.threshold);
 
     return floatBuff?.score ?? 0;
-}
-
-function calculateXp(hero) {
-    hero.xp += hero.lastEvent.hp || 0; // Only gain XP from HP events
-
-    const requiredXp = (hero.lv + 1) * 100;
-
-    while (hero.xp >= requiredXp) {
-        hero.xp -= requiredXp;
-        hero.lv += 1;
-
-        // 🪄 Optional: Trigger "Level Up!" animation
-        if (debug) console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
-    }
 }
 
 function startScoreDecay() {

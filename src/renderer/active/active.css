@@ -1,5 +1,4 @@
 body {
-    background-color: #1c1d23;
     color: #cdcdcd;
 
     margin: 0 auto;
@@ -27,8 +26,8 @@ body {
 
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 34vw !important; /* you wrote 35w, fixed it to 35vw */
-    height: 34vw !important;
+    width: 35vw !important; /* you wrote 35w, fixed it to 35vw */
+    height: 35vw !important;
 }
 
 /* Two-column layout using Flexbox */
@@ -47,7 +46,7 @@ body {
     transform: translate(-50%, -50%);
     color: white;
     text-align: center;
-    font-size: 1.5vw !important;
+    font-size: 1.45vw !important;
     pointer-events: none; /* so you can interact with the chart behind */
 }
 
@@ -56,11 +55,22 @@ body {
     max-width: 100%; /* Ensures it doesn't grow beyond half */
 }
 
+#data-warning-summary {
+    padding-top: 0;
+    margin-top: 10px;
+    font-size: 12px !important;
+}
+
 /* Ensure the chart container is responsive */
 .chart-container {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.chart {
+    padding-top: 0 !important;
+    margin-top: 0;
 }
 
 /* Optional: Add some spacing and alignment */
@@ -177,6 +187,9 @@ body {
 .news-item {
     margin-bottom: 2px;
     padding-bottom: 0px;
+}
+.news-item:nth-child(even) {
+    opacity: 0.9;
 }
 
 .news-item h5 {

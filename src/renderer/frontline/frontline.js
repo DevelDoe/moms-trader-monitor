@@ -21,8 +21,9 @@ let eventsPaused = false;
 const { isDev } = window.appFlags;
 
 const freshStart = isDev;
-const debug = isDev;
+const debug = false;
 const debugScoreCalc = isDev;
+const debugXp = isDev;
 
 console.log("🎯 Fresh start mode:", freshStart);
 console.log("🐛 Debug mode:", debug);
@@ -112,8 +113,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 hero.buffs = updatedSymbol.buffs || hero.buffs;
 
-                console.log("hero after buff: ", hero);
-
                 if (updatedSymbol.highestPrice > (hero.highestPrice || 0)) {
                     hero.highestPrice = updatedSymbol.highestPrice;
                 }
@@ -173,7 +172,7 @@ function updateFrontlineStateFromEvent(event) {
 
     hero.strength = event.strength;
 
-    calculateXp(hero);
+    calculateXp(hero, event);
 
     // Check if we need to scale up
     let needsFullRender = false;
@@ -610,18 +609,47 @@ function getHeroBuff(hero, key) {
     return hero?.buffs?.[key] ?? {};
 }
 
-function calculateXp(hero) {
-    hero.xp += hero.lastEvent.hp || 0; // Only gain XP from HP events
+function calculateXp(hero, event) {
+    const hp = event.hp || 0;
+    const dp = event.dp || 0;
+    const totalMove = hp + dp;
+    const strength = event.strength || 0;
 
-    const requiredXp = (hero.lv + 1) * 100;
+    // 📈 Base XP gain from price action and volume strength
+    let baseXp = totalMove * 10; // Adjust divisor to balance XP scaling
 
+    // 🎯 Get buff-based multiplier (float, volume, etc.)
+    const volumeBuff = getHeroBuff(hero, "volume");
+    const volMult = volumeBuff?.multiplier ?? 1;
+
+    const xpDelta = Math.round(baseXp * volMult);
+
+    hero.xp = (hero.xp || 0) + xpDelta;
+
+    const requiredXp = (hero.lv + 1) * 1000;
     while (hero.xp >= requiredXp) {
         hero.xp -= requiredXp;
         hero.lv += 1;
-
-        // 🪄 Optional: Trigger "Level Up!" animation
         if (debug) console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
     }
+
+    if (debugXp) {
+        console.log(`⚡⚡⚡ [${hero.hero}] XP BREAKDOWN ⚡⚡⚡`);
+        console.log(`📜 ALERT → HP: ${hp.toFixed(2)} | DP: ${dp.toFixed(2)} | Strength: ${strength.toLocaleString()}`);
+        console.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
+
+        if (volumeBuff?.desc) {
+            console.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
+        } else {
+            console.log(`🏷️ Volume Multiplier           x${volMult.toFixed(2)}`);
+        }
+
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log(`🎯 XP GAINED                   ${xpDelta}`);
+        console.log(`🎼 TOTAL XP →                  ${hero.xp} (LV ${hero.lv})`);
+    }
+
+    window.frontlineAPI?.updateXp(hero.hero, hero.xp, hero.lv);
 }
 
 function startScoreDecay() {

@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     onSymbolsFetched: (callback) => ipcRenderer.on("symbols-fetched", callback),
     getBuffs: () => ipcRenderer.invoke("buffs:get"),
     onBuffsUpdate: (callback) => ipcRenderer.on("buffs:update", (_, buffs) => callback(buffs)),
+    onXpUpdate: (cb) => ipcRenderer.on("xp-updated", (event, data) => cb(data)),
     exitApp: () => ipcRenderer.send("exit-app"),
 });
 
@@ -41,41 +42,22 @@ contextBridge.exposeInMainWorld("focusAPI", {
     calculateVolumeImpact: (volume, price) => ipcRenderer.invoke("calculate-volume-impact", { volume, price }),
 });
 
-contextBridge.exposeInMainWorld("sessionAPI", {
-    toggle: () => ipcRenderer.send("toggle-live"),
-    reCreate: () => ipcRenderer.send("recreate-live"),
-    getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
-    onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
-    clearSession: () => ipcRenderer.send("clear-live"),
-    onSessionCleared: (callback) => ipcRenderer.on("live-cleared", callback),
-    applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
-    onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
-});
-
-contextBridge.exposeInMainWorld("activeAPI", {
-    toggle: () => ipcRenderer.send("toggle-active"),
-    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
-    getSymbol: (symbol) => ipcRenderer.invoke("get-symbol", symbol), // ✅ New function
-    setActiveTicker: (ticker) => ipcRenderer.send("set-active-ticker", ticker),
-    onActiveTickerUpdate: (callback) => {
-        ipcRenderer.on("update-active-ticker", (event, ticker) => {
-            callback(ticker);
-        });
-    },
-    notifyActiveWindowReady: () => ipcRenderer.send("active-window-ready"), // ✅ This line
-});
+// contextBridge.exposeInMainWorld("sessionAPI", {
+//     toggle: () => ipcRenderer.send("toggle-live"),
+//     reCreate: () => ipcRenderer.send("recreate-live"),
+//     getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
+//     onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
+//     clearSession: () => ipcRenderer.send("clear-live"),
+//     onSessionCleared: (callback) => ipcRenderer.on("live-cleared", callback),
+//     applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
+//     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
+// });
 
 contextBridge.exposeInMainWorld("newsAPI", {
     get: () => ipcRenderer.invoke("get-all-news"),
     toggle: () => ipcRenderer.send("toggle-news"),
     onUpdate: (callback) => ipcRenderer.on("news-updated", callback),
     setBounds: (bounds) => ipcRenderer.send("set-window-bounds", bounds),
-});
-
-contextBridge.exposeInMainWorld("infobarAPI", {
-    toggle: () => ipcRenderer.send("toggle-infobar"),
-    refresh: () => ipcRenderer.send("refresh-infobar"),
-    onForceRefresh: (callback) => ipcRenderer.on("trigger-window-refresh", () => callback()),
 });
 
 // Modern
@@ -106,6 +88,38 @@ contextBridge.exposeInMainWorld("frontlineAPI", {
     activate: () => ipcRenderer.send("activate-frontline"),
     deactivate: () => ipcRenderer.send("deactivate-frontline"),
     getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+    updateXp: (symbol, xp, level) => ipcRenderer.send("update-xp", { symbol, xp, level }),
+});
+
+contextBridge.exposeInMainWorld("heroesAPI", {
+    activate: () => ipcRenderer.send("activate-heroes"),
+    deactivate: () => ipcRenderer.send("deactivate-heroes"),
+});
+
+contextBridge.exposeInMainWorld("activeAPI", {
+    activate: () => ipcRenderer.send("activate-active"),
+    deactivate: () => ipcRenderer.send("deactivate-active"),
+    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+    getSymbol: (symbol) => ipcRenderer.invoke("get-symbol", symbol), // ✅ New function
+    setActiveTicker: (ticker) => ipcRenderer.send("set-active-ticker", ticker),
+    onActiveTickerUpdate: (callback) => {
+        ipcRenderer.on("update-active-ticker", (event, ticker) => {
+            callback(ticker);
+        });
+    },
+    notifyActiveWindowReady: () => ipcRenderer.send("active-window-ready"), // ✅ This line
+});
+
+contextBridge.exposeInMainWorld("scrollXpAPI", {
+    activate: () => ipcRenderer.send("activate-scrollXp"),
+    deactivate: () => ipcRenderer.send("deactivate-scrollXp"),
+});
+
+contextBridge.exposeInMainWorld("infobarAPI", {
+    activate: () => ipcRenderer.send("activate-infobar"),
+    deactivate: () => ipcRenderer.send("deactivate-infobar"),
+    refresh: () => ipcRenderer.send("refresh-infobar"),
+    onForceRefresh: (callback) => ipcRenderer.on("trigger-window-refresh", () => callback()),
 });
 
 contextBridge.exposeInMainWorld("traderviewAPI", {

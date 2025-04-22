@@ -65,14 +65,20 @@ const { getWindowState, saveWindowState } = require("./utils/windowState");
 const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
+
+const { createScannerWindow } = require("./windows/scanner");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createFocusWindow } = require("./windows/focus");
-const { createDailyWindow } = require("./windows/daily");
+
 const { createActiveWindow } = require("./windows/active");
-const { createScannerWindow } = require("./windows/scanner");
+
+const { createDailyWindow } = require("./windows/daily");
+const { createScrollXpWindow } = require("./windows/scrollXp");
+
 const { createInfobarWindow } = require("./windows/infobar");
-const { createWizardWindow } = require("./windows/wizard");
+
 const { createProgressWindow } = require("./windows/progress");
+const { createWizardWindow } = require("./windows/wizard");
 
 let windows = {};
 
@@ -462,30 +468,10 @@ tickerStore.on("buffs-updated", (payload = []) => {
     broadcast("buffs-updated", { symbols: updates }); // ✅ always send as array
 });
 
-// focus
-ipcMain.on("toggle-focus", () => {
-    const focus = windowManager.windows.focus;
-
-    if (focus && !focus.isDestroyed()) {
-        log.log("[toggle-focus] Destroying focus window");
-        destroyWindow("focus"); // Destroy the window
-    } else {
-        log.log("[toggle-focus] Creating focus window");
-        windows.focus = createWindow("focus", () => createFocusWindow(isDevelopment));
-        windows.focus.show();
-    }
-});
-
-ipcMain.on("recreate-focus", async () => {
-    log.log("recreate focus window.");
-
-    if (windows.focus) {
-        windows.focus.close(); // Close the existing window
-    }
-
-    // ✅ Recreate the window with updated settings
-    windows.focus = await createFocusWindow(isDevelopment); // Recreate the window
-    windows.focus.show(); // Show the newly created window
+tickerStore.on("xp-updated", (payload) => {
+    BrowserWindow.getAllWindows().forEach((win) => {
+        safeSend(win, "xp-updated", payload);
+    });
 });
 
 // daily
@@ -512,58 +498,6 @@ ipcMain.on("recreate-daily", async () => {
     // ✅ Recreate the window with updated settings
     windows.daily = await createDailyWindow(isDevelopment); // Recreate the window
     windows.daily.show(); // Show the newly created window
-});
-
-// active
-ipcMain.on("toggle-active", () => {
-    const active = windowManager.windows.active;
-
-    if (active && !active.isDestroyed()) {
-        log.log("[toggle-active] Destroying active window");
-        destroyWindow("active"); // Destroy the window
-    } else {
-        log.log("[toggle-live] Creating active window");
-        windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
-        windows.active.show();
-    }
-});
-
-let activeWindowReady = false;
-let pendingActiveSymbol = null;
-
-ipcMain.on("set-active-ticker", (event, ticker) => {
-    ticker = typeof ticker === "string" ? ticker.trim().toUpperCase() : String(ticker).toUpperCase();
-
-    // Update global state
-    global.sharedState = global.sharedState || {};
-    global.sharedState.activeTicker = ticker;
-
-    // Case 1: Active window exists & is ready → Send immediately
-    if (windows.active && !windows.active.isDestroyed() && activeWindowReady) {
-        safeSend(windows.active, "update-active-ticker", ticker);
-        log.log(`✅ Active ticker updated (live): ${ticker}`);
-    }
-    // Case 2: Window is being restored → Buffer until ready
-    else if (windows.active && !activeWindowReady) {
-        pendingActiveSymbol = ticker;
-        log.log(`⏳ Buffering ticker (window loading): ${ticker}`);
-    }
-    // Case 3: No active window → Store in global state
-    else {
-        pendingActiveSymbol = ticker;
-        log.log(`📦 Storing ticker (no window): ${ticker}`);
-    }
-
-    // Send to MTT (or other systems)
-    sendActiveSymbol(ticker);
-});
-
-ipcMain.on("active-window-ready", () => {
-    activeWindowReady = true;
-    if (pendingActiveSymbol) {
-        safeSend(getWindow("active"), "update-active-ticker", pendingActiveSymbol);
-        pendingActiveSymbol = null;
-    }
 });
 
 // Events
@@ -610,18 +544,153 @@ tickerStore.on("new-high-price", ({ symbol, price, direction, change_percent, fi
     }
 });
 
-// infobar
-ipcMain.on("toggle-infobar", () => {
-    const infobar = windowManager.windows.infobar;
-
-    if (infobar && !infobar.isDestroyed()) {
-        log.log("[toggle-infobar] Destroying infobar window");
-        destroyWindow("infobar"); // Destroy the window
-    } else {
-        log.log("[toggle-infobar] Creating infobar window");
-        windows.infobar = createWindow("infobar", () => createInfobarWindow(isDevelopment));
-        windows.infobar.show();
+// Frontline
+ipcMain.on("activate-frontline", () => {
+    try {
+        const win = createWindow("frontline", () => createFrontlineWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to frontline window:", err.message);
     }
+    // // Step 1: Create or show the frontline window
+    // const frontlineWindow = createWindow("frontline", () => createFrontlineWindow(isDevelopment));
+    // if (frontlineWindow) frontlineWindow.show();
+
+    // // Step 2: Destroy any existing active window
+    // destroyWindow("active");
+
+    // // Step 3: Recreate active window (ensure clean state)
+    // const newActiveWindow = createWindow("active", () => createActiveWindow(isDevelopment));
+    // if (newActiveWindow) newActiveWindow.show();
+});
+
+ipcMain.on("deactivate-frontline", () => {
+    destroyWindow("frontline");
+});
+
+ipcMain.on("update-xp", (event, { symbol, xp, level }) => {
+    tickerStore.updateXp(symbol, xp, level);
+});
+
+// Heroes
+ipcMain.on("activate-heroes", () => {
+    try {
+        const win = createWindow("focus", () => createFocusWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to focus window:", err.message);
+    }
+    // // Step 1: Create or show the frontline window
+    // const focusWindow = createWindow("focus", () => createFocusWindow(isDevelopment));
+    // if (focusWindow) focusWindow.show();
+
+    // // Step 2: Destroy any existing active window
+    // destroyWindow("active");
+
+    // // Step 3: Recreate active window (ensure clean state)
+    // const newActiveWindow = createWindow("active", () => createActiveWindow(isDevelopment));
+    // if (newActiveWindow) newActiveWindow.show();
+});
+
+ipcMain.on("deactivate-heroes", () => {
+    destroyWindow("focus");
+});
+
+ipcMain.on("recreate-focus", async () => {
+    log.log("recreate focus window.");
+
+    if (windows.focus) {
+        windows.focus.close(); // Close the existing window
+    }
+
+    // ✅ Recreate the window with updated settings
+    windows.focus = await createFocusWindow(isDevelopment); // Recreate the window
+    windows.focus.show(); // Show the newly created window
+});
+
+// active
+ipcMain.on("activate-active", () => {
+    try {
+        const win = createWindow("active", () => createActiveWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate events window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-active", () => {
+    destroyWindow("active");
+});
+
+let activeWindowReady = false;
+let pendingActiveSymbol = null;
+
+ipcMain.on("set-active-ticker", (event, ticker) => {
+    ticker = typeof ticker === "string" ? ticker.trim().toUpperCase() : String(ticker).toUpperCase();
+
+    // Update global state
+    global.sharedState = global.sharedState || {};
+    global.sharedState.activeTicker = ticker;
+
+    // Case 1: Active window exists & is ready → Send immediately
+    if (windows.active && !windows.active.isDestroyed() && activeWindowReady) {
+        safeSend(windows.active, "update-active-ticker", ticker);
+        log.log(`✅ Active ticker updated (live): ${ticker}`);
+    }
+    // Case 2: Window is being restored → Buffer until ready
+    else if (windows.active && !activeWindowReady) {
+        pendingActiveSymbol = ticker;
+        log.log(`⏳ Buffering ticker (window loading): ${ticker}`);
+    }
+    // Case 3: No active window → Store in global state
+    else {
+        pendingActiveSymbol = ticker;
+        log.log(`📦 Storing ticker (no window): ${ticker}`);
+    }
+
+    // Send to MTT (or other systems)
+    sendActiveSymbol(ticker);
+});
+
+ipcMain.on("active-window-ready", () => {
+    activeWindowReady = true;
+    if (pendingActiveSymbol) {
+        safeSend(getWindow("active"), "update-active-ticker", pendingActiveSymbol);
+        pendingActiveSymbol = null;
+    }
+});
+
+// Scroll Xp
+ipcMain.on("activate-scrollXp", () => {
+    try {
+        const win = createWindow("scrollXp", () => createScrollXpWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate events window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-scrollXp", () => {
+    destroyWindow("scrollXp");
+});
+
+module.exports = {
+    getWindowState,
+    saveWindowState,
+};
+
+// infobar
+ipcMain.on("activate-infobar", () => {
+    try {
+        const win = createWindow("infobar", () => createInfobarWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate infobar window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-infobar", () => {
+    destroyWindow("infobar");
 });
 
 ipcMain.on("refresh-infobar", () => {
@@ -693,24 +762,6 @@ ipcMain.on("deactivate-progress", () => {
     destroyWindow("progress");
 });
 
-// Frontline
-ipcMain.on("activate-frontline", () => {
-    // Step 1: Create or show the frontline window
-    const frontlineWindow = createWindow("frontline", () => createFrontlineWindow(isDevelopment));
-    if (frontlineWindow) frontlineWindow.show();
-
-    // Step 2: Destroy any existing active window
-    destroyWindow("active");
-
-    // Step 3: Recreate active window (ensure clean state)
-    const newActiveWindow = createWindow("active", () => createActiveWindow(isDevelopment));
-    if (newActiveWindow) newActiveWindow.show();
-});
-
-ipcMain.on("deactivate-frontline", () => {
-    destroyWindow("frontline");
-});
-
 // Wizard
 ipcMain.on("activate-wizard", () => {
     try {
@@ -724,8 +775,3 @@ ipcMain.on("activate-wizard", () => {
 ipcMain.on("deactivate-wizard", () => {
     destroyWindow("wizard");
 });
-
-module.exports = {
-    getWindowState,
-    saveWindowState,
-};

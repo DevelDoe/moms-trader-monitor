@@ -14,6 +14,20 @@
      - Blue:   #3498db  (Informational, neutral)
      - Yellow: #f1c40f  (Warning, active attention)
      - Gray:   #2c3e50 / #95a5a6 (Backgrounds and secondary text)
+
+
+🎨 The Pop Combo for #1b1f24
+
+Element	Hex	Use for	Vibe
+Bright Mint	#39ff14	Active hero, HP bar, key text	Surge of power ⚔️
+Electric Violet	#9b5de5	Buffs, XP glow, outlines	Mystic energy 🔮
+Blazing Amber	#ffb700	Critical events, aura rings	Urgency + warmth 🔥
+Frost Blue	#00eaff	Cool indicators, tooltips	Clean clarity ❄️
+Dim White	#eaeaea	Main text	Just enough glow 🧙‍♂️
+
+Yesss!! 🙌 That amber 🔥 on #1b1f24 is like a sunspell cast over midnight fog — it sings, right? It’s got that high-impact pop, but with enough warmth to keep things feeling alive, not just sterile.
+
+Pair that amber (#ffb700) with a mint highlight or deep violet shadow and suddenly your app looks like it’s channeling energy — not just displaying info. It's the visual version of a market momentum surge.
 ============================================================================= */
 
 /* Reset */
@@ -32,16 +46,59 @@ span {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Segoe UI", sans-serif;
 }
 
 /* Base */
 body {
     background-color: #1b1f24;
-    color: #ecf0f1;
+    /* background-color: #1c1d23; */
+    color: #f1f0ec;
     font-size: 14px;
     line-height: 1.6;
     padding: 12px;
+    font: menu;
+    font-weight: 600;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Disable text selection across the entire application */
+* {
+    user-select: none; /* Standard */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+}
+
+/* Remove outline from all elements when clicked */
+*:focus,
+*:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+body::-webkit-scrollbar {
+    display: none;
+}
+
+.draggable {
+    -webkit-app-region: drag; /* Makes the entire window draggable */
+}
+.no-drag {
+    -webkit-app-region: no-drag; /* Prevent drag on interactive elements */
+}
+
+.drag-area {
+    height: 30px;
+    -webkit-app-region: drag; /* Enable dragging */
+    position: absolute;
+    top: 0;
+    width: 90%;
+    z-index: 10;
 }
 
 a {
@@ -58,7 +115,7 @@ h2,
 h3,
 h4,
 h5 {
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 0.5em;
 }
 
@@ -68,7 +125,7 @@ h5 {
 
 /* Utility Colors */
 .text-bullish {
-    color: #2ecc71;
+    color: #2ecc97;
 }
 .text-bearish {
     color: #e74c3c;
@@ -84,7 +141,7 @@ h5 {
 
 /* News Buffs (example) */
 .news-item.bullish h5 {
-    color: #2ecc71;
+    color: #2ecc97;
 }
 .news-item.bearish h5 {
     color: #e74c3c;

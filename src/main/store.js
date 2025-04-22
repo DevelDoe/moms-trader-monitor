@@ -70,6 +70,7 @@ class Store extends EventEmitter {
         this.sessionData = new Map(); // Resets on clear
         this.dailyData = new Map(); // Stores all tickers for the full day
         this.newsList = []; // Store all news in a single list
+        this.xpState = new Map(); // ⬅️ new clean XP tracker
 
         setInterval(() => {
             this.cleanupOldNews();
@@ -476,6 +477,13 @@ class Store extends EventEmitter {
         // 🟥 Unknown type
         log.error(`[getAllTickers] ❌ Unknown listType '${listType}' — expected 'symbols'`);
         return [];
+    }
+
+    updateXp(symbol, xp, lv) {
+        this.xpState.set(symbol, { xp, lv });
+
+        log.log(`[XP] Updated ${symbol}: XP ${xp}, LV ${lv}`);
+        this.emit("xp-updated", { symbol, xp, lv });
     }
 
     clearSessionData() {

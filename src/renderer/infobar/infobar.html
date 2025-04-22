@@ -8,7 +8,6 @@
             /* Container styling */
             body {
                 margin: 0;
-                background: #1c1d23; /* dark theme background */
                 color: #f0f0f0; /* light text for contrast */
                 font-family: sans-serif; /* use app's font if needed */
                 height: 50px;
@@ -313,7 +312,7 @@
             function queueNewsItem(desc, id = null, type = "neutral") {
                 if (id && displayedNewsKeys.has(id)) return;
 
-                const icon = type === "bullish" ? "📈" : type === "bearish" ? "📉" : "📰";
+                const icon = type === "bullish" ? "😺" : type === "bearish" ? "🙀" : "😼";
 
                 newsQueue.push({ icon, desc, type });
                 if (id) displayedNewsKeys.add(id);

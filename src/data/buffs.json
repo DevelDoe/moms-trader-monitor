@@ -1,5 +1,5 @@
 [
-    { "key": "floatCorrupt", "icon": "⚠️", "desc": "Float is corrupted", "multiplier": 1, "score": 0 },
+    { "key": "floatCorrupt", "icon": "⚠️", "desc": "Float is unclear", "multiplier": 1, "score": 0 },
 
     { "key": "float1m", "threshold": 2000000, "icon": "1️⃣", "desc": "Float around 1M", "multiplier": 1.15, "score": 300, "isBuff": true },
     { "key": "float5m", "threshold": 7500000, "icon": "5️⃣", "desc": "Float around 5M", "multiplier": 1.1, "score": 100, "isBuff": true },
