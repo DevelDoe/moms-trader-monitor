@@ -258,9 +258,17 @@ function updateUI(symbolData) {
             console.log(`🚫 Blocked by "${match}":`, newsItem.headline);
         }
     });
+
     const filteredNews = (Array.isArray(symbolData.News) ? symbolData.News : []).filter((newsItem) => {
         const headline = sanitize(newsItem.headline || "");
-        return !blockList.some((blocked) => headline.includes(sanitize(blocked)));
+
+        // ❌ Blocked by blockList
+        const isBlocked = blockList.some((blocked) => headline.includes(sanitize(blocked)));
+
+        // ❌ Blocked if multiple symbols
+        const isMultiSymbol = Array.isArray(newsItem.symbols) && newsItem.symbols.length > 1;
+
+        return !isBlocked && !isMultiSymbol;
     });
 
     if (filteredNews.length === 0) {

@@ -348,14 +348,23 @@ class Store extends EventEmitter {
         const existingHeadlines = new Set(this.newsList.map((n) => n.headline));
 
         const filteredNews = newsItems.filter((news) => {
-            if (existingIds.has(news.id)) {
-                log.log(`[addNews] Skipping duplicate by ID: ${news.id}`);
+            if (existingIds.has(news.id)) return false;
+            if (existingHeadlines.has(news.headline)) return false;
+
+            // ⛔ Block multi-symbol news
+            if (news.symbols.length > 1) {
+                log.log(`[addNews] Skipping multi-symbol headline: "${news.headline}"`);
                 return false;
             }
-            if (existingHeadlines.has(news.headline)) {
-                log.log(`[addNews] Skipping duplicate by headline: "${news.headline}"`);
+
+            // ⛔ Block by blockList
+            const sanitized = news.headline.toLowerCase().trim();
+            const isBlocked = blockList.some((word) => sanitized.includes(word.toLowerCase().trim()));
+            if (isBlocked) {
+                log.log(`[addNews] Blocked by blockList: "${news.headline}"`);
                 return false;
             }
+
             return true;
         });
 
