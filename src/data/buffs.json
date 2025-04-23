@@ -26,9 +26,9 @@
         "priceThreshold": 2,
         "volumeStages": [
             { "key": "minVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 30000, "multiplier": 0.01, "score": -1500, "isBuff": false },
-            { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 120000, "multiplier": 0.5, "score": -150, "isBuff": false },
-            { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 350000, "multiplier": 1.5, "score": 0 },
-            { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 500000, "multiplier": 2, "score": 200, "isBuff": true },
+            { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 150000, "multiplier": 0.5, "score": -150, "isBuff": false },
+            { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 400000, "multiplier": 1.5, "score": 0 },
+            { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 600000, "multiplier": 2, "score": 200, "isBuff": true },
             { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 4, "score": 400, "isBuff": true }
         ]
     },
@@ -55,22 +55,22 @@
         ]
     },
 
-    { "key": "lockedShares", "icon": "💼", "desc": "High insider/institutional/locked shares holders", "score": 10, "isBuff": false },
+    { "key": "lockedShares", "icon": "💼", "desc": "High insider/institutional/locked shares holders", "score": -10, "isBuff": false },
 
-    { "key": "hasNews", "icon": "😼", "desc": "Catalyst in play — recent news may affect momentum", "score": 0 },
-    { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news - may affect momentum", "score": 100, "isBuff": true },
-    { "key": "hasBearishNews", "icon": "🙀", "desc": "Bearish news - may affect momentum", "score": -100, "isBuff": false },
+    { "key": "hasNews", "icon": "😼", "desc": "Catalyst in play — recent news may affect momentum", "score": 10 },
+    { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news - may affect momentum", "score": 30, "isBuff": true },
+    { "key": "hasBearishNews", "icon": "🙀", "desc": "Bearish news - may affect momentum", "score": -10, "isBuff": false },
 
     { "key": "newHigh", "icon": "📈", "desc": "New high", "score": 10, "isBuff": true },
-    { "key": "bounceBack", "icon": "🔁", "desc": "Recovering — stock is bouncing back after a downtrend", "score": 5, "isBuff": true },
+    { "key": "bounceBack", "icon": "🔁", "desc": "Recovering — stock is bouncing back after a downtrend", "score": 10, "isBuff": true },
 
-    { "key": "bio", "icon": "🧬", "desc": "Biotechnology stock", "score": 5, "isBuff": true },
-    { "key": "weed", "icon": "🌿", "desc": "Cannabis stock", "score": 5 },
+    { "key": "bio", "icon": "🧬", "desc": "Biotechnology stock", "score": 10, "isBuff": true },
+    { "key": "weed", "icon": "🌿", "desc": "Cannabis stock", "score": 0 },
     { "key": "space", "icon": "🌌", "desc": "Space industry stock", "score": 5 },
     { "key": "china", "icon": "🇨🇳", "desc": "China/Hong Kong-based company", "score": 0 },
 
     { "key": "highShort", "icon": "🩳", "desc": "High short interest (more than 20% of float)", "score": 10, "isBuff": true },
-    { "key": "netLoss", "icon": "🥅", "desc": "Company is currently running at a net loss", "score": -5, "isBuff": false },
+    { "key": "netLoss", "icon": "🥅", "desc": "Company is currently running at a net loss", "score": -10, "isBuff": false },
     { "key": "hasS3", "icon": "📂", "desc": "Registered S-3 filing", "score": -10, "isBuff": false },
-    { "key": "dilutionRisk", "icon": "🚨", "desc": "High dilution risk: Net loss + Registered S-3", "score": -20, "isBuff": false }
+    { "key": "dilutionRisk", "icon": "🚨", "desc": "High dilution risk: Net loss + Registered S-3", "score": -10, "isBuff": false }
 ]

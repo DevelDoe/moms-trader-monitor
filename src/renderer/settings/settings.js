@@ -124,9 +124,11 @@ function initializeGeneralSection() {
 
     const showScrollXpToggle = document.getElementById("show-scrollXp");
     showScrollXpToggle.checked = window.settings.windows.scrollXpWindow?.isOpen ?? false;
+    const showScrollStatsToggle = document.getElementById("show-scrollStats");
+    showScrollStatsToggle.checked = window.settings.windows.scrollStatsWindow?.isOpen ?? false;
 
     const showInfobarToggle = document.getElementById("show-infobar");
-    showInfobarToggle.toggle = window.settings.windows.infobarWindow?.isOpen ?? false;
+    showInfobarToggle.checked = window.settings.windows.infobarWindow?.isOpen ?? false;
 
     const showTraderviewsToggle = document.getElementById("show-traderviews");
     const showProgressToggle = document.getElementById("show-progress");
@@ -172,6 +174,14 @@ function initializeGeneralSection() {
             window.scrollXpAPI.activate();
         } else {
             window.scrollXpAPI.deactivate();
+        }
+    });
+
+    showScrollStatsToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.scrollStatsAPI.activate();
+        } else {
+            window.scrollStatsAPI.deactivate();
         }
     });
 

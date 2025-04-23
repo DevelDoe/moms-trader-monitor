@@ -21,7 +21,7 @@ let eventsPaused = false;
 const { isDev } = window.appFlags;
 
 const freshStart = isDev;
-const debug = false;
+const debug = isDev;
 const debugScoreCalc = isDev;
 const debugXp = isDev;
 

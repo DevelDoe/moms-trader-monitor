@@ -207,6 +207,16 @@ function updateUI(symbolData) {
     document.getElementById("data-warning-stats").style.display = dataIsCorrupted ? "block" : "none";
     document.getElementById("section-float-stats").style.display = "flex";
 
+    const floatSection = document.getElementById("section-float-summary");
+
+    if (floatSection) {
+        if (dataIsCorrupted) {
+            floatSection.classList.add("blur-effect");
+        } else {
+            floatSection.classList.remove("blur-effect");
+        }
+    }
+
     const insidersHeld = Math.round(sharesOutstanding * (symbolData.ownership?.insidersPercentHeld || 0));
     const institutionsHeld = Math.round(sharesOutstanding * (symbolData.ownership?.institutionsPercentHeld || 0));
     const sharesShort = symbolData.statistics?.sharesShort ?? 0;

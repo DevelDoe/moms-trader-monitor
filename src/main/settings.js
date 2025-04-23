@@ -232,8 +232,31 @@ function saveSettings(settingsToSave = DEFAULT_SETTINGS) {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsToSave, null, 2));
 }
 
+const LOG_FILE = path.join(__dirname, "../data/volume.json");
+
+function logVolumeSnapshot(timestamp, volumeTotal) {
+    const entry = { timestamp, volume: volumeTotal };
+
+    let history = [];
+    try {
+        const raw = fs.readFileSync(LOG_FILE, "utf-8");
+        history = JSON.parse(raw);
+    } catch {
+        history = [];
+    }
+
+    history.push(entry);
+
+    try {
+        fs.writeFileSync(LOG_FILE, JSON.stringify(history, null, 2), "utf-8");
+    } catch (err) {
+        console.warn("⚠️ Failed to write volume log:", err.message);
+    }
+}
+
 module.exports = {
     loadSettings,
     saveSettings,
     DEFAULT_SETTINGS,
+    logVolumeSnapshot,
 };

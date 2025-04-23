@@ -17,6 +17,7 @@ const { createInfobarWindow } = require("./windows/infobar");
 const { createWizardWindow } = require("./windows/wizard");
 const { createProgressWindow } = require("./windows/progress");
 const { createScrollXpWindow } = require("./windows/scrollXp");
+const { createScrollStatsWindow } = require("./windows/scrollStats");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -86,6 +87,7 @@ async function restoreWindows() {
         wizard: "wizardWindow",
         progress: "progressWindow",
         scrollXp: "scrollXpWindow",
+        scrollStats: "scrollStatsWindow",
     };
 
     // First, restore all non-dependent windows
@@ -155,6 +157,8 @@ function createWindowByName(name) {
             return createProgressWindow(isDevelopment);
         case "scrollXp":
             return createScrollXpWindow(isDevelopment);
+        case "scrollStats":
+            return createScrollStatsWindow(isDevelopment);
         default:
             throw new Error(`No creator function for window: ${name}`);
     }

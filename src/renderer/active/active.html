@@ -68,8 +68,8 @@
 
                             <!-- Row 2: Two Panels -->
 
-                            <div id="data-warning-summary" class="bg-zinc-800 p-4 rounded-xl" style="color: #aa9c4c; display: none">
-                                🧙‍♂️ Fog of uncertainty — true ownership remains hidden in the mist.
+                            <div id="data-warning-summary" class="bg-zinc-800 p-4 rounded-xl" style="text-align: center; color: #aa9c4c; display: none">
+                                🧙‍♂️ FFog of uncertainty lingers — The float data is unclear, and true ownership remains hidden.
                             </div>
                         </div>
 
@@ -119,7 +119,7 @@
                     </p>
 
                     <div id="data-warning-stats" style="color: #b6a041; display: none; margin-bottom: 10px">
-                        🧙‍♂️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden in the mist.
+                        🧙‍♂️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden.
                     </div>
                     <section id="section-float-stats" class="two-column-layout">
                         <div class="data-column no-drag">
@@ -215,10 +215,11 @@
 
             if (container) {
                 const downSpeed = 1;
+                const upSpeed = 10;
                 const delay = 60;
                 const pauseTop = 8000;
                 const pauseBottom = 3000;
-                let direction = 0; // 0 = idle, 1 = down
+                let direction = 0; // 0 = idle, 1 = down, -1 = up
 
                 const scrollLoop = () => {
                     if (direction === 1) {
@@ -227,11 +228,21 @@
                         if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
                             direction = 0;
                             setTimeout(() => {
-                                // 🚀 Instantly jump to top
-                                container.scrollTop = 0;
-                                direction = 1;
+                                direction = -1; // go back up
                                 scrollLoop();
                             }, pauseBottom);
+                            return;
+                        }
+                    } else if (direction === -1) {
+                        container.scrollTop -= upSpeed;
+
+                        if (container.scrollTop <= 0) {
+                            container.scrollTop = 0; // make sure it's exactly top
+                            direction = 0;
+                            setTimeout(() => {
+                                direction = 1;
+                                scrollLoop();
+                            }, pauseTop);
                             return;
                         }
                     }

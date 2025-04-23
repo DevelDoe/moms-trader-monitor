@@ -197,8 +197,8 @@ function updateFocusStateFromEvent(event) {
         ts: Date.now(),
     });
 
-    // Limit to last 7
-    if (hero.history.length > 7) {
+    // Limit to last 10
+    if (hero.history.length > 10) {
         hero.history.shift();
     }
 
@@ -593,33 +593,38 @@ function calculateScore(hero, event) {
 
     try {
         // If it's an "up" event (hp > 0)
-        if (event.hp > 0) {
+        if (event.hp > 0 && isSurging(hero, { slice: 5, minUps: 2 })) {
             baseScore += event.hp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
 
             // 💪 Add bonus score per level (100 points per level) only if surging
-            let levelBoost = 0;
-            if (isSurging(hero)) {
-                levelBoost = (hero.lv || 0) * 100;
+
+            // 🧠 Evaluate surge once
+            const surging = isSurging(hero);
+
+            if (surging) {
+                // 💪 Base level boost
+                const level = hero.lv || 1;
+                const levelBoost = level * 100;
                 baseScore += levelBoost;
 
                 if (debug && debugSamples < debugLimitSamples) {
-                    logStep("⚡", `Surge Detected! Level Boost (LV ${hero.lv || 0})`, levelBoost);
+                    logStep("⚡", `Surge Detected! Level Boost (LV ${level})`, levelBoost);
+                }
+
+                // 🧪 Rookie tier bonus (amplify surge for LV 1–3)
+                if (level <= 3) {
+                    const tierBoostMultiplier = 1.5 - (level - 1) * 0.1;
+                    const boostedScore = baseScore * tierBoostMultiplier;
+
+                    if (debug && debugSamples < debugLimitSamples) {
+                        logStep("🧪", `Tier Surge Bonus (x${tierBoostMultiplier.toFixed(2)})`, boostedScore - baseScore);
+                    }
+
+                    baseScore = boostedScore;
                 }
             } else if (debug && debugSamples < debugLimitSamples) {
                 logStep("💤", "No surge — Level Boost skipped", 0);
-            }
-
-            // 🧪 Rookie Surge Bonus: amplify if surging and level is low
-            if (isSurging(hero) && (hero.lv || 0) <= 2) {
-                const tierBoostMultiplier = 1.2 + (2 - (hero.lv || 0)) * 0.15; // e.g. 1.5x for level 0, 1.35x for level 1
-                const boostedScore = baseScore * tierBoostMultiplier;
-
-                if (debug && debugSamples < debugLimitSamples) {
-                    logStep("🧪", `Tier Surge Bonus (x${tierBoostMultiplier.toFixed(2)})`, boostedScore - baseScore);
-                }
-
-                baseScore = boostedScore;
             }
 
             // Apply Float score
@@ -645,28 +650,6 @@ function calculateScore(hero, event) {
             }
             // Clamp total baseScore to positive only (no negative scoring on "up" events)
             baseScore = Math.max(0, baseScore);
-        }
-
-        if (event.dp > 0) {
-            // gainers can be removed from the heroes list if we reduce the score with dp....
-            // it just did not feel natural when a gapper suddenly just gets pushed out suddenly
-            // we are degrading the score on time and both here and the time based did not feel natural..
-
-            // baseScore -= event.dp * 5;
-
-            // Volume
-            // const volumeBuff = getHeroBuff(hero, "volume");
-            // const volPenalty = volumeBuff?.score * 0.5 ?? 0;
-
-            // // Only apply negative volume scores for down events
-            // if (volPenalty < 0) {
-            //     baseScore += volPenalty; // subtract more
-            //     if (debug && debugSamples < debugLimitSamples) {
-            //         logStep("📉", `Volume Penalty (${humanReadableNumbers(event.strength || 0)})`, volPenalty);
-            //     }
-            // }
-
-            if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp * 10);
         }
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
@@ -760,10 +743,13 @@ function startScoreDecay() {
     }, DECAY_INTERVAL_MS);
 }
 
-function isSurging(hero) {
+function isSurging(hero, { slice = 4, minUps = 3, direction = "hp" } = {}) {
     if (!hero?.history?.length) return false;
-    const recent = hero.history.slice(-4);
-    return recent.filter((e) => e.hp > 0).length >= 3;
+
+    const recent = hero.history.slice(-slice);
+    const active = recent.filter((e) => e[direction] > 0);
+
+    return active.length >= minUps;
 }
 
 function humanReadableNumbers(value) {

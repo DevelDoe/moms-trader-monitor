@@ -50,7 +50,7 @@ const { startMockNews } = require("./collectors/news");
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
 
-const { loadSettings, saveSettings } = require("./settings");
+const { loadSettings, saveSettings, logVolumeSnapshot } = require("./settings");
 
 appSettings = loadSettings();
 
@@ -72,8 +72,8 @@ const { createFocusWindow } = require("./windows/focus");
 
 const { createActiveWindow } = require("./windows/active");
 
-const { createDailyWindow } = require("./windows/daily");
 const { createScrollXpWindow } = require("./windows/scrollXp");
+const { createScrollStatsWindow } = require("./windows/scrollStats");
 
 const { createInfobarWindow } = require("./windows/infobar");
 
@@ -474,32 +474,6 @@ tickerStore.on("xp-updated", (payload) => {
     });
 });
 
-// daily
-ipcMain.on("toggle-daily", () => {
-    const daily = windowManager.windows.daily;
-
-    if (daily && !daily.isDestroyed()) {
-        log.log("[toggle-daily] Destroying daily window");
-        destroyWindow("daily"); // Destroy the window
-    } else {
-        log.log("[toggle-daily] Creating daily window");
-        windows.daily = createWindow("daily", () => createDailyWindow(isDevelopment));
-        windows.daily.show();
-    }
-});
-
-ipcMain.on("recreate-daily", async () => {
-    log.log("recreate daily window.");
-
-    if (windows.daily) {
-        windows.daily.close(); // Close the existing window
-    }
-
-    // ✅ Recreate the window with updated settings
-    windows.daily = await createDailyWindow(isDevelopment); // Recreate the window
-    windows.daily.show(); // Show the newly created window
-});
-
 // Events
 ipcMain.on("activate-events", () => {
     try {
@@ -674,6 +648,20 @@ ipcMain.on("deactivate-scrollXp", () => {
     destroyWindow("scrollXp");
 });
 
+// Scroll Stats
+ipcMain.on("activate-scrollStats", () => {
+    try {
+        const win = createWindow("scrollStats", () => createScrollStatsWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate scrollStats window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-scrollStats", () => {
+    destroyWindow("scrollStats");
+});
+
 module.exports = {
     getWindowState,
     saveWindowState,
@@ -760,6 +748,10 @@ ipcMain.on("activate-progress", () => {
 
 ipcMain.on("deactivate-progress", () => {
     destroyWindow("progress");
+});
+
+ipcMain.on("log-volume", (event, { timestamp, volume }) => {
+    logVolumeSnapshot(timestamp, volume);
 });
 
 // Wizard

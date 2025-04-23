@@ -115,6 +115,11 @@ contextBridge.exposeInMainWorld("scrollXpAPI", {
     deactivate: () => ipcRenderer.send("deactivate-scrollXp"),
 });
 
+contextBridge.exposeInMainWorld("scrollStatsAPI", {
+    activate: () => ipcRenderer.send("activate-scrollStats"),
+    deactivate: () => ipcRenderer.send("deactivate-scrollStats"),
+});
+
 contextBridge.exposeInMainWorld("infobarAPI", {
     activate: () => ipcRenderer.send("activate-infobar"),
     deactivate: () => ipcRenderer.send("deactivate-infobar"),
@@ -130,6 +135,7 @@ contextBridge.exposeInMainWorld("traderviewAPI", {
 contextBridge.exposeInMainWorld("progressAPI", {
     activate: () => ipcRenderer.send("activate-progress"),
     deactivate: () => ipcRenderer.send("deactivate-progress"),
+    log: (timestamp, volume) => ipcRenderer.send("log-volume", { timestamp, volume }),
 });
 
 contextBridge.exposeInMainWorld("wizardAPI", {

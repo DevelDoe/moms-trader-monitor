@@ -27,11 +27,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 return `
                     <div class="xp-line" style="${dullStyle}">
-                       
-                        <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</span></strong>
-                         XP ${h.lv}${Math.floor(h.xp)}
-                    </div>
-                `;
+                        <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</span></strong>${getTotalXP(h.lv, h.xp)}
+                    </div>`;
             })
             .join("");
     };
@@ -56,6 +53,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         refreshList();
     });
 });
+
+function getTotalXP(lv, xp) {
+    let total = 0;
+    for (let i = 0; i < lv; i++) {
+        total += (i + 1) * 1000;
+    }
+    return total + xp;
+}
 
 function getSymbolColor(symbol) {
     if (!symbolColors[symbol]) {

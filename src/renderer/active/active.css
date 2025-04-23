@@ -57,8 +57,16 @@ body {
 
 #data-warning-summary {
     padding-top: 0;
-    margin-top: 10px;
-    font-size: 12px !important;
+    margin-top: 4px;
+    font-size: 14px !important;
+    font-weight: 600;
+}
+
+.blur-effect {
+    /* filter: blur(0.8px); */
+    opacity: 0.5;
+    pointer-events: none; /* optional if you want to disable interaction */
+    transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
 /* Ensure the chart container is responsive */
@@ -66,11 +74,12 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 4px;
 }
 
 .chart {
-    padding-top: 0 !important;
-    margin-top: 0;
+    padding-top: 20px !important;
+    margin-top: 20px;
 }
 
 /* Optional: Add some spacing and alignment */

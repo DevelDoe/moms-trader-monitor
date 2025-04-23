@@ -6,6 +6,27 @@ let tradeRate = 0; // trades per second (smoothed)
 let tradeRateRaw = 0; // raw count within interval
 let dynamicWindowSize = 50; // adaptive window size
 
+// logging volumes
+let currentVolumeBucket = 0;
+
+function accumulateStrength(event) {
+    if (event.strength) {
+        currentVolumeBucket += event.strength;
+    }
+}
+
+// Every incoming trade alert:
+window.eventsAPI.onAlertEvents((events) => {
+    events.forEach(accumulateStrength);
+});
+
+// Every 5 min, dump and reset:
+setInterval(() => {
+    const now = new Date().toISOString();
+    window.progressAPI.log(now, currentVolumeBucket);
+    currentVolumeBucket = 0;
+}, 5 * 60 * 1000);
+
 // Update every second
 setInterval(() => {
     const minSize = 0;
