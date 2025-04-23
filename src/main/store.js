@@ -59,6 +59,14 @@ function getNewsSentimentBuff(headline, buffs, bullishList, bearishList) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function getMarketDateString() {
+    const now = new Date();
+    const offset = -5 * 60; // EST (adjust for DST)
+    const localOffset = now.getTimezoneOffset();
+    const est = new Date(now.getTime() + (localOffset - offset) * 60000);
+    return est.toISOString().split("T")[0];
+}
+
 class Store extends EventEmitter {
     constructor() {
         super();
@@ -70,7 +78,17 @@ class Store extends EventEmitter {
         this.sessionData = new Map(); // Resets on clear
         this.dailyData = new Map(); // Stores all tickers for the full day
         this.newsList = []; // Store all news in a single list
-        this.xpState = new Map(); // ⬅️ new clean XP tracker
+        this.lastXpDate = getMarketDateString();
+        this.xpState = new Map();
+
+        setInterval(() => {
+            const current = getMarketDateString();
+            if (this.lastXpDate !== current) {
+                this.lastXpDate = current;
+                this.xpState.clear();
+                log.log("🧹 XP state cleared for new market day");
+            }
+        }, 60 * 1000); // Check every minute
 
         setInterval(() => {
             this.cleanupOldNews();

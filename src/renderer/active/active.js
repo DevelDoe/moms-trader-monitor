@@ -272,7 +272,7 @@ function updateUI(symbolData) {
     });
 
     if (filteredNews.length === 0) {
-        newsContainer.innerHTML = '<p style="opacity:0.1; color: white">No recent news available</p>';
+        newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no recent news available</p>';
     } else {
         filteredNews.forEach((newsItem) => {
             const sentimentClass = getNewsSentimentClass(newsItem);
