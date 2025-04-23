@@ -142,6 +142,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         renderAll();
         startScoreDecay();
+
+        window.electronAPI.onNukeState(() => {
+            console.warn("🧨 Nuke signal received — clearing local state.");
+            clearState(); // 🧼 your custom wipe logic
+            location.reload(); // 🔁 optional but ensures a clean re-init
+        });
     } catch (error) {
         console.error("Initialization failed:", error);
         // Fallback or error handling here

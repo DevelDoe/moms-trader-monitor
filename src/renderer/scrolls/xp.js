@@ -52,6 +52,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         heroes[symbol].lastUpdate = Date.now(); // ⏱️
         refreshList();
     });
+
+    window.electronAPI.onNukeState(async () => {
+        console.warn("🧨 Nuke signal received in XP scroll — clearing and reloading heroes");
+
+        // Clear
+        Object.keys(heroes).forEach((key) => delete heroes[key]);
+        container.innerHTML = "";
+
+        // Re-fetch fresh symbols
+        const all = await window.storeAPI.getSymbols();
+        all.forEach((h) => {
+            heroes[h.symbol] = {
+                hero: h.symbol,
+                xp: h.xp || 0,
+                lv: h.lv || 0,
+                lastUpdate: Date.now(),
+            };
+        });
+
+        refreshList();
+    });
 });
 
 function getTotalXP(lv, xp) {

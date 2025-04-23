@@ -21,7 +21,7 @@ let eventsPaused = false;
 const { isDev } = window.appFlags;
 
 const freshStart = isDev;
-const debug = isDev;
+const debug = false;
 const debugScoreCalc = isDev;
 const debugXp = isDev;
 
@@ -35,8 +35,6 @@ let buffs = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ Frontline Dom loaded");
-
-    localStorage.removeItem("frontlineState"); // 🔥 hard nuke on load
 
     try {
         const fetchedBuffs = await window.electronAPI.getBuffs(); // ✅ pull buffs from preload
@@ -73,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         dp: 0,
                         strength: 0,
                         xp: 0,
-                        lv: 1,
+                        lv: 0,
                         score: 0,
                         lastEvent: {
                             hp: 0,
@@ -115,6 +113,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 hero.buffs = updatedSymbol.buffs || hero.buffs;
 
+                console.log("hero after buff: ", hero);
+
                 if (updatedSymbol.highestPrice > (hero.highestPrice || 0)) {
                     hero.highestPrice = updatedSymbol.highestPrice;
                 }
@@ -125,6 +125,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 updateCardDOM(hero.hero);
             });
+        });
+
+        window.electronAPI.onNukeState(() => {
+            console.warn("🧨 Nuke signal received — clearing local state.");
+            clearState(); // 🧼 your custom wipe logic
+            location.reload(); // 🔁 optional but ensures a clean re-init
         });
 
         renderAll();
@@ -629,7 +635,7 @@ function calculateXp(hero, event) {
     hero.xp = (hero.xp || 0) + xpDelta;
 
     hero.lv = Math.max(1, hero.lv || 1);
-    const requiredXp = hero.lv * 1000;
+    const requiredXp = (hero.lv + 1) * 1000;
     while (hero.xp >= requiredXp) {
         hero.xp -= requiredXp;
         hero.lv += 1;
@@ -871,6 +877,10 @@ function saveState() {
 }
 
 async function loadState() {
+    if (freshStart) {
+        console.log("🧪 loadState() overridden for testing — skipping restore");
+        return false;
+    }
     const saved = localStorage.getItem("frontlineState");
     if (!saved) return false;
 
@@ -878,17 +888,17 @@ async function loadState() {
         const parsed = JSON.parse(saved);
         const today = getMarketDateString();
 
-        // ⛔️ Always clear if it's a different day
-        if (parsed.date !== today) {
+        if (parsed.date === today) {
+            Object.assign(frontlineState, parsed.state); // More efficient than forEach
+            if (debug) console.log("🔄 Restored frontline state from earlier session.");
+            return true;
+        } else {
+            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
             localStorage.removeItem("frontlineState");
             return false;
         }
-
-        // ✅ Safe to restore
-        Object.assign(frontlineState, parsed.state);
-        return true;
-    } catch {
-        // ⛔️ If it breaks, wipe it
+    } catch (err) {
+        console.warn("⚠️ Could not parse frontline state. Clearing.");
         localStorage.removeItem("frontlineState");
         return false;
     }
@@ -900,13 +910,4 @@ function clearState() {
         delete frontlineState[key];
     }
     if (debug) console.log("🧹 Cleared saved and in-memory frontline state.");
-}
-
-function isBeforeMarketResetTime() {
-    const now = new Date();
-    const offset = -5 * 60; // EST (adjust manually for DST if needed)
-    const localOffset = now.getTimezoneOffset();
-    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
-
-    return estDate.getHours() < 11;
 }

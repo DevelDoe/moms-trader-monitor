@@ -113,6 +113,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
         console.error("Failed to load stats scroll:", err);
     }
+
+    window.electronAPI.onNukeState(async () => {
+        console.warn("🧨 Nuke signal received in XP scroll — clearing and reloading heroes");
+
+        Object.keys(heroes).forEach((key) => delete heroes[key]);
+        container.innerHTML = "";
+
+        try {
+            const symbols = await window.storeAPI.getSymbols();
+            symbols.forEach((s) => {
+                heroes[s.symbol] = {
+                    hero: s.symbol,
+                    xp: s.xp || 0,
+                    lv: s.lv || 0,
+                    buffs: s.buffs || {},
+                    lastUpdate: Date.now(),
+                };
+            });
+
+            refreshList();
+        } catch (err) {
+            console.error("⚠️ Failed to reload heroes after nuke:", err);
+        }
+    });
 });
 
 function getSymbolColor(symbol) {

@@ -231,6 +231,11 @@ function initializeAdminSection() {
         window.settingsAPI.fetchNews();
         window.infobarAPI.refresh();
     });
+
+    document.getElementById("nukeBtn").addEventListener("click", () => {
+        console.log("💣 Admin Nuke button clicked");
+        window.electronAPI.nukeState(); // Sends to ipcMain → then triggers store:nuke
+    });
 }
 
 function initializeScannerSection() {

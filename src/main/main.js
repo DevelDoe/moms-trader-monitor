@@ -145,6 +145,7 @@ app.on("ready", async () => {
             startMockNews();
         }
     });
+    scheduleDailyRestart(); // defaults to 03:50 AM
 });
 
 app.whenReady().then(() => {
@@ -169,6 +170,40 @@ process.on("exit", () => {
     log.log("Saving settings before exit...");
     // saveSettings(appSettings);
 });
+
+function scheduleDailyRestart(targetHour = 3, targetMinute = 50) {
+    const now = new Date();
+
+    // Get the current time in ET
+    const utcOffsetMinutes = now.getTimezoneOffset(); // Local → UTC
+    const estOffsetMinutes = 5 * 60; // EST is UTC-5
+    const dstOffset = isDST(now) ? -4 * 60 : -5 * 60; // Adjust if DST in effect
+
+    const etNow = new Date(now.getTime() + (dstOffset - utcOffsetMinutes) * 60 * 1000);
+
+    const next = new Date(etNow);
+    next.setHours(targetHour, targetMinute, 0, 0);
+    if (next <= etNow) next.setDate(next.getDate() + 1); // move to next day if time has passed
+
+    // Convert ET next time back to local time for the timeout delay
+    const localNext = new Date(next.getTime() - (dstOffset - utcOffsetMinutes) * 60 * 1000);
+    const timeUntilRestart = localNext - now;
+
+    log.log(`🕒 Scheduled app restart at ET ${targetHour}:${targetMinute.toString().padStart(2, "0")} → local ${localNext.toLocaleTimeString()} (${Math.round(timeUntilRestart / 1000)}s from now)`);
+
+    setTimeout(() => {
+        log.log("🔄 Restarting app due to daily ET schedule");
+        app.relaunch();
+        app.exit(0);
+    }, timeUntilRestart);
+}
+
+// Determine if DST is in effect in ET (U.S. rules)
+function isDST(date) {
+    const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+    const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+    return Math.max(jan, jul) !== date.getTimezoneOffset();
+}
 
 ////////////////////////////////////////////////////////////////////////////////////// UPDATES
 
@@ -471,6 +506,26 @@ tickerStore.on("buffs-updated", (payload = []) => {
 tickerStore.on("xp-updated", (payload) => {
     BrowserWindow.getAllWindows().forEach((win) => {
         safeSend(win, "xp-updated", payload);
+    });
+});
+
+// When the store triggers a nuke (e.g. daily reset or internal logic)
+tickerStore.on("store-state", () => {
+    console.log("💣 Nuke triggered by store");
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("store:nuke");
+    });
+});
+
+// When renderer explicitly requests a nuke
+ipcMain.on("admin-nuke", () => {
+    console.log("💣 Nuke state requested by renderer");
+
+    tickerStore.nuke(); // << Trigger internal state reset
+
+    // Inform renderer windows
+    BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send("admin:nuke");
     });
 });
 

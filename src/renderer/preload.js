@@ -7,6 +7,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     onBuffsUpdate: (callback) => ipcRenderer.on("buffs:update", (_, buffs) => callback(buffs)),
     onXpUpdate: (cb) => ipcRenderer.on("xp-updated", (event, data) => cb(data)),
     exitApp: () => ipcRenderer.send("exit-app"),
+    // Nuke triggers
+    onNukeState: (cb) => {
+        ipcRenderer.on("store-nuke", cb); // 🧨 from Store (auto or manual)
+        ipcRenderer.on("admin:nuke", cb); // 🧨 from Admin button
+    },
+
+    nukeState: () => ipcRenderer.send("admin-nuke"),
 });
 
 contextBridge.exposeInMainWorld("appFlags", {

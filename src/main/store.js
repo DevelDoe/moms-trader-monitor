@@ -110,11 +110,24 @@ class Store extends EventEmitter {
 
             log.log("🧨 Full store reset at boot (new day)");
 
+            this.emit("store-nuke");
+
             saveStoreMeta(today);
             this.startXpDecay();
         } else {
             log.log("✅ Store is up to date — no daily reset needed");
         }
+    }
+
+    nuke() {
+        this.xpState.clear();
+        this.sessionData.clear();
+        this.dailyData.clear();
+        this.newsList = [];
+
+        log.warn("🔥 Manual nuke: Store state cleared");
+
+        this.emit("store-nuke");
     }
 
     updateSymbols(symbolList) {

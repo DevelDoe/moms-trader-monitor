@@ -83,7 +83,7 @@
     },
     "settingsWindow": {
       "width": 759,
-      "height": 617,
+      "height": 628,
       "x": 1429,
       "y": -653,
       "isOpen": true
@@ -379,15 +379,15 @@
     "scrollXpWindow": {
       "width": 159,
       "height": 553,
-      "x": 1752,
-      "y": 523,
+      "x": 1689,
+      "y": 504,
       "isOpen": true
     },
     "scrollStatsWindow": {
       "width": 284,
       "height": 553,
-      "x": 1918,
-      "y": 524,
+      "x": 1856,
+      "y": 506,
       "isOpen": true
     }
   },
