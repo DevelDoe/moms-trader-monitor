@@ -78,6 +78,14 @@ function loadStoreMeta() {
     }
 }
 
+function getMarketDateString() {
+    const now = new Date();
+    const offset = -5 * 60; // EST offset in minutes
+    const localOffset = now.getTimezoneOffset();
+    const est = new Date(now.getTime() + (localOffset - offset) * 60000);
+    return est.toISOString().split("T")[0];
+}
+
 class Store extends EventEmitter {
     constructor() {
         super();
