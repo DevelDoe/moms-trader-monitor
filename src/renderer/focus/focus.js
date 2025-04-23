@@ -7,7 +7,7 @@ let container;
 
 const symbolColors = {};
 
-let maxXP = 100;
+let maxXP = 1000;
 let maxHP = 10;
 
 const BASE_MAX_HP = 300;
@@ -28,6 +28,7 @@ const { isDev } = window.appFlags;
 const freshStart = isDev;
 const debug = isDev;
 const debugScoreCalc = isDev;
+const debugXp = isDev;
 
 console.log("🎯 Fresh start mode:", freshStart);
 console.log("🐛 Debug mode:", debug);
@@ -65,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         dp: 0,
                         strength: 0,
                         xp: 0,
-                        lv: 0,
+                        lv: 1,
                         score: 0,
                         lastEvent: {
                             hp: 0,
@@ -75,6 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         floatValue: symbolData.statistics?.floatShares || 0, // Added optional chaining
                         buffs: symbolData.buffs || {},
                         highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
+                        history: [],
                     };
                 }
             });
@@ -107,8 +109,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 hero.buffs = updatedSymbol.buffs || hero.buffs;
 
-                console.log("hero after buff: ", hero);
-
                 if (updatedSymbol.highestPrice > (hero.highestPrice || 0)) {
                     hero.highestPrice = updatedSymbol.highestPrice;
                 }
@@ -119,6 +119,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 updateCardDOM(hero.hero);
             });
+        });
+
+        window.electronAPI.onXpUpdate(({ symbol, xp, lv }) => {
+            const hero = focusState[symbol];
+            if (!hero) return;
+
+            hero.xp = xp;
+
+            // Only update level if lv is > 0, or if explicitly defined
+            if (typeof lv === "number" && lv > 0) {
+                hero.lv = lv;
+            } else {
+                // Optional debug output
+                if (debug) console.warn(`⚠️ Skipped LV update for ${symbol} — received lv:`, lv);
+            }
+
+            if (debugXp) console.log(`🎮 ${symbol} XP update → LV ${hero.lv}, XP ${xp}`);
+
+            updateCardDOM(symbol);
         });
 
         renderAll();
@@ -170,6 +189,19 @@ function updateFocusStateFromEvent(event) {
         xp: 0,
     };
 
+    // ➕ Push to history
+    hero.history = hero.history || [];
+    hero.history.push({
+        hp: event.hp || 0,
+        dp: event.dp || 0,
+        ts: Date.now(),
+    });
+
+    // Limit to last 10
+    if (hero.history.length > 10) {
+        hero.history.shift();
+    }
+
     // 🎯 scoring
     const scoreDelta = calculateScore(hero, event); // Call the function synchronously
     hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
@@ -181,31 +213,6 @@ function updateFocusStateFromEvent(event) {
     };
 
     hero.strength = event.strength;
-
-    // // 🔁 Update volume buff dynamically based on current event
-    // const volumeBuff = calculateVolumeImpact(event.strength || 0, event.price || 1);
-    // hero.buffs.volume = volumeBuff;
-
-    // // Evaluate bounce back condition
-    // const bounceBuff = getBounceBackBuff(hero, event);
-    // if (bounceBuff) {
-    //     hero.buffs.bounceBack = bounceBuff;
-    // } else {
-    //     delete hero.buffs.bounceBack;
-    // }
-
-    // const newHighBuff = getNewHighBuff(hero);
-    // if (newHighBuff) {
-    //     hero.buffs.newHigh = newHighBuff;
-    // } else {
-    //     delete hero.buffs.newHigh;
-    // }
-
-    // if (!hero.highestPrice || event.price > hero.highestPrice) {
-    //     hero.highestPrice = event.price;
-    // }
-
-    calculateXp(hero);
 
     let needsFullRender = false;
     if (hero.hp > maxHP) {
@@ -356,7 +363,7 @@ function updateCardDOM(hero) {
         const state = focusState[hero];
         const strengthCap = state.price < 1.5 ? 800000 : 400000;
 
-        newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 100)) * 100, 100)}%`;
+        newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 1000)) * 100, 100)}%`;
 
         newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
 
@@ -374,7 +381,7 @@ function updateCardDOM(hero) {
             const state = focusState[hero];
             const strengthCap = state.price < 1.5 ? 800000 : 400000;
 
-            newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 100)) * 100, 100)}%`;
+            newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 1000)) * 100, 100)}%`;
             newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
             newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / strengthCap) * 100, 100)}%`;
         });
@@ -399,7 +406,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const yOffset = row * 100;
 
     const topPosition = 200;
-    const requiredXp = (state.lv + 1) * 100;
+    const requiredXp = (state.lv || 1) * 1000;
     const xpProgress = Math.min((state.xp / requiredXp) * 100, 100);
     const strengthCap = price < 1.5 ? 800000 : 400000;
 
@@ -409,8 +416,6 @@ function renderCard({ hero, price, hp, dp, strength }) {
         hp: state.hp,
         strength: strength,
     };
-
-    console.log(state.buffs);
 
     // Buffs
     const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
@@ -588,15 +593,38 @@ function calculateScore(hero, event) {
 
     try {
         // If it's an "up" event (hp > 0)
-        if (event.hp > 0) {
+        if (event.hp > 0 && isSurging(hero, { slice: 5, minUps: 2 })) {
             baseScore += event.hp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
 
-            // 💪 Add bonus score per level (100 points per level)
-            const levelBoost = (hero.level || 0) * 100;
-            baseScore += levelBoost;
-            if (debug && debugSamples < debugLimitSamples) {
-                logStep("🎖️", `Level Boost (LV ${hero.level || 0})`, levelBoost);
+            // 💪 Add bonus score per level (100 points per level) only if surging
+
+            // 🧠 Evaluate surge once
+            const surging = isSurging(hero);
+
+            if (surging) {
+                // 💪 Base level boost
+                const level = hero.lv || 1;
+                const levelBoost = level * 100;
+                baseScore += levelBoost;
+
+                if (debug && debugSamples < debugLimitSamples) {
+                    logStep("⚡", `Surge Detected! Level Boost (LV ${level})`, levelBoost);
+                }
+
+                // 🧪 Rookie tier bonus (amplify surge for LV 1–3)
+                if (level <= 3) {
+                    const tierBoostMultiplier = 1.5 - (level - 1) * 0.1;
+                    const boostedScore = baseScore * tierBoostMultiplier;
+
+                    if (debug && debugSamples < debugLimitSamples) {
+                        logStep("🧪", `Tier Surge Bonus (x${tierBoostMultiplier.toFixed(2)})`, boostedScore - baseScore);
+                    }
+
+                    baseScore = boostedScore;
+                }
+            } else if (debug && debugSamples < debugLimitSamples) {
+                logStep("💤", "No surge — Level Boost skipped", 0);
             }
 
             // Apply Float score
@@ -622,24 +650,6 @@ function calculateScore(hero, event) {
             }
             // Clamp total baseScore to positive only (no negative scoring on "up" events)
             baseScore = Math.max(0, baseScore);
-        }
-
-        if (event.dp > 0) {
-            baseScore -= event.dp * 10;
-
-            // Volume
-            // const volumeBuff = getHeroBuff(hero, "volume");
-            // const volPenalty = volumeBuff?.score * 0.5 ?? 0;
-
-            // // Only apply negative volume scores for down events
-            // if (volPenalty < 0) {
-            //     baseScore += volPenalty; // subtract more
-            //     if (debug && debugSamples < debugLimitSamples) {
-            //         logStep("📉", `Volume Penalty (${humanReadableNumbers(event.strength || 0)})`, volPenalty);
-            //     }
-            // }
-
-            if (debug && debugSamples < debugLimitSamples) logStep("💥", "Base DP Deducted", event.dp * 10);
         }
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
@@ -669,20 +679,6 @@ function getFloatScore(floatValue) {
     return floatBuff?.score ?? 0;
 }
 
-function calculateXp(hero) {
-    hero.xp += hero.lastEvent.hp || 0; // Only gain XP from HP events
-
-    const requiredXp = (hero.lv + 1) * 100;
-
-    while (hero.xp >= requiredXp) {
-        hero.xp -= requiredXp;
-        hero.lv += 1;
-
-        // 🪄 Optional: Trigger "Level Up!" animation
-        if (debug) console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
-    }
-}
-
 function startScoreDecay() {
     let decayTickCount = 0;
     const DECAY_TICKS_BETWEEN_LOGS = 5; // Only log every 5 ticks to avoid spam
@@ -703,7 +699,7 @@ function startScoreDecay() {
             if (hero.score > 0) {
                 const originalScore = hero.score;
                 const scale = 1 + hero.score / SCORE_NORMALIZATION;
-                const cling = 0.5;
+                const cling = 0.2;
                 const taper = Math.max(cling, Math.min(1, hero.score / 10)); // Tapers when score < 10
                 const decayAmount = XP_DECAY_PER_TICK * scale * taper;
                 const newScore = Math.max(0, hero.score - decayAmount);
@@ -747,66 +743,14 @@ function startScoreDecay() {
     }, DECAY_INTERVAL_MS);
 }
 
-// function calculateVolumeImpact(volume = 0, price = 1) {
-//     const categories = Object.entries(window.buffs)
-//         .map(([category, data]) => ({ category, ...data }))
-//         .sort((a, b) => a.priceThreshold - b.priceThreshold);
+function isSurging(hero, { slice = 4, minUps = 3, direction = "hp" } = {}) {
+    if (!hero?.history?.length) return false;
 
-//     for (const category of categories) {
-//         if (price <= category.priceThreshold) {
-//             const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
+    const recent = hero.history.slice(-slice);
+    const active = recent.filter((e) => e[direction] > 0);
 
-//             const stageToUse =
-//                 sortedStages.find((stage, index) => {
-//                     const current = stage.volumeThreshold;
-//                     const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
-//                     if (index === sortedStages.length - 1) {
-//                         return volume >= prev;
-//                     }
-//                     return volume > prev && volume <= current;
-//                 }) || sortedStages[sortedStages.length - 1];
-
-//             // ✅ Only now we can safely use stageToUse
-//             return {
-//                 ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
-//                 capAssigned: category.category,
-//                 volumeStage: stageToUse.key,
-//                 message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
-//                 style: {
-//                     cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-//                     color: getColorForStage(stageToUse.key),
-//                     animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-//                 },
-//             };
-//         }
-//     }
-
-//     // Fallback if no category matched
-//     return {
-//         multiplier: 1,
-//         capAssigned: "None",
-//         volumeStage: "None",
-//         message: "No matching category found",
-//         style: {
-//             cssClass: "volume-none",
-//             icon: "",
-//             description: "No volume",
-//             color: "#cccccc",
-//             animation: "none",
-//         },
-//         score: 0,
-//     };
-// }
-
-// function getColorForStage(stageKey) {
-//     const colors = {
-//         lowVol: "#cccccc",
-//         mediumVol: "#4caf50",
-//         highVol: "#ff9800",
-//         parabolicVol: "#f44336",
-//     };
-//     return colors[stageKey] || "#cccccc";
-// }
+    return active.length >= minUps;
+}
 
 function humanReadableNumbers(value) {
     if (!value || isNaN(value)) return "-";

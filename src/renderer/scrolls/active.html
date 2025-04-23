@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+        <link rel="stylesheet" href="../flat.css" />
+        <title>📜 Scroll of Activity</title>
+        <style>
+            body {
+                padding: 10px;
+            }
+            h2 {
+                font-size: 16px;
+                color: #595959;
+                margin-bottom: 10px;
+            }
+            .xp-line {
+                padding: 4px 8px;
+                border-radius: 4px;
+                margin-bottom: 2px;
+                font-size: 0.8rem;
+                font-weight: 200;
+            }
+            .symbol {
+                /* Your existing symbol styles */
+                white-space: nowrap; /* Prevents line breaks */
+                color: antiquewhite !important;
+                font-weight: 400;
+                width: 70px;
+                display: inline-block;
+                font-size: 16px;
+                padding: 0px 2px;
+                border-radius: 1px;
+                /* cursor: pointer; */
+                margin-right: 4px;
+                position: relative;
+            }
+            .xp-line {
+                transition: opacity 0.5s ease, filter 0.5s ease;
+            }
+            .lv {
+                font-size: 11px;
+                margin-left: 2px;
+                color: white;
+                font-weight: 300;
+                position: absolute;
+                right: 2px;
+                bottom: 0px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="drag-area"></div>
+        <h2>📜 Scroll of Activity</h2>
+        <div id="xp-scroll">Loading...</div>
+
+        <script src="./active.js"></script>
+    </body>
+</html>

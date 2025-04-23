@@ -1,5 +1,4 @@
 body {
-    background-color: #1c1d23;
     color: #cdcdcd;
 
     margin: 0 auto;
@@ -27,8 +26,8 @@ body {
 
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 36vw !important; /* you wrote 35w, fixed it to 35vw */
-    height: 36vw !important;
+    width: 35vw !important; /* you wrote 35w, fixed it to 35vw */
+    height: 35vw !important;
 }
 
 /* Two-column layout using Flexbox */
@@ -47,7 +46,7 @@ body {
     transform: translate(-50%, -50%);
     color: white;
     text-align: center;
-    font-size: 1.5vw !important;
+    font-size: 1.45vw !important;
     pointer-events: none; /* so you can interact with the chart behind */
 }
 
@@ -56,11 +55,31 @@ body {
     max-width: 100%; /* Ensures it doesn't grow beyond half */
 }
 
+#data-warning-summary {
+    padding-top: 0;
+    margin-top: 4px;
+    font-size: 14px !important;
+    font-weight: 600;
+}
+
+.blur-effect {
+    /* filter: blur(0.8px); */
+    opacity: 0.5;
+    pointer-events: none; /* optional if you want to disable interaction */
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
 /* Ensure the chart container is responsive */
 .chart-container {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 4px;
+}
+
+.chart {
+    padding-top: 20px !important;
+    margin-top: 20px;
 }
 
 /* Optional: Add some spacing and alignment */
@@ -87,14 +106,35 @@ body {
     -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0.1));
 }
 
-.about::-webkit-scrollbar {
-    width: 0px;
-    height: 0px !important;
-    display: none !important;
+.scroll-container {
+    max-height: 60px; /* Or whatever fits your layout */
+    overflow: hidden;
+    position: relative;
+    margin-top: 10px;
 }
 
-.about::-webkit-scrollbar {
-    display: none !important;
+.scroll-content {
+    white-space: pre-wrap;
+    overflow-y: auto;
+    max-height: 60px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.scroll-content::-webkit-scrollbar {
+    display: none;
+}
+/* Hide scrollbar in WebKit browsers (Chrome, Safari) */
+.scroll-content::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+/* Optional: hide scrollbar in Firefox */
+.scroll-content {
+    scrollbar-width: none; /* Firefox */
+}
+.scroll-content::-webkit-scrollbar {
+    display: none; /* Safari/Chrome fallback */
 }
 
 /* Hide all tab content by default */
@@ -151,12 +191,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 10px;
 }
 
 .news-item {
-    margin-bottom: 10px;
+    margin-bottom: 2px;
     padding-bottom: 0px;
+}
+.news-item:nth-child(even) {
+    opacity: 0.9;
 }
 
 .news-item h5 {

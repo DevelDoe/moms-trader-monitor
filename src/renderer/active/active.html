@@ -49,12 +49,12 @@
                                 </div>
                             </div>
 
-                            <div class="bg-zinc-800 p-4 rounded-xl" style="position: relative">
+                            <div class="bg-zinc-800 p-4 rounded-xl chart" style="position: relative; padding-top: 0 !important; margin-top: 0 !important">
                                 <div id="section-float-summary" class="grid grid-cols-1 sm:grid-cols-2 gap-0">
                                     <div class="data-column no-drag">
                                         <p><strong title="Total Shares Outstanding">Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
                                         <p><strong title="🔵 Public Float">🔵 Float:</strong> <span data-id="statistics-float"></span></p>
-                                        <p><strong title="🟡 Total Shorted Shares">🟡 Short:</strong><span data-id="statistics-sharesShort"></span></p>
+                                        <p><strong title="🟡 Total Shorted Shares">🟡 Short:</strong> <span data-id="statistics-sharesShort"></span></p>
                                         <p><strong title="🔴 Held by Insiders">🔴 Inside:</strong> <span data-id="statistics-insidersHeld"></span></p>
                                         <p><strong title="🟠 Held by Institutions">🟠 Insti:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
                                         <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remain:</strong> <span data-id="statistics-remainingShares"></span></p>
@@ -68,18 +68,23 @@
 
                             <!-- Row 2: Two Panels -->
 
-                            <div id="data-warning-summary" class="bg-zinc-800 p-4 rounded-xl" style="color: #aa9c4c; display: none">
-                                🧙‍♂️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden in the mist.
+                            <div id="data-warning-summary" class="bg-zinc-800 p-4 rounded-xl" style="text-align: center; color: #aa9c4c; display: none">
+                                🧙‍♂️ FFog of uncertainty lingers — The float data is unclear, and true ownership remains hidden.
                             </div>
                         </div>
 
                         <!-- Right Column -->
                         <div class="space-y-4">
-                            <div class="bg-zinc-800 p-4 rounded-xl scroll-vertical-mask">
-                                <div class="scroll-vertical-text about text-tertiary" data-id="profile-longBusinessSummary"></div>
+                            <div class="bg-zinc-800 p-4 rounded-xl">
+                                <div class="scroll-container text-tertiary no-drag">
+                                    <div class="scroll-content no-drag" data-id="profile-longBusinessSummary"></div>
+                                    <!-- <div class="scroll-content no-drag" >China SXT Pharmaceuticals, Inc., a pharmaceutical company, engages in the research, development, manufacture, marketing, and sale of traditional Chinese medicine pieces (TCMP) in China. The company offers advanced, fine, and regular TCMP products, and raw medicinal material, such as SanQiFen, HongQi, SuMu, JiangXiang, CuYanHuSuo, XiaTianWu, LuXueJing, XueJie, ChaoSuanZaoRen, HongQuMi, ChuanBeiMu, HuangShuKuiHua, WuWeiZi, DingXiang, RenShen, QingGuo, JueMingZi, ShaRen, and ChenXiang. It provides its products under the Suxuantang, Hui Chun Tang, and Tong Ren Tang brands. The company had an end-customer base of pharmaceutical companies, chain pharmacies, and hospitals, as well as pharmaceutical distributors. China SXT Pharmaceuticals, Inc. was founded in 2005 and is headquartered in Taizhou, China. -->
+                                    <!-- </div> -->
+                                </div>
                             </div>
 
                             <div class="bg-zinc-800 p-4 rounded-xl">
+                                <h2>news</h2>
                                 <div id="news-container" class="news-list no-drag"></div>
                             </div>
                         </div>
@@ -114,7 +119,7 @@
                     </p>
 
                     <div id="data-warning-stats" style="color: #b6a041; display: none; margin-bottom: 10px">
-                        🧙‍♂️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden in the mist.
+                        🧙‍♂️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden.
                     </div>
                     <section id="section-float-stats" class="two-column-layout">
                         <div class="data-column no-drag">
@@ -205,5 +210,52 @@
         </div>
 
         <script src="./active.js"></script>
+        <script>
+            const container = document.querySelector(".scroll-content.no-drag");
+
+            if (container) {
+                const downSpeed = 1;
+                const upSpeed = 10;
+                const delay = 60;
+                const pauseTop = 8000;
+                const pauseBottom = 3000;
+                let direction = 0; // 0 = idle, 1 = down, -1 = up
+
+                const scrollLoop = () => {
+                    if (direction === 1) {
+                        container.scrollTop += downSpeed;
+
+                        if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
+                            direction = 0;
+                            setTimeout(() => {
+                                direction = -1; // go back up
+                                scrollLoop();
+                            }, pauseBottom);
+                            return;
+                        }
+                    } else if (direction === -1) {
+                        container.scrollTop -= upSpeed;
+
+                        if (container.scrollTop <= 0) {
+                            container.scrollTop = 0; // make sure it's exactly top
+                            direction = 0;
+                            setTimeout(() => {
+                                direction = 1;
+                                scrollLoop();
+                            }, pauseTop);
+                            return;
+                        }
+                    }
+
+                    setTimeout(scrollLoop, delay);
+                };
+
+                // Start paused at top
+                setTimeout(() => {
+                    direction = 1;
+                    scrollLoop();
+                }, pauseTop);
+            }
+        </script>
     </body>
 </html>

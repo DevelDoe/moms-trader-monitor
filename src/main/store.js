@@ -10,6 +10,8 @@ const fs = require("fs");
 const os = require("os");
 
 const isDevelopment = process.env.NODE_ENV === "development";
+
+// ✅ Declare SETTINGS_FILE before logging it
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(require("electron").app.getPath("userData"), "settings.json");
 
 const BUFFS_FILE = path.join(__dirname, "../data/buffs.json");
@@ -23,6 +25,7 @@ function loadSettingsAndBuffs() {
     try {
         const settingsRaw = fs.readFileSync(SETTINGS_FILE, "utf-8");
         const settings = JSON.parse(settingsRaw);
+
         blockList = settings.news?.blockList || [];
         bullishList = settings.news?.bullishList || [];
         bearishList = settings.news?.bearishList || [];
@@ -42,23 +45,46 @@ function loadSettingsAndBuffs() {
     }
 }
 
-function getNewsSentimentBuff(headline) {
+function getNewsSentimentBuff(headline, buffs, bullishList, bearishList) {
     const lower = headline.toLowerCase();
-    console.log("🧪 Checking sentiment for:", headline);
 
     if (bullishList.some((term) => lower.includes(term.toLowerCase()))) {
-        console.log("🟢 Matched bullish term!");
         return buffs.find((b) => b.key === "hasBullishNews");
     }
     if (bearishList.some((term) => lower.includes(term.toLowerCase()))) {
-        console.log("🔴 Matched bearish term!");
         return buffs.find((b) => b.key === "hasBearishNews");
     }
-    console.log("⚪ No sentiment match — using neutral buff.");
     return buffs.find((b) => b.key === "hasNews");
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const META_FILE = path.join(__dirname, "../data/store.meta.json");
+
+function saveStoreMeta(date) {
+    try {
+        fs.writeFileSync(META_FILE, JSON.stringify({ date }), "utf-8");
+    } catch (err) {
+        log.warn("⚠️ Failed to save store meta file:", err.message);
+    }
+}
+
+function loadStoreMeta() {
+    try {
+        const raw = fs.readFileSync(META_FILE, "utf-8");
+        return JSON.parse(raw).date || null;
+    } catch {
+        return null;
+    }
+}
+
+function getMarketDateString() {
+    const now = new Date();
+    const offset = -5 * 60; // EST offset in minutes
+    const localOffset = now.getTimezoneOffset();
+    const est = new Date(now.getTime() + (localOffset - offset) * 60000);
+    return est.toISOString().split("T")[0];
+}
 
 class Store extends EventEmitter {
     constructor() {
@@ -71,10 +97,24 @@ class Store extends EventEmitter {
         this.sessionData = new Map(); // Resets on clear
         this.dailyData = new Map(); // Stores all tickers for the full day
         this.newsList = []; // Store all news in a single list
+        this.xpState = new Map();
 
-        setInterval(() => {
-            this.cleanupOldNews();
-        }, 60 * 1000); // Runs every 60 seconds
+        const today = getMarketDateString();
+        const lastClear = loadStoreMeta();
+
+        if (lastClear !== today) {
+            this.xpState.clear();
+            this.sessionData.clear();
+            this.dailyData.clear();
+            this.newsList = [];
+
+            log.log("🧨 Full store reset at boot (new day)");
+
+            saveStoreMeta(today);
+            this.startXpDecay();
+        } else {
+            log.log("✅ Store is up to date — no daily reset needed");
+        }
     }
 
     updateSymbols(symbolList) {
@@ -349,14 +389,23 @@ class Store extends EventEmitter {
         const existingHeadlines = new Set(this.newsList.map((n) => n.headline));
 
         const filteredNews = newsItems.filter((news) => {
-            if (existingIds.has(news.id)) {
-                log.log(`[addNews] Skipping duplicate by ID: ${news.id}`);
+            if (existingIds.has(news.id)) return false;
+            if (existingHeadlines.has(news.headline)) return false;
+
+            // ⛔ Block multi-symbol news
+            if (news.symbols.length > 1) {
+                log.log(`[addNews] Skipping multi-symbol headline: "${news.headline}"`);
                 return false;
             }
-            if (existingHeadlines.has(news.headline)) {
-                log.log(`[addNews] Skipping duplicate by headline: "${news.headline}"`);
+
+            // ⛔ Block by blockList
+            const sanitized = news.headline.toLowerCase().trim();
+            const isBlocked = blockList.some((word) => sanitized.includes(word.toLowerCase().trim()));
+            if (isBlocked) {
+                log.log(`[addNews] Blocked by blockList: "${news.headline}"`);
                 return false;
             }
+
             return true;
         });
 
@@ -390,7 +439,7 @@ class Store extends EventEmitter {
             }
 
             // 🎯 Check sentiment and attach buff
-            const newsBuff = getNewsSentimentBuff(newsItem.headline);
+            const newsBuff = getNewsSentimentBuff(newsItem.headline, buffs, bullishList, bearishList);
             newsItem.symbols.forEach((sym) => {
                 if (this.dailyData.has(sym) || this.sessionData.has(sym) || this.symbols.has(sym)) {
                     const ticker = this.symbols.get(sym);
@@ -470,6 +519,13 @@ class Store extends EventEmitter {
         return [];
     }
 
+    updateXp(symbol, xp, lv) {
+        this.xpState.set(symbol, { xp, lv });
+
+        log.log(`[XP] Updated ${symbol}: XP ${xp}, LV ${lv}`);
+        this.emit("xp-updated", { symbol, xp, lv });
+    }
+
     clearSessionData() {
         log.log("[clearSessionData] called");
         this.sessionData.clear();
@@ -489,6 +545,37 @@ class Store extends EventEmitter {
         if (beforeCleanup !== afterCleanup) {
             log.log(`Cleaned up old news from global list. Before: ${beforeCleanup}, After: ${afterCleanup}`);
         }
+    }
+
+    startXpDecay() {
+        const XP_DECAY_PER_MINUTE = 6.67;
+        const XP_MIN_FLOOR = 300;
+
+        setInterval(() => {
+            for (const [symbol, xpData] of this.xpState.entries()) {
+                let { xp, lv } = xpData;
+
+                if (xp > XP_MIN_FLOOR) {
+                    xp -= XP_DECAY_PER_MINUTE;
+                    xp = Math.max(xp, XP_MIN_FLOOR);
+
+                    // 🔁 Recalculate level based on remaining XP
+                    let newLv = lv;
+                    let tempXp = xp;
+                    while (newLv > 1 && tempXp < (newLv - 1) * 1000) {
+                        newLv -= 1;
+                        tempXp += newLv * 1000; // restore xp from the level drop
+                    }
+
+                    // 🔁 Store updated state
+                    if (newLv !== lv) {
+                        this.updateXp(symbol, xp, newLv);
+                    } else {
+                        this.xpState.set(symbol, { xp, lv });
+                    }
+                }
+            }
+        }, 60000); // decay every 1 minute
     }
 }
 

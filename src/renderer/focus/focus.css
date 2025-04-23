@@ -1,6 +1,6 @@
 /* Body Styles */
 body {
-    background-color: #1c1d23;
+    background-color: #1b1f24;
     color: #fff;
     font-family: "Press Start 2P", monospace;
     /* font-family: Arial, Helvetica, sans-serif; */
@@ -20,7 +20,7 @@ body::-webkit-scrollbar {
     display: none; /* Hide scrollbar in WebKit browsers */
 }
 #focus-window {
-    margin-top: -5px;
+    margin-top: -7px;
 }
 /* Ticker Card */
 .ticker-card {
@@ -44,7 +44,7 @@ body::-webkit-scrollbar {
 h1,
 h2 {
     font-size: 16px;
-    margin-top: -3px;
+    margin-top: -6px;
     color: #595959;
     font-family: Arial, Helvetica, sans-serif;
     margin-bottom: 0;

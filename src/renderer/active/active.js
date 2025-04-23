@@ -207,6 +207,16 @@ function updateUI(symbolData) {
     document.getElementById("data-warning-stats").style.display = dataIsCorrupted ? "block" : "none";
     document.getElementById("section-float-stats").style.display = "flex";
 
+    const floatSection = document.getElementById("section-float-summary");
+
+    if (floatSection) {
+        if (dataIsCorrupted) {
+            floatSection.classList.add("blur-effect");
+        } else {
+            floatSection.classList.remove("blur-effect");
+        }
+    }
+
     const insidersHeld = Math.round(sharesOutstanding * (symbolData.ownership?.insidersPercentHeld || 0));
     const institutionsHeld = Math.round(sharesOutstanding * (symbolData.ownership?.institutionsPercentHeld || 0));
     const sharesShort = symbolData.statistics?.sharesShort ?? 0;
@@ -258,13 +268,21 @@ function updateUI(symbolData) {
             console.log(`🚫 Blocked by "${match}":`, newsItem.headline);
         }
     });
+
     const filteredNews = (Array.isArray(symbolData.News) ? symbolData.News : []).filter((newsItem) => {
         const headline = sanitize(newsItem.headline || "");
-        return !blockList.some((blocked) => headline.includes(sanitize(blocked)));
+
+        // ❌ Blocked by blockList
+        const isBlocked = blockList.some((blocked) => headline.includes(sanitize(blocked)));
+
+        // ❌ Blocked if multiple symbols
+        const isMultiSymbol = Array.isArray(newsItem.symbols) && newsItem.symbols.length > 1;
+
+        return !isBlocked && !isMultiSymbol;
     });
 
     if (filteredNews.length === 0) {
-        newsContainer.innerHTML = "<p>No recent news available</p>";
+        newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no recent news available</p>';
     } else {
         filteredNews.forEach((newsItem) => {
             const sentimentClass = getNewsSentimentClass(newsItem);
@@ -272,10 +290,12 @@ function updateUI(symbolData) {
             const itemDiv = document.createElement("div");
             itemDiv.className = `news-item ${sentimentClass}`;
 
-            itemDiv.innerHTML = `
-                <h5>${newsItem.headline || "Untitled"}</h5>
-                <p>${newsItem.summary || ""}</p>
-            `;
+            itemDiv.innerHTML = `<h5>${newsItem.headline || "Untitled"}</h5>`;
+
+            //     itemDiv.innerHTML = `
+            //     <h5>${newsItem.headline || "Untitled"}</h5>
+            //     <p>${newsItem.summary || ""}</p>
+            // `;
 
             newsContainer.appendChild(itemDiv);
         });
@@ -323,8 +343,14 @@ function sanitize(str) {
  * @param {string|number} value - The value to set.
  */
 function setText(id, value) {
-    const elements = document.querySelectorAll(`[data-id="${id}"]`); // ✅ Selects all elements with matching `data-id`
-    elements.forEach((el) => (el.innerText = value ?? "N/A")); // ✅ Update all instances
+    const elements = document.querySelectorAll(`[data-id="${id}"]`);
+    elements.forEach((el) => {
+        let text = value ?? "N/A";
+        if (id === "industry" && typeof text === "string" && text.length > 30) {
+            text = text.slice(0, 27) + "...";
+        }
+        el.innerText = text;
+    });
 }
 /**
  * Formats a large number with abbreviations (K, M, B).

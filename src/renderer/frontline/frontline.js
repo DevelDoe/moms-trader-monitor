@@ -23,6 +23,7 @@ const { isDev } = window.appFlags;
 const freshStart = isDev;
 const debug = isDev;
 const debugScoreCalc = isDev;
+const debugXp = isDev;
 
 console.log("🎯 Fresh start mode:", freshStart);
 console.log("🐛 Debug mode:", debug);
@@ -34,6 +35,8 @@ let buffs = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ Frontline Dom loaded");
+
+    localStorage.removeItem("frontlineState"); // 🔥 hard nuke on load
 
     try {
         const fetchedBuffs = await window.electronAPI.getBuffs(); // ✅ pull buffs from preload
@@ -70,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         dp: 0,
                         strength: 0,
                         xp: 0,
-                        lv: 0,
+                        lv: 1,
                         score: 0,
                         lastEvent: {
                             hp: 0,
@@ -111,8 +114,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (!hero) return;
 
                 hero.buffs = updatedSymbol.buffs || hero.buffs;
-
-                console.log("hero after buff: ", hero);
 
                 if (updatedSymbol.highestPrice > (hero.highestPrice || 0)) {
                     hero.highestPrice = updatedSymbol.highestPrice;
@@ -173,7 +174,7 @@ function updateFrontlineStateFromEvent(event) {
 
     hero.strength = event.strength;
 
-    calculateXp(hero);
+    calculateXp(hero, event);
 
     // Check if we need to scale up
     let needsFullRender = false;
@@ -610,18 +611,48 @@ function getHeroBuff(hero, key) {
     return hero?.buffs?.[key] ?? {};
 }
 
-function calculateXp(hero) {
-    hero.xp += hero.lastEvent.hp || 0; // Only gain XP from HP events
+function calculateXp(hero, event) {
+    const hp = event.hp || 0;
+    const dp = event.dp || 0;
+    const totalMove = hp + dp;
+    const strength = event.strength || 0;
 
-    const requiredXp = (hero.lv + 1) * 100;
+    // 📈 Base XP gain from price action and volume strength
+    let baseXp = totalMove * 10; // Adjust divisor to balance XP scaling
 
+    // 🎯 Get buff-based multiplier (float, volume, etc.)
+    const volumeBuff = getHeroBuff(hero, "volume");
+    const volMult = volumeBuff?.multiplier ?? 1;
+
+    const xpDelta = Math.round(baseXp * volMult);
+
+    hero.xp = (hero.xp || 0) + xpDelta;
+
+    hero.lv = Math.max(1, hero.lv || 1);
+    const requiredXp = hero.lv * 1000;
     while (hero.xp >= requiredXp) {
         hero.xp -= requiredXp;
         hero.lv += 1;
-
-        // 🪄 Optional: Trigger "Level Up!" animation
         if (debug) console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
     }
+
+    if (debugXp) {
+        console.log(`⚡⚡⚡ [${hero.hero}] XP BREAKDOWN ⚡⚡⚡`);
+        console.log(`📜 ALERT → HP: ${hp.toFixed(2)} | DP: ${dp.toFixed(2)} | Strength: ${strength.toLocaleString()}`);
+        console.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
+
+        if (volumeBuff?.desc) {
+            console.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
+        } else {
+            console.log(`🏷️ Volume Multiplier           x${volMult.toFixed(2)}`);
+        }
+
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log(`🎯 XP GAINED                   ${xpDelta}`);
+        console.log(`🎼 TOTAL XP →                  ${hero.xp} (LV ${hero.lv})`);
+    }
+
+    window.frontlineAPI?.updateXp(hero.hero, hero.xp, hero.lv);
 }
 
 function startScoreDecay() {
@@ -840,10 +871,6 @@ function saveState() {
 }
 
 async function loadState() {
-    if (freshStart) {
-        console.log("🧪 loadState() overridden for testing — skipping restore");
-        return false;
-    }
     const saved = localStorage.getItem("frontlineState");
     if (!saved) return false;
 
@@ -851,17 +878,17 @@ async function loadState() {
         const parsed = JSON.parse(saved);
         const today = getMarketDateString();
 
-        if (parsed.date === today) {
-            Object.assign(frontlineState, parsed.state); // More efficient than forEach
-            if (debug) console.log("🔄 Restored frontline state from earlier session.");
-            return true;
-        } else {
-            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
+        // ⛔️ Always clear if it's a different day
+        if (parsed.date !== today) {
             localStorage.removeItem("frontlineState");
             return false;
         }
-    } catch (err) {
-        console.warn("⚠️ Could not parse frontline state. Clearing.");
+
+        // ✅ Safe to restore
+        Object.assign(frontlineState, parsed.state);
+        return true;
+    } catch {
+        // ⛔️ If it breaks, wipe it
         localStorage.removeItem("frontlineState");
         return false;
     }
@@ -873,4 +900,13 @@ function clearState() {
         delete frontlineState[key];
     }
     if (debug) console.log("🧹 Cleared saved and in-memory frontline state.");
+}
+
+function isBeforeMarketResetTime() {
+    const now = new Date();
+    const offset = -5 * 60; // EST (adjust manually for DST if needed)
+    const localOffset = now.getTimezoneOffset();
+    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
+
+    return estDate.getHours() < 11;
 }

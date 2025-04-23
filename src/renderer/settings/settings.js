@@ -114,29 +114,34 @@ function initializeGeneralSection() {
 
     const showEventsToggle = document.getElementById("show-events");
     const showFrontlineToggle = document.getElementById("show-frontline");
+    const showHeroesToggle = document.getElementById("show-heroes");
+    showEventsToggle.checked = window.settings.windows.scannerWindow?.isOpen ?? false;
+    showFrontlineToggle.checked = window.settings.windows.frontlineWindow?.isOpen ?? false;
+    showHeroesToggle.checked = window.settings.windows.focusWindow?.isOpen ?? false;
+
+    const showActiveToggle = document.getElementById("show-active");
+    showActiveToggle.checked = window.settings.windows.activeWindow?.isOpen ?? false;
+
+    const showScrollXpToggle = document.getElementById("show-scrollXp");
+    showScrollXpToggle.checked = window.settings.windows.scrollXpWindow?.isOpen ?? false;
+    const showScrollStatsToggle = document.getElementById("show-scrollStats");
+    showScrollStatsToggle.checked = window.settings.windows.scrollStatsWindow?.isOpen ?? false;
+
+    const showInfobarToggle = document.getElementById("show-infobar");
+    showInfobarToggle.checked = window.settings.windows.infobarWindow?.isOpen ?? false;
+
+    const showTraderviewsToggle = document.getElementById("show-traderviews");
     const showProgressToggle = document.getElementById("show-progress");
     const showWizardToggle = document.getElementById("show-wizard");
-    const showTraderviewsToggle = document.getElementById("show-traderviews");
-
-    showEventsToggle.checked = window.settings.windows.scannerWindow?.isOpen ?? false;
-    showProgressToggle.checked = window.settings.windows.progressWindow?.isOpen ?? false;
-    showFrontlineToggle.checked = window.settings.windows.frontlineWindow?.isOpen ?? false;
-    showWizardToggle.checked = window.settings.windows.wizardWindow?.isOpen ?? false;
     showTraderviewsToggle.checked = window.settings.traderview?.visibility ?? false;
+    showProgressToggle.checked = window.settings.windows.progressWindow?.isOpen ?? false;
+    showWizardToggle.checked = window.settings.windows.wizardWindow?.isOpen ?? false;
 
     showEventsToggle.addEventListener("change", (event) => {
         if (event.target.checked) {
             window.eventsAPI.activate();
         } else {
             window.eventsAPI.deactivate();
-        }
-    });
-
-    showProgressToggle.addEventListener("change", (event) => {
-        if (event.target.checked) {
-            window.progressAPI.activate();
-        } else {
-            window.progressAPI.deactivate();
         }
     });
 
@@ -148,11 +153,43 @@ function initializeGeneralSection() {
         }
     });
 
-    showWizardToggle.addEventListener("change", (event) => {
+    showHeroesToggle.addEventListener("change", (event) => {
         if (event.target.checked) {
-            window.wizardAPI.activate();
+            window.heroesAPI.activate();
         } else {
-            window.wizardAPI.deactivate();
+            window.heroesAPI.deactivate();
+        }
+    });
+
+    showActiveToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.activeAPI.activate();
+        } else {
+            window.activeAPI.deactivate();
+        }
+    });
+
+    showScrollXpToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.scrollXpAPI.activate();
+        } else {
+            window.scrollXpAPI.deactivate();
+        }
+    });
+
+    showScrollStatsToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.scrollStatsAPI.activate();
+        } else {
+            window.scrollStatsAPI.deactivate();
+        }
+    });
+
+    showInfobarToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.infobarAPI.activate();
+        } else {
+            window.infobarAPI.deactivate();
         }
     });
 
@@ -169,6 +206,22 @@ function initializeGeneralSection() {
         };
 
         await window.settingsAPI.update(window.settings);
+    });
+
+    showProgressToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.progressAPI.activate();
+        } else {
+            window.progressAPI.deactivate();
+        }
+    });
+
+    showWizardToggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+            window.wizardAPI.activate();
+        } else {
+            window.wizardAPI.deactivate();
+        }
     });
 }
 

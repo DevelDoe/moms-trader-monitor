@@ -2,16 +2,18 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link rel="stylesheet" href="../styles.css" />
+        <!-- <link rel="stylesheet" href="../styles.css" /> -->
+        <link rel="stylesheet" href="../flat.css" />
+
         <title>Infobar</title>
         <style>
             /* Container styling */
             body {
+                padding: 0;
                 margin: 0;
-                background: #1c1d23; /* dark theme background */
                 color: #f0f0f0; /* light text for contrast */
                 font-family: sans-serif; /* use app's font if needed */
-                height: 50px;
+                height: 100px;
                 width: 100%;
                 overflow-x: hidden;
             }
@@ -19,7 +21,7 @@
             .news-list {
                 position: relative;
                 width: 100%;
-                height: 30px;
+                height: 100%;
                 overflow: hidden;
                 font-size: 14px;
                 color: #f0f0f0;
@@ -45,7 +47,6 @@
             .news-item {
                 font-weight: bold;
                 cursor: pointer;
-                height: 30px;
             }
 
             .news-item.show {
@@ -114,17 +115,64 @@
             }
             .bullish-news {
                 color: #1bcf65;
-                border-left: 4px solid #1bcf65;
+                /* border-left: 4px solid #1bcf65; */
             }
 
             .bearish-news {
                 color: #e70049;
-                border-left: 4px solid #e70049;
+                /* border-left: 4px solid #e70049; */
             }
 
             .neutral-news {
                 color: #f0f0f0;
-                border-left: 4px solid #666;
+                /* border-left: 4px solid #666; */
+            }
+            .bonus-item,
+            .news-item {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .bonus-item .icon,
+            .news-item .icon {
+                flex: 0 0 30px; /* fixed width for icon column */
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 18px;
+                margin-right: 6px;
+            }
+
+            .bonus-item .desc,
+            .news-item .desc {
+                /* flex: 1; */
+                /* overflow: hidden; */
+                text-overflow: ellipsis;
+                /* white-space: nowrap; */
+            }
+            @keyframes scrollVertical {
+                0% {
+                    transform: translateY(0%);
+                }
+                100% {
+                    transform: translateY(-100%);
+                }
+            }
+
+            .news-item .desc.scroll-vertical {
+                display: inline-block;
+                animation: scrollVertical 6s linear infinite;
+                line-height: 1.2em;
+            }
+            .news-item .desc {
+                max-height: 2.4em; /* shows 2 lines max by default */
+                overflow: hidden;
+                position: relative;
+            }
+
+            .news-item .desc .scroll-inner {
+                display: inline-block;
             }
         </style>
     </head>
@@ -209,7 +257,7 @@
                         const type = getSentimentClass(newsItem.headline);
 
                         // Truncate headline to 90 characters
-                        const maxLength = 50;
+                        const maxLength = 240;
                         let truncated = newsItem.headline;
                         if (truncated.length > maxLength) {
                             truncated = truncated.slice(0, maxLength - 1).trimEnd() + "…";
@@ -289,7 +337,18 @@
 
                 const li = document.createElement("li");
                 li.className = `news-item show slide-in no-drag ${type}-news`;
-                li.innerHTML = `<span class="icon">${icon}</span><span class="desc">${desc}</span>`;
+                li.innerHTML = `
+                    <span class="icon">${icon}</span>
+                    <span class="desc"><span class="scroll-inner">${desc}</span></span>
+                `;
+                setTimeout(() => {
+                    const descSpan = li.querySelector(".desc");
+                    const inner = descSpan?.querySelector(".scroll-inner");
+
+                    if (inner && descSpan.clientHeight < inner.scrollHeight) {
+                        inner.classList.add("scroll-vertical");
+                    }
+                }, 50); // wait for render
                 container.appendChild(li);
 
                 const cleanup = () => {
@@ -313,7 +372,7 @@
             function queueNewsItem(desc, id = null, type = "neutral") {
                 if (id && displayedNewsKeys.has(id)) return;
 
-                const icon = type === "bullish" ? "📈" : type === "bearish" ? "📉" : "📰";
+                const icon = type === "bullish" ? "😺" : type === "bearish" ? "🙀" : "😼";
 
                 newsQueue.push({ icon, desc, type });
                 if (id) displayedNewsKeys.add(id);
@@ -364,21 +423,29 @@
             }
 
             const bonusItems = [
-                { icon: "💀", desc: "Very Low Volume (less than 80k last 5min)" },
-                { icon: "💤", desc: "Low Volume (80k to 120k last 5min)" },
-                { icon: "🚛", desc: "Medium Volume (120k to 240k last 5min)" },
-                { icon: "🔥", desc: "High Volume (more than 240k last 5min)" },
+                { icon: "💤", desc: "Low Volume" },
+                { icon: "🚛", desc: "Medium Volume" },
+                { icon: "🔥", desc: "High Volume" },
+                { icon: "🚀", desc: "Parabolic Volume" },
                 { icon: "1️⃣", desc: "Float around 1M" },
                 { icon: "5️⃣", desc: "Float around 5M" },
                 { icon: "🔟", desc: "Float around 10M" },
+                { icon: "50", desc: "Float around 50M" },
+                { icon: "100", desc: "Float around 100M" },
+                { icon: "200", desc: "Float around 200M" },
+                { icon: "500", desc: "Float around 500M" },
+                { icon: "600+", desc: "Float higher than 600M" },
+                { icon: "⚠️", desc: "Float is corrupted" },
                 { icon: "💼", desc: "High insider/institutional/locked shares holders" },
-                { icon: "😼", desc: "Has news" },
+                { icon: "😼", desc: "Catalyst in play — recent news may affect momentum" },
+                { icon: "😺", desc: "Bullish news - may affect momentum" },
+                { icon: "🙀", desc: "Bearish news - may affect momentum" },
                 { icon: "📈", desc: "New high" },
                 { icon: "🔁", desc: "Recovering — stock is bouncing back after a downtrend" },
                 { icon: "🧬", desc: "Biotechnology stock" },
                 { icon: "🌿", desc: "Cannabis stock" },
                 { icon: "🌌", desc: "Space industry stock" },
-                { icon: "🇨🇳/🇭🇰", desc: "China/Hong Kong-based company" },
+                { icon: "🇨🇳", desc: "China/Hong Kong-based company" },
                 { icon: "🩳", desc: "High short interest (more than 20% of float)" },
                 { icon: "🥅", desc: "Company is currently running at a net loss" },
                 { icon: "📂", desc: "Registered S-3 filing" },

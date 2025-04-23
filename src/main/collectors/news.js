@@ -198,28 +198,28 @@ const startMockNews = () => {
     const mockHeadlines = [
         {
             headline: "RADX Surges After Positive Trial Data, FDA Approves",
-            summary: "RADX announced positive Phase 2 results for its lead candidate. ",
             symbols: ["RADX"],
         },
         {
-            headline: "LTRN Jumps on FDA Fast Track Designation, Sell Alert",
-            summary: "LTRN granted fast track status for its lung cancer therapy. ",
-            symbols: ["LTRN"],
+            headline: "LTRN & RADX This is a multi symbol headline for completeness. Jumps on FDA Fast Track Designation, Sell Alert",
+            symbols: ["LTRN", "RADX"],
         },
         {
             headline: "This is an bullish healine, FDA Approves",
-            summary: "LTRN granted fast track status for its lung cancer therapy. ",
             symbols: ["LTRN"],
         },
         {
             headline: "And a neurtral headline for completeness.",
-            summary: "LTRN granted fast track status for its lung cancer therapy. ",
             symbols: ["LTRN"],
         },
         {
             headline: "INKT Shares Climb After Patent Approval",
-            summary: "INKT secures new patent for AI-driven diagnostic tech.",
             symbols: ["INKT"],
+        },
+        {
+            headline:
+                "Just like Ascension, it's a ranked list. But instead of only looking at % change since open, Scroll of XP measures how much real action a stock has had — up or down — and rewards that movement with XP.",
+            symbols: ["LTRN"],
         },
     ];
 

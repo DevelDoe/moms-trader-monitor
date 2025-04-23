@@ -329,9 +329,15 @@ function transformToFocusEvent(alert) {
 // Predefined alerts
 const predefinedAlerts = [
     // RADX alerts
+    // RADX alerts — engineered to trigger a surge
+
+    { symbol: "RADX", direction: "UP", price: 1.75, volume: 100000, change_percent: 2.1 },
+    { symbol: "RADX", direction: "UP", price: 1.78, volume: 110000, change_percent: 2.8 },
+    { symbol: "RADX", direction: "UP", price: 1.81, volume: 115000, change_percent: 3.1 },
+    { symbol: "RADX", direction: "DOWN", price: 1.77, volume: 90000, change_percent: 1.9 },
     { symbol: "RADX", direction: "UP", price: 1.85, volume: 125000, change_percent: 3.2 },
-    { symbol: "RADX", direction: "DOWN", price: 1.72, volume: 120000, change_percent: 2.5 },
     { symbol: "RADX", direction: "UP", price: 1.91, volume: 140000, change_percent: 5.1 },
+    { symbol: "RADX", direction: "UP", price: 2.05, volume: 160000, change_percent: 7.4 },
 
     // NRXP alerts
     { symbol: "NRXP", direction: "UP", price: 0.42, volume: 35000, change_percent: 8.7 },
