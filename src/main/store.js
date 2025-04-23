@@ -80,6 +80,7 @@ class Store extends EventEmitter {
         this.newsList = []; // Store all news in a single list
         this.lastXpDate = getMarketDateString();
         this.xpState = new Map();
+        this.xpState.clear();
 
         setInterval(() => {
             const current = getMarketDateString();
