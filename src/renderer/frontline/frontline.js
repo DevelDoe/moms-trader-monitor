@@ -36,10 +36,7 @@ let buffs = [];
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ Frontline Dom loaded");
 
-    if (isBeforeMarketResetTime()) {
-        clearState(); // Wipe stale XP/score early in the morning
-        console.log("🌅 Early session detected — clearing old state.");
-    }
+    localStorage.removeItem("frontlineState"); // 🔥 hard nuke on load
 
     try {
         const fetchedBuffs = await window.electronAPI.getBuffs(); // ✅ pull buffs from preload

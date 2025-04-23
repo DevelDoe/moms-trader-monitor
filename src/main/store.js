@@ -94,6 +94,36 @@ class Store extends EventEmitter {
         setInterval(() => {
             this.cleanupOldNews();
         }, 60 * 1000); // Runs every 60 seconds
+
+        this.scheduleDailyReset();
+    }
+
+    scheduleDailyReset() {
+        const now = new Date();
+        const estOffsetMinutes = -5 * 60; // Adjust manually for DST if needed
+        const localOffset = now.getTimezoneOffset();
+        const estNow = new Date(now.getTime() + (localOffset - estOffsetMinutes) * 60000);
+
+        // Schedule for 3:55 AM EST
+        const target = new Date(estNow);
+        target.setHours(3, 55, 0, 0);
+
+        // If target time already passed, schedule for tomorrow
+        if (estNow > target) target.setDate(target.getDate() + 1);
+
+        const delay = target - estNow;
+
+        log.log(`🕒 Scheduled XP/session reset in ${(delay / 60000).toFixed(1)} minutes`);
+
+        setTimeout(() => {
+            this.sessionData.clear();
+            this.dailyData.clear();
+            this.xpState.clear();
+            log.log("🧹 Store reset at 3:55 AM EST");
+
+            // Reschedule for the next day
+            this.scheduleDailyReset();
+        }, delay);
     }
 
     updateSymbols(symbolList) {
