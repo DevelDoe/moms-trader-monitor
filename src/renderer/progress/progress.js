@@ -32,8 +32,11 @@ function processMarketFlow(event) {
 
     tradeRateRaw++;
 
-    const hpChange = Math.max(0, event.hp - (flowHistory[0]?.hp || 0));
-    const dpChange = Math.max(0, event.dp - (flowHistory[0]?.dp || 0));
+    // Normalize strength to 0–1 (e.g., using 500k as strong)
+    const normalizedStrength = Math.min(event.strength / 500000, 1);
+
+    const hpChange = event.hp > 0 ? event.hp * normalizedStrength : 0;
+    const dpChange = event.dp > 0 ? event.dp * normalizedStrength : 0;
 
     flowHistory.unshift({ hp: event.hp, dp: event.dp });
 

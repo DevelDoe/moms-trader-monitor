@@ -36,6 +36,11 @@ let buffs = [];
 document.addEventListener("DOMContentLoaded", async () => {
     if (debug) console.log("⚡ Frontline Dom loaded");
 
+    if (isBeforeMarketResetTime()) {
+        clearState(); // Wipe stale XP/score early in the morning
+        console.log("🌅 Early session detected — clearing old state.");
+    }
+
     try {
         const fetchedBuffs = await window.electronAPI.getBuffs(); // ✅ pull buffs from preload
         window.buffs = fetchedBuffs; // ✅ set to global
@@ -869,10 +874,6 @@ function saveState() {
 }
 
 async function loadState() {
-    if (freshStart) {
-        console.log("🧪 loadState() overridden for testing — skipping restore");
-        return false;
-    }
     const saved = localStorage.getItem("frontlineState");
     if (!saved) return false;
 
@@ -880,17 +881,17 @@ async function loadState() {
         const parsed = JSON.parse(saved);
         const today = getMarketDateString();
 
-        if (parsed.date === today) {
-            Object.assign(frontlineState, parsed.state); // More efficient than forEach
-            if (debug) console.log("🔄 Restored frontline state from earlier session.");
-            return true;
-        } else {
-            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
+        // ⛔️ Always clear if it's a different day
+        if (parsed.date !== today) {
             localStorage.removeItem("frontlineState");
             return false;
         }
-    } catch (err) {
-        console.warn("⚠️ Could not parse frontline state. Clearing.");
+
+        // ✅ Safe to restore
+        Object.assign(frontlineState, parsed.state);
+        return true;
+    } catch {
+        // ⛔️ If it breaks, wipe it
         localStorage.removeItem("frontlineState");
         return false;
     }
@@ -902,4 +903,13 @@ function clearState() {
         delete frontlineState[key];
     }
     if (debug) console.log("🧹 Cleared saved and in-memory frontline state.");
+}
+
+function isBeforeMarketResetTime() {
+    const now = new Date();
+    const offset = -5 * 60; // EST (adjust manually for DST if needed)
+    const localOffset = now.getTimezoneOffset();
+    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
+
+    return estDate.getHours() < 11;
 }
