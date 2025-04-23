@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .map((h) => {
                 const bg = getSymbolColor(h.hero);
                 const age = now - (h.lastUpdate || 0);
-                const dullStyle = age > 900_000 ? "opacity: 0.4; filter: grayscale(60%);" : "";
+                const dullStyle = age > 30_000 ? "opacity: 0.4; filter: grayscale(60%);" : "";
 
                 const buffIcons = Object.entries(h.buffs || {})
                     .filter(([key]) => !key.includes("vol") && key !== "volume") // exclude volume-related buffs
