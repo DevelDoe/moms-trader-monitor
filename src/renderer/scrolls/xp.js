@@ -1,12 +1,8 @@
-const { isDev } = window.appFlags;
-const freshStart = isDev; // Fresh session each time while developing
-
 const symbolColors = {};
+
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
     const heroes = {};
-
-    loadScrollState();
 
     const refreshList = () => {
         const now = Date.now();
@@ -33,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <div class="xp-line" style="${dullStyle}">
                        
                         <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</span></strong>
-                         XP ${Math.floor(h.xp)}
+                         XP ${h.lv}${Math.floor(h.xp)}
                     </div>
                 `;
             })
@@ -58,7 +54,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         heroes[symbol].lv = lv;
         heroes[symbol].lastUpdate = Date.now(); // ⏱️
         refreshList();
-        saveScrollState();
     });
 });
 
@@ -72,45 +67,4 @@ function getSymbolColor(symbol) {
         symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
     }
     return symbolColors[symbol];
-}
-
-////////////////////////////////////// State
-function getMarketDateString() {
-    const now = new Date();
-    const offset = -5 * 60; // EST
-    const localOffset = now.getTimezoneOffset();
-    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
-    return estDate.toISOString().split("T")[0];
-}
-
-function saveScrollState() {
-    const sessionDate = getMarketDateString();
-    const payload = {
-        date: sessionDate,
-        heroes,
-    };
-    localStorage.setItem("scrollXpState", JSON.stringify(payload));
-}
-
-function loadScrollState() {
-    if (freshStart) {
-        console.log("🧪 Dev mode: skipping XP restore");
-        return;
-    }
-
-    const saved = localStorage.getItem("scrollXpState");
-    if (!saved) return;
-
-    try {
-        const parsed = JSON.parse(saved);
-        const today = getMarketDateString();
-        if (parsed.date === today && parsed.heroes) {
-            Object.assign(heroes, parsed.heroes);
-            console.log("🔄 Scroll state restored.");
-        } else {
-            console.log("🧼 Scroll state outdated or missing. Skipping restore.");
-        }
-    } catch (err) {
-        console.warn("⚠️ Invalid scroll state.");
-    }
 }

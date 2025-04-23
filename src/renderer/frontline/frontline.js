@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         dp: 0,
                         strength: 0,
                         xp: 0,
-                        lv: 0,
+                        lv: 1,
                         score: 0,
                         lastEvent: {
                             hp: 0,
@@ -626,7 +626,8 @@ function calculateXp(hero, event) {
 
     hero.xp = (hero.xp || 0) + xpDelta;
 
-    const requiredXp = (hero.lv + 1) * 1000;
+    hero.lv = Math.max(1, hero.lv || 1);
+    const requiredXp = hero.lv * 1000;
     while (hero.xp >= requiredXp) {
         hero.xp -= requiredXp;
         hero.lv += 1;

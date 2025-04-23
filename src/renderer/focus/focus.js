@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         dp: 0,
                         strength: 0,
                         xp: 0,
-                        lv: 0,
+                        lv: 1,
                         score: 0,
                         lastEvent: {
                             hp: 0,
@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         floatValue: symbolData.statistics?.floatShares || 0, // Added optional chaining
                         buffs: symbolData.buffs || {},
                         highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
+                        history: [],
                     };
                 }
             });
@@ -108,8 +109,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 hero.buffs = updatedSymbol.buffs || hero.buffs;
 
-                console.log("hero after buff: ", hero);
-
                 if (updatedSymbol.highestPrice > (hero.highestPrice || 0)) {
                     hero.highestPrice = updatedSymbol.highestPrice;
                 }
@@ -127,11 +126,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (!hero) return;
 
             hero.xp = xp;
-            hero.lv = lv;
 
-            if (debugXp) console.log(`🎮 ${symbol} XP update → LV ${lv}, XP ${xp}`);
+            // Only update level if lv is > 0, or if explicitly defined
+            if (typeof lv === "number" && lv > 0) {
+                hero.lv = lv;
+            } else {
+                // Optional debug output
+                if (debug) console.warn(`⚠️ Skipped LV update for ${symbol} — received lv:`, lv);
+            }
 
-            updateCardDOM(symbol); // 🖼️ Refresh just this card
+            if (debugXp) console.log(`🎮 ${symbol} XP update → LV ${hero.lv}, XP ${xp}`);
+
+            updateCardDOM(symbol);
         });
 
         renderAll();
@@ -182,6 +188,19 @@ function updateFocusStateFromEvent(event) {
         dp: event.dp || 0,
         xp: 0,
     };
+
+    // ➕ Push to history
+    hero.history = hero.history || [];
+    hero.history.push({
+        hp: event.hp || 0,
+        dp: event.dp || 0,
+        ts: Date.now(),
+    });
+
+    // Limit to last 7
+    if (hero.history.length > 7) {
+        hero.history.shift();
+    }
 
     // 🎯 scoring
     const scoreDelta = calculateScore(hero, event); // Call the function synchronously
@@ -387,7 +406,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const yOffset = row * 100;
 
     const topPosition = 200;
-    const requiredXp = (state.lv + 1) * 1000;
+    const requiredXp = (state.lv || 1) * 1000;
     const xpProgress = Math.min((state.xp / requiredXp) * 100, 100);
     const strengthCap = price < 1.5 ? 800000 : 400000;
 
@@ -397,8 +416,6 @@ function renderCard({ hero, price, hp, dp, strength }) {
         hp: state.hp,
         strength: strength,
     };
-
-    console.log(state.buffs);
 
     // Buffs
     const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
@@ -580,11 +597,29 @@ function calculateScore(hero, event) {
             baseScore += event.hp * 10;
             if (debug && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
 
-            // 💪 Add bonus score per level (100 points per level)
-            const levelBoost = (hero.level || 0) * 100;
-            baseScore += levelBoost;
-            if (debug && debugSamples < debugLimitSamples) {
-                logStep("🎖️", `Level Boost (LV ${hero.level || 0})`, levelBoost);
+            // 💪 Add bonus score per level (100 points per level) only if surging
+            let levelBoost = 0;
+            if (isSurging(hero)) {
+                levelBoost = (hero.lv || 0) * 100;
+                baseScore += levelBoost;
+
+                if (debug && debugSamples < debugLimitSamples) {
+                    logStep("⚡", `Surge Detected! Level Boost (LV ${hero.lv || 0})`, levelBoost);
+                }
+            } else if (debug && debugSamples < debugLimitSamples) {
+                logStep("💤", "No surge — Level Boost skipped", 0);
+            }
+
+            // 🧪 Rookie Surge Bonus: amplify if surging and level is low
+            if (isSurging(hero) && (hero.lv || 0) <= 2) {
+                const tierBoostMultiplier = 1.2 + (2 - (hero.lv || 0)) * 0.15; // e.g. 1.5x for level 0, 1.35x for level 1
+                const boostedScore = baseScore * tierBoostMultiplier;
+
+                if (debug && debugSamples < debugLimitSamples) {
+                    logStep("🧪", `Tier Surge Bonus (x${tierBoostMultiplier.toFixed(2)})`, boostedScore - baseScore);
+                }
+
+                baseScore = boostedScore;
             }
 
             // Apply Float score
@@ -725,66 +760,11 @@ function startScoreDecay() {
     }, DECAY_INTERVAL_MS);
 }
 
-// function calculateVolumeImpact(volume = 0, price = 1) {
-//     const categories = Object.entries(window.buffs)
-//         .map(([category, data]) => ({ category, ...data }))
-//         .sort((a, b) => a.priceThreshold - b.priceThreshold);
-
-//     for (const category of categories) {
-//         if (price <= category.priceThreshold) {
-//             const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
-
-//             const stageToUse =
-//                 sortedStages.find((stage, index) => {
-//                     const current = stage.volumeThreshold;
-//                     const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
-//                     if (index === sortedStages.length - 1) {
-//                         return volume >= prev;
-//                     }
-//                     return volume > prev && volume <= current;
-//                 }) || sortedStages[sortedStages.length - 1];
-
-//             // ✅ Only now we can safely use stageToUse
-//             return {
-//                 ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
-//                 capAssigned: category.category,
-//                 volumeStage: stageToUse.key,
-//                 message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
-//                 style: {
-//                     cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-//                     color: getColorForStage(stageToUse.key),
-//                     animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-//                 },
-//             };
-//         }
-//     }
-
-//     // Fallback if no category matched
-//     return {
-//         multiplier: 1,
-//         capAssigned: "None",
-//         volumeStage: "None",
-//         message: "No matching category found",
-//         style: {
-//             cssClass: "volume-none",
-//             icon: "",
-//             description: "No volume",
-//             color: "#cccccc",
-//             animation: "none",
-//         },
-//         score: 0,
-//     };
-// }
-
-// function getColorForStage(stageKey) {
-//     const colors = {
-//         lowVol: "#cccccc",
-//         mediumVol: "#4caf50",
-//         highVol: "#ff9800",
-//         parabolicVol: "#f44336",
-//     };
-//     return colors[stageKey] || "#cccccc";
-// }
+function isSurging(hero) {
+    if (!hero?.history?.length) return false;
+    const recent = hero.history.slice(-4);
+    return recent.filter((e) => e.hp > 0).length >= 3;
+}
 
 function humanReadableNumbers(value) {
     if (!value || isNaN(value)) return "-";

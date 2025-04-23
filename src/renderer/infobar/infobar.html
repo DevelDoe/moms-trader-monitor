@@ -2,15 +2,18 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link rel="stylesheet" href="../styles.css" />
+        <!-- <link rel="stylesheet" href="../styles.css" /> -->
+        <link rel="stylesheet" href="../flat.css" />
+
         <title>Infobar</title>
         <style>
             /* Container styling */
             body {
+                padding: 0;
                 margin: 0;
                 color: #f0f0f0; /* light text for contrast */
                 font-family: sans-serif; /* use app's font if needed */
-                height: 50px;
+                height: 100px;
                 width: 100%;
                 overflow-x: hidden;
             }
@@ -18,7 +21,7 @@
             .news-list {
                 position: relative;
                 width: 100%;
-                height: 30px;
+                height: 100%;
                 overflow: hidden;
                 font-size: 14px;
                 color: #f0f0f0;
@@ -44,7 +47,6 @@
             .news-item {
                 font-weight: bold;
                 cursor: pointer;
-                height: 30px;
             }
 
             .news-item.show {
@@ -113,17 +115,64 @@
             }
             .bullish-news {
                 color: #1bcf65;
-                border-left: 4px solid #1bcf65;
+                /* border-left: 4px solid #1bcf65; */
             }
 
             .bearish-news {
                 color: #e70049;
-                border-left: 4px solid #e70049;
+                /* border-left: 4px solid #e70049; */
             }
 
             .neutral-news {
                 color: #f0f0f0;
-                border-left: 4px solid #666;
+                /* border-left: 4px solid #666; */
+            }
+            .bonus-item,
+            .news-item {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .bonus-item .icon,
+            .news-item .icon {
+                flex: 0 0 30px; /* fixed width for icon column */
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 18px;
+                margin-right: 6px;
+            }
+
+            .bonus-item .desc,
+            .news-item .desc {
+                /* flex: 1; */
+                /* overflow: hidden; */
+                text-overflow: ellipsis;
+                /* white-space: nowrap; */
+            }
+            @keyframes scrollVertical {
+                0% {
+                    transform: translateY(0%);
+                }
+                100% {
+                    transform: translateY(-100%);
+                }
+            }
+
+            .news-item .desc.scroll-vertical {
+                display: inline-block;
+                animation: scrollVertical 6s linear infinite;
+                line-height: 1.2em;
+            }
+            .news-item .desc {
+                max-height: 2.4em; /* shows 2 lines max by default */
+                overflow: hidden;
+                position: relative;
+            }
+
+            .news-item .desc .scroll-inner {
+                display: inline-block;
             }
         </style>
     </head>
@@ -208,7 +257,7 @@
                         const type = getSentimentClass(newsItem.headline);
 
                         // Truncate headline to 90 characters
-                        const maxLength = 50;
+                        const maxLength = 240;
                         let truncated = newsItem.headline;
                         if (truncated.length > maxLength) {
                             truncated = truncated.slice(0, maxLength - 1).trimEnd() + "…";
@@ -288,7 +337,18 @@
 
                 const li = document.createElement("li");
                 li.className = `news-item show slide-in no-drag ${type}-news`;
-                li.innerHTML = `<span class="icon">${icon}</span><span class="desc">${desc}</span>`;
+                li.innerHTML = `
+                    <span class="icon">${icon}</span>
+                    <span class="desc"><span class="scroll-inner">${desc}</span></span>
+                `;
+                setTimeout(() => {
+                    const descSpan = li.querySelector(".desc");
+                    const inner = descSpan?.querySelector(".scroll-inner");
+
+                    if (inner && descSpan.clientHeight < inner.scrollHeight) {
+                        inner.classList.add("scroll-vertical");
+                    }
+                }, 50); // wait for render
                 container.appendChild(li);
 
                 const cleanup = () => {
