@@ -56,8 +56,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function getTotalXP(lv, xp) {
     let total = 0;
-    for (let i = 0; i < lv; i++) {
-        total += (i + 1) * 1000;
+    for (let i = 1; i < lv; i++) {
+        total += i * 1000;
     }
     return total + xp;
 }
