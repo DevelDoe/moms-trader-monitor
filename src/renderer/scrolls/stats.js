@@ -9,6 +9,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function calculateScore(heroBuffs = {}) {
         return Object.keys(heroBuffs).reduce((acc, key) => {
+            // Skip volume-based buffs
+            if (key === "volume" || key.startsWith("vol") || key.includes("Vol")) return acc;
+
             const buff = heroBuffs[key];
             if (typeof buff === "object" && buff?.score != null) {
                 return acc + buff.score;
@@ -54,9 +57,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             .map((h) => {
                 const bg = getSymbolColor(h.hero);
                 const age = now - (h.lastUpdate || 0);
-                const dullStyle = age > 30_000 ? "opacity: 0.4; filter: grayscale(60%);" : "";
+                const dullStyle = age > 900_000 ? "opacity: 0.4; filter: grayscale(60%);" : "";
 
                 const buffIcons = Object.entries(h.buffs || {})
+                    .filter(([key]) => !key.includes("vol") && key !== "volume") // exclude volume-related buffs
                     .map(([key, val]) => (typeof val === "object" && val.icon ? val.icon : globalBuffs[key]?.icon || ""))
                     .join(" ");
 
