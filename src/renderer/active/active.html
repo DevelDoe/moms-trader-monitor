@@ -215,11 +215,10 @@
 
             if (container) {
                 const downSpeed = 1;
-                const upSpeed = 10;
                 const delay = 60;
-                const pauseTop = 8000; // ms to pause at the top
-                const pauseBottom = 3000; // ms to pause at the bottom
-                let direction = 0; // 0 = idle, 1 = down, -1 = up
+                const pauseTop = 8000;
+                const pauseBottom = 3000;
+                let direction = 0; // 0 = idle, 1 = down
 
                 const scrollLoop = () => {
                     if (direction === 1) {
@@ -228,20 +227,11 @@
                         if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
                             direction = 0;
                             setTimeout(() => {
-                                direction = -1;
-                                scrollLoop();
-                            }, pauseBottom);
-                            return;
-                        }
-                    } else if (direction === -1) {
-                        container.scrollTop -= upSpeed;
-
-                        if (container.scrollTop <= 0) {
-                            direction = 0;
-                            setTimeout(() => {
+                                // 🚀 Instantly jump to top
+                                container.scrollTop = 0;
                                 direction = 1;
                                 scrollLoop();
-                            }, pauseTop);
+                            }, pauseBottom);
                             return;
                         }
                     }
