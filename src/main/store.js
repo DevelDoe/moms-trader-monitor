@@ -59,12 +59,23 @@ function getNewsSentimentBuff(headline, buffs, bullishList, bearishList) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function getMarketDateString() {
-    const now = new Date();
-    const offset = -5 * 60; // EST (adjust for DST)
-    const localOffset = now.getTimezoneOffset();
-    const est = new Date(now.getTime() + (localOffset - offset) * 60000);
-    return est.toISOString().split("T")[0];
+const META_FILE = path.join(__dirname, "../data/store.meta.json");
+
+function saveStoreMeta(date) {
+    try {
+        fs.writeFileSync(META_FILE, JSON.stringify({ date }), "utf-8");
+    } catch (err) {
+        log.warn("⚠️ Failed to save store meta file:", err.message);
+    }
+}
+
+function loadStoreMeta() {
+    try {
+        const raw = fs.readFileSync(META_FILE, "utf-8");
+        return JSON.parse(raw).date || null;
+    } catch {
+        return null;
+    }
 }
 
 class Store extends EventEmitter {
@@ -78,52 +89,23 @@ class Store extends EventEmitter {
         this.sessionData = new Map(); // Resets on clear
         this.dailyData = new Map(); // Stores all tickers for the full day
         this.newsList = []; // Store all news in a single list
-        this.lastXpDate = getMarketDateString();
         this.xpState = new Map();
-        this.xpState.clear();
 
-        setInterval(() => {
-            const current = getMarketDateString();
-            if (this.lastXpDate !== current) {
-                this.lastXpDate = current;
-                this.xpState.clear();
-                log.log("🧹 XP state cleared for new market day");
-            }
-        }, 60 * 1000); // Check every minute
+        const today = getMarketDateString();
+        const lastClear = loadStoreMeta();
 
-        setInterval(() => {
-            this.cleanupOldNews();
-        }, 60 * 1000); // Runs every 60 seconds
-
-        this.scheduleDailyReset();
-    }
-
-    scheduleDailyReset() {
-        const now = new Date();
-        const estOffsetMinutes = -5 * 60; // Adjust manually for DST if needed
-        const localOffset = now.getTimezoneOffset();
-        const estNow = new Date(now.getTime() + (localOffset - estOffsetMinutes) * 60000);
-
-        // Schedule for 3:55 AM EST
-        const target = new Date(estNow);
-        target.setHours(3, 55, 0, 0);
-
-        // If target time already passed, schedule for tomorrow
-        if (estNow > target) target.setDate(target.getDate() + 1);
-
-        const delay = target - estNow;
-
-        log.log(`🕒 Scheduled XP/session reset in ${(delay / 60000).toFixed(1)} minutes`);
-
-        setTimeout(() => {
+        if (lastClear !== today) {
+            this.xpState.clear();
             this.sessionData.clear();
             this.dailyData.clear();
-            this.xpState.clear();
-            log.log("🧹 Store reset at 3:55 AM EST");
+            this.newsList = [];
 
-            // Reschedule for the next day
-            this.scheduleDailyReset();
-        }, delay);
+            log.log("🧨 Full store reset at boot (new day)");
+
+            saveStoreMeta(today);
+        } else {
+            log.log("✅ Store is up to date — no daily reset needed");
+        }
     }
 
     updateSymbols(symbolList) {
