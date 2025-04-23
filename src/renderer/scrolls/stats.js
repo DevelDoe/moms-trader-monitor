@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 return `
                     <div class="xp-line" style="${dullStyle}">
-                        <strong class="symbol" style="background: ${bg};">$${h.hero}</strong><span>${h.score}</span><span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
+                        <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</strong><span>${h.score}</span><span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
                     </div>`;
             })
             .join("");
