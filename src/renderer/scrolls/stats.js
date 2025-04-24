@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     .join(" ");
 
                 return `
-                    <div class="xp-line" style="${dullStyle}">
+                    <div class="xp-line ellipsis" style="${dullStyle}">
                         <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</strong><span>${h.score}</span><span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
                     </div>`;
             })
@@ -95,20 +95,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         refreshList();
 
-        window.electronAPI.onXpUpdate(({ symbol, xp, lv }) => {
-            if (!heroes[symbol]) heroes[symbol] = { hero: symbol, xp, lv, buffs: {} };
-            heroes[symbol].xp = xp;
-            heroes[symbol].lv = lv;
-            heroes[symbol].lastUpdate = Date.now();
-            refreshList();
-        });
+        window.storeAPI.onHeroUpdate((updatedHeroes) => {
+            updatedHeroes.forEach(({ hero, buffs, xp, lv }) => {
+                if (!heroes[hero]) {
+                    heroes[hero] = {
+                        hero,
+                        xp: 0,
+                        lv: 1,
+                        buffs: {},
+                        lastUpdate: Date.now(),
+                    };
+                }
 
-        window.storeAPI.onBuffsUpdate((updatedSymbols) => {
-            updatedSymbols.forEach(({ symbol, buffs }) => {
-                if (!heroes[symbol]) return;
-                heroes[symbol].buffs = buffs;
-                refreshList();
+                if (typeof xp === "number") heroes[hero].xp = xp;
+                if (typeof lv === "number") heroes[hero].lv = lv;
+                if (buffs) heroes[hero].buffs = buffs;
+                heroes[hero].lastUpdate = Date.now();
             });
+
+            refreshList();
         });
     } catch (err) {
         console.error("Failed to load stats scroll:", err);

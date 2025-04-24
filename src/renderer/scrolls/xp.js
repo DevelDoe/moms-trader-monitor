@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(60%);" : "";
 
                 return `
-                    <div class="xp-line" style="${dullStyle}">
+                    <div class="xp-line ellipsis" style="${dullStyle}">
                         <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</span></strong>${getTotalXP(h.lv, h.xp)}
                     </div>`;
             })
@@ -45,11 +45,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     refreshList();
 
-    window.electronAPI.onXpUpdate(({ symbol, xp, lv }) => {
-        if (!heroes[symbol]) heroes[symbol] = { hero: symbol, xp, lv };
-        heroes[symbol].xp = xp;
-        heroes[symbol].lv = lv;
-        heroes[symbol].lastUpdate = Date.now(); // ⏱️
+    window.storeAPI.onHeroUpdate((updatedHeroes) => {
+        updatedHeroes.forEach(({ hero, xp, lv }) => {
+            if (!heroes[hero]) heroes[hero] = { hero, xp: 0, lv: 1 };
+            if (typeof xp === "number") heroes[hero].xp = xp;
+            if (typeof lv === "number") heroes[hero].lv = lv;
+            heroes[hero].lastUpdate = Date.now();
+        });
+
         refreshList();
     });
 

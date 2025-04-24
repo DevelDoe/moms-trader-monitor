@@ -330,8 +330,15 @@ function getColorForStage(stageKey) {
     return colors[stageKey] || "#cccccc";
 }
 
+function getHeroBuff(hero, key) {
+    if (!hero?.buffs) return null;
+    const buff = hero.buffs[key];
+    return buff && typeof buff === "object" ? buff : null;
+}
+
 // Export
 module.exports = {
     computeBuffsForSymbol,
     calculateVolumeImpact,
+    getHeroBuff,
 };

@@ -101,6 +101,12 @@ body::-webkit-scrollbar {
     z-index: 10;
 }
 
+.ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 a {
     color: #3498db;
     text-decoration: none;
@@ -121,6 +127,11 @@ h5 {
 
 h5 {
     font-size: 15px;
+}
+h2 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Utility Colors */

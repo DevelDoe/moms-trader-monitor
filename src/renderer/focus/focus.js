@@ -102,42 +102,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
 
-        window.storeAPI.onBuffsUpdate((updatedSymbols) => {
-            updatedSymbols.forEach((updatedSymbol) => {
-                const hero = focusState[updatedSymbol.symbol];
+        window.storeAPI.onHeroUpdate((updatedHeroes) => {
+            updatedHeroes.forEach((updated) => {
+                const hero = focusState[updated.hero];
                 if (!hero) return;
 
-                hero.buffs = updatedSymbol.buffs || hero.buffs;
-
-                if (updatedSymbol.highestPrice > (hero.highestPrice || 0)) {
-                    hero.highestPrice = updatedSymbol.highestPrice;
-                }
-
-                if (updatedSymbol.lastEvent) {
-                    hero.lastEvent = updatedSymbol.lastEvent;
-                }
+                // Merge the updated values
+                hero.buffs = updated.buffs || hero.buffs;
+                hero.highestPrice = Math.max(hero.highestPrice || 0, updated.highestPrice || 0);
+                hero.lastEvent = updated.lastEvent || hero.lastEvent;
+                hero.xp = updated.xp ?? hero.xp;
+                hero.lv = updated.lv ?? hero.lv;
 
                 updateCardDOM(hero.hero);
             });
-        });
-
-        window.electronAPI.onXpUpdate(({ symbol, xp, lv }) => {
-            const hero = focusState[symbol];
-            if (!hero) return;
-
-            hero.xp = xp;
-
-            // Only update level if lv is > 0, or if explicitly defined
-            if (typeof lv === "number" && lv > 0) {
-                hero.lv = lv;
-            } else {
-                // Optional debug output
-                if (debug) console.warn(`⚠️ Skipped LV update for ${symbol} — received lv:`, lv);
-            }
-
-            if (debugXp) console.log(`🎮 ${symbol} XP update → LV ${hero.lv}, XP ${xp}`);
-
-            updateCardDOM(symbol);
         });
 
         renderAll();
@@ -412,8 +390,13 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const yOffset = row * 100;
 
     const topPosition = 200;
-    const requiredXp = (state.lv || 1) * 1000;
-    const xpProgress = Math.min((state.xp / requiredXp) * 100, 100);
+    const currentLevel = state.lv || 1;
+    const prevLevelXp = (currentLevel - 1) * 1000;
+    const nextLevelXp = currentLevel * 1000;
+
+    const progressXp = state.xp - prevLevelXp;
+    const requiredXp = nextLevelXp - prevLevelXp;
+    const xpProgress = Math.min((progressXp / requiredXp) * 100, 100);
     const strengthCap = price < 1.5 ? 800000 : 400000;
 
     // Store initial values for animation
@@ -478,7 +461,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
     <div class="bars">
         <div class="bar">
             <div class="bar-fill xp" style="width: ${Math.min((initialValues.xp / requiredXp) * 100, 100)}%">
-                <span class="bar-text">XP: ${Math.floor(state.xp)} / ${requiredXp}</span>
+                <span class="bar-text">XP: ${Math.floor(progressXp)} / ${requiredXp}</span>
             </div>
         </div>
         <div class="bar">

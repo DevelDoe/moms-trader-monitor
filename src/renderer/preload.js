@@ -5,7 +5,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     onSymbolsFetched: (callback) => ipcRenderer.on("symbols-fetched", callback),
     getBuffs: () => ipcRenderer.invoke("buffs:get"),
     onBuffsUpdate: (callback) => ipcRenderer.on("buffs:update", (_, buffs) => callback(buffs)),
-    onXpUpdate: (cb) => ipcRenderer.on("xp-updated", (event, data) => cb(data)),
     exitApp: () => ipcRenderer.send("exit-app"),
     // Nuke triggers
     onNukeState: (cb) => {
@@ -78,9 +77,9 @@ contextBridge.exposeInMainWorld("storeAPI", {
 
     onUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
-    onBuffsUpdate: (callback) =>
-        ipcRenderer.on("buffs-updated", (event, data) => {
-            callback(data.symbols || []);
+    onHeroUpdate: (callback) =>
+        ipcRenderer.on("hero-updated", (event, data) => {
+            callback(data.heroes || []);
         }),
 });
 

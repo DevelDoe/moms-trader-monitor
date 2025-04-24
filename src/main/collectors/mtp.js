@@ -80,8 +80,9 @@ const connectMTP = () => {
             // Handle alert messages
             if (msg.type === "alert" && msg.data) {
                 const tickerStore = require("../store");
-                if (tickerStore?.addMtpAlerts) {
-                    tickerStore.addMtpAlerts(JSON.stringify(msg.data));
+
+                if (tickerStore?.addEvent) {
+                    tickerStore.addEvent(msg.data);
                 }
 
                 const scannerWindow = windows.scanner;

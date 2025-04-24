@@ -141,7 +141,7 @@ app.on("ready", async () => {
         });
 
         if (isDevelopment) {
-            startMockAlerts();
+            // startMockAlerts();
             startMockNews();
         }
     });
@@ -497,24 +497,26 @@ ipcMain.handle("fetch-news", async () => {
     tickerStore.fetchNews();
 });
 
-tickerStore.on("buffs-updated", (payload = []) => {
-    const updates = Array.isArray(payload) ? payload : [payload];
-    log.log(`📢 Broadcasting buffs update for: ${updates.map((u) => u.symbol).join(", ")}`);
-    broadcast("buffs-updated", { symbols: updates }); // ✅ always send as array
-});
+tickerStore.on("hero-updated", (payload = []) => {
+    const heroes = Array.isArray(payload) ? payload : [payload];
+    const ids = heroes.map((h) => h.hero).join(", ");
+    log.log(`📢 Broadcasting hero update for: ${ids}`);
 
-tickerStore.on("xp-updated", (payload) => {
-    BrowserWindow.getAllWindows().forEach((win) => {
-        safeSend(win, "xp-updated", payload);
-    });
+    broadcast("hero-updated", { heroes }); // 👈 clean consistent naming
 });
 
 // When the store triggers a nuke (e.g. daily reset or internal logic)
-tickerStore.on("store-state", () => {
+tickerStore.on("store-nuke", () => {
     console.log("💣 Nuke triggered by store");
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("store:nuke");
     });
+
+    // Give a brief moment for any cleanup/UI alerts, then restart
+    setTimeout(() => {
+        app.relaunch();
+        app.exit(0);
+    }, 300); // Adjust delay if needed
 });
 
 // When renderer explicitly requests a nuke
@@ -527,6 +529,12 @@ ipcMain.on("admin-nuke", () => {
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("admin:nuke");
     });
+
+    // Give a brief moment for any cleanup/UI alerts, then restart
+    setTimeout(() => {
+        app.relaunch();
+        app.exit(0);
+    }, 300); // Adjust delay if needed
 });
 
 // Events

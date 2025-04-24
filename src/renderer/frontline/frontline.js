@@ -106,22 +106,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
 
-        window.storeAPI.onBuffsUpdate((updatedSymbols) => {
-            updatedSymbols.forEach((updatedSymbol) => {
-                const hero = frontlineState[updatedSymbol.symbol];
+        window.storeAPI.onHeroUpdate((updatedHeroes) => {
+            updatedHeroes.forEach((updated) => {
+                const hero = frontlineState[updated.hero];
                 if (!hero) return;
 
-                hero.buffs = updatedSymbol.buffs || hero.buffs;
-
-                console.log("hero after buff: ", hero);
-
-                if (updatedSymbol.highestPrice > (hero.highestPrice || 0)) {
-                    hero.highestPrice = updatedSymbol.highestPrice;
-                }
-
-                if (updatedSymbol.lastEvent) {
-                    hero.lastEvent = updatedSymbol.lastEvent;
-                }
+                // Merge updated fields
+                hero.buffs = updated.buffs || hero.buffs;
+                hero.highestPrice = Math.max(hero.highestPrice || 0, updated.highestPrice || 0);
+                hero.lastEvent = updated.lastEvent || hero.lastEvent;
+                hero.xp = updated.xp ?? hero.xp;
+                hero.lv = updated.lv ?? hero.lv;
 
                 updateCardDOM(hero.hero);
             });
@@ -180,7 +175,7 @@ function updateFrontlineStateFromEvent(event) {
 
     hero.strength = event.strength;
 
-    calculateXp(hero, event);
+    // calculateXp(hero, event);
 
     // Check if we need to scale up
     let needsFullRender = false;
@@ -617,49 +612,49 @@ function getHeroBuff(hero, key) {
     return hero?.buffs?.[key] ?? {};
 }
 
-function calculateXp(hero, event) {
-    const hp = event.hp || 0;
-    const dp = event.dp || 0;
-    const totalMove = hp + dp;
-    const strength = event.strength || 0;
+// function calculateXp(hero, event) {
+//     const hp = event.hp || 0;
+//     const dp = event.dp || 0;
+//     const totalMove = hp + dp;
+//     const strength = event.strength || 0;
 
-    // 📈 Base XP gain from price action and volume strength
-    let baseXp = totalMove * 10; // Adjust divisor to balance XP scaling
+//     // 📈 Base XP gain from price action and volume strength
+//     let baseXp = totalMove * 10; // Adjust divisor to balance XP scaling
 
-    // 🎯 Get buff-based multiplier (float, volume, etc.)
-    const volumeBuff = getHeroBuff(hero, "volume");
-    const volMult = volumeBuff?.multiplier ?? 1;
+//     // 🎯 Get buff-based multiplier (float, volume, etc.)
+//     const volumeBuff = getHeroBuff(hero, "volume");
+//     const volMult = volumeBuff?.multiplier ?? 1;
 
-    const xpDelta = Math.round(baseXp * volMult);
+//     const xpDelta = Math.round(baseXp * volMult);
 
-    hero.xp = (hero.xp || 0) + xpDelta;
+//     hero.xp = (hero.xp || 0) + xpDelta;
 
-    hero.lv = Math.max(1, hero.lv || 1);
-    const requiredXp = (hero.lv + 1) * 1000;
-    while (hero.xp >= requiredXp) {
-        hero.xp -= requiredXp;
-        hero.lv += 1;
-        if (debug) console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
-    }
+//     hero.lv = Math.max(1, hero.lv || 1);
+//     const requiredXp = (hero.lv + 1) * 1000;
+//     while (hero.xp >= requiredXp) {
+//         hero.xp -= requiredXp;
+//         hero.lv += 1;
+//         if (debug) console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
+//     }
 
-    if (debugXp) {
-        console.log(`⚡⚡⚡ [${hero.hero}] XP BREAKDOWN ⚡⚡⚡`);
-        console.log(`📜 ALERT → HP: ${hp.toFixed(2)} | DP: ${dp.toFixed(2)} | Strength: ${strength.toLocaleString()}`);
-        console.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
+//     if (debugXp) {
+//         console.log(`⚡⚡⚡ [${hero.hero}] XP BREAKDOWN ⚡⚡⚡`);
+//         console.log(`📜 ALERT → HP: ${hp.toFixed(2)} | DP: ${dp.toFixed(2)} | Strength: ${strength.toLocaleString()}`);
+//         console.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
 
-        if (volumeBuff?.desc) {
-            console.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
-        } else {
-            console.log(`🏷️ Volume Multiplier           x${volMult.toFixed(2)}`);
-        }
+//         if (volumeBuff?.desc) {
+//             console.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
+//         } else {
+//             console.log(`🏷️ Volume Multiplier           x${volMult.toFixed(2)}`);
+//         }
 
-        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        console.log(`🎯 XP GAINED                   ${xpDelta}`);
-        console.log(`🎼 TOTAL XP →                  ${hero.xp} (LV ${hero.lv})`);
-    }
+//         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+//         console.log(`🎯 XP GAINED                   ${xpDelta}`);
+//         console.log(`🎼 TOTAL XP →                  ${hero.xp} (LV ${hero.lv})`);
+//     }
 
-    window.frontlineAPI?.updateXp(hero.hero, hero.xp, hero.lv);
-}
+//     window.frontlineAPI?.updateXp(hero.hero, hero.xp, hero.lv);
+// }
 
 function startScoreDecay() {
     let decayTickCount = 0;
