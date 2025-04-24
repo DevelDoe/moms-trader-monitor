@@ -136,16 +136,16 @@
     "frontlineWindow": {
       "width": 358,
       "height": 489,
-      "x": -77,
-      "y": -496,
-      "isOpen": false
+      "x": 433,
+      "y": 479,
+      "isOpen": true
     },
     "activeWindow": {
       "width": 802,
       "height": 404,
-      "x": 1568,
-      "y": -438,
-      "isOpen": false
+      "x": 1444,
+      "y": 343,
+      "isOpen": true
     },
     "traderviewWindow_MULN": {
       "width": 1486,
