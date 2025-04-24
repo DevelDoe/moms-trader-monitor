@@ -145,6 +145,7 @@ app.on("ready", async () => {
             startMockNews();
         }
     });
+
     scheduleDailyRestart(); // defaults to 03:50 AM
 });
 
@@ -516,7 +517,7 @@ tickerStore.on("store-nuke", () => {
     setTimeout(() => {
         app.relaunch();
         app.exit(0);
-    }, 300); // Adjust delay if needed
+    }, 100); // Was 300 — now 1000ms to let main init settle
 });
 
 // When renderer explicitly requests a nuke
@@ -524,17 +525,6 @@ ipcMain.on("admin-nuke", () => {
     console.log("💣 Nuke state requested by renderer");
 
     tickerStore.nuke(); // << Trigger internal state reset
-
-    // Inform renderer windows
-    BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("admin:nuke");
-    });
-
-    // Give a brief moment for any cleanup/UI alerts, then restart
-    setTimeout(() => {
-        app.relaunch();
-        app.exit(0);
-    }, 300); // Adjust delay if needed
 });
 
 // Events

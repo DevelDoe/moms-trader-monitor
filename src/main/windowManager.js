@@ -133,6 +133,11 @@ async function restoreWindows() {
     Object.values(windows).forEach((win) => {
         safeSend(win, "settings-updated", settings);
     });
+
+    // 🔔 Signal to renderer windows that app is fully ready
+    Object.values(windows).forEach((win) => {
+        safeSend(win, "app-ready");
+    });
 }
 
 function createWindowByName(name) {
