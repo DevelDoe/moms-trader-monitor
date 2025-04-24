@@ -141,7 +141,7 @@ app.on("ready", async () => {
         });
 
         if (isDevelopment) {
-            // startMockAlerts();
+            startMockAlerts();
             startMockNews();
         }
     });

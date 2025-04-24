@@ -97,9 +97,9 @@
     },
     "focusWindow": {
       "width": 444,
-      "height": 489,
-      "x": 628,
-      "y": 199,
+      "height": 492,
+      "x": 281,
+      "y": -496,
       "isOpen": true
     },
     "dailyWindow": {
@@ -135,9 +135,9 @@
     },
     "frontlineWindow": {
       "width": 358,
-      "height": 489,
-      "x": 433,
-      "y": 479,
+      "height": 492,
+      "x": -77,
+      "y": -496,
       "isOpen": true
     },
     "activeWindow": {

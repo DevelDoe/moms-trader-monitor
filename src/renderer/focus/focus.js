@@ -428,8 +428,8 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const neutralBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === undefined));
 
     const now = Date.now();
-    const recentlyUpdated = now - (state.lastUpdate || 0) <= 3000; // 3 sec window
-    const fadeStyle = recentlyUpdated ? "" : "opacity: 0.5; filter: grayscale(0.1);";
+    const recentlyUpdated = now - (state.lastUpdate || 0) <= 30000; // 3 sec window
+    const fadeStyle = recentlyUpdated ? "" : "opacity: 0.5; filter: grayscale(0.4);";
 
     // Render
     const buffHtml = `
