@@ -23,14 +23,38 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 const age = now - (h.lastUpdate || 0);
                 const isInactive = age > inactiveThreshold;
-                const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(60%);" : "";
+                const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
 
                 return `
                     <div class="xp-line ellipsis" style="${dullStyle}">
-                        <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</span></strong>${getTotalXP(h.lv, h.xp)}
+                        <strong class="symbol" style="background: ${bg};">${h.hero}  <span class="lv">${h.lv}</span></strong>${getTotalXP(h.lv, h.xp)}
                     </div>`;
             })
             .join("");
+
+        // Add click listeners to symbol elements
+        container.querySelectorAll(".symbol").forEach((el) => {
+            el.addEventListener("click", (e) => {
+                const hero = el.textContent.trim().split(" ")[0].replace("$", ""); // Remove $ if included
+
+                try {
+                    navigator.clipboard.writeText(hero);
+                    console.log(`📋 Copied ${hero} to clipboard`);
+
+                    if (window.activeAPI?.setActiveTicker) {
+                        window.activeAPI.setActiveTicker(hero);
+                        console.log(`🎯 Set ${hero} as active ticker`);
+                    }
+
+                    el.classList.add("symbol-clicked");
+                    setTimeout(() => el.classList.remove("symbol-clicked"), 200);
+                } catch (err) {
+                    console.error(`⚠️ Failed to handle click for ${hero}:`, err);
+                }
+
+                e.stopPropagation();
+            });
+        });
     };
 
     const all = await window.storeAPI.getSymbols();

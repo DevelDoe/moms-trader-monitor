@@ -107,13 +107,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const hero = focusState[updated.hero];
                 if (!hero) return;
 
-                // Merge the updated values
                 hero.buffs = updated.buffs || hero.buffs;
                 hero.highestPrice = Math.max(hero.highestPrice || 0, updated.highestPrice || 0);
                 hero.lastEvent = updated.lastEvent || hero.lastEvent;
                 hero.xp = updated.xp ?? hero.xp;
                 hero.lv = updated.lv ?? hero.lv;
 
+                if (debugXp) console.log(`🎮 ${updated.hero} XP update → LV ${hero.lv}, XP ${hero.xp}`);
                 updateCardDOM(hero.hero);
             });
         });
@@ -347,8 +347,9 @@ function updateCardDOM(hero) {
         const state = focusState[hero];
         const strengthCap = state.price < 1.5 ? 800000 : 400000;
 
-        newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 1000)) * 100, 100)}%`;
-
+        const requiredXp = (state.lv + 1) * 1000;
+        const xpPercent = Math.min((state.xp / requiredXp) * 100, 100);
+        newCard.querySelector(".bar-fill.xp").style.width = `${xpPercent}%`;
         newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
 
         newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / strengthCap) * 100, 100)}%`;
@@ -365,7 +366,9 @@ function updateCardDOM(hero) {
             const state = focusState[hero];
             const strengthCap = state.price < 1.5 ? 800000 : 400000;
 
-            newCard.querySelector(".bar-fill.xp").style.width = `${Math.min((state.xp / ((state.lv + 1) * 1000)) * 100, 100)}%`;
+            const requiredXp = (state.lv + 1) * 1000;
+            const xpPercent = Math.min((state.xp / requiredXp) * 100, 100);
+            newCard.querySelector(".bar-fill.xp").style.width = `${xpPercent}%`;
             newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
             newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / strengthCap) * 100, 100)}%`;
         });
@@ -390,13 +393,8 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const yOffset = row * 100;
 
     const topPosition = 200;
-    const currentLevel = state.lv || 1;
-    const prevLevelXp = (currentLevel - 1) * 1000;
-    const nextLevelXp = currentLevel * 1000;
-
-    const progressXp = state.xp - prevLevelXp;
-    const requiredXp = nextLevelXp - prevLevelXp;
-    const xpProgress = Math.min((progressXp / requiredXp) * 100, 100);
+    const requiredXp = (state.lv + 1) * 1000;
+    const xpPercent = Math.min((state.xp / requiredXp) * 100, 100);
     const strengthCap = price < 1.5 ? 800000 : 400000;
 
     // Store initial values for animation
@@ -446,9 +444,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
     card.innerHTML = `
     <div class="ticker-header-grid">
         <div class="ticker-info">
-            <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}">
-                $${hero}<span class="lv">${state.lv}</span>
-            </div>
+            <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}">$${hero}<span class="lv">${state.lv}</span></div>
             <div class="ticker-price">$<span class="price">${price.toFixed(2)}</span></div>
             <div id="change" style="top: 0 + ${topPosition}px;">${change ? `<div class="${changeClass}" >${change}</div>` : ""}</div>
             
@@ -460,8 +456,8 @@ function renderCard({ hero, price, hp, dp, strength }) {
     
     <div class="bars">
         <div class="bar">
-            <div class="bar-fill xp" style="width: ${Math.min((initialValues.xp / requiredXp) * 100, 100)}%">
-                <span class="bar-text">XP: ${Math.floor(progressXp)} / ${requiredXp}</span>
+            <div class="bar-fill xp" style="width: ${xpPercent}%">
+                <span class="bar-text">XP: ${Math.floor(state.xp)} / ${requiredXp}</span>
             </div>
         </div>
         <div class="bar">
@@ -484,7 +480,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
 
     // Animate to final values
     requestAnimationFrame(() => {
-        if (xpBar) xpBar.style.width = `${xpProgress}%`;
+        if (xpBar) xpBar.style.width = `${xpPercent}%`;
         if (hpBar) hpBar.style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
         if (strengthBar) strengthBar.style.width = `${Math.min((strength / strengthCap) * 100, 100)}%`;
     });

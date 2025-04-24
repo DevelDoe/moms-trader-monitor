@@ -317,83 +317,35 @@ function updateCardDOM(hero) {
 
     const newCard = renderCard(frontlineState[hero]);
 
-    // Smooth transitions
+    // Transfer current widths for smooth transition
     ["hp", "score", "strength"].forEach((type) => {
         const oldBar = existing.querySelector(`.bar-fill.${type}`);
         const newBar = newCard.querySelector(`.bar-fill.${type}`);
 
         if (oldBar && newBar) {
             newBar.style.width = getComputedStyle(oldBar).width;
-            void newBar.offsetHeight; // Force reflow
-        }
-        function calculateVolumeImpact(volume = 0, price = 1) {
-            const categories = Object.entries(window.buffs)
-                .map(([category, data]) => ({ category, ...data }))
-                .sort((a, b) => a.priceThreshold - b.priceThreshold);
-
-            for (const category of categories) {
-                if (price <= category.priceThreshold) {
-                    const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
-
-                    const stageToUse =
-                        sortedStages.find((stage, index) => {
-                            const current = stage.volumeThreshold;
-                            const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
-                            if (index === sortedStages.length - 1) {
-                                return volume >= prev;
-                            }
-                            return volume > prev && volume <= current;
-                        }) || sortedStages[sortedStages.length - 1];
-
-                    // ✅ Only now we can safely use stageToUse
-                    return {
-                        ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
-                        capAssigned: category.category,
-                        volumeStage: stageToUse.key,
-                        message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
-                        style: {
-                            cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-                            color: getColorForStage(stageToUse.key),
-                            animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-                        },
-                    };
-                }
-            }
-
-            // Fallback if no category matched
-            return {
-                multiplier: 1,
-                capAssigned: "None",
-                volumeStage: "None",
-                message: "No matching category found",
-                style: {
-                    cssClass: "volume-none",
-                    icon: "",
-                    description: "No volume",
-                    color: "#cccccc",
-                    animation: "none",
-                },
-                score: 0,
-            };
+            void newBar.offsetHeight; // Trigger reflow
         }
     });
 
-    // Add highlight animation class before replacing
-    newCard.classList.add("card-update-highlight");
+    // Temporarily insert the new card offscreen to animate
+    existing.parentNode.insertBefore(newCard, existing);
 
-    existing.replaceWith(newCard);
-
-    // Animate to final values
     requestAnimationFrame(() => {
         const state = frontlineState[hero];
+
         newCard.querySelector(".bar-fill.score").style.width = `${Math.min((state.score / maxScore) * 100, 100)}%`;
         newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
         newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / 400000) * 100, 100)}%`;
 
-        // Remove highlight after animation completes
+        // Fade / bounce / scale optional effects
+        newCard.classList.add("card-update-highlight");
+
+        // Replace the old card after animation has begun
         setTimeout(() => {
+            existing.replaceWith(newCard);
             newCard.classList.remove("card-update-highlight");
-        }, 1000);
+        }, 300); // Give time for transition to visibly start
     });
 }
 
@@ -421,8 +373,11 @@ function renderCard({ hero, price, hp, dp, strength }) {
         strength: strength,
     };
 
-    const opacity = state.score < 10 ? 0.5 : 1;
-    const opacityStyle = `opacity: ${opacity}`;
+    if (state.score < 10) {
+        card.classList.add("fade-out");
+    } else {
+        card.classList.remove("fade-out");
+    }
 
     // Buffs
     // ✅ 1. Define sort priority (group/category level)
@@ -485,8 +440,8 @@ function renderCard({ hero, price, hp, dp, strength }) {
 
     // Inject into ticker-data row
     card.innerHTML = `
-<div class="ticker-header" style="${opacityStyle}">
-    <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> $${hero} </div>
+<div class="ticker-header">
+    <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> ${hero} <span class="lv">${state.lv}<span></div>
     <div class="ticker-info">
         <div class="ticker-data">
             <span class="price">$${price.toFixed(2)}</span>

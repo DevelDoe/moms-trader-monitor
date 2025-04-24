@@ -235,10 +235,10 @@ function updateUI(symbolData) {
     // User set symbol input
     const symbolInput = document.getElementById("symbol-input");
     if (symbolInput) {
-        symbolInput.value = symbolData.symbol;
+        symbolInput.value = "$" + symbolData.symbol;
 
         const color = getSymbolColor(symbolData.symbol);
-        symbolInput.style.color = color; // 🎨 Colorize input text
+        symbolInput.style.backgroundColor = color; // 🎨 Colorize input text
 
         // Apply color to any elements with data-id="symbol"
         const symbolLabels = document.querySelectorAll('[data-id="symbol"]');
@@ -246,7 +246,7 @@ function updateUI(symbolData) {
 
         symbolInput.onkeydown = (e) => {
             if (e.key === "Enter") {
-                const newSymbol = symbolInput.value.trim().toUpperCase();
+                const newSymbol = symbolInput.value.trim().replace(/^\$/, "").toUpperCase();
                 if (newSymbol && newSymbol !== symbolData.symbol) {
                     window.activeAPI.setActiveTicker(newSymbol);
                 }

@@ -42,22 +42,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 score: calculateScore(h.buffs),
             }))
             .sort((a, b) => b.score - a.score);
-        // .slice(0, 10);
-
-        // if (debugScroll) {
-        //     console.groupCollapsed("📦 Full Heroes Snapshot (Raw)");
-        //     Object.values(heroes).forEach((h) => {
-        //         console.log(`🧙 ${h.hero} — XP: ${h.xp} | LV: ${h.lv} | Score: ${calculateScore(h.buffs)}`);
-        //         console.table(h.buffs);
-        //     });
-        //     console.groupEnd();
-        // }
 
         container.innerHTML = sorted
             .map((h) => {
                 const bg = getSymbolColor(h.hero);
                 const age = now - (h.lastUpdate || 0);
-                const dullStyle = age > 30_000 ? "opacity: 0.4; filter: grayscale(60%);" : "";
+                const dullStyle = age > inactiveThreshold ? "opacity: 0.4; filter: grayscale(0.8);" : "";
 
                 const buffIcons = Object.entries(h.buffs || {})
                     .filter(([key]) => !key.includes("vol") && key !== "volume") // exclude volume-related buffs
@@ -66,10 +56,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 return `
                     <div class="xp-line ellipsis" style="${dullStyle}">
-                        <strong class="symbol" style="background: ${bg};">$${h.hero}  <span class="lv">${h.lv}</strong><span>${h.score}</span><span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
+                        <strong class="symbol" style="background: ${bg};">${h.hero}  <span class="lv">${h.lv}</strong><span>${h.score}</span><span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
                     </div>`;
             })
             .join("");
+
+        // Add click listeners to symbol elements
+        container.querySelectorAll(".symbol").forEach((el) => {
+            el.addEventListener("click", (e) => {
+                const hero = el.textContent.trim().split(" ")[0].replace("$", ""); // Remove $ if included
+
+                try {
+                    navigator.clipboard.writeText(hero);
+                    console.log(`📋 Copied ${hero} to clipboard`);
+
+                    if (window.activeAPI?.setActiveTicker) {
+                        window.activeAPI.setActiveTicker(hero);
+                        console.log(`🎯 Set ${hero} as active ticker`);
+                    }
+
+                    el.classList.add("symbol-clicked");
+                    setTimeout(() => el.classList.remove("symbol-clicked"), 200);
+                } catch (err) {
+                    console.error(`⚠️ Failed to handle click for ${hero}:`, err);
+                }
+
+                e.stopPropagation();
+            });
+        });
     };
 
     try {
