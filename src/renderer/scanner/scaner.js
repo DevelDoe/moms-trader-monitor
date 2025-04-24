@@ -280,7 +280,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             const alertElement = createAlertElement(alertData);
-            logElement.appendChild(alertElement);
+            if (alertElement instanceof Node) {
+                logElement.appendChild(alertElement);
+
+                while (logElement.children.length > currentMaxAlerts) {
+                    logElement.removeChild(logElement.firstChild);
+                }
+            }
 
             while (logElement.children.length > currentMaxAlerts) {
                 logElement.removeChild(logElement.firstChild);

@@ -24,6 +24,11 @@ body {
     margin-bottom: 30px;
 }
 
+.ticker-symbol.active-glow {
+    box-shadow: 0 0 10px #ffc107;
+    transition: box-shadow 0.3s ease-in-out;
+}
+
 #ownershipChart-summary,
 #ownershipChart-stats {
     width: 36vw !important; /* you wrote 35w, fixed it to 35vw */

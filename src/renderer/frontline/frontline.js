@@ -228,6 +228,9 @@ function updateFrontlineStateFromEvent(event) {
     } else {
         updateCardDOM(event.hero);
     }
+
+    hero.lastUpdate = Date.now();
+
     saveState();
 }
 
@@ -373,10 +376,16 @@ function renderCard({ hero, price, hp, dp, strength }) {
         strength: strength,
     };
 
-    if (state.score < 10) {
-        card.classList.add("fade-out");
-    } else {
+    const isVisiblyActive = state.lastEvent && (state.lastEvent.hp > 0 || state.lastEvent.dp > 0 || state.lastEvent.score > 0);
+
+    const now = Date.now();
+    const inactiveThreshold = 3000;
+    const recentlyUpdated = now - (state.lastUpdate || 0) <= inactiveThreshold;
+
+    if (recentlyUpdated || state.score >= 10) {
         card.classList.remove("fade-out");
+    } else {
+        card.classList.add("fade-out");
     }
 
     // Buffs

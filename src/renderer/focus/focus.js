@@ -269,6 +269,7 @@ function updateFocusStateFromEvent(event) {
     } else {
         updateCardDOM(event.hero);
     }
+    hero.lastUpdate = Date.now();
     saveState();
 }
 
@@ -426,6 +427,10 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const negativeBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === false));
     const neutralBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === undefined));
 
+    const now = Date.now();
+    const recentlyUpdated = now - (state.lastUpdate || 0) <= 3000; // 3 sec window
+    const fadeStyle = recentlyUpdated ? "" : "opacity: 0.5; filter: grayscale(0.1);";
+
     // Render
     const buffHtml = `
     <div class="buff-container">
@@ -444,7 +449,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
     card.innerHTML = `
     <div class="ticker-header-grid">
         <div class="ticker-info">
-            <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}">$${hero}<span class="lv">${state.lv}</span></div>
+            <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}; ${fadeStyle}">$${hero}<span class="lv">${state.lv}</span></div>
             <div class="ticker-price">$<span class="price">${price.toFixed(2)}</span></div>
             <div id="change" style="top: 0 + ${topPosition}px;">${change ? `<div class="${changeClass}" >${change}</div>` : ""}</div>
             
