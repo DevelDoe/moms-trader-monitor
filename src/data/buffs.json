@@ -57,11 +57,11 @@
 
     { "key": "lockedShares", "icon": "🏛️", "desc": "High insider/institutional/locked shares holders", "score": -25, "isBuff": false },
 
-    { "key": "hasNews", "icon": "😼", "desc": "Catalyst in play — recent news may affect momentum", "score": 25 },
-    { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news - may affect momentum", "score": 100, "isBuff": true },
-    { "key": "hasBearishNews", "icon": "🙀", "desc": "Bearish news - may affect momentum", "score": -25, "isBuff": false },
+    { "key": "hasNews", "icon": "😼", "desc": "Catalyst in play — recent news may affect momentum", "score": 200 },
+    { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news - may affect momentum", "score": 300, "isBuff": true },
+    { "key": "hasBearishNews", "icon": "🙀", "desc": "Bearish news - may affect momentum", "score": -200, "isBuff": false },
 
-    { "key": "newHigh", "icon": "📈", "desc": "New high", "score": 100, "isBuff": true },
+    { "key": "newHigh", "icon": "📈", "desc": "New high", "score": 200, "isBuff": true },
     { "key": "bounceBack", "icon": "🔁", "desc": "Recovering — stock is bouncing back after a downtrend", "score": 50, "isBuff": true },
 
     { "key": "bio", "icon": "🧬", "desc": "Biotechnology stock", "score": 25, "isBuff": true },
