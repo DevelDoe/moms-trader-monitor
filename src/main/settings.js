@@ -5,9 +5,31 @@ const path = require("path");
 const { app } = require("electron");
 const log = require("../hlps/logger")(__filename);
 
+const CURRENT_VERSION = app.getVersion();
+const VERSION_LOCK_FILE = path.join(app.getPath("userData"), "version.lock");
+let cacheCleared = false;
+
 // Use system settings file for production, separate file for development
 const isDevelopment = process.env.NODE_ENV === "development";
 log.log("Development:", isDevelopment);
+
+function deleteFolderRecursive(folderPath) {
+    if (!fs.existsSync(folderPath)) return;
+    fs.readdirSync(folderPath).forEach((file) => {
+        const curPath = path.join(folderPath, file);
+        if (fs.lstatSync(curPath).isDirectory()) {
+            deleteFolderRecursive(curPath);
+        } else {
+            fs.unlinkSync(curPath);
+        }
+    });
+    try {
+        fs.rmdirSync(folderPath);
+    } catch (err) {
+        log.warn("⚠️ Failed to remove cache folder root:", err.message);
+    }
+}
+
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(app.getPath("userData"), "settings.json");
 log.log("Current working directory:", process.cwd());
 log.log("__dirname:", __dirname);
@@ -220,6 +242,22 @@ function loadSettings() {
         const mergedSettings = mergeSettingsWithDefaults(parsedSettings, DEFAULT_SETTINGS);
 
         saveSettings(mergedSettings); // Save back merged settings if needed
+
+        // ✅ Move cache nuke logic here
+        try {
+            const cachePath = path.join(app.getPath("userData"), "Cache", "Cache_Data");
+            const existingVersion = fs.existsSync(VERSION_LOCK_FILE) ? fs.readFileSync(VERSION_LOCK_FILE, "utf-8").trim() : null;
+
+            if (!cacheCleared && existingVersion !== CURRENT_VERSION) {
+                log.warn(`🧼 Cache nuke triggered (version changed: ${existingVersion} → ${CURRENT_VERSION})`);
+                deleteFolderRecursive(cachePath);
+                fs.writeFileSync(VERSION_LOCK_FILE, CURRENT_VERSION, "utf-8");
+                cacheCleared = true;
+            }
+        } catch (err) {
+            log.log("⚠️ Failed to check or nuke cache:", err.message);
+        }
+
         return mergedSettings;
     } catch (err) {
         log.error("Error loading settings, resetting to defaults.", err);

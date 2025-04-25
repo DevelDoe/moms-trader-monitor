@@ -44,43 +44,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     container = document.getElementById("focus");
 
     try {
-        // Load settings and symbols in parallel
-        const [settings, storeSymbols, restored] = await Promise.all([
-            window.settingsAPI.get(),
-            window.focusAPI.getSymbols(),
-            loadState(), // Make loadState async (see below)
-        ]);
+        const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.focusAPI.getSymbols(), loadState()]);
 
         window.settings = settings;
-        if (debug) console.log("Loaded settings: ", window.settings);
 
-        // Initialize focus state (only if not restored)
-        if (!restored) {
-            storeSymbols.forEach((symbolData) => {
-                // Skip if already exists (just in case)
-                if (!focusState[symbolData.symbol]) {
-                    focusState[symbolData.symbol] = {
-                        hero: symbolData.symbol,
-                        price: symbolData.price || 1,
-                        hp: 0,
-                        dp: 0,
-                        strength: 0,
-                        xp: 0,
-                        lv: 1,
-                        score: 0,
-                        lastEvent: {
-                            hp: 0,
-                            dp: 0,
-                            xp: 0,
-                        },
-                        floatValue: symbolData.statistics?.floatShares || 0, // Added optional chaining
-                        buffs: symbolData.buffs || {},
-                        highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
-                        history: [],
-                    };
-                }
-            });
+        // Merge restored state
+        if (restoredState) {
+            Object.assign(focusState, restoredState);
         }
+
+        // Hydrate missing entries from store
+        storeSymbols.forEach((symbolData) => {
+            if (!focusState[symbolData.symbol]) {
+                focusState[symbolData.symbol] = {
+                    hero: symbolData.symbol,
+                    hp: 0,
+                    dp: 0,
+                    score: 0,
+                    xp: 0,
+                    lv: 0,
+                    lastEvent: { hp: 0, dp: 0 },
+                    floatValue: symbolData.statistics?.floatShares || 0,
+                    buffs: symbolData.buffs || {},
+                    highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
+                };
+            }
+        });
 
         renderAll();
         startScoreDecay();
@@ -135,8 +124,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         window.electronAPI.onNukeState(() => {
             console.warn("🧨 Nuke signal received — clearing local state.");
-            clearState(); // 🧼 your custom wipe logic
-            location.reload(); // 🔁 optional but ensures a clean re-init
+            clearState();
+            location.reload();
         });
     } catch (error) {
         console.error("Initialization failed:", error);
@@ -820,9 +809,8 @@ async function loadState() {
         const today = getMarketDateString();
 
         if (parsed.date === today) {
-            Object.assign(focusState, parsed.state);
             if (debug) console.log("🔄 Restored focus state from earlier session.");
-            return true;
+            return parsed.state;
         } else {
             if (debug) console.log("🧼 Session from previous day. Skipping restore.");
             localStorage.removeItem("focusState");
@@ -842,11 +830,3 @@ function clearState() {
     }
     if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
 }
-
-window.clearState = () => {
-    localStorage.removeItem("focusState");
-    for (const key in focusState) {
-        delete focusState[key];
-    }
-    if (debug) console.log("🧹 Cleared saved and in-memory focus state.");
-};

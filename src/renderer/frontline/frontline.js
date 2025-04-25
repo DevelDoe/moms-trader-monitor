@@ -52,39 +52,38 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         // Load everything in parallel
-        const [settings, storeSymbols, restored] = await Promise.all([
-            window.settingsAPI.get(),
-            window.frontlineAPI.getSymbols(),
-            loadState(), // Now async
-        ]);
+        const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.frontlineAPI.getSymbols(), loadState()]);
 
         window.settings = settings;
 
-        // Initialize state if not restored
-        if (!restored) {
-            storeSymbols.forEach((symbolData) => {
-                if (!frontlineState[symbolData.symbol]) {
-                    frontlineState[symbolData.symbol] = {
-                        hero: symbolData.symbol,
-                        price: symbolData.price || 1,
+        // Restore any saved state
+        if (restoredState) {
+            Object.assign(frontlineState, restoredState);
+        }
+
+        // Always hydrate missing entries from storeSymbols
+        storeSymbols.forEach((symbolData) => {
+            if (!frontlineState[symbolData.symbol]) {
+                frontlineState[symbolData.symbol] = {
+                    hero: symbolData.symbol,
+                    price: symbolData.price || 1,
+                    hp: 0,
+                    dp: 0,
+                    strength: 0,
+                    xp: 0,
+                    lv: 0,
+                    score: 0,
+                    lastEvent: {
                         hp: 0,
                         dp: 0,
-                        strength: 0,
                         xp: 0,
-                        lv: 0,
-                        score: 0,
-                        lastEvent: {
-                            hp: 0,
-                            dp: 0,
-                            xp: 0,
-                        },
-                        floatValue: symbolData.statistics?.floatShares || 0, // Safe access
-                        buffs: symbolData.buffs || {},
-                        highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
-                    };
-                }
-            });
-        }
+                    },
+                    floatValue: symbolData.statistics?.floatShares || 0,
+                    buffs: symbolData.buffs || {},
+                    highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
+                };
+            }
+        });
 
         renderAll();
         startScoreDecay();
@@ -127,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         window.electronAPI.onNukeState(() => {
             console.warn("🧨 Nuke signal received — clearing local state.");
-            clearState(); // 🧼 your custom wipe logic
+            clearState();
             location.reload(); // 🔁 optional but ensures a clean re-init
         });
 
@@ -547,50 +546,6 @@ function getHeroBuff(hero, key) {
     return hero?.buffs?.[key] ?? {};
 }
 
-// function calculateXp(hero, event) {
-//     const hp = event.hp || 0;
-//     const dp = event.dp || 0;
-//     const totalMove = hp + dp;
-//     const strength = event.strength || 0;
-
-//     // 📈 Base XP gain from price action and volume strength
-//     let baseXp = totalMove * 10; // Adjust divisor to balance XP scaling
-
-//     // 🎯 Get buff-based multiplier (float, volume, etc.)
-//     const volumeBuff = getHeroBuff(hero, "volume");
-//     const volMult = volumeBuff?.multiplier ?? 1;
-
-//     const xpDelta = Math.round(baseXp * volMult);
-
-//     hero.xp = (hero.xp || 0) + xpDelta;
-
-//     hero.lv = Math.max(1, hero.lv || 1);
-//     const requiredXp = (hero.lv + 1) * 1000;
-//     while (hero.xp >= requiredXp) {
-//         hero.xp -= requiredXp;
-//         hero.lv += 1;
-//         if (debug) console.log(`✨ ${hero.hero} leveled up to LV ${hero.lv}!`);
-//     }
-
-//     if (debugXp) {
-//         console.log(`⚡⚡⚡ [${hero.hero}] XP BREAKDOWN ⚡⚡⚡`);
-//         console.log(`📜 ALERT → HP: ${hp.toFixed(2)} | DP: ${dp.toFixed(2)} | Strength: ${strength.toLocaleString()}`);
-//         console.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
-
-//         if (volumeBuff?.desc) {
-//             console.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
-//         } else {
-//             console.log(`🏷️ Volume Multiplier           x${volMult.toFixed(2)}`);
-//         }
-
-//         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-//         console.log(`🎯 XP GAINED                   ${xpDelta}`);
-//         console.log(`🎼 TOTAL XP →                  ${hero.xp} (LV ${hero.lv})`);
-//     }
-
-//     window.frontlineAPI?.updateXp(hero.hero, hero.xp, hero.lv);
-// }
-
 function startScoreDecay() {
     let decayTickCount = 0;
     const DECAY_TICKS_BETWEEN_LOGS = 5;
@@ -785,28 +740,27 @@ function saveState() {
 async function loadState() {
     if (freshStart) {
         console.log("🧪 loadState() overridden for testing — skipping restore");
-        return false;
+        return null;
     }
     const saved = localStorage.getItem("frontlineState");
-    if (!saved) return false;
+    if (!saved) return null;
 
     try {
         const parsed = JSON.parse(saved);
         const today = getMarketDateString();
 
         if (parsed.date === today) {
-            Object.assign(frontlineState, parsed.state); // More efficient than forEach
             if (debug) console.log("🔄 Restored frontline state from earlier session.");
-            return true;
+            return parsed.state || null;
         } else {
             if (debug) console.log("🧼 Session from previous day. Skipping restore.");
             localStorage.removeItem("frontlineState");
-            return false;
+            return null;
         }
     } catch (err) {
         console.warn("⚠️ Could not parse frontline state. Clearing.");
         localStorage.removeItem("frontlineState");
-        return false;
+        return null;
     }
 }
 
