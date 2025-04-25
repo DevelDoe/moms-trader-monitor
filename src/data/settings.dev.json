@@ -79,13 +79,13 @@
       "height": 900,
       "x": -250,
       "y": -900,
-      "isOpen": true
+      "isOpen": false
     },
     "settingsWindow": {
       "width": 759,
       "height": 628,
-      "x": 969,
-      "y": 467,
+      "x": 1406,
+      "y": 108,
       "isOpen": true
     },
     "liveWindow": {
@@ -145,7 +145,7 @@
       "height": 404,
       "x": -77,
       "y": -900,
-      "isOpen": true
+      "isOpen": false
     },
     "traderviewWindow_MULN": {
       "width": 1486,
@@ -381,14 +381,14 @@
       "height": 553,
       "x": 725,
       "y": -553,
-      "isOpen": true
+      "isOpen": false
     },
     "scrollStatsWindow": {
       "width": 290,
       "height": 553,
       "x": 900,
       "y": -553,
-      "isOpen": true
+      "isOpen": false
     }
   },
   "traderview": {

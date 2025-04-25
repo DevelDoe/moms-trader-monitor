@@ -310,6 +310,17 @@ function updateCardDOM(hero) {
     // Add highlight effect
     card.classList.add("card-update-highlight");
     setTimeout(() => card.classList.remove("card-update-highlight"), 300);
+
+    const now = Date.now();
+    const timeSinceUpdate = now - (state.lastUpdate || 0);
+    const inactiveThreshold = 3000; // 3 seconds
+    const shouldFadeOut = timeSinceUpdate > inactiveThreshold && state.score < 10;
+
+    if (shouldFadeOut) {
+        card.classList.add("fade-out");
+    } else {
+        card.classList.remove("fade-out");
+    }
 }
 
 function renderCard({ hero, price, hp, dp, strength }) {
@@ -339,13 +350,14 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const isVisiblyActive = state.lastEvent && (state.lastEvent.hp > 0 || state.lastEvent.dp > 0 || state.lastEvent.score > 0);
 
     const now = Date.now();
-    const inactiveThreshold = 3000;
-    const recentlyUpdated = now - (state.lastUpdate || 0) <= inactiveThreshold;
+    const timeSinceUpdate = now - (state.lastUpdate || 0);
+    const inactiveThreshold = 3000; // 3 seconds
+    const shouldFadeOut = timeSinceUpdate > inactiveThreshold && state.score < 10;
 
-    if (recentlyUpdated || state.score >= 10) {
-        card.classList.remove("fade-out");
-    } else {
+    if (shouldFadeOut) {
         card.classList.add("fade-out");
+    } else {
+        card.classList.remove("fade-out");
     }
 
     // Buffs
@@ -581,12 +593,7 @@ function getHeroBuff(hero, key) {
 
 function startScoreDecay() {
     let decayTickCount = 0;
-    const DECAY_TICKS_BETWEEN_LOGS = 5; // Only log every 5 ticks to avoid spam
-
-    console.log(`\n🌌🌠 STARTING SCORE DECAY SYSTEM 🌠🌌`);
-    console.log(`⏱️  Decay Interval: ${DECAY_INTERVAL_MS}ms`);
-    console.log(`📉 Base Decay/Tick: ${XP_DECAY_PER_TICK}`);
-    console.log(`⚖️  Normalization Factor: ${SCORE_NORMALIZATION}\n`);
+    const DECAY_TICKS_BETWEEN_LOGS = 5;
 
     setInterval(() => {
         decayTickCount++;
@@ -600,7 +607,7 @@ function startScoreDecay() {
                 const originalScore = hero.score;
                 const scale = 1 + hero.score / SCORE_NORMALIZATION;
                 const cling = 0.2;
-                const taper = Math.max(cling, Math.min(1, hero.score / 10)); // Tapers when score < 10
+                const taper = Math.max(cling, Math.min(1, hero.score / 10));
                 const decayAmount = XP_DECAY_PER_TICK * scale * taper;
                 const newScore = Math.max(0, hero.score - decayAmount);
 
@@ -618,25 +625,6 @@ function startScoreDecay() {
         });
 
         if (changed) {
-            // Only show full details periodically
-            if (decayTickCount % DECAY_TICKS_BETWEEN_LOGS === 0) {
-                console.log(`\n⏳ [DECAY TICK #${decayTickCount}]`);
-                console.log(`🌡️ ${heroesDecayed} heroes decaying | Total decay: ${totalDecay.toFixed(2)}`);
-                console.log("━".repeat(50));
-
-                // Show top 3 most affected heroes (or all if ≤3)
-                activeHeroes
-                    .sort((a, b) => b.score - a.score)
-                    .slice(0, 3)
-                    .forEach((hero) => {
-                        const decayAmount = XP_DECAY_PER_TICK * (1 + hero.score / SCORE_NORMALIZATION);
-                        console.log(`🧙 ${hero.hero.padEnd(15)}`);
-                        console.log(`   📊 Score: ${hero.score.toFixed(2).padStart(8)} → ${(hero.score - decayAmount).toFixed(2)}`);
-                        console.log(`   🔻 Decay: ${decayAmount.toFixed(2)} (scale: ${(1 + hero.score / SCORE_NORMALIZATION).toFixed(2)}x)`);
-                        console.log("─".repeat(50));
-                    });
-            }
-
             renderAll();
             saveState();
         }
