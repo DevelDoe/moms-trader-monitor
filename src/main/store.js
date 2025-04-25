@@ -319,7 +319,10 @@ class Store extends EventEmitter {
             xp: alert.volume || 0,
         };
 
-        this.calculateXp(ticker, event);
+        const xpDelta = this.calculateXp(ticker, event);
+
+        ticker.firstXpTimestamp = ticker.firstXpTimestamp || Date.now();
+        ticker.totalXpGained = (ticker.totalXpGained || 0) + xpDelta;
 
         ticker.buffs = ticker.buffs || {};
         ticker.buffs.volume = calculateVolumeImpact(alert.volume, alert.price, buffs);
@@ -349,6 +352,8 @@ class Store extends EventEmitter {
                 xp: ticker.xp,
                 lv: ticker.lv,
                 price: ticker.Price || ticker.price || 0,
+                totalXpGained: ticker.totalXpGained || 0,
+                firstXpTimestamp: ticker.firstXpTimestamp || Date.now(), // fallback to now just in case
             },
         ]);
 
@@ -526,11 +531,16 @@ class Store extends EventEmitter {
         const strength = event.strength || 0;
 
         let baseXp = totalMove * 10;
-
         const volumeBuff = getHeroBuff(ticker, "volume");
         const volMult = volumeBuff?.multiplier ?? 1;
-
         const xpDelta = Math.round(baseXp * volMult);
+
+        // 🧠 New: track total XP gained and first gain timestamp
+        ticker.totalXpGained = (ticker.totalXpGained || 0) + xpDelta;
+
+        if (!ticker.firstXpTimestamp) {
+            ticker.firstXpTimestamp = Date.now();
+        }
 
         ticker.xp = (ticker.xp || 0) + xpDelta;
 
@@ -557,6 +567,8 @@ class Store extends EventEmitter {
             console.log(`🎯 XP GAINED                   ${xpDelta}`);
             console.log(`🎼 TOTAL XP →                  ${ticker.xp} (LV ${ticker.lv})`);
         }
+
+        return xpDelta;
     }
 
     startXpDecay() {

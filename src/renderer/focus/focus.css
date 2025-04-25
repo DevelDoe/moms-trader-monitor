@@ -72,21 +72,23 @@ h2 {
     width: 210px;
     position: relative;
     box-sizing: border-box;
-    line-height: 1; /* tune this if needed */
+    line-height: 0.9; /* tune this if needed */
 }
 .ticker-symbol:hover {
     color: #a6fcca !important;
 }
 
 .ticker-symbol .lv {
-    font-size: 11px;
     margin-left: 2px;
     color: white;
     font-weight: 300;
-    background-color: rgba(0, 0, 0, 0.5);
     position: absolute;
-    right: 2px;
-    bottom: 3px;
+    right: 1px;
+    bottom: 2px;
+    font-size: 11px !important;
+    background-color: #1b1f24;
+    padding: 0px 1px;
+    border-radius: 1px;
 }
 
 .ticker-price {

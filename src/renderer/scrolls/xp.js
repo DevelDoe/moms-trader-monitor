@@ -27,7 +27,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 return `
                     <div class="xp-line ellipsis" style="${dullStyle}">
-                        <strong class="symbol" style="background: ${bg};">${h.hero}  <span class="lv">${formatPrice(h.price)}</span></strong>${getTotalXP(h.lv, h.xp)}
+                        <strong class="symbol" style="background: ${bg};">${h.hero}  <span class="lv">${formatPrice(h.price)}</span></strong><span style="font-weight: 600">${getTotalXP(
+                    h.lv,
+                    h.xp
+                )}</span><span class="xpm text-tertiary" style="font-size: 9px">${getXpPerMinute(h)}</span>
                     </div>`;
             })
             .join("");
@@ -66,6 +69,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             lv: h.lv || 0,
             buffs: h.buffs || {}, // optional if needed
             price: h.Price || h.price || 0, // ✅ Add this line
+            totalXpGained: h.totalXpGained || 0, // ✅ NEW
+            firstXpTimestamp: h.firstXpTimestamp || Date.now(), // ✅ NEW fallback
             lastUpdate: Date.now(),
         };
     });
@@ -98,6 +103,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 hero: h.symbol,
                 xp: h.xp || 0,
                 lv: h.lv || 0,
+                buffs: h.buffs || {},
+                price: h.Price || h.price || 0,
+                totalXpGained: h.totalXpGained || 0, // ✅ NEW
+                firstXpTimestamp: h.firstXpTimestamp || Date.now(), // ✅ NEW fallback
                 lastUpdate: Date.now(),
             };
         });
@@ -140,4 +149,12 @@ function getSymbolColor(symbol) {
 
 function formatPrice(price) {
     return typeof price === "number" ? `$${price.toFixed(2)}` : "—";
+}
+
+function getXpPerMinute(hero) {
+    const now = Date.now();
+    const start = hero.firstXpTimestamp || now;
+    const minutes = (now - start) / 60000;
+    const gained = hero.totalXpGained || 0;
+    return minutes > 0 ? `${(gained / minutes).toFixed(0)}` : "—";
 }
