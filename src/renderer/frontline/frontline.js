@@ -86,6 +86,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         }
 
+        renderAll();
+        startScoreDecay();
+
         // Set up listeners after initialization
         window.settingsAPI.onUpdate(async (updatedSettings) => {
             if (debug) console.log("🎯 Settings updated, applying changes...", updatedSettings);
@@ -128,8 +131,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             location.reload(); // 🔁 optional but ensures a clean re-init
         });
 
-        renderAll();
-        startScoreDecay();
+        window.electronAPI.onXpReset(() => {
+            console.log("🧼 XP Reset received — resetting XP and LV in frontline");
+
+            Object.values(frontlineState).forEach((hero) => {
+                hero.xp = 0;
+                hero.lv = 1;
+                updateCardDOM(hero.hero);
+            });
+
+            saveState(); // ✅ Persist the updated XP/LV state
+        });
     } catch (error) {
         console.error("Frontline initialization failed:", error);
         // Add error recovery here if needed
@@ -235,121 +247,69 @@ function updateFrontlineStateFromEvent(event) {
 }
 
 function renderAll() {
-    container.innerHTML = "";
-    function calculateVolumeImpact(volume = 0, price = 1) {
-        const categories = Object.entries(window.buffs)
-            .map(([category, data]) => ({ category, ...data }))
-            .sort((a, b) => a.priceThreshold - b.priceThreshold);
-
-        for (const category of categories) {
-            if (price <= category.priceThreshold) {
-                const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
-
-                const stageToUse =
-                    sortedStages.find((stage, index) => {
-                        const current = stage.volumeThreshold;
-                        const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
-                        if (index === sortedStages.length - 1) {
-                            return volume >= prev;
-                        }
-                        return volume > prev && volume <= current;
-                    }) || sortedStages[sortedStages.length - 1];
-
-                // ✅ Only now we can safely use stageToUse
-                return {
-                    ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
-                    capAssigned: category.category,
-                    volumeStage: stageToUse.key,
-                    message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
-                    style: {
-                        cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-                        color: getColorForStage(stageToUse.key),
-                        animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-                    },
-                };
-            }
-        }
-
-        // Fallback if no category matched
-        return {
-            multiplier: 1,
-            capAssigned: "None",
-            volumeStage: "None",
-            message: "No matching category found",
-            style: {
-                cssClass: "volume-none",
-                icon: "",
-                description: "No volume",
-                color: "#cccccc",
-                animation: "none",
-            },
-            score: 0,
-        };
-    }
-
-    Object.values(frontlineState)
+    const topN = window.settings?.top?.frontlineListLength ?? 3;
+    const top = Object.values(frontlineState)
         .filter((s) => s.score > 0)
         .sort((a, b) => b.score - a.score)
-        .slice(0, window.settings?.top?.frontlineListLength ?? 3)
-        .forEach((data) => {
-            const card = renderCard(data);
-            container.appendChild(card); // ✅ Append created card
-        });
+        .slice(0, topN);
 
-    // ✅ After rendering all top heroes, remove any zombie cards
-    const topSymbols = Object.values(frontlineState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, window.settings?.top?.frontlineListLength ?? 3)
-        .map((s) => s.hero);
+    const topSymbols = top.map((h) => h.hero.trim().toUpperCase());
+    const rendered = new Set();
 
-    // 🔍 Remove all cards not in the top list
+    // Track and remove duplicates first
     document.querySelectorAll(".ticker-card").forEach((card) => {
-        const sym = card.dataset.symbol;
-        if (!topSymbols.includes(sym)) {
+        const sym = card.dataset.symbol?.trim().toUpperCase();
+        if (rendered.has(sym) || !topSymbols.includes(sym)) {
             card.remove();
+        } else {
+            rendered.add(sym);
+        }
+    });
+
+    // Ensure correct ordering
+    top.forEach((heroData, i) => {
+        const sym = heroData.hero.trim().toUpperCase();
+        const existing = container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
+
+        if (!existing) {
+            const newCard = renderCard(heroData);
+            newCard.classList.add("fade-in");
+            container.insertBefore(newCard, container.children[i] || null);
+            requestAnimationFrame(() => newCard.classList.add("show"));
+        } else {
+            if (container.children[i] !== existing) {
+                container.insertBefore(existing, container.children[i] || null);
+            }
+            updateCardDOM(sym);
         }
     });
 }
 
 function updateCardDOM(hero) {
+    hero = hero?.trim().toUpperCase();
     if (!hero || !frontlineState[hero]) return;
 
-    const existing = document.querySelector(`.ticker-card[data-symbol="${hero}"]`);
-    if (!existing) return;
+    const state = frontlineState[hero];
+    const card = document.querySelector(`.ticker-card[data-symbol="${hero}"]`);
+    if (!card) return;
 
-    const newCard = renderCard(frontlineState[hero]);
+    // Update bars
+    const setBarWidth = (selector, value, max) => {
+        const bar = card.querySelector(`.bar-fill.${selector}`);
+        if (bar) bar.style.width = `${Math.min((value / max) * 100, 100)}%`;
+    };
 
-    // Transfer current widths for smooth transition
-    ["hp", "score", "strength"].forEach((type) => {
-        const oldBar = existing.querySelector(`.bar-fill.${type}`);
-        const newBar = newCard.querySelector(`.bar-fill.${type}`);
+    setBarWidth("score", state.score, maxScore);
+    setBarWidth("hp", state.hp, maxHP);
+    setBarWidth("strength", state.strength, 400000);
 
-        if (oldBar && newBar) {
-            newBar.style.width = getComputedStyle(oldBar).width;
-            void newBar.offsetHeight; // Trigger reflow
-        }
-    });
+    // Update label
+    const priceEl = card.querySelector(".lv");
+    if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
 
-    // Temporarily insert the new card offscreen to animate
-    existing.parentNode.insertBefore(newCard, existing);
-
-    requestAnimationFrame(() => {
-        const state = frontlineState[hero];
-
-        newCard.querySelector(".bar-fill.score").style.width = `${Math.min((state.score / maxScore) * 100, 100)}%`;
-        newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
-        newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / 400000) * 100, 100)}%`;
-
-        // Fade / bounce / scale optional effects
-        newCard.classList.add("card-update-highlight");
-
-        // Replace the old card after animation has begun
-        setTimeout(() => {
-            existing.replaceWith(newCard);
-            newCard.classList.remove("card-update-highlight");
-        }, 300); // Give time for transition to visibly start
-    });
+    // Add highlight effect
+    card.classList.add("card-update-highlight");
+    setTimeout(() => card.classList.remove("card-update-highlight"), 300);
 }
 
 function renderCard({ hero, price, hp, dp, strength }) {
@@ -450,10 +410,9 @@ function renderCard({ hero, price, hp, dp, strength }) {
     // Inject into ticker-data row
     card.innerHTML = `
 <div class="ticker-header">
-    <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> ${hero} <span class="lv">${state.lv}<span></div>
+    <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> ${hero} <span class="lv">$${state.price.toFixed(2)}<span></div>
     <div class="ticker-info">
         <div class="ticker-data">
-            <span class="price">$${price.toFixed(2)}</span>
             <span class="bar-text ${volumeImpact.style.cssClass}">${Math.floor(strength / 1000)}k</span>
             ${change ? `<span class="${changeClass}">${change}</span>` : ""}
             ${buffsInline}

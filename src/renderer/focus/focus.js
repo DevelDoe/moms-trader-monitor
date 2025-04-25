@@ -82,6 +82,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         }
 
+        renderAll();
+        startScoreDecay();
+
         // Set up event listeners AFTER initialization
         window.settingsAPI.onUpdate(async (updatedSettings) => {
             if (debug) console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
@@ -118,8 +121,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
 
-        renderAll();
-        startScoreDecay();
+        window.electronAPI.onXpReset(() => {
+            console.log("🧼 XP Reset received — resetting XP and LV in focus");
+
+            Object.values(focusState).forEach((hero) => {
+                hero.xp = 0;
+                hero.lv = 1;
+                updateCardDOM(hero.hero);
+            });
+
+            saveState(); // ✅ Persist new XP/LV state
+        });
 
         window.electronAPI.onNukeState(() => {
             console.warn("🧨 Nuke signal received — clearing local state.");
@@ -449,8 +461,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
     card.innerHTML = `
     <div class="ticker-header-grid">
         <div class="ticker-info">
-            <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}; ${fadeStyle}">$${hero}<span class="lv">${state.lv}</span></div>
-            <div class="ticker-price">$<span class="price">${price.toFixed(2)}</span></div>
+            <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}; ${fadeStyle}">$${hero}<span class="lv">$${state.price.toFixed(2)}</span></div>
             <div id="change" style="top: 0 + ${topPosition}px;">${change ? `<div class="${changeClass}" >${change}</div>` : ""}</div>
             
             <div id="score"><span class="bar-text score" style="font-size: 6px; margin-top:4px">SCORE: ${state.score.toFixed(0)}</span></div>

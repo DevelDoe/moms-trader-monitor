@@ -63,13 +63,13 @@ h2 {
 }
 
 .ticker-symbol {
-    font-size: 20px;
+    font-size: 28px;
     font-weight: bold;
     color: antiquewhite;
     padding: 2px; /* add bottom padding to push text baseline down */
     cursor: pointer;
     display: inline-block;
-    width: 130px;
+    width: 210px;
     position: relative;
     box-sizing: border-box;
     line-height: 1; /* tune this if needed */
@@ -79,7 +79,7 @@ h2 {
 }
 
 .ticker-symbol .lv {
-    font-size: 0.5em;
+    font-size: 11px;
     margin-left: 2px;
     color: white;
     font-weight: 300;
@@ -151,7 +151,7 @@ h2 {
 /* Animation for HP and DP Boost */
 #change {
     position: absolute;
-    left: -110px;
+    left: -35px;
 }
 .hp-boost,
 .dp-damage {
@@ -308,6 +308,7 @@ h2 {
     padding: 2px 4px;
     cursor: help;
     opacity: 0.91;
+    color: #ff0040;
 }
 
 .buff-row.positive {

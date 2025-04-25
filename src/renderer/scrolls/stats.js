@@ -7,21 +7,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
     const heroes = {};
 
-    function calculateScore(heroBuffs = {}) {
-        return Object.keys(heroBuffs).reduce((acc, key) => {
-            // Skip volume-based buffs
-            if (key === "volume" || key.startsWith("vol") || key.includes("Vol")) return acc;
-
-            const buff = heroBuffs[key];
-            if (typeof buff === "object" && buff?.score != null) {
-                return acc + buff.score;
-            }
-
-            const lookup = globalBuffs[key];
-            return acc + (lookup?.score || 0);
-        }, 0);
-    }
-
     const refreshList = () => {
         const now = Date.now();
         const inactiveThreshold = 30_000;
@@ -36,11 +21,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             .slice(0, 16);
 
         // Step 2: Sort that pool by buff score
+        // Step 2: Sort that pool by buff score
         const sorted = topByXP
-            .map((h) => ({
-                ...h,
-                score: calculateScore(h.buffs),
-            }))
+            .map((h) => {
+                const finalScore = calculateScore(h.buffs, h.score || 0);
+
+                Object.entries(h.buffs || {}).forEach(([key, val]) => {
+                    const ref = typeof val === "object" ? val : globalBuffs[key];
+                    if (!ref || ref.score === 0) return;
+
+                    console.log(`   🔸 ${key}: ${ref.score} (${ref.desc || "no desc"})`);
+                });
+
+                return {
+                    ...h,
+                    score: finalScore,
+                };
+            })
             .sort((a, b) => b.score - a.score);
 
         container.innerHTML = sorted
@@ -56,7 +53,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 return `
                     <div class="xp-line ellipsis" style="${dullStyle}">
-                        <strong class="symbol" style="background: ${bg};">${h.hero}  <span class="lv">${h.lv}</strong><span>${h.score}</span><span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
+                        <strong class="symbol" style="background: ${bg};">${h.hero} <span class="lv">${formatPrice(h.price)}</span></strong>
+                        
+                        <span class="score" title="${generateScoreTooltip(h)}">${h.score}</span>
+                        <span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
                     </div>`;
             })
             .join("");
@@ -103,6 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 xp: s.xp || 0,
                 lv: s.lv || 0,
                 buffs: s.buffs || {},
+                price: s.Price || s.price || 0, // ✅ Grab price from incoming symbol
                 lastUpdate: Date.now(),
             };
         });
@@ -110,13 +111,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         refreshList();
 
         window.storeAPI.onHeroUpdate((updatedHeroes) => {
-            updatedHeroes.forEach(({ hero, buffs, xp, lv }) => {
+            updatedHeroes.forEach(({ hero, buffs, xp, lv, price }) => {
                 if (!heroes[hero]) {
                     heroes[hero] = {
                         hero,
                         xp: 0,
                         lv: 1,
                         buffs: {},
+                        price: 0,
                         lastUpdate: Date.now(),
                     };
                 }
@@ -124,6 +126,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (typeof xp === "number") heroes[hero].xp = xp;
                 if (typeof lv === "number") heroes[hero].lv = lv;
                 if (buffs) heroes[hero].buffs = buffs;
+                if (typeof price === "number") heroes[hero].price = price;
+
                 heroes[hero].lastUpdate = Date.now();
             });
 
@@ -132,6 +136,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
         console.error("Failed to load stats scroll:", err);
     }
+
+    window.electronAPI.onXpReset(() => {
+        console.log("🧼 XP Reset received in Foundations — zeroing XP and LV");
+
+        Object.values(heroes).forEach((hero) => {
+            hero.xp = 0;
+            hero.lv = 1;
+            hero.lastUpdate = Date.now();
+        });
+
+        refreshList();
+    });
 
     window.electronAPI.onNukeState(async () => {
         console.warn("🧨 Nuke signal received in XP scroll — clearing and reloading heroes");
@@ -158,6 +174,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
+function generateScoreTooltip(hero) {
+    const base = hero.score - calculateScore(hero.buffs, 0);
+    const lines = [`Base Score: ${base}`];
+
+    let hasBullish = false;
+    let hasBearish = false;
+    let hasNeutral = false;
+
+    Object.entries(hero.buffs || {}).forEach(([key, buff]) => {
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol")) return;
+
+        const ref = typeof buff === "object" ? buff : globalBuffs[key];
+        if (!ref || typeof ref.score !== "number") return;
+
+        if (key === "hasBullishNews") {
+            hasBullish = true;
+            return;
+        }
+
+        if (key === "hasBearishNews") {
+            hasBearish = true;
+            return;
+        }
+
+        if (key === "hasNews") {
+            hasNeutral = true;
+            return;
+        }
+
+        lines.push(`${ref.score >= 0 ? "+" : ""}${ref.score} — ${ref.desc || key}`);
+    });
+
+    // Only show one line for news
+    if (hasBullish && !hasBearish) {
+        lines.push(`+${globalBuffs.hasBullishNews?.score || 0} — ${globalBuffs.hasBullishNews?.desc || "Bullish News"}`);
+    } else if (hasBearish && !hasBullish) {
+        lines.push(`${globalBuffs.hasBearishNews?.score || 0} — ${globalBuffs.hasBearishNews?.desc || "Bearish News"}`);
+    } else if (hasNeutral && !hasBullish && !hasBearish) {
+        lines.push(`+${globalBuffs.hasNews?.score || 0} — ${globalBuffs.hasNews?.desc || "News Catalyst"}`);
+    }
+
+    lines.push(`= Total: ${hero.score}`);
+    return lines.join("\n");
+}
+
 function getSymbolColor(symbol) {
     if (!symbolColors[symbol]) {
         const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -168,4 +229,51 @@ function getSymbolColor(symbol) {
         symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
     }
     return symbolColors[symbol];
+}
+
+function calculateScore(heroBuffs = {}, baseScore = 0) {
+    let totalScore = baseScore;
+    let newsScore = 0;
+    let hasBullish = false;
+    let hasBearish = false;
+
+    for (const key in heroBuffs) {
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol")) continue;
+
+        const buff = heroBuffs[key];
+        const ref = typeof buff === "object" ? buff : globalBuffs[key];
+        const score = ref?.score || 0;
+
+        if (key === "hasBullishNews") {
+            hasBullish = true;
+            newsScore = score;
+            continue;
+        }
+
+        if (key === "hasBearishNews") {
+            hasBearish = true;
+            newsScore = score;
+            continue;
+        }
+
+        if (key === "hasNews") {
+            // Only assign if no stronger sentiment already found
+            if (!hasBullish && !hasBearish) {
+                newsScore = score;
+            }
+            continue;
+        }
+
+        totalScore += score;
+    }
+
+    if (!(hasBullish && hasBearish)) {
+        totalScore += newsScore;
+    }
+
+    return totalScore;
+}
+
+function formatPrice(price) {
+    return typeof price === "number" ? `$${price.toFixed(2)}` : "—";
 }

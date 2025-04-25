@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
 
     nukeState: () => ipcRenderer.send("admin-nuke"),
+    onXpReset: (cb) => ipcRenderer.on("xp-reset", cb),
 });
 
 contextBridge.exposeInMainWorld("appFlags", {

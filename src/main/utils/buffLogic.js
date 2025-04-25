@@ -133,7 +133,7 @@ function getOwnershipBuff(symbolData, buffList = []) {
                 key: "lockedShares",
                 icon: "💼",
                 desc: "High insider/institutional/locked shares holders",
-                score: 10,
+                score: -25,
                 isBuff: false,
             }
         );
@@ -153,7 +153,7 @@ function getIndustryBuff(symbolData) {
             key: "bio",
             icon: "🧬",
             desc: "Biotechnology stock",
-            score: 5,
+            score: 25,
             isBuff: true,
         };
     }
@@ -163,7 +163,7 @@ function getIndustryBuff(symbolData) {
             key: "weed",
             icon: "🌿",
             desc: "Cannabis stock",
-            score: 5,
+            score: -10,
             isBuff: true,
         };
     }
@@ -173,7 +173,7 @@ function getIndustryBuff(symbolData) {
             key: "space",
             icon: "🌌",
             desc: "Space industry stock",
-            score: 5,
+            score: 10,
             isBuff: true,
         };
     }
@@ -210,7 +210,7 @@ function getShortInterestBuff(symbolData) {
             key: "highShort",
             icon: "🩳",
             desc: "High short interest (more than 20% of float)",
-            score: 10,
+            score: 25,
             isBuff: true,
         };
     }
@@ -225,7 +225,7 @@ function getNetLossBuff(symbolData) {
             key: "netLoss",
             icon: "🥅",
             desc: "Company is currently running at a net loss",
-            score: -5,
+            score: -25,
             isBuff: false,
         };
     }
@@ -238,7 +238,7 @@ function getS3FilingBuff(symbolData) {
             key: "hasS3",
             icon: "📂",
             desc: `Registered S-3 filing (${symbolData.offReg})`,
-            score: -10,
+            score: -25,
             isBuff: false,
         };
     }
@@ -255,7 +255,7 @@ function getDilutionRiskBuff(symbolData) {
             key: "dilutionRisk",
             icon: "🚨",
             desc: "High dilution risk: Net loss + Registered S-3",
-            score: -20,
+            score: -50,
             isBuff: false,
         };
     }

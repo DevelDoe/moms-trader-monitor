@@ -236,41 +236,40 @@ function startMockAlerts(baseInterval = 500, fluctuation = 1000) {
     let wavePosition = 0;
 
     function sendAlert(alert) {
-        // Scanner window check
-        if (!windows?.scanner?.webContents || windows.scanner.isDestroyed()) {
-            log.warn("[MockAlerts] Scanner window not available to receive alerts");
-        } else {
-            windows.scanner.webContents.send("ws-alert", alert);
-        }
-
-        // frontline window check
-        if (!windows?.frontline?.webContents || windows.frontline.isDestroyed()) {
-            log.warn("[MockAlerts] frontline window not available to receive events");
-        } else {
-            const event = transformToFocusEvent(alert);
-            windows.frontline.webContents.send("ws-events", [event]);
-        }
-
-        // Focus window check
-        if (!windows?.focus?.webContents || windows.focus.isDestroyed()) {
-            log.warn("[MockAlerts] Focus window not available to receive events");
-        } else {
-            const event = transformToFocusEvent(alert);
-            windows.focus.webContents.send("ws-events", [event]);
-        }
-
-        // progress window check
-        if (!windows?.progress?.webContents || windows.progress.isDestroyed()) {
-            log.warn("[MockAlerts] progress window not available to receive events");
-        } else {
-            const event = transformToFocusEvent(alert);
-            windows.progress.webContents.send("ws-events", [event]);
-        }
-
-        // Ticker store update (keeping your existing logic)
+        // 🔁 Ticker Store update (simulate real alert)
         const tickerStore = require("../store");
-        if (tickerStore?.addMtpAlerts) {
-            tickerStore.addMtpAlerts(JSON.stringify(alert));
+        if (tickerStore?.addEvent) {
+            tickerStore.addEvent(alert); // ✅ Just like ws.onmessage
+        }
+
+        // Scanner window
+        if (windows?.scanner?.webContents && !windows.scanner.isDestroyed()) {
+            windows.scanner.webContents.send("ws-alert", alert);
+        } else {
+            log.warn("[MockAlerts] Scanner window not available to receive alerts");
+        }
+
+        const event = transformToFocusEvent(alert);
+
+        // Frontline
+        if (windows?.frontline?.webContents && !windows.frontline.isDestroyed()) {
+            windows.frontline.webContents.send("ws-events", [event]);
+        } else {
+            log.warn("[MockAlerts] frontline window not available to receive events");
+        }
+
+        // Focus
+        if (windows?.focus?.webContents && !windows.focus.isDestroyed()) {
+            windows.focus.webContents.send("ws-events", [event]);
+        } else {
+            log.warn("[MockAlerts] Focus window not available to receive events");
+        }
+
+        // Progress
+        if (windows?.progress?.webContents && !windows.progress.isDestroyed()) {
+            windows.progress.webContents.send("ws-events", [event]);
+        } else {
+            log.warn("[MockAlerts] progress window not available to receive events");
         }
     }
 

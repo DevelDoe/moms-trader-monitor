@@ -444,6 +444,11 @@ ipcMain.on("update-settings", (event, newSettings) => {
     });
 });
 
+tickerStore.on("xp-reset", () => {
+    log.log("📢 Broadcasting xp-reset to all windows");
+    broadcast("xp-reset");
+});
+
 // Store
 ipcMain.handle("get-all-symbols", () => {
     return tickerStore.getAllSymbols();

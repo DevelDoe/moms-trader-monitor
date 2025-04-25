@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 return `
                     <div class="xp-line ellipsis" style="${dullStyle}">
-                        <strong class="symbol" style="background: ${bg};">${h.hero}  <span class="lv">${h.lv}</span></strong>${getTotalXP(h.lv, h.xp)}
+                        <strong class="symbol" style="background: ${bg};">${h.hero}  <span class="lv">${formatPrice(h.price)}</span></strong>${getTotalXP(h.lv, h.xp)}
                     </div>`;
             })
             .join("");
@@ -58,22 +58,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const all = await window.storeAPI.getSymbols();
+
     all.forEach((h) => {
         heroes[h.symbol] = {
             hero: h.symbol,
             xp: h.xp || 0,
             lv: h.lv || 0,
-            lastUpdate: Date.now(), // optional default
+            buffs: h.buffs || {}, // optional if needed
+            price: h.Price || h.price || 0, // ✅ Add this line
+            lastUpdate: Date.now(),
         };
     });
 
     refreshList();
 
     window.storeAPI.onHeroUpdate((updatedHeroes) => {
-        updatedHeroes.forEach(({ hero, xp, lv }) => {
-            if (!heroes[hero]) heroes[hero] = { hero, xp: 0, lv: 1 };
+        updatedHeroes.forEach(({ hero, xp, lv, price }) => {
+            if (!heroes[hero]) heroes[hero] = { hero, xp: 0, lv: 1, price: 0 };
             if (typeof xp === "number") heroes[hero].xp = xp;
             if (typeof lv === "number") heroes[hero].lv = lv;
+            if (typeof price === "number") heroes[hero].price = price; // ✅ add this line
             heroes[hero].lastUpdate = Date.now();
         });
 
@@ -100,6 +104,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         refreshList();
     });
+
+    window.electronAPI.onXpReset(() => {
+        console.log("🧼 XP Reset received in XP Scroll — zeroing all XP and LV");
+
+        Object.values(heroes).forEach((hero) => {
+            hero.xp = 0;
+            hero.lv = 1;
+            hero.lastUpdate = Date.now();
+        });
+
+        refreshList();
+    });
 });
 
 function getTotalXP(lv, xp) {
@@ -120,4 +136,8 @@ function getSymbolColor(symbol) {
         symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
     }
     return symbolColors[symbol];
+}
+
+function formatPrice(price) {
+    return typeof price === "number" ? `$${price.toFixed(2)}` : "—";
 }

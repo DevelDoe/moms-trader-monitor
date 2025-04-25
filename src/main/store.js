@@ -46,16 +46,64 @@ function loadSettingsAndBuffs() {
     }
 }
 
-function getNewsSentimentBuff(headline, buffs, bullishList, bearishList) {
+function getNewsSentimentBuff(headline, buffList, bullishList, bearishList, blockList = []) {
     const lower = headline.toLowerCase();
 
-    if (bullishList.some((term) => lower.includes(term.toLowerCase()))) {
-        return buffs.find((b) => b.key === "hasBullishNews");
+    // Blocked?
+    if (blockList.some((term) => lower.includes(term.toLowerCase()))) {
+        return null;
     }
-    if (bearishList.some((term) => lower.includes(term.toLowerCase()))) {
-        return buffs.find((b) => b.key === "hasBearishNews");
+
+    const isBullish = bullishList.some((term) => lower.includes(term.toLowerCase()));
+    const isBearish = bearishList.some((term) => lower.includes(term.toLowerCase()));
+
+    if (isBullish && isBearish) {
+        // Cancel out — return neutral
+        return (
+            buffList.find((b) => b.key === "hasNews") || {
+                key: "hasNews",
+                icon: "😼",
+                desc: "Catalyst in play — recent news may affect momentum",
+                score: 200,
+                isBuff: true,
+            }
+        );
     }
-    return buffs.find((b) => b.key === "hasNews");
+
+    if (isBullish) {
+        return (
+            buffList.find((b) => b.key === "hasBullishNews") || {
+                key: "hasBullishNews",
+                icon: "😺",
+                desc: "Bullish news - may affect momentum",
+                score: 300,
+                isBuff: true,
+            }
+        );
+    }
+
+    if (isBearish) {
+        return (
+            buffList.find((b) => b.key === "hasBearishNews") || {
+                key: "hasBearishNews",
+                icon: "🙀",
+                desc: "Bearish news - may affect momentum",
+                score: -200,
+                isBuff: false,
+            }
+        );
+    }
+
+    // No sentiment, but still relevant
+    return (
+        buffList.find((b) => b.key === "hasNews") || {
+            key: "hasNews",
+            icon: "😼",
+            desc: "Catalyst in play — recent news may affect momentum",
+            score: 200,
+            isBuff: true,
+        }
+    );
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -118,6 +166,10 @@ class Store extends EventEmitter {
         } else {
             log.log("✅ Store is up to date — no daily reset needed");
         }
+    }
+
+    getBuffFromJson(key) {
+        return buffs.find((b) => b.key === key);
     }
 
     nuke() {
@@ -259,10 +311,8 @@ class Store extends EventEmitter {
         const ticker = this.symbols.get(symbol);
         if (!ticker) return;
 
-        // 🎮 Convert to RPG-style event
         const event = this.transformToFocusEvent(alert);
 
-        // 🧠 Save last event in RPG terms
         ticker.lastEvent = {
             hp: event.hp,
             dp: event.dp,
@@ -271,32 +321,21 @@ class Store extends EventEmitter {
 
         this.calculateXp(ticker, event);
 
-        // 🎯 Initialize and update buffs
         ticker.buffs = ticker.buffs || {};
         ticker.buffs.volume = calculateVolumeImpact(alert.volume, alert.price, buffs);
 
-        // 🔁 Bounce Back Buff
+        // ✅ Use buff.json for bounceBack
         if (event.dp > 0 && event.hp > 0) {
-            ticker.buffs.bounceBack = {
-                key: "bounceBack",
-                icon: "🔁",
-                desc: "Recovering — stock is bouncing back after a downtrend",
-                score: 5,
-                isBuff: true,
-            };
+            const bounceBuff = this.getBuffFromJson("bounceBack");
+            if (bounceBuff) ticker.buffs.bounceBack = bounceBuff;
         } else {
             delete ticker.buffs.bounceBack;
         }
 
-        // 📈 New High Buff
+        // ✅ Use buff.json for newHigh
         if (isNewHigh) {
-            ticker.buffs.newHigh = {
-                key: "newHigh",
-                icon: "📈",
-                desc: "New high",
-                score: 10,
-                isBuff: true,
-            };
+            const highBuff = this.getBuffFromJson("newHigh");
+            if (highBuff) ticker.buffs.newHigh = highBuff;
         } else {
             delete ticker.buffs.newHigh;
         }
@@ -309,6 +348,7 @@ class Store extends EventEmitter {
                 lastEvent: ticker.lastEvent,
                 xp: ticker.xp,
                 lv: ticker.lv,
+                price: ticker.Price || ticker.price || 0,
             },
         ]);
 
@@ -376,7 +416,7 @@ class Store extends EventEmitter {
 
         timestampedNews.forEach((newsItem) => {
             // 🎯 Attach sentiment buff and link news to symbol if it's tracked
-            const newsBuff = getNewsSentimentBuff(newsItem.headline, buffs, bullishList, bearishList);
+            const newsBuff = getNewsSentimentBuff(newsItem.headline, buffs, bullishList, bearishList, blockList);
 
             newsItem.symbols.forEach((sym) => {
                 const ticker = this.symbols.get(sym);
@@ -393,7 +433,22 @@ class Store extends EventEmitter {
 
                 // Add sentiment buff
                 ticker.buffs = ticker.buffs || {};
-                ticker.buffs[newsBuff.key] = newsBuff;
+                ticker.buffs = ticker.buffs || {};
+
+                // Remove any existing opposing news buff first
+                if (newsBuff.key === "bullishNews") {
+                    delete ticker.buffs["bearishNews"];
+                } else if (newsBuff.key === "bearishNews") {
+                    delete ticker.buffs["bullishNews"];
+                }
+
+                // Apply only if not already both
+                const hasBullish = "bullishNews" in ticker.buffs;
+                const hasBearish = "bearishNews" in ticker.buffs;
+
+                if (!(hasBullish && hasBearish)) {
+                    ticker.buffs[newsBuff.key] = newsBuff;
+                }
 
                 this.emit("buffs-updated", [
                     {
@@ -566,7 +621,7 @@ class Store extends EventEmitter {
         }
 
         this.xpState.clear();
-        this.emit("store-nuke");
+        this.emit("xp-reset");
     }
 }
 
