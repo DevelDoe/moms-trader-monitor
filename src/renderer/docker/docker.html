@@ -9,13 +9,6 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>
             :root {
-                --scanner-color: #4caf50;
-                --live-color: #2196f3;
-                --focus-color: #3f51b5;
-                --daily-color: #009688;
-                --active-color: #ff9800;
-                --infobar-color: #9c27b0;
-                --traderview-color: #673ab7;
                 --settings-color: #607d8b;
                 --exit-color: #f44336;
             }
@@ -54,31 +47,6 @@
                 color: white;
                 font-size: 18px;
                 cursor: pointer;
-            }
-            /* Color assignments */
-            #scanner-btn {
-                background-color: var(--scanner-color);
-            }
-            #live-btn {
-                background-color: var(--live-color);
-            }
-            #focus-btn {
-                background-color: var(--focus-color);
-            }
-            #daily-btn {
-                background-color: var(--daily-color);
-            }
-            #active-btn {
-                background-color: var(--active-color);
-            }
-            #inforbar-btn {
-                background-color: var(--infobar-color);
-            }
-            #traderview-btn {
-                background-color: var(--traderview-color);
-            }
-            #settings-btn {
-                background-color: var(--settings-color);
             }
             #exit-btn {
                 background-color: var(--exit-color);
@@ -131,7 +99,6 @@
     <body>
         <div class="drag-area"></div>
         <div class="dock" id="dock">
-            <a href="#" id="daily-btn" class="no-drag" onclick="window.dailyAPI.toggle()" title="Daily"><i class="fas fa-calendar-day"></i></a>
             <a href="#" id="settings-btn" class="no-drag" onclick="window.settingsAPI.toggle()" title="Settings"><i class="fas fa-cog"></i></a>
             <a href="#" id="exit-btn" class="no-drag" onclick="window.electronAPI.exitApp()" title="Exit"><i class="fas fa-power-off"></i></a>
         </div>
