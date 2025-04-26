@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, 16);
+            .slice(0, 15);
 
         // Step 2: Sort that pool by buff score
         // Step 2: Sort that pool by buff score
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const dullStyle = age > inactiveThreshold ? "opacity: 0.4; filter: grayscale(0.8);" : "";
 
                 const buffIcons = Object.entries(h.buffs || {})
-                    .filter(([key]) => !key.includes("vol") && key !== "volume") // exclude volume-related buffs
+                    .filter(([key]) => !key.includes("vol") && key !== "volume" && key !== "newHigh") // ⬅️ filter first
                     .map(([key, val]) => (typeof val === "object" && val.icon ? val.icon : globalBuffs[key]?.icon || ""))
                     .join(" ");
 
@@ -183,7 +183,7 @@ function generateScoreTooltip(hero) {
     let hasNeutral = false;
 
     Object.entries(hero.buffs || {}).forEach(([key, buff]) => {
-        if (key === "volume" || key.startsWith("vol") || key.includes("Vol")) return;
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh") return;
 
         const ref = typeof buff === "object" ? buff : globalBuffs[key];
         if (!ref || typeof ref.score !== "number") return;
@@ -238,7 +238,7 @@ function calculateScore(heroBuffs = {}, baseScore = 0) {
     let hasBearish = false;
 
     for (const key in heroBuffs) {
-        if (key === "volume" || key.startsWith("vol") || key.includes("Vol")) continue;
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh") continue;
 
         const buff = heroBuffs[key];
         const ref = typeof buff === "object" ? buff : globalBuffs[key];

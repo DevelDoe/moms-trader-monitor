@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, 16);
+            .slice(0, 15);
 
         container.innerHTML = sorted
             .map((h, i) => {

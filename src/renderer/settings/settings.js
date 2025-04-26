@@ -64,35 +64,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         await loadAttributeFilters("focus", "focus-filters");
         await loadAttributeFilters("daily", "daily-filters");
 
-        // ✅ Update toggle buttons to pass settings
-        document.querySelector("#live-toggle-all").addEventListener("click", () => {
-            toggleAll("live", true);
-        });
-
-        document.querySelector("#live-toggle-none").addEventListener("click", () => {
-            toggleAll("live", false);
-        });
-
-        document.querySelector("#focus-toggle-all").addEventListener("click", () => {
-            toggleAll("focus", true);
-        });
-
-        document.querySelector("#focus-toggle-none").addEventListener("click", () => {
-            toggleAll("focus", false);
-        });
-
-        document.querySelector("#daily-toggle-all").addEventListener("click", () => {
-            toggleAll("daily", true);
-        });
-
-        document.querySelector("#daily-toggle-none").addEventListener("click", () => {
-            toggleAll("daily", false);
-        });
-
-        // window.settingsAPI.onUpdate((updatedSettings) => {
-        //     console.log("Settings Syncing", updatedSettings);
-        // });
-
         const defaultTab = document.querySelector(".tablinks.active");
         if (defaultTab) {
             openTab(null, defaultTab.getAttribute("onclick").match(/'(\w+)'/)[1]);
@@ -546,93 +517,80 @@ function initializeTopSection() {
     dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
 }
 
-async function loadAttributeFilters(listType, containerId) {
-    try {
-        console.log(`📥 Loading attributes for ${listType}...`);
-        console.log("HARDCODED_ATTRIBUTES:", HARDCODED_ATTRIBUTES);
-        console.log("window.settings.top.lists:", window.settings.top.lists);
+// async function loadAttributeFilters(listType, containerId) {
+//     try {
+//         console.log(`📥 Loading attributes for ${listType}...`);
+//         console.log("HARDCODED_ATTRIBUTES:", HARDCODED_ATTRIBUTES);
+//         console.log("window.settings.top.lists:", window.settings.top.lists);
 
-        const attributes = Object.keys(HARDCODED_ATTRIBUTES[listType]); // Only include predefined attributes
-        const container = document.getElementById(containerId);
+//         const attributes = Object.keys(HARDCODED_ATTRIBUTES[listType]); // Only include predefined attributes
+//         const container = document.getElementById(containerId);
 
-        if (!container) {
-            console.error(`❌ Container ${containerId} not found!`);
-            return;
-        }
+//         if (!container) {
+//             console.error(`❌ Container ${containerId} not found!`);
+//             return;
+//         }
 
-        container.innerHTML = ""; // Clear previous checkboxes
+//         container.innerHTML = ""; // Clear previous checkboxes
 
-        // ✅ Ensure settings exist before using them
-        const selectedFilters = window.settings.top.lists?.[listType] || {};
+//         // ✅ Ensure settings exist before using them
+//         const selectedFilters = window.settings.top.lists?.[listType] || {};
 
-        attributes.forEach((attr) => {
-            const label = document.createElement("label");
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.name = listType;
-            checkbox.value = attr;
-            checkbox.checked = selectedFilters[attr] ?? false; // ✅ Fetch value from settings
+//         attributes.forEach((attr) => {
+//             const label = document.createElement("label");
+//             const checkbox = document.createElement("input");
+//             checkbox.type = "checkbox";
+//             checkbox.name = listType;
+//             checkbox.value = attr;
+//             checkbox.checked = selectedFilters[attr] ?? false; // ✅ Fetch value from settings
 
-            checkbox.addEventListener("change", () => {
-                updateAttributeFilters(); // ✅ Save updates correctly
-            });
+//             checkbox.addEventListener("change", () => {
+//                 updateAttributeFilters(); // ✅ Save updates correctly
+//             });
 
-            label.appendChild(checkbox);
-            label.append(` ${attr}`);
-            container.appendChild(label);
-        });
+//             label.appendChild(checkbox);
+//             label.append(` ${attr}`);
+//             container.appendChild(label);
+//         });
 
-        console.log(`✅ Attributes loaded dynamically from settings for ${listType}!`);
-    } catch (error) {
-        console.error(`❌ Error loading ${listType} attributes:`, error);
-    }
-}
+//         console.log(`✅ Attributes loaded dynamically from settings for ${listType}!`);
+//     } catch (error) {
+//         console.error(`❌ Error loading ${listType} attributes:`, error);
+//     }
+// }
 
-async function updateAttributeFilters() {
-    try {
-        console.log("🔄 Fetching latest settings before updating filters...");
-        const latestSettings = await window.settingsAPI.get();
-        if (!latestSettings || !latestSettings.top) {
-            console.error("❌ Failed to fetch latest settings. Skipping update.");
-            return;
-        }
+// async function updateAttributeFilters() {
+//     try {
+//         console.log("🔄 Fetching latest settings before updating filters...");
+//         const latestSettings = await window.settingsAPI.get();
+//         if (!latestSettings || !latestSettings.top) {
+//             console.error("❌ Failed to fetch latest settings. Skipping update.");
+//             return;
+//         }
 
-        // ✅ Update settings dynamically while preserving other lists
-        const updatedLists = {
-            ...latestSettings.top.lists,
-            live: Object.fromEntries(Array.from(document.querySelectorAll("input[name='live']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-            focus: Object.fromEntries(Array.from(document.querySelectorAll("input[name='focus']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-            daily: Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-        };
+//         // ✅ Update settings dynamically while preserving other lists
+//         const updatedLists = {
+//             ...latestSettings.top.lists,
+//             live: Object.fromEntries(Array.from(document.querySelectorAll("input[name='live']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+//             focus: Object.fromEntries(Array.from(document.querySelectorAll("input[name='focus']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+//             daily: Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
+//         };
 
-        // ✅ Spread everything and only update `lists`
-        const newSettings = {
-            ...latestSettings,
-            top: {
-                ...latestSettings.top,
-                lists: updatedLists,
-            },
-        };
+//         // ✅ Spread everything and only update `lists`
+//         const newSettings = {
+//             ...latestSettings,
+//             top: {
+//                 ...latestSettings.top,
+//                 lists: updatedLists,
+//             },
+//         };
 
-        console.log("💾 Saving updated filters:", newSettings);
-        await window.settingsAPI.update(newSettings);
-    } catch (error) {
-        console.error("❌ Error updating filters:", error);
-    }
-}
-
-function toggleAll(listType, state) {
-    if (!window.settings || !window.settings.top) {
-        console.error("❌ `settings.top` is missing! Skipping toggle.");
-        return;
-    }
-
-    document.querySelectorAll(`input[name='${listType}']`).forEach((checkbox) => {
-        checkbox.checked = state;
-    });
-
-    updateAttributeFilters(); // ✅ Remove argument (fetches latest settings itself)
-}
+//         console.log("💾 Saving updated filters:", newSettings);
+//         await window.settingsAPI.update(newSettings);
+//     } catch (error) {
+//         console.error("❌ Error updating filters:", error);
+//     }
+// }
 
 function initializeNewsSection() {
     if (!window.settings.news) {
