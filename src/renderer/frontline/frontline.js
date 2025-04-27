@@ -124,10 +124,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
 
-        window.electronAPI.onNukeState(() => {
+        window.electronAPI.onNukeState(async () => {
             console.warn("🧨 Nuke signal received — clearing local state.");
             clearState();
-            location.reload(); // 🔁 optional but ensures a clean re-init
+
+            try {
+                const fetchedBuffs = await window.electronAPI.getBuffs();
+                window.buffs = fetchedBuffs;
+                console.log("🔄 Buffs reloaded after nuke:", fetchedBuffs.length);
+            } catch (err) {
+                console.error("⚠️ Failed to reload buffs after nuke:", err);
+            }
+
+            location.reload(); // 🔁 Ensures fresh init
         });
 
         window.electronAPI.onXpReset(() => {

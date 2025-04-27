@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 1,
+    "minPrice": 0,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -86,7 +86,7 @@
       "height": 804,
       "x": 1406,
       "y": 108,
-      "isOpen": true
+      "isOpen": false
     },
     "liveWindow": {
       "width": 358,
@@ -377,17 +377,17 @@
       "isOpen": false
     },
     "scrollXpWindow": {
-      "width": 184,
-      "height": 553,
+      "width": 192,
+      "height": 558,
       "x": 725,
-      "y": -553,
+      "y": -558,
       "isOpen": true
     },
     "scrollStatsWindow": {
-      "width": 281,
-      "height": 553,
-      "x": 909,
-      "y": -553,
+      "width": 273,
+      "height": 558,
+      "x": 917,
+      "y": -558,
       "isOpen": true
     }
   },

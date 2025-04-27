@@ -356,3 +356,11 @@ h2 {
     opacity: 0.9;
     font-weight: bold;
 }
+
+.bar-fill {
+    transition: width 0.3s ease-in-out;
+}
+.ticker-card.fade-out {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}

@@ -3,6 +3,7 @@ const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews, subscribeToSymbolNews } = require("./collectors/news");
 const { computeBuffsForSymbol, calculateVolumeImpact, getHeroBuff } = require("./utils/buffLogic");
+const { DateTime } = require("luxon");
 
 const path = require("path");
 const fs = require("fs");
@@ -10,7 +11,8 @@ const os = require("os");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
-const debugXp = false;
+const debugXp = true;
+const debug = true;
 
 // ✅ Declare SETTINGS_FILE before logging it
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(require("electron").app.getPath("userData"), "settings.json");
@@ -143,8 +145,6 @@ class Store extends EventEmitter {
         loadSettingsAndBuffs();
 
         this.symbols = new Map();
-        // this.sessionData = new Map();
-        // this.dailyData = new Map();
         this.newsList = [];
         this.xpState = new Map();
 
@@ -153,18 +153,17 @@ class Store extends EventEmitter {
 
         if (lastClear !== today) {
             this.xpState.clear();
-            // this.sessionData.clear();
-            // this.dailyData.clear();
             this.newsList = [];
-
             log.log("🧨 Full store reset at boot (new day)");
 
             this.emit("store-nuke");
-
             saveStoreMeta(today);
         } else {
             log.log("✅ Store is up to date — no daily reset needed");
         }
+
+        // ✅ Start the XP reset timer!
+        this.startXpResetScheduler();
     }
 
     getBuffFromJson(key) {
@@ -341,6 +340,12 @@ class Store extends EventEmitter {
         } else {
             delete ticker.buffs.newHigh;
         }
+
+        log.log(`[store] ${symbol} about to emit:`, {
+            xp: ticker.xp,
+            totalXpGained: ticker.totalXpGained,
+            calculatedXpDelta: xpDelta,
+        });
 
         this.emit("hero-updated", [
             {
@@ -540,23 +545,29 @@ class Store extends EventEmitter {
         const volMult = volumeBuff?.multiplier ?? 1;
         const xpDelta = Math.round(baseXp * volMult);
 
-        // 🧠 New: track total XP gained and first gain timestamp
         ticker.totalXpGained = (ticker.totalXpGained || 0) + xpDelta;
-
-        if (!ticker.firstXpTimestamp) {
-            ticker.firstXpTimestamp = Date.now();
-        }
-
         ticker.xp = (ticker.xp || 0) + xpDelta;
 
         ticker.lv = Math.max(1, ticker.lv || 1);
-        let requiredXp = (ticker.lv + 1) * 1000;
 
-        while (ticker.xp >= requiredXp) {
-            ticker.xp -= requiredXp;
+        // Function to calculate the total required XP for a given level
+        const getRequiredXp = (level) => {
+            if (level <= 1) return 0;
+            let requiredXp = 0;
+            for (let i = 1; i < level; i++) {
+                requiredXp += i * 1000; // XP needed to go from level i to i+1
+            }
+            return requiredXp;
+        };
+
+        // Calculate the total XP required to reach the next level
+        let requiredXp = getRequiredXp(ticker.lv + 1);
+
+        // Level up logic
+        while (ticker.totalXpGained >= requiredXp) {
             ticker.lv += 1;
+            requiredXp = getRequiredXp(ticker.lv + 1); // Recalculate for the next level
             if (debug) console.log(`✨ ${ticker.symbol} leveled up to LV ${ticker.lv}!`);
-            requiredXp = (ticker.lv + 1) * 1000;
         }
 
         if (debugXp) {
@@ -565,26 +576,23 @@ class Store extends EventEmitter {
             console.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
             if (volumeBuff?.desc) {
                 console.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
-            } else {
-                console.log(`🏷️ Volume Multiplier           x${volMult.toFixed(2)}`);
             }
             console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             console.log(`🎯 XP GAINED                   ${xpDelta}`);
-            console.log(`🎼 TOTAL XP →                  ${ticker.xp} (LV ${ticker.lv})`);
+            console.log(`🎼 CURRENT LV →                ${ticker.lv}`);
+            console.log(`🎼 TOTAL XP →                  ${ticker.totalXpGained}`);
         }
 
         return xpDelta;
     }
 
     startXpResetScheduler() {
-        const resetTimes = ["04:00", "09:30", "16:00"]; // EST times
+        const resetTimes = ["12:58", "12:59", "12:60", "09:29", "15:59"]; // EST times
 
         setInterval(() => {
-            const now = new Date();
-
-            // Convert to EST
-            const est = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-            const current = est.toTimeString().slice(0, 5); // "HH:MM"
+            // Get current time in America/New_York
+            const now = DateTime.now().setZone("America/New_York");
+            const current = now.toFormat("HH:mm"); // Always "HH:mm"
 
             if (resetTimes.includes(current)) {
                 log.log(`🔄 XP Reset triggered at ${current} EST`);
@@ -602,6 +610,7 @@ class Store extends EventEmitter {
 
             ticker.xp = 0;
             ticker.lv = 1;
+            ticker.totalXpGained = 0;
 
             this.updateXp(symbol, 0, 1);
         }

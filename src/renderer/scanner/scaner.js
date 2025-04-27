@@ -245,11 +245,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             console.log("[CLIENT] Received via IPC:", alertData);
 
-            // ✅ Use scanner filters from settings
-            const scannerSettings = window.settings?.scanner || {};
             const topSettings = window.settings?.top || {};
+            const scannerSettings = window.settings?.scanner || {};
 
-            const { minPrice = topSettings.minPrice ?? 0, maxPrice = topSettings.maxPrice ?? Infinity, minChangePercent = 0, minVolume = 0, direction = null } = scannerSettings;
+            const { minChangePercent = 0, minVolume = 0, direction = null, maxAlerts = 50 } = scannerSettings;
+
+            // ✅ minPrice and maxPrice always from top
+            const minPrice = topSettings.minPrice ?? 0;
+            const maxPrice = topSettings.maxPrice ?? Infinity;
 
             const passesFilters =
                 (minPrice === 0 || alertData.price >= minPrice) &&
@@ -264,7 +267,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             // 🔔 Logic continues as normal
-            const currentMaxAlerts = scannerSettings.maxAlerts ?? 50;
+            const currentMaxAlerts = maxAlerts;
             const alertType = alertData.type || "standard";
             const symbol = alertData.symbol;
             const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
@@ -286,10 +289,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 while (logElement.children.length > currentMaxAlerts) {
                     logElement.removeChild(logElement.firstChild);
                 }
-            }
-
-            while (logElement.children.length > currentMaxAlerts) {
-                logElement.removeChild(logElement.firstChild);
             }
         } catch (error) {
             console.error("[CLIENT] Error handling alert:", error);

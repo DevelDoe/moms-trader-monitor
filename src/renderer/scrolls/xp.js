@@ -1,12 +1,20 @@
 const symbolColors = {};
+const allHeroes = {}; // 💾 all heroes, unfiltered
+const heroes = {}; // 🧹 filtered heroes based on settings
+const { isDev } = window.appFlags;
+const debug = isDev;
 
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
-    const heroes = {};
+
+    window.settings = await window.settingsAPI.get();
+    const all = await window.storeAPI.getSymbols();
 
     const refreshList = () => {
         const now = Date.now();
         const inactiveThreshold = 30_000; // 30 seconds
+
+        const { min, realMax } = getPriceLimits();
 
         const sorted = Object.values(heroes)
             .filter((h) => h.xp > 0)
@@ -65,27 +73,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     };
 
-    const all = await window.storeAPI.getSymbols();
-
-    all.forEach((h) => {
-        heroes[h.symbol] = {
-            hero: h.symbol,
-            xp: h.xp || 0,
-            lv: h.lv || 1,
-            buffs: h.buffs || {},
-            price: h.Price || h.price || 0,
-            totalXpGained: h.totalXpGained || 0, // ✅ ONLY fallback to 0, NOT to xp
-            firstXpTimestamp: h.firstXpTimestamp || Date.now(),
+    // 1. Insert all heroes
+    all.forEach(({ symbol, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
+        allHeroes[symbol] = {
+            hero: symbol,
+            xp: Number(xp) || 0,
+            lv: Number(lv) || 1,
+            price: Number(price) || 0,
+            totalXpGained: totalXpGained !== undefined ? Number(totalXpGained) : Number(xp) || 0,
+            firstXpTimestamp: typeof firstXpTimestamp === "number" ? firstXpTimestamp : Date.now(),
             lastUpdate: Date.now(),
         };
     });
 
+    filterHeroes(); // 🎯 create filtered heroes based on settings
     refreshList();
 
+    // 2. Hero updates
     window.storeAPI.onHeroUpdate((updatedHeroes) => {
         updatedHeroes.forEach(({ hero, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
-            if (!heroes[hero]) {
-                heroes[hero] = {
+            if (!allHeroes[hero]) {
+                allHeroes[hero] = {
                     hero,
                     xp: 0,
                     lv: 1,
@@ -95,39 +103,62 @@ document.addEventListener("DOMContentLoaded", async () => {
                 };
             }
 
-            if (typeof xp === "number") heroes[hero].xp = xp;
-            if (typeof lv === "number") heroes[hero].lv = lv;
-            if (typeof price === "number") heroes[hero].price = price;
-
-            if (typeof totalXpGained === "number") {
-                heroes[hero].totalXpGained = totalXpGained;
-            } else if (typeof xp === "number" && (heroes[hero].totalXpGained === undefined || heroes[hero].totalXpGained === 0)) {
-                // 🧠 Only fallback if totalXpGained missing
-                heroes[hero].totalXpGained = xp;
-            }
-
-            if (typeof firstXpTimestamp === "number") {
-                heroes[hero].firstXpTimestamp = firstXpTimestamp;
-            }
-
-            heroes[hero].lastUpdate = Date.now();
+            const h = allHeroes[hero];
+            h.xp = Number(xp) || 0;
+            h.lv = Number(lv) || 1;
+            h.price = price !== undefined ? Number(price) : 0;
+            h.totalXpGained = totalXpGained !== undefined ? Number(totalXpGained) : h.xp;
+            h.firstXpTimestamp = typeof firstXpTimestamp === "number" ? firstXpTimestamp : Date.now();
+            h.lastUpdate = Date.now();
         });
 
+        filterHeroes();
         refreshList();
     });
 
-    window.electronAPI.onXpReset(() => {
-        console.log("🧼 XP Reset received in XP Scroll — zeroing all XP and LV");
+    // 3. Settings updates
+    window.settingsAPI.onUpdate(async (updatedSettings) => {
+        if (debug) console.log("🎯 Settings updated:", updatedSettings);
+        window.settings = updatedSettings;
+        filterHeroes();
+        refreshList();
+    });
 
-        Object.values(heroes).forEach((hero) => {
-            hero.xp = 0;
-            hero.lv = 1;
-            hero.lastUpdate = Date.now();
+    // 4. XP Reset
+    window.electronAPI.onXpReset(() => {
+        console.log("🧼 XP Reset received — zeroing XP and LV");
+
+        Object.values(allHeroes).forEach((h) => {
+            h.xp = 0;
+            h.lv = 1;
+            h.totalXpGained = 0; // ✅ Reset this too
+            h.firstXpTimestamp = Date.now(); // ✅ Reset session start
+            h.lastUpdate = Date.now();
         });
 
+        filterHeroes();
         refreshList();
     });
 });
+
+function filterHeroes() {
+    const { minPrice, realMaxPrice } = getPriceLimits();
+    Object.keys(heroes).forEach((key) => delete heroes[key]); // Clear heroes
+
+    for (const symbol in allHeroes) {
+        const h = allHeroes[symbol];
+        if (h.price >= minPrice && h.price <= realMaxPrice) {
+            heroes[symbol] = h;
+        }
+    }
+}
+
+function getPriceLimits() {
+    const min = Number(window.settings?.top?.minPrice) || 0;
+    const max = Number(window.settings?.top?.maxPrice) || 0;
+    const realMax = max > 0 ? max : Infinity;
+    return { minPrice: min, realMaxPrice: realMax };
+}
 
 function getTotalXP(lv, xp) {
     let total = 0;

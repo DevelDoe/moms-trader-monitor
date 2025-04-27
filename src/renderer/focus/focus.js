@@ -61,8 +61,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     hp: 0,
                     dp: 0,
                     score: 0,
-                    xp: 0,
-                    lv: 0,
+                    xp: symbolData.xp || 0, // ← FIX HERE
+                    lv: symbolData.lv || 1, // ← maybe also fix lv
+                    totalXpGained: symbolData.totalXpGained || 0,
                     lastEvent: { hp: 0, dp: 0 },
                     floatValue: symbolData.statistics?.floatShares || 0,
                     buffs: symbolData.buffs || {},
@@ -104,8 +105,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 hero.lastEvent = updated.lastEvent || hero.lastEvent;
                 hero.xp = updated.xp ?? hero.xp;
                 hero.lv = updated.lv ?? hero.lv;
+                hero.totalXpGained = updated.totalXpGained ?? (hero.totalXpGained || 0); // <-- already good!
 
-                if (debugXp) console.log(`🎮 ${updated.hero} XP update → LV ${hero.lv}, XP ${hero.xp}`);
+                if (debugXp) console.log(`🎮 ${updated.hero} XP update → LV ${hero.lv}, XP ${hero.xp}, TOTAL XP ${hero.totalXpGained}`);
                 updateCardDOM(hero.hero);
             });
         });
@@ -137,9 +139,7 @@ let lastTickerSetAt = 0;
 const MIN_UPDATE_INTERVAL = 5000; // 3 seconds
 
 function updateFocusStateFromEvent(event) {
-    if (eventsPaused) return; // Skip event processing if paused
-
-    // 1. Add validation for the hero
+    if (eventsPaused) return;
     if (!event || !event.hero) {
         console.warn("Invalid event received:", event);
         return;
@@ -149,64 +149,36 @@ function updateFocusStateFromEvent(event) {
 
     hero.price = event.price;
 
-    // 1. FIRST check for resurrection BEFORE changing HP
     const wasDead = hero.hp === 0 && event.hp > 0;
-    if (wasDead) {
-        if (debug) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
-        // hero.score += 5; // Directly add to score
-    }
+    if (wasDead && debug) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
 
-    // 2. Check for reversal (must happen BEFORE applying new HP)
     const isReversal = hero.lastEvent.dp > 0 && event.hp > 0;
-    if (isReversal) {
-        // hero.score += 5;
-        if (debug) console.log(`🔄 ${hero.hero} REVERSAL! s`);
-    }
+    if (isReversal && debug) console.log(`🔄 ${hero.hero} REVERSAL!`);
 
-    // 🧠 Apply alert changes
     if (event.hp > 0) hero.hp += event.hp;
     if (event.dp > 0) hero.hp = Math.max(hero.hp - event.dp, 0);
 
-    // 🧠 Update event log
     hero.lastEvent = {
         hp: event.hp || 0,
         dp: event.dp || 0,
-        xp: 0,
     };
 
-    // ➕ Push to history
     hero.history = hero.history || [];
     hero.history.push({
         hp: event.hp || 0,
         dp: event.dp || 0,
         ts: Date.now(),
     });
+    if (hero.history.length > 10) hero.history.shift();
 
-    // Limit to last 10
-    if (hero.history.length > 10) {
-        hero.history.shift();
-    }
-
-    // 🎯 scoring
-    const scoreDelta = calculateScore(hero, event); // Call the function synchronously
+    const scoreDelta = calculateScore(hero, event);
     hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
-
-    hero.lastEvent = {
-        hp: event.hp || 0,
-        dp: event.dp || 0,
-        xp: 0, // you can keep or remove this if unused
-    };
 
     hero.strength = event.strength;
 
     let needsFullRender = false;
     if (hero.hp > maxHP) {
         maxHP = hero.hp * 1.05;
-        needsFullRender = true;
-    }
-
-    if (hero.xp > maxXP) {
-        maxXP = hero.xp;
         needsFullRender = true;
     }
 
@@ -219,7 +191,6 @@ function updateFocusStateFromEvent(event) {
     const currentTopHeroes = sortedHeroes.slice(0, topN).map((s) => s.hero);
     const now = Date.now();
 
-    // 1. Priority: Immediately update if #1 hero changes
     if (newTopHero && newTopHero !== currentTopHero) {
         currentTopHero = newTopHero;
         if (window.activeAPI?.setActiveTicker) {
@@ -228,35 +199,26 @@ function updateFocusStateFromEvent(event) {
             lastActiveTickerUpdate = now;
             if (debug) console.log(`🏆 New top hero: ${newTopHero}`);
         }
-    }
-    // 2. Secondary: Auto-rotate every 3 minutes (if no #1 change)
-    else if (window.activeAPI?.setActiveTicker && currentTopHeroes.length > 0 && now - lastActiveTickerUpdate >= ACTIVE_TICKER_UPDATE_INTERVAL) {
-        // Filter out current active ticker to avoid immediate repeats
+    } else if (window.activeAPI?.setActiveTicker && currentTopHeroes.length > 0 && now - lastActiveTickerUpdate >= ACTIVE_TICKER_UPDATE_INTERVAL) {
         const candidates = currentTopHeroes.filter((h) => h !== currentActiveTicker);
         const selectedHero = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : currentTopHeroes[Math.floor(Math.random() * currentTopHeroes.length)];
-
         window.activeAPI.setActiveTicker(selectedHero);
         currentActiveTicker = selectedHero;
         lastActiveTickerUpdate = now;
-
-        if (debug) console.log(`🔀 Rotated to: ${selectedHero} (of ${currentTopHeroes.length} top heroes)`);
+        if (debug) console.log(`🔀 Rotated to: ${selectedHero}`);
     }
 
-    // Check if we should scale down maxHP
     if (currentTopHeroes.length > 0) {
         const allBelowThreshold = currentTopHeroes.every((heroName) => {
             const hero = focusState[heroName];
             return hero.hp < maxHP * HP_SCALE_DOWN_THRESHOLD;
         });
-
         if (allBelowThreshold && maxHP > BASE_MAX_HP) {
-            // Scale down maxHP but never below BASE_MAX_HP
             maxHP = Math.max(BASE_MAX_HP, maxHP * HP_SCALE_DOWN_FACTOR);
             needsFullRender = true;
         }
     }
 
-    // If layout changed or full render required, redraw everything
     if (needsFullRender || currentTopHeroes.join(",") !== lastTopHeroes.join(",")) {
         lastTopHeroes = currentTopHeroes;
         renderAll();
@@ -270,6 +232,7 @@ function updateFocusStateFromEvent(event) {
     } else {
         updateCardDOM(event.hero);
     }
+
     hero.lastUpdate = Date.now();
     saveState();
 }
@@ -302,6 +265,28 @@ function renderAll() {
     });
 }
 
+function getTotalXpToReachLevel(level) {
+    if (level <= 1) return 0;
+    let totalXp = 0;
+    for (let i = 1; i < level; i++) {
+        totalXp += i * 1000;
+    }
+    return totalXp;
+}
+
+function getXpProgress(state) {
+    const totalXp = state.totalXpGained || 0;
+    const lv = Math.max(1, state.lv || 1);
+
+    // Total XP needed to reach the next level
+    const xpForNextLevel = getTotalXpToReachLevel(lv + 1);
+
+    // Percentage progress toward next level based on total XP
+    const xpPercent = xpForNextLevel > 0 ? Math.min((totalXp / xpForNextLevel) * 100, 100) : 100;
+
+    return { totalXp, xpForNextLevel, xpPercent };
+}
+
 function updateCardDOM(hero) {
     // 1. Safety checks
     if (!hero || !focusState[hero]) {
@@ -320,7 +305,7 @@ function updateCardDOM(hero) {
 
     if (!topHeroes.includes(hero)) return;
 
-    // 3. Get DOM elements
+    // 3. Get existing card
     const existing = document.querySelector(`.ticker-card[data-symbol="${hero}"]`);
     if (!existing) return;
 
@@ -333,48 +318,26 @@ function updateCardDOM(hero) {
         const newBar = newCard.querySelector(`.bar-fill.${type}`);
 
         if (oldBar && newBar) {
-            // Start from current width for smooth transition
             newBar.style.width = getComputedStyle(oldBar).width;
-
-            // Force reflow before animating
-            void newBar.offsetHeight;
+            void newBar.offsetHeight; // Force reflow
         }
     });
 
-    // 6. Replace card in DOM
-    existing.replaceWith(newCard);
-
-    // 7. Animate to final values
-    requestAnimationFrame(() => {
-        const state = focusState[hero];
-        const strengthCap = state.price < 1.5 ? 800000 : 400000;
-
-        const requiredXp = (state.lv + 1) * 1000;
-        const xpPercent = Math.min((state.xp / requiredXp) * 100, 100);
-        newCard.querySelector(".bar-fill.xp").style.width = `${xpPercent}%`;
-        newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
-
-        newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / strengthCap) * 100, 100)}%`;
-    });
-
-    // 6. Animate out, then replace card in DOM
+    // 6. Replace card with fade-out animation
     existing.classList.add("fade-out");
-
     setTimeout(() => {
         existing.replaceWith(newCard);
-
-        // 7. Animate to final values (moved inside here)
+        // 7. Animate to final values
         requestAnimationFrame(() => {
             const state = focusState[hero];
             const strengthCap = state.price < 1.5 ? 800000 : 400000;
+            const { xpPercent } = getXpProgress(state);
 
-            const requiredXp = (state.lv + 1) * 1000;
-            const xpPercent = Math.min((state.xp / requiredXp) * 100, 100);
             newCard.querySelector(".bar-fill.xp").style.width = `${xpPercent}%`;
             newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
             newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / strengthCap) * 100, 100)}%`;
         });
-    }, 200); // Match animation duration
+    }, 200); // Match fade-out animation duration
 }
 
 function renderCard({ hero, price, hp, dp, strength }) {
@@ -386,6 +349,9 @@ function renderCard({ hero, price, hp, dp, strength }) {
         hp: 0,
         dp: 0,
         lastEvent: { hp: 0, dp: 0 },
+        score: 0,
+        lv: 1,
+        totalXpGained: 0,
     };
 
     const change = state.lastEvent.hp ? `+${state.lastEvent.hp.toFixed(2)}%` : state.lastEvent.dp ? `-${state.lastEvent.dp.toFixed(2)}%` : "";
@@ -395,28 +361,18 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const yOffset = row * 100;
 
     const topPosition = 200;
-    const requiredXp = (state.lv + 1) * 1000;
-    const xpPercent = Math.min((state.xp / requiredXp) * 100, 100);
     const strengthCap = price < 1.5 ? 800000 : 400000;
 
-    // Store initial values for animation
-    const initialValues = {
-        xp: state.xp,
-        hp: state.hp,
-        strength: strength,
-    };
+    const { totalXp, xpForNextLevel, xpPercent } = getXpProgress(state);
 
     // Buffs
     const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
-
-    // Extract buffs
     const buffsArray = Object.entries(state.buffs || {}).map(([originalKey, b]) => ({
         ...b,
-        key: originalKey, // <- for display (icon, tooltip)
-        _sortKey: originalKey.toLowerCase().includes("vol") ? "volume" : originalKey, // <- for sorting
+        key: originalKey,
+        _sortKey: originalKey.toLowerCase().includes("vol") ? "volume" : originalKey,
     }));
 
-    // Sort helper
     const sortBuffs = (arr) =>
         arr.sort((a, b) => {
             const aIndex = sortOrder.indexOf(a._sortKey);
@@ -429,10 +385,9 @@ function renderCard({ hero, price, hp, dp, strength }) {
     const neutralBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === undefined));
 
     const now = Date.now();
-    const recentlyUpdated = now - (state.lastUpdate || 0) <= 30000; // 3 sec window
+    const recentlyUpdated = now - (state.lastUpdate || 0) <= 30000;
     const fadeStyle = recentlyUpdated ? "" : "opacity: 0.5; filter: grayscale(0.4);";
 
-    // Render
     const buffHtml = `
     <div class="buff-container">
         <div class="buff-row positive">
@@ -451,84 +406,43 @@ function renderCard({ hero, price, hp, dp, strength }) {
     <div class="ticker-header-grid">
         <div class="ticker-info">
             <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}; ${fadeStyle}">$${hero}<span class="lv">$${state.price.toFixed(2)}</span></div>
-            <div id="change" style="top: 0 + ${topPosition}px;">${change ? `<div class="${changeClass}" >${change}</div>` : ""}</div>
-            
+            <div id="change" style="top: 0 + ${topPosition}px;">${change ? `<div class="${changeClass}">${change}</div>` : ""}</div>
             <div id="score"><span class="bar-text score" style="font-size: 6px; margin-top:4px">SCORE: ${state.score.toFixed(0)}</span></div>
+            <div id="lv"><span class="bar-text lv" style="font-size: 6px; margin-top:4px">LV: ${state.lv}</span></div>
         </div>
-    
         ${buffHtml}
     </div>
-    
     <div class="bars">
         <div class="bar">
             <div class="bar-fill xp" style="width: ${xpPercent}%">
-                <span class="bar-text">XP: ${Math.floor(state.xp)} / ${requiredXp}</span>
+                <span class="bar-text">XP: ${Math.floor(totalXp)} / ${xpForNextLevel}</span>
             </div>
         </div>
         <div class="bar">
-            <div class="bar-fill hp" style="width: ${Math.min((initialValues.hp / maxHP) * 100, 100)}%">
-                <span class="bar-text">CHANGE: ${state.hp.toFixed(0)}</span>
+            <div class="bar-fill hp" style="width: ${Math.min((hp / maxHP) * 100, 100)}%">
+                <span class="bar-text">CHANGE: ${hp.toFixed(0)}</span>
             </div>
         </div>
         <div class="bar">
-            <div class="bar-fill strength" style="width: ${Math.min((initialValues.strength / strengthCap) * 100, 100)}%">
+            <div class="bar-fill strength" style="width: ${Math.min((strength / strengthCap) * 100, 100)}%">
                 <span class="bar-text">VOLUME: ${Math.floor(strength / 1000)}k</span>
             </div>
         </div>
     </div>
     `;
 
-    // Get references to the bars from the newly created card
-    const xpBar = card.querySelector(".bar-fill.xp");
-    const hpBar = card.querySelector(".bar-fill.hp");
-    const strengthBar = card.querySelector(".bar-fill.strength");
-
-    // Animate to final values
-    requestAnimationFrame(() => {
-        if (xpBar) xpBar.style.width = `${xpPercent}%`;
-        if (hpBar) hpBar.style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
-        if (strengthBar) strengthBar.style.width = `${Math.min((strength / strengthCap) * 100, 100)}%`;
-    });
-
-    const scoreEl = card.querySelector(".bar-text.score");
-
-    if (scoreEl) {
-        const prevScore = state.prevScore || 0;
-        const currentScore = state.score;
-
-        if (currentScore > prevScore) {
-            scoreEl.classList.add("score-flash-up");
-        } else if (currentScore < prevScore) {
-            scoreEl.classList.add("score-flash-down");
-        }
-
-        setTimeout(() => {
-            scoreEl.classList.remove("score-flash-up", "score-flash-down");
-        }, 500); // same as animation duration
-
-        state.prevScore = currentScore; // store for next tick
-    }
-
     // Add click handler to the symbol element
     const symbolElement = card.querySelector(".ticker-symbol");
     symbolElement.onclick = (e) => {
-        e.stopPropagation(); // Prevent event bubbling
-
+        e.stopPropagation();
         try {
-            // Copy to clipboard
             navigator.clipboard.writeText(hero);
             console.log(`📋 Copied ${hero} to clipboard`);
-
-            // Set as active ticker if the API exists
             if (window.activeAPI && window.activeAPI.setActiveTicker) {
                 window.activeAPI.setActiveTicker(hero);
                 console.log(`🎯 Set ${hero} as active ticker`);
             }
-
-            // Store last clicked symbol
             lastClickedSymbol = hero;
-
-            // Optional: Add visual feedback
             symbolElement.classList.add("symbol-clicked");
             setTimeout(() => {
                 symbolElement.classList.remove("symbol-clicked");
