@@ -378,14 +378,14 @@
     },
     "scrollXpWindow": {
       "width": 192,
-      "height": 558,
+      "height": 551,
       "x": 725,
       "y": -558,
       "isOpen": true
     },
     "scrollStatsWindow": {
       "width": 273,
-      "height": 558,
+      "height": 551,
       "x": 917,
       "y": -558,
       "isOpen": true

@@ -11,8 +11,8 @@ const os = require("os");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
-const debugXp = true;
-const debug = true;
+const debugXp = false;
+const debug = false;
 
 // ✅ Declare SETTINGS_FILE before logging it
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(require("electron").app.getPath("userData"), "settings.json");
@@ -587,7 +587,7 @@ class Store extends EventEmitter {
     }
 
     startXpResetScheduler() {
-        const resetTimes = ["12:58", "12:59", "12:60", "09:29", "15:59"]; // EST times
+        const resetTimes = ["03:59", "09:29", "15:59"]; // EST times
 
         setInterval(() => {
             // Get current time in America/New_York
