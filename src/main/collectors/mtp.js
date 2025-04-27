@@ -231,7 +231,7 @@ const fetchSymbolsFromServer = async () => {
     });
 };
 
-function startMockAlerts(baseInterval = 500, fluctuation = 1000) {
+function startMockAlerts(baseInterval = 10000, fluctuation = 1000) {
     let currentIndex = 0;
     let wavePosition = 0;
 

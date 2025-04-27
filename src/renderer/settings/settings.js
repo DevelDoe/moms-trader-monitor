@@ -60,9 +60,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         initializeNewsSection();
         initializeAdminSection();
 
-        await loadAttributeFilters("live", "live-filters");
-        await loadAttributeFilters("focus", "focus-filters");
-        await loadAttributeFilters("daily", "daily-filters");
+        // await loadAttributeFilters("live", "live-filters");
+        // await loadAttributeFilters("focus", "focus-filters");
+        // await loadAttributeFilters("daily", "daily-filters");
 
         const defaultTab = document.querySelector(".tablinks.active");
         if (defaultTab) {
@@ -514,7 +514,7 @@ function initializeTopSection() {
     liveLengthInput.addEventListener("input", () => updateListLength("live", liveLengthInput));
     liveLengthInput.addEventListener("input", () => updateListLength("frontline", liveLengthInput));
     focusLengthInput.addEventListener("input", () => updateListLength("focus", focusLengthInput));
-    dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
+    // dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
 }
 
 // async function loadAttributeFilters(listType, containerId) {

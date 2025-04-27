@@ -162,7 +162,6 @@ class Store extends EventEmitter {
             this.emit("store-nuke");
 
             saveStoreMeta(today);
-            this.startXpDecay();
         } else {
             log.log("✅ Store is up to date — no daily reset needed");
         }
@@ -356,6 +355,12 @@ class Store extends EventEmitter {
                 firstXpTimestamp: ticker.firstXpTimestamp || Date.now(), // fallback to now just in case
             },
         ]);
+
+        // 🧠 ADD THIS:
+        this.xpState.set(symbol, {
+            xp: ticker.totalXpGained || 0,
+            lv: ticker.lv || 1,
+        });
 
         log.log(`[store] Emitted hero-updated for: ${event.hero}`);
     }
@@ -569,37 +574,6 @@ class Store extends EventEmitter {
         }
 
         return xpDelta;
-    }
-
-    startXpDecay() {
-        const XP_DECAY_PER_MINUTE = 6.67;
-        const XP_MIN_FLOOR = 300;
-
-        setInterval(() => {
-            for (const [symbol, xpData] of this.xpState.entries()) {
-                let { xp, lv } = xpData;
-
-                if (xp > XP_MIN_FLOOR) {
-                    xp -= XP_DECAY_PER_MINUTE;
-                    xp = Math.max(xp, XP_MIN_FLOOR);
-
-                    // 🔁 Recalculate level based on remaining XP
-                    let newLv = lv;
-                    let tempXp = xp;
-                    while (newLv > 1 && tempXp < (newLv - 1) * 1000) {
-                        newLv -= 1;
-                        tempXp += newLv * 1000; // restore xp from the level drop
-                    }
-
-                    // 🔁 Store updated state
-                    if (newLv !== lv) {
-                        this.updateXp(symbol, xp, newLv);
-                    } else {
-                        this.xpState.set(symbol, { xp, lv });
-                    }
-                }
-            }
-        }, 60000); // decay every 1 minute
     }
 
     startXpResetScheduler() {

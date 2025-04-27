@@ -16,6 +16,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             })
             .slice(0, 15);
 
+        const xpPerMinutes = sorted.map((h) => parseFloat(getXpPerMinute(h)));
+        const maxXpm = Math.max(...xpPerMinutes, 1); // fallback 1 to avoid division by 0
+
         container.innerHTML = sorted
             .map((h, i) => {
                 const required = (h.lv + 1) * 1000;
@@ -25,13 +28,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const isInactive = age > inactiveThreshold;
                 const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
 
+                const xpm = parseFloat(getXpPerMinute(h));
+                const xpmColor = getXpmColor(xpm, maxXpm);
+
                 return `
-                    <div class="xp-line ellipsis" style="${dullStyle}">
-                        <strong class="symbol" style="background: ${bg};">${h.hero}  <span class="lv">${formatPrice(h.price)}</span></strong><span style="font-weight: 600">${getTotalXP(
-                    h.lv,
-                    h.xp
-                )}</span><span class="xpm text-tertiary" style="font-size: 9px">${getXpPerMinute(h)}</span>
-                    </div>`;
+    <div class="xp-line ellipsis" style="${dullStyle}">
+        <strong class="symbol" style="background: ${bg};">${h.hero} <span class="lv">${formatPrice(h.price)}</span></strong>
+        <span style="font-weight: 600">${h.totalXpGained}</span>
+        <span class="xpm" style="font-size: 9px; color: ${xpmColor};">${xpm}</span>
+    </div>`;
             })
             .join("");
 
@@ -66,11 +71,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         heroes[h.symbol] = {
             hero: h.symbol,
             xp: h.xp || 0,
-            lv: h.lv || 0,
-            buffs: h.buffs || {}, // optional if needed
-            price: h.Price || h.price || 0, // ✅ Add this line
-            totalXpGained: h.totalXpGained || 0, // ✅ NEW
-            firstXpTimestamp: h.firstXpTimestamp || Date.now(), // ✅ NEW fallback
+            lv: h.lv || 1,
+            buffs: h.buffs || {},
+            price: h.Price || h.price || 0,
+            totalXpGained: h.totalXpGained || 0, // ✅ ONLY fallback to 0, NOT to xp
+            firstXpTimestamp: h.firstXpTimestamp || Date.now(),
             lastUpdate: Date.now(),
         };
     });
@@ -78,37 +83,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     refreshList();
 
     window.storeAPI.onHeroUpdate((updatedHeroes) => {
-        updatedHeroes.forEach(({ hero, xp, lv, price }) => {
-            if (!heroes[hero]) heroes[hero] = { hero, xp: 0, lv: 1, price: 0 };
+        updatedHeroes.forEach(({ hero, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
+            if (!heroes[hero]) {
+                heroes[hero] = {
+                    hero,
+                    xp: 0,
+                    lv: 1,
+                    price: 0,
+                    totalXpGained: 0,
+                    firstXpTimestamp: Date.now(),
+                };
+            }
+
             if (typeof xp === "number") heroes[hero].xp = xp;
             if (typeof lv === "number") heroes[hero].lv = lv;
-            if (typeof price === "number") heroes[hero].price = price; // ✅ add this line
+            if (typeof price === "number") heroes[hero].price = price;
+
+            if (typeof totalXpGained === "number") {
+                heroes[hero].totalXpGained = totalXpGained;
+            } else if (typeof xp === "number" && (heroes[hero].totalXpGained === undefined || heroes[hero].totalXpGained === 0)) {
+                // 🧠 Only fallback if totalXpGained missing
+                heroes[hero].totalXpGained = xp;
+            }
+
+            if (typeof firstXpTimestamp === "number") {
+                heroes[hero].firstXpTimestamp = firstXpTimestamp;
+            }
+
             heroes[hero].lastUpdate = Date.now();
-        });
-
-        refreshList();
-    });
-
-    window.electronAPI.onNukeState(async () => {
-        console.warn("🧨 Nuke signal received in XP scroll — clearing and reloading heroes");
-
-        // Clear
-        Object.keys(heroes).forEach((key) => delete heroes[key]);
-        container.innerHTML = "";
-
-        // Re-fetch fresh symbols
-        const all = await window.storeAPI.getSymbols();
-        all.forEach((h) => {
-            heroes[h.symbol] = {
-                hero: h.symbol,
-                xp: h.xp || 0,
-                lv: h.lv || 0,
-                buffs: h.buffs || {},
-                price: h.Price || h.price || 0,
-                totalXpGained: h.totalXpGained || 0, // ✅ NEW
-                firstXpTimestamp: h.firstXpTimestamp || Date.now(), // ✅ NEW fallback
-                lastUpdate: Date.now(),
-            };
         });
 
         refreshList();
@@ -157,4 +159,11 @@ function getXpPerMinute(hero) {
     const minutes = (now - start) / 60000;
     const gained = hero.totalXpGained || 0;
     return minutes > 0 ? `${(gained / minutes).toFixed(0)}` : "—";
+}
+
+function getXpmColor(xpm, maxXpm) {
+    const ratio = xpm / maxXpm;
+    if (ratio > 0.66) return "orange"; // Top 33%
+    if (ratio > 0.33) return "dodgerblue"; // Middle 33%
+    return "gray"; // Bottom 33%
 }

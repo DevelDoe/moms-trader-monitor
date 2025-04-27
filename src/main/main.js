@@ -141,7 +141,7 @@ app.on("ready", async () => {
         });
 
         if (isDevelopment) {
-            // startMockAlerts();
+            startMockAlerts();
             startMockNews();
         }
     });
@@ -511,7 +511,6 @@ tickerStore.on("hero-updated", (payload = []) => {
     broadcast("hero-updated", { heroes }); // 👈 clean consistent naming
 });
 
-// When the store triggers a nuke (e.g. daily reset or internal logic)
 tickerStore.on("store-nuke", () => {
     console.log("💣 Nuke triggered by store");
     BrowserWindow.getAllWindows().forEach((win) => {

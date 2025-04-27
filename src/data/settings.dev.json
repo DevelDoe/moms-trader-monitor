@@ -75,8 +75,8 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 173,
-      "height": 900,
+      "width": 165,
+      "height": 893,
       "x": -250,
       "y": -900,
       "isOpen": true
@@ -86,7 +86,7 @@
       "height": 804,
       "x": 1406,
       "y": 108,
-      "isOpen": false
+      "isOpen": true
     },
     "liveWindow": {
       "width": 358,
@@ -97,7 +97,7 @@
     },
     "focusWindow": {
       "width": 444,
-      "height": 496,
+      "height": 490,
       "x": 281,
       "y": -496,
       "isOpen": true
@@ -131,19 +131,19 @@
       "height": 8,
       "x": -253,
       "y": -7,
-      "isOpen": false
+      "isOpen": true
     },
     "frontlineWindow": {
-      "width": 358,
-      "height": 496,
-      "x": -77,
+      "width": 369,
+      "height": 490,
+      "x": -88,
       "y": -496,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 802,
+      "width": 813,
       "height": 404,
-      "x": -77,
+      "x": -88,
       "y": -900,
       "isOpen": true
     },
@@ -377,17 +377,17 @@
       "isOpen": false
     },
     "scrollXpWindow": {
-      "width": 173,
-      "height": 552,
+      "width": 184,
+      "height": 553,
       "x": 725,
-      "y": -559,
+      "y": -553,
       "isOpen": true
     },
     "scrollStatsWindow": {
-      "width": 292,
-      "height": 552,
-      "x": 898,
-      "y": -559,
+      "width": 281,
+      "height": 553,
+      "x": 909,
+      "y": -553,
       "isOpen": true
     }
   },

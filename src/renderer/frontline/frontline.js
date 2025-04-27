@@ -265,16 +265,16 @@ function renderAll() {
         }
     });
 
-    // Ensure correct ordering
     top.forEach((heroData, i) => {
         const sym = heroData.hero.trim().toUpperCase();
         const existing = container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
 
         if (!existing) {
-            const newCard = renderCard(heroData);
-            newCard.classList.add("fade-in");
+            const newCard = renderCard(frontlineState[sym]);
             container.insertBefore(newCard, container.children[i] || null);
-            requestAnimationFrame(() => newCard.classList.add("show"));
+
+            // ⚡ Immediately check fade out / not
+            updateCardDOM(sym);
         } else {
             if (container.children[i] !== existing) {
                 container.insertBefore(existing, container.children[i] || null);
@@ -306,35 +306,32 @@ function updateCardDOM(hero) {
     const priceEl = card.querySelector(".lv");
     if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
 
-    // Add highlight effect
-    card.classList.add("card-update-highlight");
-    setTimeout(() => card.classList.remove("card-update-highlight"), 300);
-
+    // Fade logic
     const now = Date.now();
-    const timeSinceUpdate = now - (state.lastUpdate || 0);
-    const inactiveThreshold = 3000; // 3 seconds
-    const shouldFadeOut = timeSinceUpdate > inactiveThreshold && state.score < 10;
+    const lastUpdate = state.lastUpdate || now;
+    const timeSinceUpdate = now - lastUpdate;
+    const inactiveThreshold = 7000;
+    const shouldFadeOut = timeSinceUpdate > inactiveThreshold;
 
     if (shouldFadeOut) {
         card.classList.add("fade-out");
+        card.classList.remove("card-update-highlight");
     } else {
         card.classList.remove("fade-out");
+        card.classList.add("card-update-highlight");
+        setTimeout(() => card.classList.remove("card-update-highlight"), 300);
     }
 }
 
-function renderCard({ hero, price, hp, dp, strength }) {
+function renderCard(state) {
+    const { hero, price, hp, dp, strength, lastUpdate } = state;
+
     const card = document.createElement("div");
     card.className = "ticker-card";
     card.dataset.symbol = hero;
 
-    const state = frontlineState[hero] || {
-        score,
-        hp: 0,
-        dp: 0,
-        lastEvent: { hp: 0, dp: 0 },
-    };
-
     const change = state.lastEvent.hp ? `+${state.lastEvent.hp.toFixed(2)}%` : state.lastEvent.dp ? `-${state.lastEvent.dp.toFixed(2)}%` : "";
+
     const changeClass = state.lastEvent.hp ? "hp-boost" : state.lastEvent.dp ? "dp-damage" : "";
 
     const volumeImpact = calculateVolumeImpact(strength, price);
@@ -347,17 +344,6 @@ function renderCard({ hero, price, hp, dp, strength }) {
     };
 
     const isVisiblyActive = state.lastEvent && (state.lastEvent.hp > 0 || state.lastEvent.dp > 0 || state.lastEvent.score > 0);
-
-    const now = Date.now();
-    const timeSinceUpdate = now - (state.lastUpdate || 0);
-    const inactiveThreshold = 3000; // 3 seconds
-    const shouldFadeOut = timeSinceUpdate > inactiveThreshold && state.score < 10;
-
-    if (shouldFadeOut) {
-        card.classList.add("fade-out");
-    } else {
-        card.classList.remove("fade-out");
-    }
 
     // Buffs
     // ✅ 1. Define sort priority (group/category level)
