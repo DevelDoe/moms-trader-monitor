@@ -288,13 +288,11 @@ function getXpProgress(state) {
 }
 
 function updateCardDOM(hero) {
-    // 1. Safety checks
     if (!hero || !focusState[hero]) {
         console.warn(`Hero "${hero}" not found in focusState`);
         return;
     }
 
-    // 2. Check if hero is in top list
     const topN = window.settings?.top?.focusListLength ?? 10;
     const topHeroes = Object.values(focusState)
         .filter((s) => s.score > 0)
@@ -305,39 +303,57 @@ function updateCardDOM(hero) {
 
     if (!topHeroes.includes(hero)) return;
 
-    // 3. Get existing card
     const existing = document.querySelector(`.ticker-card[data-symbol="${hero}"]`);
     if (!existing) return;
 
-    // 4. Create new card
     const newCard = renderCard(focusState[hero]);
 
-    // 5. Smooth bar transitions
+    // Copy old bar widths onto newCard before inserting
     ["xp", "hp", "strength"].forEach((type) => {
         const oldBar = existing.querySelector(`.bar-fill.${type}`);
         const newBar = newCard.querySelector(`.bar-fill.${type}`);
-
         if (oldBar && newBar) {
             newBar.style.width = getComputedStyle(oldBar).width;
-            void newBar.offsetHeight; // Force reflow
         }
     });
 
-    // 6. Replace card with fade-out animation
-    existing.classList.add("fade-out");
-    setTimeout(() => {
-        existing.replaceWith(newCard);
-        // 7. Animate to final values
-        requestAnimationFrame(() => {
-            const state = focusState[hero];
-            const strengthCap = state.price < 1.5 ? 800000 : 400000;
-            const { xpPercent } = getXpProgress(state);
+    // Replace immediately
+    existing.replaceWith(newCard);
 
-            newCard.querySelector(".bar-fill.xp").style.width = `${xpPercent}%`;
-            newCard.querySelector(".bar-fill.hp").style.width = `${Math.min((state.hp / maxHP) * 100, 100)}%`;
-            newCard.querySelector(".bar-fill.strength").style.width = `${Math.min((state.strength / strengthCap) * 100, 100)}%`;
-        });
-    }, 200); // Match fade-out animation duration
+    // Animate to the new values
+    // Animate to the new values
+    requestAnimationFrame(() => {
+        const state = focusState[hero];
+        const strengthCap = state.price < 1.5 ? 800000 : 400000;
+        const { xpPercent } = getXpProgress(state);
+
+        // Helper to update + pulse a bar
+        function animateBar(selector, newWidth) {
+            const bar = newCard.querySelector(selector);
+            if (bar) {
+                const oldWidth = parseFloat(bar.style.width) || 0;
+                const newWidthValue = parseFloat(newWidth);
+
+                // Only pulse if width actually changes meaningfully
+                if (Math.abs(oldWidth - newWidthValue) > 1) {
+                    bar.classList.add("bar-animate");
+                    bar.addEventListener(
+                        "animationend",
+                        () => {
+                            bar.classList.remove("bar-animate");
+                        },
+                        { once: true }
+                    );
+                }
+
+                bar.style.width = `${newWidth}`;
+            }
+        }
+
+        animateBar(".bar-fill.xp", `${xpPercent}%`);
+        animateBar(".bar-fill.hp", `${Math.min((state.hp / maxHP) * 100, 100)}%`);
+        animateBar(".bar-fill.strength", `${Math.min((state.strength / strengthCap) * 100, 100)}%`);
+    });
 }
 
 function renderCard({ hero, price, hp, dp, strength }) {
@@ -407,8 +423,11 @@ function renderCard({ hero, price, hp, dp, strength }) {
         <div class="ticker-info">
             <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}; ${fadeStyle}">$${hero}<span class="lv">$${state.price.toFixed(2)}</span></div>
             <div id="change" style="top: 0 + ${topPosition}px;">${change ? `<div class="${changeClass}">${change}</div>` : ""}</div>
-            <div id="score"><span class="bar-text score" style="font-size: 6px; margin-top:4px">SCORE: ${state.score.toFixed(0)}</span></div>
-            <div id="lv"><span class="bar-text lv" style="font-size: 6px; margin-top:4px">LV: ${state.lv}</span></div>
+            
+            <div id="lv"><span class="bar-text stats lv" style="font-size: 6px; margin-top:4px">L <span style="color:white;"> ${state.lv}</span></span></div>
+            <div id="x"><span class="bar-text stats x" style="font-size: 6px; margin-top:4px">X <span style="color:#04f370;">  ${totalXp}</span></span></div>
+            <div id="ch"><span class="bar-text stats ch" style="font-size: 6px; margin-top:4px">C <span style="color:#fd5151;"> ${hp.toFixed(0)}</span></span></div>
+            <div id="vo"><span class="bar-text stats vo" style="font-size: 6px; margin-top:4px">V <span style="color:#00aeff;">  ${humanReadableNumbers(strength)}</span></span></div>
         </div>
         ${buffHtml}
     </div>
@@ -430,6 +449,8 @@ function renderCard({ hero, price, hp, dp, strength }) {
         </div>
     </div>
     `;
+
+    // <div id="score"><span class="bar-text score" style="font-size: 6px; margin-top:4px">SCORE: ${state.score.toFixed(0)}</span></div>
 
     // Add click handler to the symbol element
     const symbolElement = card.querySelector(".ticker-symbol");

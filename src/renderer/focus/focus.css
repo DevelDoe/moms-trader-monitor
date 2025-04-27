@@ -63,7 +63,7 @@ h2 {
 }
 
 .ticker-symbol {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: bold;
     color: antiquewhite;
     padding: 2px; /* add bottom padding to push text baseline down */
@@ -73,6 +73,7 @@ h2 {
     position: relative;
     box-sizing: border-box;
     line-height: 0.9; /* tune this if needed */
+    margin-bottom: 2px;
 }
 .ticker-symbol:hover {
     color: #a6fcca !important;
@@ -112,7 +113,7 @@ h2 {
 
 /* Individual Bar */
 .bar {
-    height: 12px;
+    height: 10px;
     background: rgba(0, 0, 0, 0.09);
     border-radius: 3px;
     overflow: hidden;
@@ -135,6 +136,15 @@ h2 {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 9px;
+    color: white;
+    font-weight: 100;
+}
+
+.bar-text.stats {
+    font-size: 11px;
+    color: #c1af9c;
+    font-weight: 400;
 }
 
 /* Bar Color Classes */
@@ -255,12 +265,6 @@ h2 {
 /* hp bar animatiion  */
 /* Smooth transitions for all bars */
 
-.bar-fill {
-    transition: width 0.4s cubic-bezier(0.65, 0, 0.35, 1);
-    will-change: width;
-    transform: translateZ(0); /* GPU acceleration */
-}
-
 /* Optional pulse animation */
 @keyframes barPulse {
     0% {
@@ -302,7 +306,7 @@ h2 {
     font-size: 12px;
     /* box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); */
 
-    margin-bottom: 1px;
+    margin-bottom: 0px;
 }
 
 .buff-icon {
@@ -358,9 +362,7 @@ h2 {
 }
 
 .bar-fill {
-    transition: width 0.3s ease-in-out;
-}
-.ticker-card.fade-out {
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
+    transition: width 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: width;
+    transform: translateZ(0);
 }

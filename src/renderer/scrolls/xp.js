@@ -40,10 +40,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const xpmColor = getXpmColor(xpm, maxXpm);
 
                 return `
-    <div class="xp-line ellipsis" style="${dullStyle}">
+    <div class="xp-line ellipsis" style="${dullStyle} ; color:gray;">
         <strong class="symbol" style="background: ${bg};">${h.hero} <span class="lv">${formatPrice(h.price)}</span></strong>
-        <span style="font-weight: 600">${h.totalXpGained}</span>
-        <span class="xpm" style="font-size: 9px; color: ${xpmColor};">${xpm}</span>
+        <span style="font-weight: 600;color:#04f370;opacity:0.75;">${h.totalXpGained}</span>(<span class="xpm" style="font-size: 11px; color: ${xpmColor};">${xpm})</span>)
     </div>`;
             })
             .join("");

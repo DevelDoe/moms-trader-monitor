@@ -41,6 +41,8 @@ autoUpdater.setFeedURL({
     repo: "moms-trader-monitor",
 });
 
+const { DateTime } = require("luxon");
+
 ////////////////////////////////////////////////////////////////////////////////////
 // SERVICES
 
@@ -84,6 +86,8 @@ let windows = {};
 
 ////////////////////////////////////////////////////////////////////////////////////// START APP
 
+const isScheduledRestart = process.argv.includes("--scheduled-restart");
+
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
 
@@ -116,6 +120,12 @@ app.on("ready", async () => {
         log.log("Scanner volume initialized to 0 (muted)");
     } catch (error) {
         log.error("Failed to initialize scanner volume:", error);
+    }
+
+    // Check for scheduled restart and close splash immediately
+    if (process.argv.includes("--scheduled-restart") && windows.splash) {
+        log.log("Scheduled restart detected, closing splash screen...");
+        windows.splash.close();
     }
 
     windows.splash.once("closed", async () => {
@@ -172,38 +182,32 @@ process.on("exit", () => {
     // saveSettings(appSettings);
 });
 
-function scheduleDailyRestart(targetHour = 3, targetMinute = 50) {
-    const now = new Date();
+function scheduleDailyRestart(targetHour = 3, targetMinute = 59) {
+    // Current time in Eastern Time
+    const etNow = DateTime.now().setZone("America/New_York");
 
-    // Get the current time in ET
-    const utcOffsetMinutes = now.getTimezoneOffset(); // Local → UTC
-    const estOffsetMinutes = 5 * 60; // EST is UTC-5
-    const dstOffset = isDST(now) ? -4 * 60 : -5 * 60; // Adjust if DST in effect
+    // Set next restart time in ET
+    let next = etNow.set({ hour: targetHour, minute: targetMinute, second: 0, millisecond: 0 });
 
-    const etNow = new Date(now.getTime() + (dstOffset - utcOffsetMinutes) * 60 * 1000);
+    // If the target time has already passed today, schedule for tomorrow
+    if (next <= etNow) {
+        next = next.plus({ days: 1 });
+    }
 
-    const next = new Date(etNow);
-    next.setHours(targetHour, targetMinute, 0, 0);
-    if (next <= etNow) next.setDate(next.getDate() + 1); // move to next day if time has passed
+    // Calculate time until restart in milliseconds
+    const timeUntilRestart = next.diff(etNow).as("milliseconds");
 
-    // Convert ET next time back to local time for the timeout delay
-    const localNext = new Date(next.getTime() - (dstOffset - utcOffsetMinutes) * 60 * 1000);
-    const timeUntilRestart = localNext - now;
+    // Convert next restart time to local time for logging
+    const localNext = next.toLocal();
 
-    log.log(`🕒 Scheduled app restart at ET ${targetHour}:${targetMinute.toString().padStart(2, "0")} → local ${localNext.toLocaleTimeString()} (${Math.round(timeUntilRestart / 1000)}s from now)`);
+    log.log(`🕒 Scheduled app restart at ET ${targetHour}:${targetMinute.toString().padStart(2, "0")} → local ${localNext.toFormat("HH:mm:ss")} (${Math.round(timeUntilRestart / 1000)}s from now)`);
 
     setTimeout(() => {
         log.log("🔄 Restarting app due to daily ET schedule");
-        app.relaunch();
+        // Relaunch with --scheduled-restart flag
+        app.relaunch({ args: process.argv.slice(1).concat(["--scheduled-restart"]) });
         app.exit(0);
     }, timeUntilRestart);
-}
-
-// Determine if DST is in effect in ET (U.S. rules)
-function isDST(date) {
-    const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
-    const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
-    return Math.max(jan, jul) !== date.getTimezoneOffset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////// UPDATES

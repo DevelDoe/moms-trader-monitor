@@ -26,7 +26,7 @@ body {
     display: flex;
     align-items: center;
     background-color: #1b1f24;
-    border-left: 5px solid transparent;
+    border-left: 10px solid transparent;
     opacity: 0;
     animation: fadeIn 0.2s forwards;
 }
@@ -36,7 +36,7 @@ body {
     font-size: 12px;
     font-weight: 300;
     padding: 3px;
-    border-radius: 3px;
+    border-radius: 1px;
     color: #ffffff;
     background-color: gray;
 }
@@ -116,7 +116,7 @@ body {
     animation: blink 0.5s infinite;
 }
 .alert.new-high {
-    border-left: 5px solid gold;
+    border-left: 10px solid gold;
     background-color: #333d2a;
     animation: pulseNewHigh 0.5s infinite;
 }
