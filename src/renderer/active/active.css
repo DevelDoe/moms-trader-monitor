@@ -7,7 +7,7 @@ body {
     height: 100%;
 }
 #app-container {
-    padding: 5px 10px;
+    padding: 0px 10px;
     box-shadow: inset 0px 0px 0px 0px rgba(0, 0, 0, 0.5);
     height: 100%;
 }
@@ -21,7 +21,6 @@ body {
 #symbol {
     padding-top: 0;
     margin-top: 10px;
-    margin-bottom: 28px;
 }
 
 .ticker-symbol.active-glow {
@@ -31,8 +30,8 @@ body {
 
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 36vw !important; /* you wrote 35w, fixed it to 35vw */
-    height: 36vw !important;
+    width: 22vw !important; /* you wrote 35w, fixed it to 35vw */
+    height: 22vw !important;
 }
 
 /* Two-column layout using Flexbox */
@@ -40,19 +39,6 @@ body {
     display: flex;
     gap: 20px; /* Space between columns */
     align-items: flex-start; /* Align items to the top */
-}
-
-/* Legends  */
-
-#section-float-summary {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    text-align: center;
-    font-size: 1.45vw !important;
-    pointer-events: none; /* so you can interact with the chart behind */
 }
 
 .data-column {
@@ -63,21 +49,20 @@ body {
 #data-warning-summary {
     position: absolute;
     bottom: -20px;
-    left: 0;
-    width: 100%;
-    height: 41px;
-    padding: 51px;
-    background-color: rgba(0, 6, 0, 0.9);
+    right: 0;
+    width: 50%;
+    padding: 10px;
+    background-color: rgba(0, 6, 0, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 13px !important;
     font-weight: 600;
-    color: #f7d203;
-    text-align: center;
     z-index: 10;
     border-radius: 1px;
     margin-bottom: 10px;
+    opacity: 1;
+    filter: contrast(0.5);
 }
 
 .blur-effect {
@@ -98,12 +83,6 @@ body {
 .chart {
     padding-top: 20px !important;
     margin-top: 20px;
-}
-
-/* Optional: Add some spacing and alignment */
-#section-float-summary p,
-#section-float-stats p {
-    margin: 10px 0;
 }
 
 .about {
@@ -383,4 +362,91 @@ body {
 /* Stack layout on narrow screens */
 .p-4 {
     padding: 0.1rem !important;
+}
+
+/* buffs  */
+
+#buffs-container {
+    margin-top: 3px;
+}
+
+.buff-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0px;
+    /* background: #1f1f1f; */
+    padding: 4px 7px;
+    border-radius: 2px;
+    font-size: 12px;
+    color: rgb(243, 242, 224);
+    transition: background-color 0.2s;
+    opacity: 0.75;
+}
+.buff-positive {
+    background-color: #1e7a5c; /* Green */
+}
+.buff-negative {
+    background-color: #e73c3c; /* Red */
+}
+.buff-neutral {
+    background-color: #404040; /* Gray */
+}
+.buff-badge:hover {
+    background-color: #555;
+}
+
+.buff-icon {
+    font-size: 12px;
+    line-height: 1;
+}
+.buff-desc {
+    white-space: nowrap;
+}
+
+#section-float-summary {
+    display: flex;
+    flex-direction: column;
+}
+
+#section-float-summary > div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 100;
+}
+
+.stats-row {
+    opacity: 0.5;
+    margin-top: 0px !important;
+    margin-bottom: 20px !important;
+    width: 100%;
+}
+
+#energy .text-energy-yellow {
+    color: #facc15 !important; /* yellow-400 */
+}
+
+#energy .text-energy-light-yellow {
+    color: #fde68a !important; /* yellow-300 */
+}
+
+#energy .text-energy-blue {
+    color: #60a5fa !important; /* blue-400 */
+}
+
+#energy .text-energy-gray {
+    color: #d1d5db !important; /* gray-300 */
+}
+
+#energy .text-energy-orange {
+    color: #fb923c !important; /* orange-400 */
+}
+
+#energy .text-energy-red {
+    color: #f87171 !important; /* red-400 */
+}
+
+#energy .text-energy-dimblue {
+    color: #bfdbfe !important; /* blue-200 */
 }

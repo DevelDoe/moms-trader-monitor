@@ -16,6 +16,8 @@ let isFetchingSymbols = false; // Prevent multiple fetches
 let lastUpdateTime = 0;
 let messageQueue = [];
 
+const debug = false;
+
 function flushMessageQueue(scannerWindow) {
     if (scannerWindow?.webContents && !scannerWindow.webContents.isDestroyed()) {
         messageQueue.forEach((msg) => {
@@ -65,7 +67,7 @@ const connectMTP = () => {
 
         ws.onmessage = async (event) => {
             const rawData = event.data instanceof Buffer ? event.data.toString("utf8") : event.data;
-            log.log("DATA", "[mtp.js] Raw message:", rawData);
+            if (debug) log.log("DATA", "[mtp.js] Raw message:", rawData);
 
             const msg = safeParse(rawData);
             if (!msg) return;

@@ -52,7 +52,7 @@ function getFloatBuff(symbolData, buffList = []) {
         return {
             key: "floatCorrupt",
             icon: "⚠️",
-            desc: "Float is corrupted",
+            desc: "Float is unclear",
             multiplier: 1,
             score: 0,
             isBuff: false,
@@ -79,7 +79,7 @@ function getFloatBuff(symbolData, buffList = []) {
         : {
               key: "floatUnranked",
               icon: "❔",
-              desc: "Float does not match any buff",
+              desc: "Float does not match",
               multiplier: 1,
               score: 0,
               isBuff: false,
@@ -102,7 +102,7 @@ function getNewsBuff(symbolData) {
     return {
         key: "news",
         icon: "😼",
-        desc: "Has positive/unblocked news",
+        desc: "Bullish news",
         score: 150,
         multiplier: 1.1,
         isBuff: true,
@@ -132,7 +132,7 @@ function getOwnershipBuff(symbolData, buffList = []) {
             defined || {
                 key: "lockedShares",
                 icon: "💼",
-                desc: "High insider/institutional/locked shares holders",
+                desc: "High insider/institutional ownership",
                 score: -25,
                 isBuff: false,
             }
@@ -152,7 +152,7 @@ function getIndustryBuff(symbolData) {
         return {
             key: "bio",
             icon: "🧬",
-            desc: "Biotechnology stock",
+            desc: "Biotech stock",
             score: 25,
             isBuff: true,
         };
@@ -172,7 +172,7 @@ function getIndustryBuff(symbolData) {
         return {
             key: "space",
             icon: "🌌",
-            desc: "Space industry stock",
+            desc: "Space stock",
             score: 10,
             isBuff: true,
         };
@@ -188,7 +188,7 @@ function getCountryBuff(symbolData) {
         return {
             key: "china",
             icon: "🇨🇳",
-            desc: "China/Hong Kong-based company",
+            desc: "China stock",
             score: 0,
             isBuff: false,
         };
@@ -209,7 +209,7 @@ function getShortInterestBuff(symbolData) {
         return {
             key: "highShort",
             icon: "🩳",
-            desc: "High short interest (more than 20% of float)",
+            desc: "High short interest",
             score: 25,
             isBuff: true,
         };
@@ -224,7 +224,7 @@ function getNetLossBuff(symbolData) {
         return {
             key: "netLoss",
             icon: "🥅",
-            desc: "Company is currently running at a net loss",
+            desc: "Net loss",
             score: -25,
             isBuff: false,
         };
@@ -237,7 +237,7 @@ function getS3FilingBuff(symbolData) {
         return {
             key: "hasS3",
             icon: "📂",
-            desc: `Registered S-3 filing (${symbolData.offReg})`,
+            desc: `Registered S-3 (${symbolData.offReg})`,
             score: -25,
             isBuff: false,
         };
@@ -254,7 +254,7 @@ function getDilutionRiskBuff(symbolData) {
         return {
             key: "dilutionRisk",
             icon: "🚨",
-            desc: "High dilution risk: Net loss + Registered S-3",
+            desc: "High dilution risk",
             score: -50,
             isBuff: false,
         };

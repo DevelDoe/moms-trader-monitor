@@ -327,6 +327,108 @@ function updateUI(symbolData) {
 
     renderOwnershipChart(symbolData, "ownershipChart-summary");
     renderOwnershipChart(symbolData, "ownershipChart-stats");
+
+    // Stats & Buffs (NEW)
+    setText("stats-lv", symbolData.lv || 1);
+    setText("stats-xp", symbolData.totalXpGained || 0);
+
+    const finalScore = calculateScore(symbolData.buffs, 0);
+    setText("stats-energy", mapScoreToEnergy(finalScore));
+
+    const buffsContainer = document.getElementById("buffs-container");
+    buffsContainer.innerHTML = ""; // Clear previous buffs
+    if (symbolData.buffs) {
+        Object.values(symbolData.buffs).forEach((buff) => {
+            const badge = document.createElement("span");
+            badge.className = "bg-green-700 text-white text-xs px-2 py-1 rounded-full";
+            badge.textContent = buff.desc || "Buff";
+            buffsContainer.appendChild(badge);
+        });
+    }
+
+    renderBuffs(symbolData.buffs);
+}
+
+function mapScoreToEnergy(score) {
+    if (score >= 300) return "🏆 Legend";
+    if (score >= 150) return "🌟 Excellent";
+    if (score >= 50) return "👍 Good";
+    if (score >= 0) return "🙂 Fair";
+    if (score >= -50) return "😣 Weak";
+    if (score >= -100) return "👎 Low"; // Notice: -1 to -100
+    return "❄️ Cold"; // -101 or worse
+}
+
+function calculateScore(heroBuffs = {}, baseScore = 0) {
+    let totalScore = baseScore;
+    let newsScore = 0;
+    let hasBullish = false;
+    let hasBearish = false;
+
+    for (const key in heroBuffs) {
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh") continue;
+
+        const buff = heroBuffs[key];
+        const ref = typeof buff === "object" ? buff : globalBuffs[key];
+        const score = ref?.score || 0;
+
+        if (key === "hasBullishNews") {
+            hasBullish = true;
+            newsScore = score;
+            continue;
+        }
+
+        if (key === "hasBearishNews") {
+            hasBearish = true;
+            newsScore = score;
+            continue;
+        }
+
+        if (key === "hasNews") {
+            // Only assign if no stronger sentiment already found
+            if (!hasBullish && !hasBearish) {
+                newsScore = score;
+            }
+            continue;
+        }
+
+        totalScore += score;
+    }
+
+    if (!(hasBullish && hasBearish)) {
+        totalScore += newsScore;
+    }
+
+    return totalScore;
+}
+
+function renderBuffs(buffs) {
+    const container = document.getElementById("buffs-container");
+    container.innerHTML = ""; // Clear previous buffs
+
+    if (!buffs || Object.keys(buffs).length === 0) {
+        container.innerHTML = '<span class="text-gray-500 text-sm">No buffs available</span>';
+        return;
+    }
+
+    const sortedBuffs = Object.values(buffs).sort((a, b) => {
+        return (a.priority ?? 999) - (b.priority ?? 999);
+    });
+
+    sortedBuffs.forEach((buff) => {
+        const buffSpan = document.createElement("span");
+
+        let buffClass = "buff-neutral"; // Default to neutral
+        if (buff.isBuff === true) buffClass = "buff-positive";
+        else if (buff.isBuff === false) buffClass = "buff-negative";
+
+        buffSpan.className = `buff-badge ${buffClass}`;
+        buffSpan.innerHTML = `
+            ${buff.icon ? `<span class="buff-icon">${buff.icon}</span>` : ""}
+            <span class="buff-desc">${buff.desc || ""}</span>
+        `;
+        container.appendChild(buffSpan);
+    });
 }
 
 function sanitize(str) {

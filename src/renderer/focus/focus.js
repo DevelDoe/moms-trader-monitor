@@ -426,7 +426,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
             
             <div id="lv"><span class="bar-text stats lv" style="font-size: 6px; margin-top:4px">L <span style="color:white;"> ${state.lv}</span></span></div>
             <div id="x"><span class="bar-text stats x" style="font-size: 6px; margin-top:4px">X <span style="color:#04f370;">  ${totalXp}</span></span></div>
-            <div id="ch"><span class="bar-text stats ch" style="font-size: 6px; margin-top:4px">C <span style="color:#fd5151;"> ${hp.toFixed(0)}</span></span></div>
+            <div id="ch"><span class="bar-text stats ch" style="font-size: 6px; margin-top:4px">C <span style="color:#fd5151;"> ${hp.toFixed(0)}%</span></span></div>
             <div id="vo"><span class="bar-text stats vo" style="font-size: 6px; margin-top:4px">V <span style="color:#00aeff;">  ${humanReadableNumbers(strength)}</span></span></div>
         </div>
         ${buffHtml}
@@ -439,7 +439,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
         </div>
         <div class="bar">
             <div class="bar-fill hp" style="width: ${Math.min((hp / maxHP) * 100, 100)}%">
-                <span class="bar-text">CHANGE: ${hp.toFixed(0)}</span>
+                <span class="bar-text">CHANGE: ${hp.toFixed(0)}%</span>
             </div>
         </div>
         <div class="bar">

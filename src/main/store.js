@@ -238,7 +238,7 @@ class Store extends EventEmitter {
                 return;
             }
 
-            log.log(`[addEvent] Processing alert for ${symbol}`);
+            if (debug) log.log(`[addEvent] Processing alert for ${symbol}`);
 
             // Ensure symbol is tracked
             if (!this.symbols.has(symbol)) {
@@ -341,11 +341,12 @@ class Store extends EventEmitter {
             delete ticker.buffs.newHigh;
         }
 
-        log.log(`[store] ${symbol} about to emit:`, {
-            xp: ticker.xp,
-            totalXpGained: ticker.totalXpGained,
-            calculatedXpDelta: xpDelta,
-        });
+        if (debugXp)
+            log.log(`[store] ${symbol} about to emit:`, {
+                xp: ticker.xp,
+                totalXpGained: ticker.totalXpGained,
+                calculatedXpDelta: xpDelta,
+            });
 
         this.emit("hero-updated", [
             {
@@ -367,7 +368,7 @@ class Store extends EventEmitter {
             lv: ticker.lv || 1,
         });
 
-        log.log(`[store] Emitted hero-updated for: ${event.hero}`);
+        if (debug) log.log(`[store] Emitted hero-updated for: ${event.hero}`);
     }
 
     // This function checks and attaches any news for the symbol in dailyData and sessionData
@@ -534,6 +535,24 @@ class Store extends EventEmitter {
         }
     }
 
+    applyFloatAdjustment(baseXp, floatShares) {
+        const safeFloat = floatShares || 1_000_000;
+
+        if (safeFloat < 1_000_000) {
+            // 📈 Small float (<1M): Slight XP boost up to +15%
+            const scale = 1.0 + ((1_000_000 - safeFloat) / 1_000_000) * 0.15;
+            const cappedScale = Math.min(scale, 1.15); // Max boost = +15%
+            return Math.round(baseXp * cappedScale);
+        } else if (safeFloat >= 100_000_000) {
+            // 📉 Large float (>100M): Max XP reduction −10%
+            return Math.round(baseXp * 0.9);
+        } else {
+            // 📉 Smooth curve (1M–100M): Linearly reduce XP up to −10%
+            const scale = 1.0 - ((safeFloat - 1_000_000) / 99_000_000) * 0.1;
+            return Math.round(baseXp * scale);
+        }
+    }
+
     calculateXp(ticker, event) {
         const hp = event.hp || 0;
         const dp = event.dp || 0;
@@ -541,7 +560,7 @@ class Store extends EventEmitter {
         const strength = event.strength || 0;
 
         // 🚨 NEW: Require minimum strength
-        const minimumStrength = 1000; // <-- adjust this threshold as needed
+        const minimumStrength = 1000; // adjust this threshold as needed
         if (strength < minimumStrength) {
             if (debugXp) {
                 console.log(`⚡ [${ticker.symbol}] Skipped XP gain - Strength too low (${strength})`);
@@ -550,12 +569,19 @@ class Store extends EventEmitter {
         }
 
         let baseXp = totalMove * 10;
+
+        // 📈 Apply volume buff (existing)
         const volumeBuff = getHeroBuff(ticker, "volume");
         const volMult = volumeBuff?.multiplier ?? 1;
-        const xpDelta = Math.round(baseXp * volMult);
+        baseXp = baseXp * volMult;
 
-        ticker.totalXpGained = (ticker.totalXpGained || 0) + xpDelta;
-        ticker.xp = (ticker.xp || 0) + xpDelta;
+        // 🧠 NEW: Apply float adjustment
+        const floatShares = ticker.floatValue || 1_000_000; // default safe fallback
+        const finalXp = this.applyFloatAdjustment(baseXp, floatShares);
+
+        // 📚 Store XP
+        ticker.totalXpGained = (ticker.totalXpGained || 0) + finalXp;
+        ticker.xp = (ticker.xp || 0) + finalXp;
 
         ticker.lv = Math.max(1, ticker.lv || 1);
 
@@ -583,13 +609,14 @@ class Store extends EventEmitter {
             if (volumeBuff?.desc) {
                 console.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
             }
+            console.log(`⚖️ Float Factor                Float: ${floatShares.toLocaleString()} Adjusted XP: ${finalXp}`);
             console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            console.log(`🎯 XP GAINED                   ${xpDelta}`);
+            console.log(`🎯 XP GAINED                   ${finalXp}`);
             console.log(`🎼 CURRENT LV →                ${ticker.lv}`);
             console.log(`🎼 TOTAL XP →                  ${ticker.totalXpGained}`);
         }
 
-        return xpDelta;
+        return finalXp;
     }
 
     startXpResetScheduler() {

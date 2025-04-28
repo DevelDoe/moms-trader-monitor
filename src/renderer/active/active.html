@@ -35,51 +35,67 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                         <!-- Left Column -->
                         <div class="space-y-4">
-                            <!-- Row 1: Single Panel -->
+                            <!-- Symbol and Info -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-0">
-                                <!-- First column takes 1/3 -->
                                 <div id="symbol" class="bg-zinc-800 p-4 rounded-xl col-span-1">
                                     <input id="symbol-input" class="editable-symbol" type="text" spellcheck="false" />
                                 </div>
-
-                                <!-- Second column takes 2/3 -->
                                 <div id="symbol" class="bg-zinc-800 p-4 rounded-xl col-span-2">
                                     <span data-id="profile-country"></span>
                                     <span data-id="industry"></span>
                                 </div>
                             </div>
 
+                            <!-- Inline Stats -->
+                            <div class="text-sm text-tertiary flex flex-wrap gap-4 mt-2 stats-row">
+                                <div>LV: <span data-id="stats-lv">1</span></div>
+                                <div>XP: <span data-id="stats-xp">0</span></div>
+                                <div><span id="energy" data-id="stats-energy">🌤️ Stable</span></div>
+                            </div>
+
+                            <!-- Charts -->
                             <div class="bg-zinc-800 p-4 rounded-xl chart" style="position: relative; padding-top: 0 !important; margin-top: 0 !important">
-                                <div id="section-float-summary" class="grid grid-cols-1 sm:grid-cols-2 gap-0">
-                                    <div class="data-column no-drag">
-                                        <p><strong title="Total Shares Outstanding">Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
-                                        <p><strong title="🔵 Public Float">🔵 Float:</strong> <span data-id="statistics-float"></span></p>
-                                        <p><strong title="🟡 Total Shorted Shares">🟡 Short:</strong> <span data-id="statistics-sharesShort"></span></p>
-                                        <p><strong title="🔴 Held by Insiders">🔴 Inside:</strong> <span data-id="statistics-insidersHeld"></span></p>
-                                        <p><strong title="🟠 Held by Institutions">🟠 Insti:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
-                                        <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remain:</strong> <span data-id="statistics-remainingShares"></span></p>
+                                <div class="bg-zinc-800 p-4 rounded-xl">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <!-- Float Data -->
+                                        <div id="section-float-summary" class="space-y-2">
+                                            <div class="flex justify-between"><span>Outstanding Shares:</span><span data-id="statistics-sharesOutstanding"></span></div>
+                                            <div class="flex justify-between"><span>🔵 Float:</span><span data-id="statistics-float"></span></div>
+                                            <div class="flex justify-between"><span>🟡 Short:</span><span data-id="statistics-sharesShort"></span></div>
+                                            <div class="flex justify-between"><span>🔴 Inside:</span><span data-id="statistics-insidersHeld"></span></div>
+                                            <div class="flex justify-between"><span>🟠 Insti:</span><span data-id="statistics-floatHeldByInstitutions"></span></div>
+                                            <div class="flex justify-between"><span>⚫ Remain:</span><span data-id="statistics-remainingShares"></span></div>
+                                        </div>
+
+                                        <!-- Ownership Pie -->
+                                        <div class="chart-container">
+                                            <canvas id="ownershipChart-summary" class="no-drag"></canvas>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div class="chart-container">
-                                    <canvas id="ownershipChart-summary" class="no-drag"></canvas>
-                                </div>
                                 <div id="data-warning-summary" class="bg-zinc-800 p-4 rounded-xl" style="text-align: center; color: #aa9c4c; display: none">
-                                    ⚠️ FFog of uncertainty lingers — The float data is unclear, and true ownership remains hidden.
+                                    ⚠️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden.
+                                </div>
+                            </div>
+
+                            <!-- 🧙 Buffs Section (now inside left column) -->
+                            <div class="bg-zinc-800 p-4 rounded-xl">
+                                <div id="buffs-container" class="flex flex-wrap gap-2 max-w-3xl">
+                                    <!-- Buff badges will appear here -->
                                 </div>
                             </div>
                         </div>
 
                         <!-- Right Column -->
                         <div class="space-y-4">
+                            <!-- Business Summary -->
                             <div class="bg-zinc-800 p-4 rounded-xl">
                                 <div class="scroll-container text-tertiary no-drag">
                                     <div class="scroll-content no-drag" data-id="profile-longBusinessSummary"></div>
-                                    <!-- <div class="scroll-content no-drag" >China SXT Pharmaceuticals, Inc., a pharmaceutical company, engages in the research, development, manufacture, marketing, and sale of traditional Chinese medicine pieces (TCMP) in China. The company offers advanced, fine, and regular TCMP products, and raw medicinal material, such as SanQiFen, HongQi, SuMu, JiangXiang, CuYanHuSuo, XiaTianWu, LuXueJing, XueJie, ChaoSuanZaoRen, HongQuMi, ChuanBeiMu, HuangShuKuiHua, WuWeiZi, DingXiang, RenShen, QingGuo, JueMingZi, ShaRen, and ChenXiang. It provides its products under the Suxuantang, Hui Chun Tang, and Tong Ren Tang brands. The company had an end-customer base of pharmaceutical companies, chain pharmacies, and hospitals, as well as pharmaceutical distributors. China SXT Pharmaceuticals, Inc. was founded in 2005 and is headquartered in Taizhou, China. -->
-                                    <!-- </div> -->
                                 </div>
                             </div>
 
+                            <!-- News -->
                             <div class="bg-zinc-800 p-4 rounded-xl">
                                 <h2>news</h2>
                                 <div id="news-container" class="news-list no-drag"></div>
