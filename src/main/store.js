@@ -540,6 +540,15 @@ class Store extends EventEmitter {
         const totalMove = hp + dp;
         const strength = event.strength || 0;
 
+        // 🚨 NEW: Require minimum strength
+        const minimumStrength = 1000; // <-- adjust this threshold as needed
+        if (strength < minimumStrength) {
+            if (debugXp) {
+                console.log(`⚡ [${ticker.symbol}] Skipped XP gain - Strength too low (${strength})`);
+            }
+            return 0; // No XP awarded
+        }
+
         let baseXp = totalMove * 10;
         const volumeBuff = getHeroBuff(ticker, "volume");
         const volMult = volumeBuff?.multiplier ?? 1;
@@ -550,23 +559,20 @@ class Store extends EventEmitter {
 
         ticker.lv = Math.max(1, ticker.lv || 1);
 
-        // Function to calculate the total required XP for a given level
         const getRequiredXp = (level) => {
             if (level <= 1) return 0;
             let requiredXp = 0;
             for (let i = 1; i < level; i++) {
-                requiredXp += i * 1000; // XP needed to go from level i to i+1
+                requiredXp += i * 1000;
             }
             return requiredXp;
         };
 
-        // Calculate the total XP required to reach the next level
         let requiredXp = getRequiredXp(ticker.lv + 1);
 
-        // Level up logic
         while (ticker.totalXpGained >= requiredXp) {
             ticker.lv += 1;
-            requiredXp = getRequiredXp(ticker.lv + 1); // Recalculate for the next level
+            requiredXp = getRequiredXp(ticker.lv + 1);
             if (debug) console.log(`✨ ${ticker.symbol} leveled up to LV ${ticker.lv}!`);
         }
 

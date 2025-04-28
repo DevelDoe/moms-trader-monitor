@@ -182,7 +182,7 @@ process.on("exit", () => {
     // saveSettings(appSettings);
 });
 
-function scheduleDailyRestart(targetHour = 3, targetMinute = 59) {
+function scheduleDailyRestart(targetHour = 3, targetMinute = 50) {
     // Current time in Eastern Time
     const etNow = DateTime.now().setZone("America/New_York");
 
