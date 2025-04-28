@@ -57,7 +57,7 @@
 
     { "key": "lockedShares", "icon": "🏛️", "desc": "High insider/institution ownership", "score": -25, "isBuff": false },
 
-    { "key": "hasNews", "icon": "😼", "desc": "Recent news catalyst", "score": 100 },
+    { "key": "hasNews", "icon": "😼", "desc": "News catalyst", "score": 100 },
     { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news", "score": 200, "isBuff": true },
     { "key": "hasBearishNews", "icon": "🙀", "desc": "Bearish news", "score": 0, "isBuff": false },
 

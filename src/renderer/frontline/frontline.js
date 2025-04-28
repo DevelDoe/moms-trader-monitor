@@ -585,27 +585,17 @@ function humanReadableNumbers(value) {
     if (value === null || value === undefined || isNaN(value) || value === "") {
         return "-";
     }
-    const num = Math.abs(Number(value));
-    const isNegative = Number(value) < 0;
-    const formatNumber = (dividedNum, suffix) => {
-        if (Math.abs(dividedNum - Math.round(dividedNum)) < 0.0001) {
-            return (isNegative ? "-" : "") + Math.round(dividedNum) + suffix;
-        }
-        return (isNegative ? "-" : "") + dividedNum.toFixed(2) + suffix;
-    };
+    const num = Number(value);
     if (num >= 1_000_000_000) {
-        return formatNumber(num / 1_000_000_000, "B");
+        return (num / 1_000_000_000).toFixed(2) + "B";
     }
     if (num >= 1_000_000) {
-        return formatNumber(num / 1_000_000, "M");
+        return (num / 1_000_000).toFixed(2) + "M";
     }
     if (num >= 1_000) {
-        return formatNumber(num / 1_000, "K");
+        return (num / 1_000).toFixed(2) + "K";
     }
-    if (num < 1) {
-        return (isNegative ? "-" : "") + num.toFixed(2);
-    }
-    return (isNegative ? "-" : "") + Math.floor(num).toLocaleString();
+    return num.toLocaleString();
 }
 
 function calculateVolumeImpact(volume = 0, price = 1) {

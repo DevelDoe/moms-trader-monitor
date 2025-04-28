@@ -678,12 +678,20 @@ function isSurging(hero, { slice = 4, minUps = 3, direction = "hp" } = {}) {
 }
 
 function humanReadableNumbers(value) {
-    if (!value || isNaN(value)) return "-";
+    if (value === null || value === undefined || isNaN(value) || value === "") {
+        return "-";
+    }
     const num = Number(value);
-    if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
-    if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
-    if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
-    return num.toLocaleString(); // For values smaller than 1,000
+    if (num >= 1_000_000_000) {
+        return (num / 1_000_000_000).toFixed(2) + "B";
+    }
+    if (num >= 1_000_000) {
+        return (num / 1_000_000).toFixed(2) + "M";
+    }
+    if (num >= 1_000) {
+        return (num / 1_000).toFixed(2) + "K";
+    }
+    return num.toLocaleString();
 }
 
 ////////////////////////////////////// State
