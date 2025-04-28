@@ -86,7 +86,7 @@
       "height": 612,
       "x": 982,
       "y": 1021,
-      "isOpen": true
+      "isOpen": false
     },
     "liveWindow": {
       "width": 358,
@@ -143,8 +143,8 @@
     "activeWindow": {
       "width": 805,
       "height": 404,
-      "x": 1051,
-      "y": 20,
+      "x": 1464,
+      "y": 0,
       "isOpen": true
     },
     "traderviewWindow_MULN": {

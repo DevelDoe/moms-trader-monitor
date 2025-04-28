@@ -131,7 +131,7 @@ function getOwnershipBuff(symbolData, buffList = []) {
         return (
             defined || {
                 key: "lockedShares",
-                icon: "💼",
+                icon: "🏛️",
                 desc: "High insider/institutional ownership",
                 score: -25,
                 isBuff: false,
