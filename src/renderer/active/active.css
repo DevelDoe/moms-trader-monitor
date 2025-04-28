@@ -30,8 +30,10 @@ body {
 
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 22vw !important; /* you wrote 35w, fixed it to 35vw */
-    height: 22vw !important;
+    width: 25vw !important; /* you wrote 35w, fixed it to 35vw */
+    height: 25vw !important;
+    margin-top: -20px;
+    margin-left: -10px;
 }
 
 /* Two-column layout using Flexbox */
@@ -377,16 +379,16 @@ body {
     /* background: #1f1f1f; */
     padding: 4px 7px;
     border-radius: 2px;
-    font-size: 12px;
+    font-size: 14px;
     color: rgb(243, 242, 224);
     transition: background-color 0.2s;
-    opacity: 0.75;
+    opacity: 0.8;
 }
 .buff-positive {
-    background-color: #1e7a5c; /* Green */
+    background-color: #02383c; /* Green */
 }
 .buff-negative {
-    background-color: #e73c3c; /* Red */
+    background-color: rgba(230, 39, 26, 0.5); /* Red */
 }
 .buff-neutral {
     background-color: #404040; /* Gray */
@@ -411,15 +413,15 @@ body {
 #section-float-summary > div {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 4px;
-    font-size: 14px;
+    margin-bottom: 6px;
+    font-size: 13px;
     font-weight: 100;
 }
 
 .stats-row {
     opacity: 0.5;
     margin-top: 0px !important;
-    margin-bottom: 20px !important;
+    margin-bottom: 40px !important;
     width: 100%;
 }
 
@@ -449,4 +451,14 @@ body {
 
 #energy .text-energy-dimblue {
     color: #bfdbfe !important; /* blue-200 */
+}
+
+.value-bold {
+    font-weight: bold;
+    color: white;
+}
+
+.value-light {
+    font-weight: normal;
+    color: #888888; /* Or any lighter gray */
 }

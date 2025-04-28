@@ -152,10 +152,16 @@ h2 {
 
 /* News Buffs (example) */
 .news-item.bullish h5 {
-    color: #2ecc97;
+    color: #02383c;
 }
 .news-item.bearish h5 {
-    color: #e73c3c;
+    color: #c70d3a;
+}
+.orange {
+    color: #ed5107;
+}
+.blue {
+    color: #230338;
 }
 .news-item.neutral h5 {
     color: #aaa;

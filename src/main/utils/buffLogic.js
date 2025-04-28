@@ -103,7 +103,7 @@ function getNewsBuff(symbolData) {
         key: "news",
         icon: "😼",
         desc: "Bullish news",
-        score: 150,
+        score: 200,
         multiplier: 1.1,
         isBuff: true,
     };
@@ -152,7 +152,7 @@ function getIndustryBuff(symbolData) {
         return {
             key: "bio",
             icon: "🧬",
-            desc: "Biotech stock",
+            desc: "Biotech",
             score: 25,
             isBuff: true,
         };
@@ -162,7 +162,7 @@ function getIndustryBuff(symbolData) {
         return {
             key: "weed",
             icon: "🌿",
-            desc: "Cannabis stock",
+            desc: "Cannabis",
             score: -10,
             isBuff: true,
         };
@@ -172,7 +172,7 @@ function getIndustryBuff(symbolData) {
         return {
             key: "space",
             icon: "🌌",
-            desc: "Space stock",
+            desc: "Space",
             score: 10,
             isBuff: true,
         };
@@ -188,7 +188,7 @@ function getCountryBuff(symbolData) {
         return {
             key: "china",
             icon: "🇨🇳",
-            desc: "China stock",
+            desc: "China",
             score: 0,
             isBuff: false,
         };
@@ -209,8 +209,8 @@ function getShortInterestBuff(symbolData) {
         return {
             key: "highShort",
             icon: "🩳",
-            desc: "High short interest",
-            score: 25,
+            desc: "High short",
+            score: 50,
             isBuff: true,
         };
     }
@@ -237,7 +237,7 @@ function getS3FilingBuff(symbolData) {
         return {
             key: "hasS3",
             icon: "📂",
-            desc: `Registered S-3 (${symbolData.offReg})`,
+            desc: `S-3 (${symbolData.offReg})`,
             score: -25,
             isBuff: false,
         };
@@ -255,7 +255,7 @@ function getDilutionRiskBuff(symbolData) {
             key: "dilutionRisk",
             icon: "🚨",
             desc: "High dilution risk",
-            score: -50,
+            score: -25,
             isBuff: false,
         };
     }

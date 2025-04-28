@@ -223,7 +223,14 @@ function updateUI(symbolData) {
 
     const remainingShares = Math.max(sharesOutstanding - Math.min(floatShares + insidersHeld + institutionsHeld, sharesOutstanding), 0);
 
-    const formatWithPercentage = (value, total) => (!Number.isFinite(value) ? `N/A (0.00%)` : total === 0 ? `0 (0.00%)` : `${formatLargeNumber(value)} (${((value / total) * 100).toFixed(2)}%)`);
+    const formatWithPercentage = (value, total) => {
+        if (!Number.isFinite(value)) return `<span class="value-bold">N/A</span> <span class="value-light">(0.00%)</span>`;
+        if (total === 0) return `<span class="value-bold">0</span> <span class="value-light">(0.00%)</span>`;
+
+        const num = formatLargeNumber(value);
+        const percent = ((value / total) * 100).toFixed(2);
+        return `<span class="value-bold">${num}</span> <span class="value-light">(${percent}%)</span>`;
+    };
 
     setText("statistics-sharesOutstanding", formatLargeNumber(sharesOutstanding));
     setText("statistics-float", formatWithPercentage(floatShares, sharesOutstanding));
@@ -337,14 +344,6 @@ function updateUI(symbolData) {
 
     const buffsContainer = document.getElementById("buffs-container");
     buffsContainer.innerHTML = ""; // Clear previous buffs
-    if (symbolData.buffs) {
-        Object.values(symbolData.buffs).forEach((buff) => {
-            const badge = document.createElement("span");
-            badge.className = "bg-green-700 text-white text-xs px-2 py-1 rounded-full";
-            badge.textContent = buff.desc || "Buff";
-            buffsContainer.appendChild(badge);
-        });
-    }
 
     renderBuffs(symbolData.buffs);
 }
@@ -411,14 +410,18 @@ function renderBuffs(buffs) {
         return;
     }
 
-    const sortedBuffs = Object.values(buffs).sort((a, b) => {
-        return (a.priority ?? 999) - (b.priority ?? 999);
-    });
+    const sortedBuffs = Object.entries(buffs)
+        .filter(([key, buff]) => {
+            const k = key.toLowerCase(); // always lowercase to match
+            return !k.includes("vol") && k !== "volume" && k !== "newhigh" && k !== "bounceback";
+        })
+        .map(([, buff]) => buff) // use only the buff object
+        .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
 
     sortedBuffs.forEach((buff) => {
         const buffSpan = document.createElement("span");
 
-        let buffClass = "buff-neutral"; // Default to neutral
+        let buffClass = "buff-neutral"; // Default
         if (buff.isBuff === true) buffClass = "buff-positive";
         else if (buff.isBuff === false) buffClass = "buff-negative";
 
@@ -451,7 +454,7 @@ function setText(id, value) {
         if (id === "industry" && typeof text === "string" && text.length > 30) {
             text = text.slice(0, 27) + "...";
         }
-        el.innerText = text;
+        el.innerHTML = text; // <-- use innerHTML instead of innerText
     });
 }
 /**

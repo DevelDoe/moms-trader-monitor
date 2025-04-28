@@ -59,12 +59,24 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <!-- Float Data -->
                                         <div id="section-float-summary" class="space-y-2">
-                                            <div class="flex justify-between"><span>Outstanding Shares:</span><span data-id="statistics-sharesOutstanding"></span></div>
-                                            <div class="flex justify-between"><span>🔵 Float:</span><span data-id="statistics-float"></span></div>
-                                            <div class="flex justify-between"><span>🟡 Short:</span><span data-id="statistics-sharesShort"></span></div>
-                                            <div class="flex justify-between"><span>🔴 Inside:</span><span data-id="statistics-insidersHeld"></span></div>
-                                            <div class="flex justify-between"><span>🟠 Insti:</span><span data-id="statistics-floatHeldByInstitutions"></span></div>
-                                            <div class="flex justify-between"><span>⚫ Remain:</span><span data-id="statistics-remainingShares"></span></div>
+                                            <div>
+                                                <span>Outstanding Shares: <strong class="text-white" data-id="statistics-sharesOutstanding"></strong></span>
+                                            </div>
+                                            <div>
+                                                <span>🔵 Float: <strong class="text-white" data-id="statistics-float"></strong></span>
+                                            </div>
+                                            <div>
+                                                <span>🟡 Short: <strong class="text-white" data-id="statistics-sharesShort"></strong></span>
+                                            </div>
+                                            <div>
+                                                <span>🔴 Inside: <strong class="text-white" data-id="statistics-insidersHeld"></strong></span>
+                                            </div>
+                                            <div>
+                                                <span>🟠 Insti: <strong class="text-white" data-id="statistics-floatHeldByInstitutions"></strong></span>
+                                            </div>
+                                            <div>
+                                                <span>⚫ Remain: <strong class="text-white" data-id="statistics-remainingShares"></strong></span>
+                                            </div>
                                         </div>
 
                                         <!-- Ownership Pie -->
@@ -228,11 +240,10 @@
 
             if (container) {
                 const downSpeed = 1;
-                const upSpeed = 10;
                 const delay = 60;
-                const pauseTop = 8000;
-                const pauseBottom = 3000;
-                let direction = 0; // 0 = idle, 1 = down, -1 = up
+                const pauseTop = 8000; // How long to pause at the top (after fade-in)
+                const pauseBottom = 3000; // How long to pause at the bottom (before fade-out)
+                let direction = 0; // 0 = idle, 1 = down
 
                 const scrollLoop = () => {
                     if (direction === 1) {
@@ -241,27 +252,32 @@
                         if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
                             direction = 0;
                             setTimeout(() => {
-                                direction = -1; // go back up
-                                scrollLoop();
-                            }, pauseBottom);
-                            return;
-                        }
-                    } else if (direction === -1) {
-                        container.scrollTop -= upSpeed;
-
-                        if (container.scrollTop <= 0) {
-                            container.scrollTop = 0; // make sure it's exactly top
-                            direction = 0;
-                            setTimeout(() => {
-                                direction = 1;
-                                scrollLoop();
-                            }, pauseTop);
+                                fadeOut(container);
+                                setTimeout(() => {
+                                    container.scrollTop = 0; // Reset to top while invisible
+                                    fadeIn(container);
+                                    setTimeout(() => {
+                                        direction = 1; // Only resume after a pause at the top
+                                        scrollLoop();
+                                    }, pauseTop);
+                                }, 3000); // fade-out duration
+                            }, pauseBottom); // Pause at bottom before fade-out
                             return;
                         }
                     }
 
                     setTimeout(scrollLoop, delay);
                 };
+
+                function fadeOut(element) {
+                    element.style.transition = "opacity 1s";
+                    element.style.opacity = "0";
+                }
+
+                function fadeIn(element) {
+                    element.style.transition = "opacity 0.5s";
+                    element.style.opacity = "1";
+                }
 
                 // Start paused at top
                 setTimeout(() => {

@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const dullStyle = age > inactiveThreshold ? "opacity: 0.4; filter: grayscale(0.8);" : "";
 
                 const buffIcons = Object.entries(h.buffs || {})
-                    .filter(([key]) => !key.includes("vol") && key !== "volume" && key !== "newHigh")
+                    .filter(([key]) => !key.includes("vol") && key !== "volume" && key !== "newHigh" && key !== "bounceBack")
                     .map(([key, val]) => (typeof val === "object" && val.icon ? val.icon : globalBuffs[key]?.icon || ""))
                     .join(" ");
 
@@ -207,7 +207,7 @@ function generateScoreTooltip(hero) {
     let hasNeutral = false;
 
     Object.entries(hero.buffs || {}).forEach(([key, buff]) => {
-        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh") return;
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh" || key === "bounceBack") return;
 
         const ref = typeof buff === "object" ? buff : globalBuffs[key];
         if (!ref || typeof ref.score !== "number") return;
@@ -262,7 +262,7 @@ function calculateScore(heroBuffs = {}, baseScore = 0) {
     let hasBearish = false;
 
     for (const key in heroBuffs) {
-        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh") continue;
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh" || key === "bounceBack") continue;
 
         const buff = heroBuffs[key];
         const ref = typeof buff === "object" ? buff : globalBuffs[key];

@@ -55,7 +55,7 @@
         ]
     },
 
-    { "key": "lockedShares", "icon": "🏛️", "desc": "High insider/institutional ownership", "score": -25, "isBuff": false },
+    { "key": "lockedShares", "icon": "🏛️", "desc": "High insider/institution ownership", "score": -25, "isBuff": false },
 
     { "key": "hasNews", "icon": "😼", "desc": "Recent news catalyst", "score": 100 },
     { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news", "score": 200, "isBuff": true },
@@ -64,13 +64,13 @@
     { "key": "newHigh", "icon": "📈", "desc": "New high", "score": 100, "isBuff": true },
     { "key": "bounceBack", "icon": "🔁", "desc": "Bounce after selloff", "score": 50, "isBuff": true },
 
-    { "key": "bio", "icon": "🧬", "desc": "Biotech stock", "score": 25, "isBuff": true },
-    { "key": "weed", "icon": "🌿", "desc": "Cannabis stock", "score": -10 },
-    { "key": "space", "icon": "🌌", "desc": "Space stock", "score": 10 },
-    { "key": "china", "icon": "🇨🇳", "desc": "China stock", "score": 0 },
+    { "key": "bio", "icon": "🧬", "desc": "Biotech", "score": 25, "isBuff": true },
+    { "key": "weed", "icon": "🌿", "desc": "Cannabis", "score": -10 },
+    { "key": "space", "icon": "🌌", "desc": "Space", "score": 10 },
+    { "key": "china", "icon": "🇨🇳", "desc": "China", "score": 0 },
 
     { "key": "highShort", "icon": "🩳", "desc": "High short interest", "score": 25, "isBuff": true },
     { "key": "netLoss", "icon": "🥅", "desc": "Net loss", "score": -25, "isBuff": false },
-    { "key": "hasS3", "icon": "📂", "desc": "Registered S-3", "score": -25, "isBuff": false },
+    { "key": "hasS3", "icon": "📂", "desc": "S-3", "score": -25, "isBuff": false },
     { "key": "dilutionRisk", "icon": "🚨", "desc": "High dilution risk", "score": -25, "isBuff": false }
 ]
