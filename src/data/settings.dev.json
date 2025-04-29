@@ -76,16 +76,16 @@
   "windows": {
     "scannerWindow": {
       "width": 170,
-      "height": 894,
-      "x": 1084,
-      "y": 704,
-      "isOpen": false
+      "height": 891,
+      "x": 0,
+      "y": 502,
+      "isOpen": true
     },
     "settingsWindow": {
       "width": 759,
       "height": 612,
-      "x": 982,
-      "y": 1021,
+      "x": 1369,
+      "y": 874,
       "isOpen": false
     },
     "liveWindow": {
@@ -98,8 +98,8 @@
     "focusWindow": {
       "width": 444,
       "height": 490,
-      "x": 1416,
-      "y": 426,
+      "x": 530,
+      "y": 905,
       "isOpen": true
     },
     "dailyWindow": {
@@ -136,15 +136,15 @@
     "frontlineWindow": {
       "width": 361,
       "height": 490,
-      "x": 1052,
-      "y": 426,
+      "x": 169,
+      "y": 905,
       "isOpen": true
     },
     "activeWindow": {
       "width": 805,
       "height": 404,
-      "x": 1464,
-      "y": 0,
+      "x": 170,
+      "y": 501,
       "isOpen": true
     },
     "traderviewWindow_MULN": {
@@ -388,10 +388,74 @@
       "height": 558,
       "x": 1535,
       "y": 930,
-      "isOpen": true
+      "isOpen": false
+    },
+    "traderviewWindow_[object Object]": {
+      "width": 850,
+      "height": 660,
+      "x": 798,
+      "y": 737,
+      "isOpen": false
+    },
+    "traderviewWindow_WLDS": {
+      "isOpen": false
+    },
+    "traderviewWindow_MLGO": {
+      "isOpen": false
+    },
+    "traderviewWindow_OMEX": {
+      "isOpen": false
+    },
+    "traderviewWindow_WHLR": {
+      "isOpen": false
+    },
+    "traderviewWindow_UPXI": {
+      "isOpen": false
+    },
+    "traderviewWindow_LASE": {
+      "isOpen": false
+    },
+    "traderviewWindow_CING": {
+      "isOpen": false
+    },
+    "traderviewWindow_AACG": {
+      "isOpen": false
+    },
+    "traderviewWindow_AAME": {
+      "width": 850,
+      "height": 660,
+      "x": 1402,
+      "y": 1144,
+      "isOpen": false
+    },
+    "traderviewWindow_ABAT": {
+      "width": 850,
+      "height": 660,
+      "x": 847,
+      "y": 1073,
+      "isOpen": false
+    },
+    "traderviewWindow_ABLV": {
+      "width": 850,
+      "height": 660,
+      "x": 514,
+      "y": 735,
+      "isOpen": false
+    },
+    "traderviewWindow_ABOS": {
+      "width": 850,
+      "height": 660,
+      "x": 2476,
+      "y": 876,
+      "isOpen": false
+    },
+    "traderviewWindow_OMH": {
+      "isOpen": false
     }
   },
   "traderview": {
-    "visibility": false
+    "visibility": false,
+    "enableHeroes": false,
+    "autoClose": true
   }
 }

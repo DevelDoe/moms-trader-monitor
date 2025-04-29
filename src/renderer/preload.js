@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     onXpReset: (cb) => ipcRenderer.on("xp-reset", cb),
 });
 
+contextBridge.exposeInMainWorld("hlpsFunctions", {
+    calculateImpact: (vol, price, buffs) => calculateVolumeImpact(vol, price, buffs),
+});
+
 contextBridge.exposeInMainWorld("appFlags", {
     isDev: process.env.NODE_ENV === "development",
 });
@@ -28,38 +32,6 @@ contextBridge.exposeInMainWorld("settingsAPI", {
     onUpdate: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
     fetchNews: () => ipcRenderer.invoke("fetch-news"),
 });
-
-// contextBridge.exposeInMainWorld("dailyAPI", {
-//     toggle: () => ipcRenderer.send("toggle-daily"),
-//     refresh: () => ipcRenderer.send("refresh-daily"),
-//     getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
-//     onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
-//     applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
-//     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
-// });
-
-contextBridge.exposeInMainWorld("focusAPI", {
-    toggle: () => ipcRenderer.send("toggle-focus"),
-    refresh: () => ipcRenderer.send("refresh-focus"),
-    getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
-    onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
-    applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
-    onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
-    onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
-    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
-    calculateVolumeImpact: (volume, price) => ipcRenderer.invoke("calculate-volume-impact", { volume, price }),
-});
-
-// contextBridge.exposeInMainWorld("sessionAPI", {
-//     toggle: () => ipcRenderer.send("toggle-live"),
-//     reCreate: () => ipcRenderer.send("recreate-live"),
-//     getTickers: (listType) => ipcRenderer.invoke("get-tickers", listType),
-//     onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
-//     clearSession: () => ipcRenderer.send("clear-live"),
-//     onSessionCleared: (callback) => ipcRenderer.on("live-cleared", callback),
-//     applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
-//     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
-// });
 
 contextBridge.exposeInMainWorld("newsAPI", {
     get: () => ipcRenderer.invoke("get-all-news"),
@@ -73,10 +45,8 @@ contextBridge.exposeInMainWorld("newsAPI", {
 contextBridge.exposeInMainWorld("storeAPI", {
     getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
     getSymbol: (symbol) => ipcRenderer.invoke("get-symbol", symbol),
-    getTickers: (listType = "session") => ipcRenderer.invoke("get-tickers", listType),
     getAllNews: () => ipcRenderer.invoke("get-all-news"),
     getTickerNews: (ticker) => ipcRenderer.invoke("get-news", ticker),
-
     onUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
     onHeroUpdate: (callback) =>
@@ -102,6 +72,13 @@ contextBridge.exposeInMainWorld("frontlineAPI", {
 contextBridge.exposeInMainWorld("heroesAPI", {
     activate: () => ipcRenderer.send("activate-heroes"),
     deactivate: () => ipcRenderer.send("deactivate-heroes"),
+    onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
+    applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
+    onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
+    onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
+    getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
+    calculateVolumeImpact: (volume, price) => ipcRenderer.invoke("calculate-volume-impact", { volume, price }),
+    getCurrentHeroes: () => ipcRenderer.invoke("get-tickers", "focus"),
 });
 
 contextBridge.exposeInMainWorld("activeAPI", {
@@ -138,6 +115,7 @@ contextBridge.exposeInMainWorld("infobarAPI", {
 contextBridge.exposeInMainWorld("traderviewAPI", {
     setVisibility: (enabled) => ipcRenderer.send("set-traderview-visibility", enabled),
     setTopTickers: (tickers) => ipcRenderer.send("set-top-tickers", tickers),
+    openTickersNow: (tickers) => ipcRenderer.send("open-traderview-tickers", tickers),
 });
 
 contextBridge.exposeInMainWorld("progressAPI", {
@@ -150,3 +128,69 @@ contextBridge.exposeInMainWorld("wizardAPI", {
     activate: () => ipcRenderer.send("activate-wizard"),
     deactivate: () => ipcRenderer.send("deactivate-wizard"),
 });
+
+// HELPER FUNCTIONS
+function calculateVolumeImpact(volume = 0, price = 1, buffs = {}) {
+    const categories = Object.entries(buffs)
+        .map(([category, data]) => ({ category, ...data }))
+        .sort((a, b) => a.priceThreshold - b.priceThreshold);
+
+    for (const category of categories) {
+        if (price <= category.priceThreshold) {
+            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
+
+            const stageToUse =
+                sortedStages.find((stage, index) => {
+                    const current = stage.volumeThreshold;
+                    const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
+                    if (index === sortedStages.length - 1) {
+                        return volume >= prev;
+                    }
+                    return volume > prev && volume <= current;
+                }) || sortedStages[sortedStages.length - 1];
+
+            return {
+                ...stageToUse,
+                capAssigned: category.category,
+                volumeStage: stageToUse.key,
+                message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
+                style: {
+                    cssClass: `volume-${stageToUse.key.toLowerCase()}`,
+                    color: getColorForStage(stageToUse.key),
+                    animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
+                },
+            };
+        }
+    }
+
+    return {
+        multiplier: 1,
+        capAssigned: "None",
+        volumeStage: "None",
+        message: "No matching category found",
+        style: {
+            cssClass: "volume-none",
+            icon: "",
+            description: "No volume",
+            color: "#cccccc",
+            animation: "none",
+        },
+        score: 0,
+    };
+}
+
+function getColorForStage(stageKey) {
+    const colors = {
+        lowVol: "#ccc",
+        mediumVol: "#00aeff",
+        highVol: "#263cff",
+        parabolicVol: "#e25822",
+    };
+    return colors[stageKey] || "#cccccc";
+}
+
+function humanReadableNumbers(num) {
+    if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
+    if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
+    return num.toString();
+}

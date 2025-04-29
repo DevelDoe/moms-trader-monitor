@@ -151,7 +151,7 @@ app.on("ready", async () => {
         });
 
         if (isDevelopment) {
-            startMockAlerts();
+            // startMockAlerts();
             startMockNews();
         }
     });
@@ -172,7 +172,6 @@ app.whenReady().then(() => {
     });
 });
 
-// Quit the app when all windows are closed
 app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
 });
@@ -463,7 +462,7 @@ ipcMain.handle("get-symbol", (event, symbol) => {
 });
 
 ipcMain.handle("get-tickers", (event, listType = "session") => {
-    return tickerStore.getAllTickers(listType);
+    return tickerStore.getAllSymbols();
 });
 
 ipcMain.handle("get-news", (event, ticker) => {
@@ -528,7 +527,6 @@ tickerStore.on("store-nuke", () => {
     }, 100); // Was 300 — now 1000ms to let main init settle
 });
 
-// When renderer explicitly requests a nuke
 ipcMain.on("admin-nuke", () => {
     console.log("💣 Nuke state requested by renderer");
 
@@ -540,6 +538,9 @@ ipcMain.on("activate-events", () => {
     try {
         const win = createWindow("scanner", () => createScannerWindow(isDevelopment));
         if (win) win.show();
+        const settings = loadSettings();
+        settings.scanner.scannerVolume = 1;
+        saveSettings(settings);
     } catch (err) {
         log.error("Failed to activate events window:", err.message);
     }
@@ -547,6 +548,9 @@ ipcMain.on("activate-events", () => {
 
 ipcMain.on("deactivate-events", () => {
     destroyWindow("scanner");
+    const settings = loadSettings();
+    settings.scanner.scannerVolume = 0;
+    saveSettings(settings);
 });
 
 ipcMain.on("toggle-scanner", () => {
@@ -749,53 +753,70 @@ ipcMain.on("refresh-infobar", () => {
 });
 
 // Traderview
-ipcMain.on("toggle-traderview-browser", () => {
-    const settings = loadSettings();
-    const showTraderViews = settings.traderview?.visibility ?? false;
-
-    if (!showTraderViews) {
-        console.log("[Traderview] Dynamic traderview creation is disabled.");
-        return;
-    }
-
-    if (global.traderviewWindowsVisible) {
-        destroyTradingViewWindows();
-        global.traderviewWindowsVisible = false;
-        return;
-    }
-
-    const fallback = ["AAPL"];
-    const symbols = global.currentTopTickers?.length ? global.currentTopTickers : [];
-    if (symbols.length === 0) {
-        console.log("⚠️ No top tickers set, skipping traderview window creation.");
-        return;
-    }
-
-    symbols.forEach((symbol) => {
-        registerTradingViewWindow(symbol, isDevelopment);
-    });
-
-    global.traderviewWindowsVisible = true;
-});
+const setLimitForWindows = 20; // Hardcoded limit to 20 windows for now. (TODO: Make user-configurable)
+global.currentTopTickers = [];
 
 ipcMain.on("set-top-tickers", (event, newTickers) => {
+    applyTopTickers(newTickers);
+});
+
+ipcMain.on("set-enable-heroes", (event, enabled) => {
+    const settings = loadSettings();
+    settings.traderview = {
+        ...(settings.traderview || {}),
+        enableHeroes: enabled,
+    };
+    saveSettings(settings);
+
+    if (!enabled) return;
+
+    // ⚠️ Wait for global.currentTopTickers to be populated
+    if (!Array.isArray(global.currentTopTickers) || global.currentTopTickers.length === 0) {
+        console.warn("[Traderview] EnableHeroes toggled but no top tickers available yet.");
+        return;
+    }
+
+    ipcMain.emit("set-top-tickers", event, global.currentTopTickers);
+});
+
+function applyTopTickers(newTickers) {
+    const settings = loadSettings();
+    const enableHeroes = settings.traderview?.enableHeroes ?? false;
+    const autoClose = settings.traderview?.autoClose ?? true;
+
     global.currentTopTickers = [...newTickers];
 
-    const settings = loadSettings();
-    const showTraderViews = settings.traderview?.visibility ?? false;
+    if (!enableHeroes) return;
 
-    if (!showTraderViews) return;
+    const limitedTickers = newTickers.slice(0, setLimitForWindows);
 
-    // ✅ If not visible, we need to register them
-    if (!global.traderviewWindowsVisible) {
-        newTickers.forEach((symbol) => {
-            registerTradingViewWindow(symbol, isDevelopment);
+    if (autoClose) {
+        const openSymbols = Object.keys(global.traderviewWindowRefs || {}).filter((s) => global.traderviewWindowRefs[s]);
+        const openSet = new Set(openSymbols);
+        const desiredSet = new Set(limitedTickers);
+
+        openSymbols.forEach((symbol) => {
+            if (!desiredSet.has(symbol)) {
+                destroyTradingViewWindow(symbol);
+            }
         });
-        global.traderviewWindowsVisible = true;
+
+        limitedTickers.forEach((symbol) => {
+            if (!openSet.has(symbol)) {
+                registerTradingViewWindow(symbol, isDevelopment);
+            }
+        });
     } else {
-        updateTradingViewWindows(newTickers);
+        const openSymbols = Object.keys(global.traderviewWindowRefs || {}).filter((s) => global.traderviewWindowRefs[s]);
+        const availableSlots = setLimitForWindows - openSymbols.length;
+        if (availableSlots <= 0) return;
+
+        const toOpen = newTickers.filter((s) => !global.traderviewWindowRefs?.[s]).slice(0, availableSlots);
+        toOpen.forEach((symbol) => registerTradingViewWindow(symbol, isDevelopment));
+
+        global.traderviewWindowsVisible = true;
     }
-});
+}
 
 // Progress
 ipcMain.on("activate-progress", () => {

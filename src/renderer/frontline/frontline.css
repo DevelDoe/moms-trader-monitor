@@ -147,9 +147,9 @@ h2 {
     background: linear-gradient(90deg, #faab00, #ffe499);
 }
 
-.bar-fill.strength {
+/* .bar-fill.strength {
     background: linear-gradient(90deg, #263cff, #00aeff);
-}
+} */
 
 .hp-boost,
 .dp-damage {
@@ -250,26 +250,22 @@ h2 {
     width: 100%;
 }
 
-/* stength text  */
-
-/* Volume text colors */
-.bar-text.volume-none {
+/* .bar-text.volume-none {
     color: #cccccc;
-} /* Default/gray when no volume */
+} 
 .bar-text.volume-lowvol {
     color: #6b7280;
-} /* Gray for low volume */
+} 
 .bar-text.volume-mediumvol {
     color: #3b82f6;
-} /* Blue for medium volume */
+} 
 .bar-text.volume-highvol {
     color: #ef4444;
-} /* Red for high volume */
+} 
 .bar-text.volume-parabolicvol {
-    /* Amber with animation for parabolic */
     color: #f59e0b;
     animation: pulse 1.5s infinite;
-}
+} */
 
 /* Pulse animation for parabolic volume */
 @keyframes pulse {

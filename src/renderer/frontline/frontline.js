@@ -309,7 +309,13 @@ function updateCardDOM(hero) {
 
     setBarWidth("score", state.score, maxScore);
     setBarWidth("hp", state.hp, maxHP);
-    setBarWidth("strength", state.strength, 400000);
+    // Volume impact-based coloring
+    const volImpact = window.hlpsFunctions.calculateImpact(state.strength, state.price, window.buffs);
+    const strengthBar = card.querySelector(".bar-fill.strength");
+    if (strengthBar) {
+        strengthBar.style.width = `${Math.min((state.strength / 400000) * 100, 100)}%`;
+        strengthBar.style.backgroundColor = volImpact.style.color;
+    }
 
     // Update label
     const priceEl = card.querySelector(".lv");
@@ -343,7 +349,7 @@ function renderCard(state) {
 
     const changeClass = state.lastEvent.hp ? "hp-boost" : state.lastEvent.dp ? "dp-damage" : "";
 
-    const volumeImpact = calculateVolumeImpact(strength, price);
+    const volumeImpact = window.hlpsFunctions.calculateImpact(strength, price, window.buffs);
 
     // Store initial values for animation
     const initialValues = {
@@ -419,7 +425,7 @@ function renderCard(state) {
     <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> ${hero} <span class="lv">$${state.price.toFixed(2)}<span></div>
     <div class="ticker-info">
         <div class="ticker-data">
-            <span class="bar-text ${volumeImpact.style.cssClass}">${Math.floor(strength / 1000)}k</span>
+<span class="bar-text" style="color:${volumeImpact.style.color}">${abbriviatedValues(strength)}</span>
             ${change ? `<span class="${changeClass}">${change}</span>` : ""}
             ${buffsInline}
         </div>
@@ -503,15 +509,15 @@ function calculateScore(hero, event) {
             baseScore += event.hp * 10;
             logStep("💖", "Base HP Added", baseScore);
 
-            const floatBuff = getHeroBuff(hero, "float");
-            const floatMult = floatBuff?.multiplier ?? 1;
-            baseScore *= floatMult;
-            logStep(floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️", `Float Mult (${humanReadableNumbers(hero.floatValue)})`, floatMult);
+            // const floatBuff = getHeroBuff(hero, "float");
+            // const floatMult = floatBuff?.multiplier ?? 1;
+            // baseScore *= floatMult;
+            // logStep(floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️", `Float Mult (${abbriviatedValues(hero.floatValue)})`, floatMult);
 
             const volumeBuff = getHeroBuff(hero, "volume");
             const volMult = volumeBuff?.multiplier ?? 1;
             baseScore *= volMult;
-            logStep("📢", volumeBuff?.message ?? `No volume buff (${humanReadableNumbers(event.strength || 0)})`, volMult);
+            logStep("📢", volumeBuff?.message ?? `No volume buff (${abbriviatedValues(event.strength || 0)})`, volMult);
         }
 
         if (event.dp > 0) {
@@ -556,7 +562,7 @@ function startScoreDecay() {
             if (hero.score > 0) {
                 const originalScore = hero.score;
                 const scale = 1 + hero.score / SCORE_NORMALIZATION;
-                const cling = 0.2;
+                const cling = 0.1;
                 const taper = Math.max(cling, Math.min(1, hero.score / 10));
                 const decayAmount = XP_DECAY_PER_TICK * scale * taper;
                 const newScore = Math.max(0, hero.score - decayAmount);
@@ -581,7 +587,7 @@ function startScoreDecay() {
     }, DECAY_INTERVAL_MS);
 }
 
-function humanReadableNumbers(value) {
+function abbriviatedValues(value) {
     if (value === null || value === undefined || isNaN(value) || value === "") {
         return "-";
     }
@@ -598,56 +604,56 @@ function humanReadableNumbers(value) {
     return num.toLocaleString();
 }
 
-function calculateVolumeImpact(volume = 0, price = 1) {
-    const categories = Object.entries(window.buffs)
-        .map(([category, data]) => ({ category, ...data }))
-        .sort((a, b) => a.priceThreshold - b.priceThreshold);
+// function calculateVolumeImpact(volume = 0, price = 1) {
+//     const categories = Object.entries(window.buffs)
+//         .map(([category, data]) => ({ category, ...data }))
+//         .sort((a, b) => a.priceThreshold - b.priceThreshold);
 
-    for (const category of categories) {
-        if (price <= category.priceThreshold) {
-            const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
+//     for (const category of categories) {
+//         if (price <= category.priceThreshold) {
+//             const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
 
-            const stageToUse =
-                sortedStages.find((stage, index) => {
-                    const current = stage.volumeThreshold;
-                    const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
-                    if (index === sortedStages.length - 1) {
-                        return volume >= prev;
-                    }
-                    return volume > prev && volume <= current;
-                }) || sortedStages[sortedStages.length - 1];
+//             const stageToUse =
+//                 sortedStages.find((stage, index) => {
+//                     const current = stage.volumeThreshold;
+//                     const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
+//                     if (index === sortedStages.length - 1) {
+//                         return volume >= prev;
+//                     }
+//                     return volume > prev && volume <= current;
+//                 }) || sortedStages[sortedStages.length - 1];
 
-            // ✅ Only now we can safely use stageToUse
-            return {
-                ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
-                capAssigned: category.category,
-                volumeStage: stageToUse.key,
-                message: `${category.category} ${stageToUse.key} (${humanReadableNumbers(volume)})`,
-                style: {
-                    cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-                    color: getColorForStage(stageToUse.key),
-                    animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-                },
-            };
-        }
-    }
+//             // ✅ Only now we can safely use stageToUse
+//             return {
+//                 ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
+//                 capAssigned: category.category,
+//                 volumeStage: stageToUse.key,
+//                 message: `${category.category} ${stageToUse.key} (${abbriviatedValues(volume)})`,
+//                 style: {
+//                     cssClass: `volume-${stageToUse.key.toLowerCase()}`,
+//                     color: getColorForStage(stageToUse.key),
+//                     animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
+//                 },
+//             };
+//         }
+//     }
 
-    // Fallback if no category matched
-    return {
-        multiplier: 1,
-        capAssigned: "None",
-        volumeStage: "None",
-        message: "No matching category found",
-        style: {
-            cssClass: "volume-none",
-            icon: "",
-            description: "No volume",
-            color: "#cccccc",
-            animation: "none",
-        },
-        score: 0,
-    };
-}
+//     // Fallback if no category matched
+//     return {
+//         multiplier: 1,
+//         capAssigned: "None",
+//         volumeStage: "None",
+//         message: "No matching category found",
+//         style: {
+//             cssClass: "volume-none",
+//             icon: "",
+//             description: "No volume",
+//             color: "#cccccc",
+//             animation: "none",
+//         },
+//         score: 0,
+//     };
+// }
 
 function getSymbolColor(symbol) {
     if (!symbolColors[symbol]) {
@@ -671,7 +677,7 @@ function getColorForStage(stageKey) {
     return colors[stageKey] || "#cccccc";
 }
 
-function humanReadableNumbers(num) {
+function abbriviatedValues(num) {
     if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
     if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
     return num.toString();

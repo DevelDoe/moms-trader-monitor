@@ -156,9 +156,9 @@ h2 {
     background: linear-gradient(90deg, #c20101, #fd5151);
 }
 
-.strength {
+/* .strength {
     background: linear-gradient(90deg, #263cff, #00aeff);
-}
+} */
 
 /* Animation for HP and DP Boost */
 #change {
@@ -207,11 +207,11 @@ h2 {
 @keyframes floatOut {
     0% {
         opacity: 1;
-        transform: translateY(20px); /* Start 20px below its final position */
+        transform: translateY(10px); /* Start 20px below its final position */
     }
     60% {
         opacity: 1;
-        transform: translateY(20px); /* End at its original position */
+        transform: translateY(10px); /* End at its original position */
     }
     100% {
         opacity: 0;

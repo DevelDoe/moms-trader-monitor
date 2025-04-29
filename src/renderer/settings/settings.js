@@ -101,98 +101,171 @@ function initializeGeneralSection() {
     const showInfobarToggle = document.getElementById("show-infobar");
     showInfobarToggle.checked = window.settings.windows.infobarWindow?.isOpen ?? false;
 
-    const showTraderviewsToggle = document.getElementById("show-traderviews");
     const showProgressToggle = document.getElementById("show-progress");
     const showWizardToggle = document.getElementById("show-wizard");
-    showTraderviewsToggle.checked = window.settings.traderview?.visibility ?? false;
     showProgressToggle.checked = window.settings.windows.progressWindow?.isOpen ?? false;
     showWizardToggle.checked = window.settings.windows.wizardWindow?.isOpen ?? false;
 
-    showEventsToggle.addEventListener("change", (event) => {
+    showEventsToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.eventsAPI.activate();
         } else {
             window.eventsAPI.deactivate();
         }
+
+        window.settings.windows.scannerWindow = {
+            ...(window.settings.windows.scannerWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
     });
 
-    showFrontlineToggle.addEventListener("change", (event) => {
+    showFrontlineToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.frontlineAPI.activate();
         } else {
             window.frontlineAPI.deactivate();
         }
+
+        window.settings.windows.frontlineWindow = {
+            ...(window.settings.windows.frontlineWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
     });
 
-    showHeroesToggle.addEventListener("change", (event) => {
+    showHeroesToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.heroesAPI.activate();
         } else {
             window.heroesAPI.deactivate();
         }
+
+        window.settings.windows.focusWindow = {
+            ...(window.settings.windows.focusWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
     });
 
-    showActiveToggle.addEventListener("change", (event) => {
+    showActiveToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.activeAPI.activate();
         } else {
             window.activeAPI.deactivate();
         }
+
+        window.settings.windows.activeWindow = {
+            ...(window.settings.windows.activeWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
     });
 
-    showScrollXpToggle.addEventListener("change", (event) => {
+    showScrollXpToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.scrollXpAPI.activate();
         } else {
             window.scrollXpAPI.deactivate();
         }
+
+        window.settings.windows.scrollXpWindow = {
+            ...(window.settings.windows.scrollXpWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
     });
 
-    showScrollStatsToggle.addEventListener("change", (event) => {
+    showScrollStatsToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.scrollStatsAPI.activate();
         } else {
             window.scrollStatsAPI.deactivate();
         }
+
+        window.settings.windows.scrollStatsWindow = {
+            ...(window.settings.windows.scrollStatsWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
     });
 
-    showInfobarToggle.addEventListener("change", (event) => {
+    showInfobarToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.infobarAPI.activate();
         } else {
             window.infobarAPI.deactivate();
         }
-    });
 
-    showTraderviewsToggle.addEventListener("change", async (event) => {
-        const visibility = event.target.checked;
-
-        // 1. Update runtime behavior
-        window.traderviewAPI.setVisibility(visibility);
-
-        // 2. Modify in-memory settings and persist
-        window.settings.traderview = {
-            ...(window.settings.traderview || {}),
-            visibility,
+        window.settings.windows.infobarWindow = {
+            ...(window.settings.windows.infobarWindow || {}),
+            isOpen: event.target.checked,
         };
-
         await window.settingsAPI.update(window.settings);
     });
 
-    showProgressToggle.addEventListener("change", (event) => {
+    showProgressToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.progressAPI.activate();
         } else {
             window.progressAPI.deactivate();
         }
+
+        // ✅ Persist the new state
+        window.settings.windows.progressWindow = {
+            ...(window.settings.windows.progressWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
     });
 
-    showWizardToggle.addEventListener("change", (event) => {
+    showWizardToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.wizardAPI.activate();
         } else {
             window.wizardAPI.deactivate();
         }
+
+        // ✅ Persist the new state
+        window.settings.windows.wizardWindow = {
+            ...(window.settings.windows.wizardWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
+    });
+
+    // 🪞 Trader's View Subsettings
+    const enableHeroesToggle = document.getElementById("enableHeroes");
+    // const enableFrontlineToggle = document.getElementById("enableFrontline");
+    const autoCloseTraderviewToggle = document.getElementById("autoCloseTraderview");
+
+    enableHeroesToggle.checked = window.settings.traderview?.enableHeroes ?? true;
+    // enableFrontlineToggle.checked = window.settings.traderview?.enableFrontline ?? false;
+    autoCloseTraderviewToggle.checked = window.settings.traderview?.autoClose ?? true;
+
+    enableHeroesToggle.addEventListener("change", async (e) => {
+        const enableHeroes = e.target.checked;
+        window.settings.traderview = { ...window.settings.traderview, enableHeroes };
+        await window.settingsAPI.update(window.settings);
+
+        if (enableHeroes && window.heroesAPI?.getCurrentHeroes) {
+            const currentHeroes = await window.heroesAPI.getCurrentHeroes();
+            if (Array.isArray(currentHeroes) && currentHeroes.length > 0) {
+                window.traderviewAPI.openTickersNow(currentHeroes);
+            } else {
+                console.warn("⚠️ No current heroes available when toggling enableHeroes.");
+            }
+        }
+    });
+
+    // enableFrontlineToggle.addEventListener("change", async (e) => {
+    //     window.settings.traderview = { ...window.settings.traderview, enableFrontline: e.target.checked };
+    //     await window.settingsAPI.update(window.settings);
+    // });
+
+    autoCloseTraderviewToggle.addEventListener("change", async (e) => {
+        window.settings.traderview = { ...window.settings.traderview, autoClose: e.target.checked };
+        await window.settingsAPI.update(window.settings);
     });
 }
 

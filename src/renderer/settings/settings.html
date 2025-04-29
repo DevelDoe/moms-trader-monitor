@@ -27,7 +27,7 @@
             </div>
 
             <div id="general" class="tabcontent active">
-                <section id="section-windows">
+                <section id="section-windows border-section">
                     <h2>Windows</h2>
 
                     <div class="toggle-row">
@@ -88,14 +88,6 @@
 
                     <div class="toggle-row">
                         <label class="switch">
-                            <input type="checkbox" id="show-traderviews" />
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="toggle-label">Trader's View</span>
-                    </div>
-
-                    <div class="toggle-row">
-                        <label class="switch">
                             <input type="checkbox" id="show-progress" />
                             <span class="slider round"></span>
                         </label>
@@ -109,6 +101,34 @@
                         </label>
                         <span class="toggle-label">Arcane Wizard</span>
                     </div>
+                </section>
+
+                <section id="section-traderview">
+                    <h2>Trader's View</h2>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="enableHeroes" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Enable TradingView for Hero tickers</span>
+                    </div>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="autoCloseTraderview" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Auto-close TradingView windows</span>
+                    </div>
+
+                    <!-- <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="enableFrontline" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Enable TradingView for Frontline tickers</span>
+                    </div> -->
                 </section>
             </div>
 
@@ -180,7 +200,6 @@
                 </div>
 
                 <div class="filter-section">
-                    <
                     <label> Max Heroes Entries: <input type="number" id="focus-length" min="1" step="1" /> </label>
                 </div>
             </div>

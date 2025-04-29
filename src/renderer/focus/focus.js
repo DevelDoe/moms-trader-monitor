@@ -44,7 +44,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     container = document.getElementById("focus");
 
     try {
-        const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.focusAPI.getSymbols(), loadState()]);
+        const fetchedBuffs = await window.electronAPI.getBuffs(); // ✅ pull buffs from preload
+        window.buffs = fetchedBuffs; // ✅ set to global
+
+        window.electronAPI.onBuffsUpdate((updatedBuffs) => {
+            if (debug) console.log("🔄 Buffs updated via IPC:", updatedBuffs);
+            window.buffs = updatedBuffs; // ✅ update global
+        });
+    } catch (err) {
+        console.error("❌ Failed to load buffs:", err);
+    }
+
+    try {
+        const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.heroesAPI.getSymbols(), loadState()]);
 
         window.settings = settings;
 
@@ -75,6 +87,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderAll();
         startScoreDecay();
 
+        // 🟢 Push top tickers to TradingView immediately (on initial state)
+        const topN = window.settings?.top?.focusListLength ?? 10;
+        const sortedHeroes = Object.values(focusState)
+            .filter((s) => s.score > 0)
+            .sort((a, b) => b.score - a.score);
+
+        const initialTopTickers = sortedHeroes.slice(0, topN).map((s) => s.hero);
+        if (initialTopTickers.length > 0 && window.traderviewAPI?.setTopTickers) {
+            const traderviewWindowCount = window.settings?.top?.traderviewWindowCount ?? 3;
+            const topForTradingView = initialTopTickers.slice(0, traderviewWindowCount);
+            window.traderviewAPI.setTopTickers(topForTradingView);
+            if (debug) console.log("🚀 Initial TradingView tickers set:", topForTradingView);
+        }
+
         // Set up event listeners AFTER initialization
         window.settingsAPI.onUpdate(async (updatedSettings) => {
             if (debug) console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
@@ -82,7 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             renderAll();
         });
 
-        window.focusAPI.onFocusEvents((events) => {
+        window.heroesAPI.onFocusEvents((events) => {
             const minPrice = window.settings?.top?.minPrice ?? 0;
             const maxPrice = window.settings?.top?.maxPrice ?? Infinity;
 
@@ -356,7 +382,7 @@ function updateCardDOM(hero) {
     });
 }
 
-function renderCard({ hero, price, hp, dp, strength }) {
+function renderCard({ hero, price, hp, dp, strength, buffs }) {
     const card = document.createElement("div");
     card.className = "ticker-card";
     card.dataset.symbol = hero;
@@ -378,6 +404,8 @@ function renderCard({ hero, price, hp, dp, strength }) {
 
     const topPosition = 200;
     const strengthCap = price < 1.5 ? 800000 : 400000;
+
+    const volumeImpact = window.hlpsFunctions.calculateImpact(strength, price, window.buffs);
 
     const { totalXp, xpForNextLevel, xpPercent } = getXpProgress(state);
 
@@ -427,7 +455,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
             <div id="lv"><span class="bar-text stats lv" style="font-size: 6px; margin-top:4px">L <span style="color:white;"> ${state.lv}</span></span></div>
             <div id="x"><span class="bar-text stats x" style="font-size: 6px; margin-top:4px">X <span style="color:#04f370;">  ${totalXp}</span></span></div>
             <div id="ch"><span class="bar-text stats ch" style="font-size: 6px; margin-top:4px">C <span style="color:#fd5151;"> ${hp.toFixed(0)}%</span></span></div>
-            <div id="vo"><span class="bar-text stats vo" style="font-size: 6px; margin-top:4px">V <span style="color:#00aeff;">  ${humanReadableNumbers(strength)}</span></span></div>
+            <div id="vo"><span class="bar-text stats" style=" font-size: 6px; margin-top:4px">V <span style="color:${volumeImpact.style.color};">  ${abbriviatedValues(strength)}</span></span></div>
         </div>
         ${buffHtml}
     </div>
@@ -443,7 +471,7 @@ function renderCard({ hero, price, hp, dp, strength }) {
             </div>
         </div>
         <div class="bar">
-            <div class="bar-fill strength" style="width: ${Math.min((strength / strengthCap) * 100, 100)}%">
+            <div class="bar-fill " style="background-color: ${volumeImpact.style.color}; width: ${Math.min((strength / strengthCap) * 100, 100)}%">
                 <span class="bar-text">VOLUME: ${Math.floor(strength / 1000)}k</span>
             </div>
         </div>
@@ -553,15 +581,15 @@ function calculateScore(hero, event) {
             }
 
             // Apply Float score
-            const floatBuff = getHeroBuff(hero, "float");
-            const floatScore = floatBuff?.score ?? 0;
-            baseScore += floatScore;
+            // const floatBuff = getHeroBuff(hero, "float");
+            // const floatScore = floatBuff?.score ?? 0;
+            // baseScore += floatScore;
 
-            if (debug && debugSamples < debugLimitSamples) {
-                const label = floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️";
-                const formattedFloat = humanReadableNumbers(hero.floatValue) || "N/A";
-                logStep(label, `Float Score (${formattedFloat})`, floatScore);
-            }
+            // if (debug && debugSamples < debugLimitSamples) {
+            //     const label = floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️";
+            //     const formattedFloat = abbriviatedValues(hero.floatValue) || "N/A";
+            //     logStep(label, `Float Score (${formattedFloat})`, floatScore);
+            // }
 
             // Apply Volume score from precomputed buff
             const volumeBuff = getHeroBuff(hero, "volume");
@@ -570,7 +598,7 @@ function calculateScore(hero, event) {
 
             if (debug && debugSamples < debugLimitSamples) {
                 const volUsed = event.strength || 0;
-                const volMsg = volumeBuff?.message ?? `No volume buff (${humanReadableNumbers(volUsed)})`;
+                const volMsg = volumeBuff?.message ?? `No volume buff (${abbriviatedValues(volUsed)})`;
                 logStep("📢", volMsg, volScore);
             }
             // Clamp total baseScore to positive only (no negative scoring on "up" events)
@@ -677,7 +705,7 @@ function isSurging(hero, { slice = 4, minUps = 3, direction = "hp" } = {}) {
     return active.length >= minUps;
 }
 
-function humanReadableNumbers(value) {
+function abbriviatedValues(value) {
     if (value === null || value === undefined || isNaN(value) || value === "") {
         return "-";
     }

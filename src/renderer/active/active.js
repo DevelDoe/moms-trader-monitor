@@ -349,12 +349,12 @@ function updateUI(symbolData) {
 }
 
 function mapScoreToEnergy(score) {
-    if (score >= 300) return "🏆 Legend";
-    if (score >= 150) return "🌟 Excellent";
+    if (score >= 150) return "🏆 Legend";
+    if (score >= 100) return "🌟 Excellent";
     if (score >= 50) return "👍 Good";
     if (score >= 0) return "🙂 Fair";
-    if (score >= -50) return "😣 Weak";
-    if (score >= -100) return "👎 Weaker"; // Notice: -1 to -100
+    if (score >= -25) return "😣 Weak";
+    if (score >= -50) return "👎 Weaker"; // Notice: -1 to -100
     return "❄️ Cold"; // -101 or worse
 }
 

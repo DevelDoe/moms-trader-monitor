@@ -3,6 +3,7 @@ const { getWindowState, saveWindowState, setWindowState, nukeTradingViewWindowSt
 const { loadSettings } = require("./settings");
 const log = require("../hlps/logger")(__filename);
 const { safeSend } = require("./utils/safeSend");
+const { debounce } = require("./utils//debounce");
 
 const path = require("path");
 const fs = require("fs");
@@ -204,8 +205,14 @@ function registerTradingViewWindow(symbol = "AAPL", isDev = false) {
     win.loadURL(`https://www.tradingview.com/chart/?symbol=${encoded}`);
     win.symbolLoaded = symbol;
 
-    win.on("move", () => setWindowBounds(key, win.getBounds()));
-    win.on("resize", () => setWindowBounds(key, win.getBounds()));
+    const debouncedSetBounds = debounce(() => {
+        if (!win.isDestroyed()) {
+            setWindowBounds(key, win.getBounds());
+        }
+    }, 300); // Adjust delay if needed
+
+    win.on("move", debouncedSetBounds);
+    win.on("resize", debouncedSetBounds);
 
     win.on("closed", () => {
         tradingViewWindows.delete(symbol);
