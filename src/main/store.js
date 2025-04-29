@@ -620,7 +620,7 @@ class Store extends EventEmitter {
     }
 
     startXpResetScheduler() {
-        const resetTimes = ["03:59", "09:29", "15:59"]; // EST times
+        const resetTimes = ["03:59", "09:29", "14:59"]; // EST times
 
         setInterval(() => {
             // Get current time in America/New_York
