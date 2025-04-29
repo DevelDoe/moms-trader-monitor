@@ -15,7 +15,7 @@
         "category": "subCap",
         "priceThreshold": 1,
         "volumeStages": [
-            { "key": "minVol", "icon": "❄️", "desc": "Low Volume", "volumeThreshold": 60000, "multiplier": 0.01, "score": -1500, "isBuff": false },
+            { "key": "minVol", "icon": "❄️", "desc": "Low Volume", "volumeThreshold": 50000, "multiplier": 0.01, "score": -1500, "isBuff": false },
             { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 200000, "multiplier": 0.5, "score": -150, "isBuff": false },
             { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 600000, "multiplier": 1.5, "score": 0 },
             { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 700000, "multiplier": 2, "score": 100, "isBuff": true },
@@ -26,8 +26,8 @@
         "category": "pennyCap",
         "priceThreshold": 2,
         "volumeStages": [
-            { "key": "minVol", "icon": "❄️", "desc": "Low Volume", "volumeThreshold": 30000, "multiplier": 0.01, "score": -1500, "isBuff": false },
-            { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 150000, "multiplier": 0.5, "score": -150, "isBuff": false },
+            { "key": "minVol", "icon": "❄️", "desc": "Low Volume", "volumeThreshold": 20000, "multiplier": 0.01, "score": -1500, "isBuff": false },
+            { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 130000, "multiplier": 0.5, "score": -150, "isBuff": false },
             { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 400000, "multiplier": 1.5, "score": 0 },
             { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 600000, "multiplier": 2, "score": 200, "isBuff": true },
             { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 4, "score": 400, "isBuff": true }
@@ -37,8 +37,8 @@
         "category": "tinyCap",
         "priceThreshold": 7,
         "volumeStages": [
-            { "key": "minVol", "icon": "❄️", "desc": "Low Volume", "volumeThreshold": 25000, "multiplier": 0.01, "score": -1500, "isBuff": false },
-            { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 75000, "multiplier": 0.5, "score": -150, "isBuff": false },
+            { "key": "minVol", "icon": "❄️", "desc": "Low Volume", "volumeThreshold": 10000, "multiplier": 0.01, "score": -1500, "isBuff": false },
+            { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 80000, "multiplier": 0.5, "score": -150, "isBuff": false },
             { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 300000, "multiplier": 1.5, "score": 100, "isBuff": true },
             { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 400000, "multiplier": 2, "score": 300, "isBuff": true },
             { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 4, "score": 500, "isBuff": true }
@@ -50,7 +50,7 @@
         "volumeStages": [
             { "key": "minVol", "icon": "❄️", "desc": "Low Volume", "volumeThreshold": 20000, "multiplier": 0.01, "score": -1500, "isBuff": false },
             { "key": "lowVol", "icon": "💤", "desc": "Low Volume", "volumeThreshold": 75000, "multiplier": 0.5, "score": -150, "isBuff": false },
-            { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 300000, "multiplier": 1.5, "score": 100, "isBuff": true },
+            { "key": "mediumVol", "icon": "🚛", "desc": "Medium Volume", "volumeThreshold": 280000, "multiplier": 1.5, "score": 100, "isBuff": true },
             { "key": "highVol", "icon": "🔥", "desc": "High Volume", "volumeThreshold": 400000, "multiplier": 2, "score": 300, "isBuff": true },
             { "key": "parabolicVol", "icon": "🚀", "desc": "Parabolic Volume", "volumeThreshold": "Infinity", "multiplier": 4, "score": 500, "isBuff": true }
         ]
