@@ -455,7 +455,7 @@ function renderCard({ hero, price, hp, dp, strength, buffs }) {
             <div id="lv"><span class="bar-text stats lv" style="font-size: 6px; margin-top:4px">L <span style="color:white;"> ${state.lv}</span></span></div>
             <div id="x"><span class="bar-text stats x" style="font-size: 6px; margin-top:4px">X <span style="color:#04f370;">  ${totalXp}</span></span></div>
             <div id="ch"><span class="bar-text stats ch" style="font-size: 6px; margin-top:4px">C <span style="color:#fd5151;"> ${hp.toFixed(0)}%</span></span></div>
-            <div id="vo"><span class="bar-text stats" style=" font-size: 6px; margin-top:4px">V <span style="color:${volumeImpact.style.color};">  ${abbriviatedValues(strength)}</span></span></div>
+            <div id="vo"><span class="bar-text stats" style=" font-size: 6px; margin-top:4px">V <span style="color:${volumeImpact.style.color};">  ${abbreviatedValues(strength)}</span></span></div>
         </div>
         ${buffHtml}
     </div>
@@ -587,7 +587,7 @@ function calculateScore(hero, event) {
 
             // if (debug && debugSamples < debugLimitSamples) {
             //     const label = floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️";
-            //     const formattedFloat = abbriviatedValues(hero.floatValue) || "N/A";
+            //     const formattedFloat = abbreviatedValues(hero.floatValue) || "N/A";
             //     logStep(label, `Float Score (${formattedFloat})`, floatScore);
             // }
 
@@ -598,7 +598,7 @@ function calculateScore(hero, event) {
 
             if (debug && debugSamples < debugLimitSamples) {
                 const volUsed = event.strength || 0;
-                const volMsg = volumeBuff?.message ?? `No volume buff (${abbriviatedValues(volUsed)})`;
+                const volMsg = volumeBuff?.message ?? `No volume buff (${abbreviatedValues(volUsed)})`;
                 logStep("📢", volMsg, volScore);
             }
             // Clamp total baseScore to positive only (no negative scoring on "up" events)
@@ -705,7 +705,7 @@ function isSurging(hero, { slice = 4, minUps = 3, direction = "hp" } = {}) {
     return active.length >= minUps;
 }
 
-function abbriviatedValues(value) {
+function abbreviatedValues(value) {
     if (value === null || value === undefined || isNaN(value) || value === "") {
         return "-";
     }

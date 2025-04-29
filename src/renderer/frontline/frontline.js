@@ -317,6 +317,12 @@ function updateCardDOM(hero) {
         strengthBar.style.backgroundColor = volImpact.style.color;
     }
 
+    const strengthText = card.querySelector(".bar-text");
+    if (strengthText) {
+        strengthText.textContent = abbreviatedValues(state.strength);
+        strengthText.style.color = volImpact.style.color;
+    }
+
     // Update label
     const priceEl = card.querySelector(".lv");
     if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
@@ -425,7 +431,7 @@ function renderCard(state) {
     <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> ${hero} <span class="lv">$${state.price.toFixed(2)}<span></div>
     <div class="ticker-info">
         <div class="ticker-data">
-<span class="bar-text" style="color:${volumeImpact.style.color}">${abbriviatedValues(strength)}</span>
+<span class="bar-text" style="color:${volumeImpact.style.color}">${abbreviatedValues(strength)}</span>
             ${change ? `<span class="${changeClass}">${change}</span>` : ""}
             ${buffsInline}
         </div>
@@ -512,12 +518,12 @@ function calculateScore(hero, event) {
             // const floatBuff = getHeroBuff(hero, "float");
             // const floatMult = floatBuff?.multiplier ?? 1;
             // baseScore *= floatMult;
-            // logStep(floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️", `Float Mult (${abbriviatedValues(hero.floatValue)})`, floatMult);
+            // logStep(floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️", `Float Mult (${abbreviatedValues(hero.floatValue)})`, floatMult);
 
             const volumeBuff = getHeroBuff(hero, "volume");
             const volMult = volumeBuff?.multiplier ?? 1;
             baseScore *= volMult;
-            logStep("📢", volumeBuff?.message ?? `No volume buff (${abbriviatedValues(event.strength || 0)})`, volMult);
+            logStep("📢", volumeBuff?.message ?? `No volume buff (${abbreviatedValues(event.strength || 0)})`, volMult);
         }
 
         if (event.dp > 0) {
@@ -587,7 +593,7 @@ function startScoreDecay() {
     }, DECAY_INTERVAL_MS);
 }
 
-function abbriviatedValues(value) {
+function abbreviatedValues(value) {
     if (value === null || value === undefined || isNaN(value) || value === "") {
         return "-";
     }
@@ -628,7 +634,7 @@ function abbriviatedValues(value) {
 //                 ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
 //                 capAssigned: category.category,
 //                 volumeStage: stageToUse.key,
-//                 message: `${category.category} ${stageToUse.key} (${abbriviatedValues(volume)})`,
+//                 message: `${category.category} ${stageToUse.key} (${abbreviatedValues(volume)})`,
 //                 style: {
 //                     cssClass: `volume-${stageToUse.key.toLowerCase()}`,
 //                     color: getColorForStage(stageToUse.key),
@@ -677,7 +683,7 @@ function getColorForStage(stageKey) {
     return colors[stageKey] || "#cccccc";
 }
 
-function abbriviatedValues(num) {
+function abbreviatedValues(num) {
     if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
     if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
     return num.toString();
