@@ -75,10 +75,10 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 170,
-      "height": 891,
-      "x": 0,
-      "y": 502,
+      "width": 172,
+      "height": 768,
+      "x": 1190,
+      "y": -768,
       "isOpen": true
     },
     "settingsWindow": {
@@ -96,10 +96,10 @@
       "isOpen": false
     },
     "focusWindow": {
-      "width": 444,
-      "height": 490,
-      "x": 530,
-      "y": 905,
+      "width": 435,
+      "height": 457,
+      "x": 1655,
+      "y": -457,
       "isOpen": true
     },
     "dailyWindow": {
@@ -110,11 +110,11 @@
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 469,
-      "height": 43,
-      "x": 724,
-      "y": -842,
-      "isOpen": false
+      "width": 404,
+      "height": 40,
+      "x": 2153,
+      "y": -710,
+      "isOpen": true
     },
     "wizardWindow": {
       "width": 2400,
@@ -134,17 +134,17 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 361,
-      "height": 490,
-      "x": 169,
-      "y": 905,
+      "width": 293,
+      "height": 457,
+      "x": 1362,
+      "y": -457,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 805,
-      "height": 404,
-      "x": 170,
-      "y": 501,
+      "width": 791,
+      "height": 311,
+      "x": 1362,
+      "y": -768,
       "isOpen": true
     },
     "traderviewWindow_MULN": {
@@ -377,18 +377,18 @@
       "isOpen": false
     },
     "scrollXpWindow": {
-      "width": 192,
-      "height": 558,
-      "x": 2283,
-      "y": 6,
-      "isOpen": false
+      "width": 191,
+      "height": 457,
+      "x": 2090,
+      "y": -457,
+      "isOpen": true
     },
     "scrollStatsWindow": {
-      "width": 273,
-      "height": 558,
-      "x": 1535,
-      "y": 930,
-      "isOpen": false
+      "width": 275,
+      "height": 457,
+      "x": 2281,
+      "y": -457,
+      "isOpen": true
     },
     "traderviewWindow_[object Object]": {
       "width": 850,

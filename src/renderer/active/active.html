@@ -32,7 +32,7 @@
             <div class="settings-container no-drag">
                 <!-- Summary -->
                 <div id="summary" class="tabcontent active">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                         <!-- Left Column -->
                         <div class="space-y-4">
                             <!-- Symbol and Info -->
@@ -41,22 +41,21 @@
                                     <input id="symbol-input" class="editable-symbol" type="text" spellcheck="false" />
                                 </div>
                                 <div id="symbol" class="bg-zinc-800 p-4 rounded-xl col-span-2">
-                                    <span data-id="profile-country"></span>
                                     <span data-id="industry"></span>
                                 </div>
                             </div>
 
                             <!-- Inline Stats -->
                             <div class="text-sm text-tertiary flex flex-wrap gap-4 mt-2 stats-row">
-                                <div>Level: <span data-id="stats-lv" style="color: white">1</span></div>
+                                <div>LEVEL: <span data-id="stats-lv" style="color: white">1</span></div>
                                 <div>XP: <span data-id="stats-xp" style="color: white">0</span></div>
-                                <div>Eval: <span id="energy" data-id="stats-energy" style="color: white">🌤️ Stable</span></div>
+                                <div>RATING: <span id="energy" data-id="stats-energy" style="color: white"></span></div>
                             </div>
 
                             <!-- Charts -->
-                            <div class="bg-zinc-800 p-4 rounded-xl chart" style="position: relative; padding-top: 0 !important; margin-top: 0 !important">
+                            <div class="bg-zinc-800 p-4 rounded-xl chart" style="position: relative">
                                 <div class="bg-zinc-800 p-4 rounded-xl">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="grid grid-cols-2 gap-1">
                                         <!-- Float Data -->
                                         <div id="section-float-summary" class="space-y-2">
                                             <div>

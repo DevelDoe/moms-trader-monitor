@@ -349,13 +349,13 @@ function updateUI(symbolData) {
 }
 
 function mapScoreToEnergy(score) {
-    if (score >= 150) return "🏆 Legend";
-    if (score >= 100) return "🌟 Excellent";
-    if (score >= 50) return "👍 Good";
-    if (score >= 0) return "🙂 Fair";
-    if (score >= -25) return "😣 Weak";
-    if (score >= -50) return "👎 Weaker"; // Notice: -1 to -100
-    return "❄️ Cold"; // -101 or worse
+    if (score >= 150) return "🏆 LEGEND";
+    if (score >= 100) return "🌟 EXCELLENT";
+    if (score >= 50) return "👍 GOOD";
+    if (score >= 0) return "🙂 OK";
+    if (score >= -25) return "😣 FAIR";
+    if (score >= -50) return "👎 WEAK"; // Notice: -1 to -100
+    return "💀 DEAD"; // -101 or worse
 }
 
 function calculateScore(heroBuffs = {}, baseScore = 0) {

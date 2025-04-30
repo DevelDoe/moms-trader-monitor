@@ -20,7 +20,7 @@ body {
 
 #symbol {
     padding-top: 0;
-    margin-top: 10px;
+    margin-top: 0px;
 }
 
 .ticker-symbol.active-glow {
@@ -30,10 +30,8 @@ body {
 
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 24vw !important; /* you wrote 35w, fixed it to 35vw */
-    height: 24vw !important;
-    margin-top: -15px;
-    margin-left: -20px;
+    width: 19vw !important; /* you wrote 35w, fixed it to 35vw */
+    height: 19vw !important;
 }
 
 /* Two-column layout using Flexbox */
@@ -62,7 +60,7 @@ body {
     font-weight: 600;
     z-index: 10;
     border-radius: 1px;
-    margin-bottom: 10px;
+    margin-bottom: 68px;
     opacity: 1;
     filter: contrast(0.5);
 }
@@ -79,12 +77,13 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 4px;
+    margin-top: 5px;
+    margin-left: -23px;
 }
 
 .chart {
-    padding-top: 20px !important;
-    margin-top: 20px;
+    padding-top: 19px !important;
+    margin-top: 19px;
 }
 
 .about {
@@ -189,7 +188,7 @@ body {
 .news-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0px;
 }
 
 .news-item {
@@ -202,7 +201,7 @@ body {
 
 .news-item h5 {
     margin: 0 0 5px;
-    font-size: 1.1em;
+    font-size: 14px;
 }
 
 .news-item p {
@@ -231,11 +230,11 @@ body {
     background: transparent;
     border: none;
     outline: none;
-    width: 120px;
+    width: 100px;
     /* max-width: 95px; */
     cursor: default;
     font-family: "Press Start 2P", monospace;
-    font-size: 23px;
+    font-size: 20px;
 }
 
 #symbol {
@@ -250,7 +249,8 @@ body {
     display: flex;
     padding-bottom: 5;
     margin-top: 7px;
-    gap: 3px;
+    gap: 1px;
+    line-height: 13px;
 }
 
 .editable-symbol:hover,
@@ -369,7 +369,7 @@ body {
 /* buffs  */
 
 #buffs-container {
-    margin-top: 10px;
+    margin-top: 0px;
 }
 
 .buff-badge {
@@ -379,7 +379,7 @@ body {
     /* background: #1f1f1f; */
     padding: 4px 7px;
     border-radius: 2px;
-    font-size: 12px;
+    font-size: 11px;
     color: rgb(243, 242, 224);
     transition: background-color 0.2s;
     opacity: 0.8;
@@ -398,7 +398,7 @@ body {
 }
 
 .buff-icon {
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1;
 }
 .buff-desc {
@@ -413,17 +413,17 @@ body {
 #section-float-summary > div {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 6px;
-    font-size: 13px;
+    margin-bottom: 0px;
+    font-size: 14px;
     font-weight: 100;
-    margin-left: -4px;
+    margin-left: -1px;
 }
 
 .stats-row {
-    opacity: 0.5;
-    margin-top: 0px !important;
-    margin-bottom: 40px !important;
-    width: 100%;
+    opacity: 1;
+    margin-top: 2px !important;
+    margin-bottom: 14px !important;
+    font-size: 12px !important;
 }
 
 #energy .text-energy-yellow {

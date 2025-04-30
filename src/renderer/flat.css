@@ -129,9 +129,11 @@ h5 {
     font-size: 15px;
 }
 h2 {
+    font-size: 11px !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: #595959;
 }
 
 /* Utility Colors */

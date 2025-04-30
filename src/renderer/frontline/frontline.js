@@ -425,15 +425,15 @@ function renderCard(state) {
     const sortedBuffs = sortBuffs(Object.values(state.buffs || {}));
     const buffsInline = sortedBuffs.map((buff) => `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`).join("");
 
-    // Inject into ticker-data row
+    // Inject into ticker-data row ${buffsInline}
     card.innerHTML = `
 <div class="ticker-header">
     <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> ${hero} <span class="lv">$${state.price.toFixed(2)}<span></div>
     <div class="ticker-info">
         <div class="ticker-data">
-<span class="bar-text" style="color:${volumeImpact.style.color}">${abbreviatedValues(strength)}</span>
+            <span class="bar-text" style="color:${volumeImpact.style.color}">${abbreviatedValues(strength)}</span>
             ${change ? `<span class="${changeClass}">${change}</span>` : ""}
-            ${buffsInline}
+            
         </div>
         <div class="bars">
             <div class="bar">

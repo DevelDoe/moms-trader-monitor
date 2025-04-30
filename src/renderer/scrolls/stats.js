@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, 15);
+            .slice(0, 13);
 
         const sorted = topByXP
             .map((h) => ({

@@ -221,6 +221,18 @@ const startMockNews = () => {
                 "Just like Ascension, it's a ranked list. But instead of only looking at % change since open, Scroll of XP measures how much real action a stock has had — up or down — and rewards that movement with XP.",
             symbols: ["LTRN"],
         },
+        {
+            headline: "LTRN & RADX This is a multi symbol headline for completeness. Jumps on FDA Fast Track Designation, Sell Alert",
+            symbols: ["SXTC"],
+        },
+        {
+            headline: "This is an bullish healine, FDA Approves",
+            symbols: ["SXTC"],
+        },
+        {
+            headline: "And a neurtral headline for completeness.",
+            symbols: ["SXTC"],
+        },
     ];
 
     const delay = (ms) => new Promise((res) => setTimeout(res, ms));
