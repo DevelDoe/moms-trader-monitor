@@ -19,7 +19,7 @@ function computeBuffsForSymbol(symbolData, buffList = [], blockList = []) {
     const ownershipBuff = getOwnershipBuff(symbolData, buffList);
     if (ownershipBuff) buffs.ownership = ownershipBuff;
 
-    const industryBuff = getIndustryBuff(symbolData);
+    const industryBuff = getIndustryBuff(symbolData, buffList);
     if (industryBuff) buffs.industry = industryBuff;
 
     const countryBuff = getCountryBuff(symbolData);
@@ -99,13 +99,14 @@ function getNewsBuff(symbolData) {
 
     if (!hasGoodNews) return null;
 
+    const def = buffList.find((b) => b.key === "hasNews") || {};
     return {
-        key: "news",
-        icon: "😼",
-        desc: "Bullish news",
-        score: 200,
-        multiplier: 1.1,
-        isBuff: true,
+        key: "hasNews",
+        icon: def.icon || "😼",
+        desc: def.desc || "News catalyst",
+        score: def.score ?? 100,
+        multiplier: def.multiplier ?? 1.1,
+        isBuff: def.isBuff ?? true,
     };
 }
 
@@ -127,136 +128,158 @@ function getOwnershipBuff(symbolData, buffList = []) {
     const totalHeld = insiderShares + institutionalShares + remainingShares;
 
     if (totalHeld > 0.5 * sharesOutstanding) {
-        const defined = buffList.find((b) => b.key === "lockedShares");
-        return (
-            defined || {
-                key: "lockedShares",
-                icon: "🏛️",
-                desc: "High insider/institutional ownership",
-                score: -25,
-                isBuff: false,
-            }
-        );
+        const def = buffList.find((b) => b.key === "lockedShares") || {};
+        return {
+            key: "lockedShares",
+            icon: def.icon || "🏛️",
+            desc: def.desc || "High insider/institutional ownership",
+            score: def.score ?? -25,
+            multiplier: def.multiplier ?? 1,
+            isBuff: def.isBuff ?? false,
+        };
     }
 
     return null;
 }
 
-function getIndustryBuff(symbolData) {
+function getIndustryBuff(symbolData, buffList = []) {
     const profile = symbolData.profile || {};
     const summary = profile.longBusinessSummary?.toLowerCase() || "";
     const companyName = profile.companyName?.toLowerCase() || "";
     const industry = profile.industry || "";
 
+    const findFromBuffList = (key) => buffList.find((b) => b.key === key) || {};
+
     if (industry === "Biotechnology" || summary.includes("biotech") || summary.includes("biotechnology") || companyName.includes("biopharma")) {
+        const def = findFromBuffList("bio");
         return {
             key: "bio",
-            icon: "🧬",
-            desc: "Biotech",
-            score: 25,
-            isBuff: true,
+            icon: def.icon || "🧬",
+            desc: def.desc || "Biotech",
+            score: def.score ?? 25,
+            multiplier: def.multiplier ?? 1,
+            isBuff: def.isBuff ?? true,
         };
     }
 
     if (summary.includes("cannabis")) {
+        const def = findFromBuffList("weed");
         return {
             key: "weed",
-            icon: "🌿",
-            desc: "Cannabis",
-            score: -10,
-            isBuff: true,
+            icon: def.icon || "🌿",
+            desc: def.desc || "Cannabis",
+            score: def.score ?? -10,
+            multiplier: def.multiplier ?? 1,
+            isBuff: def.isBuff ?? false,
         };
     }
 
     if (summary.includes("space")) {
+        const def = findFromBuffList("space");
         return {
             key: "space",
-            icon: "🌌",
-            desc: "Space",
-            score: 10,
-            isBuff: true,
+            icon: def.icon || "🌌",
+            desc: def.desc || "Space",
+            score: def.score ?? 10,
+            multiplier: def.multiplier ?? 1,
+            isBuff: def.isBuff ?? true,
         };
     }
 
     return null;
 }
 
-function getCountryBuff(symbolData) {
+function getCountryBuff(symbolData, buffList = []) {
     const country = symbolData.profile?.country?.toLowerCase();
+    const def = buffList.find((b) => b.key === "china") || {};
 
     if (["china", "cn", "hk", "hong kong"].includes(country)) {
         return {
             key: "china",
-            icon: "🇨🇳",
-            desc: "China",
-            score: 0,
-            isBuff: false,
+            icon: def.icon || "🇨🇳",
+            desc: def.desc || "China",
+            score: def.score ?? 0,
+            multiplier: def.multiplier ?? 1,
+            isBuff: def.isBuff ?? false,
         };
     }
 
     return null;
 }
 
-function getShortInterestBuff(symbolData) {
+function getShortInterestBuff(symbolData, buffList = []) {
     const floatShares = symbolData.statistics?.floatShares || 0;
     const sharesShort = symbolData.statistics?.sharesShort || 0;
 
     if (!floatShares || floatShares <= 0) return null;
 
     const shortRatio = sharesShort / floatShares;
+    const def = buffList.find((b) => b.key === "highShort") || {};
 
     if (shortRatio > 0.2) {
         return {
             key: "highShort",
-            icon: "🩳",
-            desc: "High short",
-            score: 50,
-            isBuff: true,
+            icon: def.icon || "🩳",
+            desc: def.desc || "High short interest",
+            score: def.score ?? 25,
+            multiplier: def.multiplier ?? 1,
+            isBuff: def.isBuff ?? true,
         };
     }
 
     return null;
 }
 
-function getNetLossBuff(symbolData) {
+function getNetLossBuff(symbolData, buffList = []) {
     const netIncome = symbolData.financials?.cashflowStatement?.netIncome;
+    const def = buffList.find((b) => b.key === "netLoss") || {};
+
     if (typeof netIncome === "number" && netIncome < 0) {
         return {
             key: "netLoss",
-            icon: "🥅",
-            desc: "Net loss",
-            score: -25,
-            isBuff: false,
+            icon: def.icon || "🥅",
+            desc: def.desc || "Net loss",
+            score: def.score ?? -25,
+            multiplier: def.multiplier ?? 1,
+            isBuff: def.isBuff ?? false,
         };
     }
+
     return null;
 }
 
-function getS3FilingBuff(symbolData) {
+function getS3FilingBuff(symbolData, buffList = []) {
+    const def = buffList.find((b) => b.key === "hasS3") || {};
+
     if (symbolData.offReg) {
         return {
             key: "hasS3",
-            icon: "📂",
-            desc: `S-3 (${symbolData.offReg})`,
-            score: -25,
-            isBuff: false,
+            icon: def.icon || "📂",
+            desc: def.desc || `S-3 (${symbolData.offReg})`,
+            score: def.score ?? -25,
+            multiplier: def.multiplier ?? 1,
+            isBuff: def.isBuff ?? false,
         };
     }
+
     return null;
 }
 
-function getDilutionRiskBuff(symbolData) {
+function getDilutionRiskBuff(symbolData, buffList = []) {
     const hasS3 = !!symbolData.offReg;
     const netIncome = symbolData.financials?.cashflowStatement?.netIncome;
     const isNetNegative = typeof netIncome === "number" && netIncome < 0;
 
     if (hasS3 && isNetNegative) {
+        const def = buffList.find((b) => b.key === "dilutionRisk");
+
         return {
-            key: "dilutionRisk",
-            icon: "🚨",
-            desc: "High dilution risk",
-            score: -25,
-            isBuff: false,
+            key: def?.key || "dilutionRisk",
+            icon: def?.icon || "🚨",
+            desc: def?.desc || "High dilution risk",
+            score: def?.score ?? -25,
+            multiplier: def?.multiplier ?? 0.8,
+            isBuff: def?.isBuff ?? false,
         };
     }
 

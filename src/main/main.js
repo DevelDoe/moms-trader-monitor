@@ -70,7 +70,7 @@ const { createSettingsWindow } = require("./windows/settings");
 
 const { createScannerWindow } = require("./windows/scanner");
 const { createFrontlineWindow } = require("./windows/frontline");
-const { createFocusWindow } = require("./windows/focus");
+const { createHeroesWindow } = require("./windows/heroes");
 
 const { createActiveWindow } = require("./windows/active");
 
@@ -151,7 +151,7 @@ app.on("ready", async () => {
         });
 
         if (isDevelopment) {
-            startMockAlerts();
+            // startMockAlerts();
             startMockNews();
         }
     });
@@ -614,37 +614,27 @@ ipcMain.on("update-xp", (event, { symbol, xp, level }) => {
 // Heroes
 ipcMain.on("activate-heroes", () => {
     try {
-        const win = createWindow("focus", () => createFocusWindow(isDevelopment));
+        const win = createWindow("heroes", () => createHeroesWindow(isDevelopment));
         if (win) win.show();
     } catch (err) {
-        log.error("Failed to focus window:", err.message);
+        log.error("Failed to heroes window:", err.message);
     }
-    // // Step 1: Create or show the frontline window
-    // const focusWindow = createWindow("focus", () => createFocusWindow(isDevelopment));
-    // if (focusWindow) focusWindow.show();
-
-    // // Step 2: Destroy any existing active window
-    // destroyWindow("active");
-
-    // // Step 3: Recreate active window (ensure clean state)
-    // const newActiveWindow = createWindow("active", () => createActiveWindow(isDevelopment));
-    // if (newActiveWindow) newActiveWindow.show();
 });
 
 ipcMain.on("deactivate-heroes", () => {
-    destroyWindow("focus");
+    destroyWindow("heroes");
 });
 
-ipcMain.on("recreate-focus", async () => {
-    log.log("recreate focus window.");
+ipcMain.on("recreate-heroes", async () => {
+    log.log("recreate heroes window.");
 
-    if (windows.focus) {
-        windows.focus.close(); // Close the existing window
+    if (windows.heroes) {
+        windows.heroes.close(); // Close the existing window
     }
 
     // ✅ Recreate the window with updated settings
-    windows.focus = await createFocusWindow(isDevelopment); // Recreate the window
-    windows.focus.show(); // Show the newly created window
+    windows.heroes = await createHeroesWindow(isDevelopment); // Recreate the window
+    windows.heroes.show(); // Show the newly created window
 });
 
 // active
@@ -753,7 +743,6 @@ ipcMain.on("refresh-infobar", () => {
 });
 
 // Traderview
-const setLimitForWindows = 20; // Hardcoded limit to 20 windows for now. (TODO: Make user-configurable)
 global.currentTopTickers = [];
 
 ipcMain.on("set-top-tickers", (event, newTickers) => {
@@ -770,7 +759,6 @@ ipcMain.on("set-enable-heroes", (event, enabled) => {
 
     if (!enabled) return;
 
-    // ⚠️ Wait for global.currentTopTickers to be populated
     if (!Array.isArray(global.currentTopTickers) || global.currentTopTickers.length === 0) {
         console.warn("[Traderview] EnableHeroes toggled but no top tickers available yet.");
         return;
@@ -788,34 +776,27 @@ function applyTopTickers(newTickers) {
 
     if (!enableHeroes) return;
 
-    const limitedTickers = newTickers.slice(0, setLimitForWindows);
+    const openSymbols = Object.keys(global.traderviewWindowRefs || {}).filter((s) => global.traderviewWindowRefs[s]);
+    const openSet = new Set(openSymbols);
+    const desiredSet = new Set(newTickers);
 
     if (autoClose) {
-        const openSymbols = Object.keys(global.traderviewWindowRefs || {}).filter((s) => global.traderviewWindowRefs[s]);
-        const openSet = new Set(openSymbols);
-        const desiredSet = new Set(limitedTickers);
-
+        // Close windows for tickers no longer in the list
         openSymbols.forEach((symbol) => {
             if (!desiredSet.has(symbol)) {
                 destroyTradingViewWindow(symbol);
             }
         });
-
-        limitedTickers.forEach((symbol) => {
-            if (!openSet.has(symbol)) {
-                registerTradingViewWindow(symbol, isDevelopment);
-            }
-        });
-    } else {
-        const openSymbols = Object.keys(global.traderviewWindowRefs || {}).filter((s) => global.traderviewWindowRefs[s]);
-        const availableSlots = setLimitForWindows - openSymbols.length;
-        if (availableSlots <= 0) return;
-
-        const toOpen = newTickers.filter((s) => !global.traderviewWindowRefs?.[s]).slice(0, availableSlots);
-        toOpen.forEach((symbol) => registerTradingViewWindow(symbol, isDevelopment));
-
-        global.traderviewWindowsVisible = true;
     }
+
+    // Open windows for new tickers not yet displayed
+    newTickers.forEach((symbol) => {
+        if (!global.traderviewWindowRefs?.[symbol]) {
+            registerTradingViewWindow(symbol, isDevelopment);
+        }
+    });
+
+    global.traderviewWindowsVisible = true;
 }
 
 // Progress

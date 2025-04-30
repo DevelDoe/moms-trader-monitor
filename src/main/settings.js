@@ -69,10 +69,8 @@ const DEFAULT_SETTINGS = {
                 fiveMinVolume: false,
             },
         },
-        liveListLength: 9,
         frontlineListLength: 14,
-        focusListLength: 3,
-        dailyListLength: 15,
+        heroesListLength: 3,
     },
     news: {
         showTrackedTickers: false,

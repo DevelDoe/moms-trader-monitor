@@ -94,20 +94,20 @@ const connectMTP = () => {
                     messageQueue.push(msg.data);
                 }
 
-                const focusWindow = windows.focus;
-                if (focusWindow?.webContents && !focusWindow.webContents.isDestroyed()) {
-                    const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
-                    focusWindow.webContents.send("ws-events", [focusEvent]);
+                const heroesWindow = windows.heroes;
+                if (heroesWindow?.webContents && !heroesWindow.webContents.isDestroyed()) {
+                    const heroesEvent = transformEvent(msg.data); // ✅ define it
+                    heroesWindow.webContents.send("ws-events", [heroesEvent]);
                 }
                 const frontlineWindow = windows.frontline;
                 if (frontlineWindow?.webContents && !frontlineWindow.webContents.isDestroyed()) {
-                    const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
-                    frontlineWindow.webContents.send("ws-events", [focusEvent]);
+                    const frontlineEvent = transformEvent(msg.data); // ✅ define it
+                    frontlineWindow.webContents.send("ws-events", [frontlineEvent]);
                 }
                 const progressWindow = windows.progress;
                 if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
-                    const focusEvent = transformToFocusEvent(msg.data); // ✅ define it
-                    progressWindow.webContents.send("ws-events", [focusEvent]);
+                    const progressEvent = transformEvent(msg.data); // ✅ define it
+                    progressWindow.webContents.send("ws-events", [progressEvent]);
                 }
             }
 
@@ -251,7 +251,7 @@ function startMockAlerts(baseInterval = 100, fluctuation = 1000) {
             log.warn("[MockAlerts] Scanner window not available to receive alerts");
         }
 
-        const event = transformToFocusEvent(alert);
+        const event = transformEvent(alert);
 
         // Frontline
         if (windows?.frontline?.webContents && !windows.frontline.isDestroyed()) {
@@ -260,11 +260,11 @@ function startMockAlerts(baseInterval = 100, fluctuation = 1000) {
             log.warn("[MockAlerts] frontline window not available to receive events");
         }
 
-        // Focus
-        if (windows?.focus?.webContents && !windows.focus.isDestroyed()) {
-            windows.focus.webContents.send("ws-events", [event]);
+        // heroes
+        if (windows?.heroes?.webContents && !windows.heroes.isDestroyed()) {
+            windows.heroes.webContents.send("ws-events", [event]);
         } else {
-            log.warn("[MockAlerts] Focus window not available to receive events");
+            log.warn("[MockAlerts] heroes window not available to receive events");
         }
 
         // Progress
@@ -276,7 +276,7 @@ function startMockAlerts(baseInterval = 100, fluctuation = 1000) {
     }
 
     // Rest of your existing functions remain exactly the same
-    function transformToFocusEvent(alert) {
+    function transformEvent(alert) {
         const isUp = alert.direction.toUpperCase() === "UP";
         const change = Math.abs(alert.change_percent || 0);
 
@@ -309,7 +309,7 @@ function startMockAlerts(baseInterval = 100, fluctuation = 1000) {
 module.exports = { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts };
 
 // Rest of your existing functions remain exactly the same
-function transformToFocusEvent(alert) {
+function transformEvent(alert) {
     const isUp = alert.direction.toUpperCase() === "UP";
     const change = Math.abs(alert.change_percent || 0);
 

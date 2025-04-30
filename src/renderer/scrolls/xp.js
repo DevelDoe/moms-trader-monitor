@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, 13);
+            .slice(0, 12);
 
         const xpPerMinutes = sorted.map((h) => parseFloat(getXpPerMinute(h)));
         const maxXpm = Math.max(...xpPerMinutes, 1); // fallback 1 to avoid division by 0
@@ -40,9 +40,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const xpmColor = getXpmColor(xpm, maxXpm);
 
                 return `
-    <div class="xp-line ellipsis" style="${dullStyle} ; color:gray;">
+            <div class="xp-line ellipsis" style="${dullStyle}; color: gray;">
+        <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
         <strong class="symbol" style="background: ${bg};">${h.hero} <span class="lv">${formatPrice(h.price)}</span></strong>
-        <span style="font-weight: 600;color:#04f370;opacity:0.75;">${h.totalXpGained}</span>(<span class="xpm" style="font-size: 11px; color: ${xpmColor};">${xpm}</span>)
+        <span style="font-weight: 600; color: #04f370; opacity: 0.75;">${h.totalXpGained}</span>
+        (<span class="xpm" style="font-size: 11px; color: ${xpmColor};">${xpm}</span>)
     </div>`;
             })
             .join("");

@@ -1,16 +1,101 @@
 const symbolColors = {};
-let globalBuffs = {};
-const heroes = {};
+let globalBuffs = {}; // ⬅️ Buff map for score lookup
+
 const { isDev } = window.appFlags;
-const debug = isDev;
 
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
+    const heroes = {};
+
+    const refreshList = () => {
+        const now = Date.now();
+        const inactiveThreshold = 30_000;
+
+        // Step 1: Pick top XP-based pool (level and xp)
+        const topByXP = Object.values(heroes)
+            .filter((h) => h.xp > 0)
+            .sort((a, b) => {
+                if (b.lv !== a.lv) return b.lv - a.lv;
+                return b.xp - a.xp;
+            })
+            .slice(0, 12);
+
+        // Step 2: Sort that pool by buff score
+        // Step 2: Sort that pool by buff score
+        const sorted = topByXP
+            .map((h) => {
+                const finalScore = calculateScore(h.buffs, h.score || 0);
+
+                Object.entries(h.buffs || {}).forEach(([key, val]) => {
+                    const ref = typeof val === "object" ? val : globalBuffs[key];
+                    if (!ref || ref.score === 0) return;
+
+                    console.log(`   🔸 ${key}: ${ref.score} (${ref.desc || "no desc"})`);
+                });
+
+                return {
+                    ...h,
+                    score: finalScore,
+                };
+            })
+            .sort((a, b) => b.score - a.score);
+
+        container.innerHTML = sorted
+            .map((h, idx) => {
+                const bg = getSymbolColor(h.hero);
+                const age = now - (h.lastUpdate || 0);
+                const dullStyle = age > inactiveThreshold ? "opacity: 0.4; filter: grayscale(0.8);" : "";
+
+                const buffIcons = Object.entries(h.buffs || {})
+                    .filter(([key]) => !key.includes("vol") && key !== "volume" && key !== "newHigh")
+                    .map(([key, val]) => (typeof val === "object" && val.icon ? val.icon : globalBuffs[key]?.icon || ""))
+                    .join(" ");
+
+                return `
+                <div class="xp-line ellipsis" style="${dullStyle}">
+                    <span class="text-tertiary" style="display:inline-block; min-width: 24px; text-align:right; margin-right: 4px; opacity: 0.5;">
+                        ${idx + 1}.
+                    </span>
+                    <strong class="symbol" style="background: ${bg};">
+                        ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
+                    </strong>
+                    <span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
+                </div>`;
+            })
+
+            .join("");
+
+        // <span class="score" title="${generateScoreTooltip(h)}">${h.score}</span>
+
+        // Add click listeners to symbol elements
+        container.querySelectorAll(".symbol").forEach((el) => {
+            el.addEventListener("click", (e) => {
+                const hero = el.textContent.trim().split(" ")[0].replace("$", ""); // Remove $ if included
+
+                try {
+                    navigator.clipboard.writeText(hero);
+                    console.log(`📋 Copied ${hero} to clipboard`);
+
+                    if (window.activeAPI?.setActiveTicker) {
+                        window.activeAPI.setActiveTicker(hero);
+                        console.log(`🎯 Set ${hero} as active ticker`);
+                    }
+
+                    el.classList.add("symbol-clicked");
+                    setTimeout(() => el.classList.remove("symbol-clicked"), 200);
+                } catch (err) {
+                    console.error(`⚠️ Failed to handle click for ${hero}:`, err);
+                }
+
+                e.stopPropagation();
+            });
+        });
+    };
 
     try {
-        const [symbols, fetchedBuffs, settings] = await Promise.all([window.storeAPI.getSymbols(), window.electronAPI.getBuffs(), window.settingsAPI.get()]);
+        const [symbols, fetchedBuffs] = await Promise.all([window.storeAPI.getSymbols(), window.electronAPI.getBuffs()]);
 
-        window.settings = settings;
+        // 🧠 Convert buffs list into { key: buffObj }
         globalBuffs = Array.isArray(fetchedBuffs)
             ? fetchedBuffs.reduce((acc, buff) => {
                   if (buff.key) acc[buff.key] = buff;
@@ -18,74 +103,48 @@ document.addEventListener("DOMContentLoaded", async () => {
               }, {})
             : {};
 
-        symbols.forEach(({ symbol, xp, lv, buffs, price, Price }) => {
-            const parsedPrice = Number(price ?? Price);
-            if (isNaN(parsedPrice)) {
-                return;
-            }
-
-            const { minPrice, realMaxPrice } = getPriceLimits();
-            if ((minPrice > 0 && parsedPrice < minPrice) || parsedPrice > realMaxPrice) {
-                return;
-            }
-
-            heroes[symbol] = {
-                hero: symbol,
-                xp: Number(xp) || 0,
-                lv: Number(lv) || 1,
-                buffs: buffs || {},
-                price: parsedPrice,
+        symbols.forEach((s) => {
+            heroes[s.symbol] = {
+                hero: s.symbol,
+                xp: s.xp || 0,
+                lv: s.lv || 0,
+                buffs: s.buffs || {},
+                price: s.Price || s.price || 0, // ✅ Grab price from incoming symbol
                 lastUpdate: Date.now(),
             };
         });
 
         refreshList();
+
+        window.storeAPI.onHeroUpdate((updatedHeroes) => {
+            updatedHeroes.forEach(({ hero, buffs, xp, lv, price }) => {
+                if (!heroes[hero]) {
+                    heroes[hero] = {
+                        hero,
+                        xp: 0,
+                        lv: 1,
+                        buffs: {},
+                        price: 0,
+                        lastUpdate: Date.now(),
+                    };
+                }
+
+                if (typeof xp === "number") heroes[hero].xp = xp;
+                if (typeof lv === "number") heroes[hero].lv = lv;
+                if (buffs) heroes[hero].buffs = buffs;
+                if (typeof price === "number") heroes[hero].price = price;
+
+                heroes[hero].lastUpdate = Date.now();
+            });
+
+            refreshList();
+        });
     } catch (err) {
-        console.error("⚠️ Failed during initial load:", err);
+        console.error("Failed to load stats scroll:", err);
     }
 
-    window.storeAPI.onHeroUpdate((updatedHeroes) => {
-        const { minPrice, realMaxPrice } = getPriceLimits();
-
-        updatedHeroes.forEach(({ hero, xp, lv, buffs, price }) => {
-            const parsedPrice = Number(price);
-            if (isNaN(parsedPrice)) {
-                return;
-            }
-
-            if ((minPrice > 0 && parsedPrice < minPrice) || parsedPrice > realMaxPrice) {
-                return;
-            }
-
-            if (!heroes[hero]) {
-                heroes[hero] = {
-                    hero,
-                    xp: 0,
-                    lv: 1,
-                    buffs: {},
-                    price: 0,
-                    lastUpdate: Date.now(),
-                };
-            }
-
-            heroes[hero].xp = Number(xp) || 0;
-            heroes[hero].lv = Number(lv) || 1;
-            heroes[hero].buffs = buffs || {};
-            heroes[hero].price = parsedPrice;
-            heroes[hero].lastUpdate = Date.now();
-        });
-
-        refreshList();
-    });
-
-    window.settingsAPI.onUpdate(async (updatedSettings) => {
-        if (debug) console.log("🎯 Settings updated, reapplying...", updatedSettings);
-        window.settings = updatedSettings;
-        refreshList();
-    });
-
     window.electronAPI.onXpReset(() => {
-        console.log("🧼 XP Reset received — zeroing XP and LV");
+        console.log("🧼 XP Reset received in Foundations — zeroing XP and LV");
 
         Object.values(heroes).forEach((hero) => {
             hero.xp = 0;
@@ -97,106 +156,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     window.electronAPI.onNukeState(async () => {
-        console.warn("🧨 Nuke signal received in XP scroll — clearing and reloading heroes and buffs");
+        console.warn("🧨 Nuke signal received in XP scroll — clearing and reloading heroes");
 
         Object.keys(heroes).forEach((key) => delete heroes[key]);
         container.innerHTML = "";
 
         try {
-            const [symbols, fetchedBuffs] = await Promise.all([window.storeAPI.getSymbols(), window.electronAPI.getBuffs()]);
-
-            // 🧠 Rebuild buff map
-            globalBuffs = Array.isArray(fetchedBuffs)
-                ? fetchedBuffs.reduce((acc, buff) => {
-                      if (buff.key) acc[buff.key] = buff;
-                      return acc;
-                  }, {})
-                : {};
-
-            // 🧠 Rebuild heroes
+            const symbols = await window.storeAPI.getSymbols();
             symbols.forEach((s) => {
                 heroes[s.symbol] = {
                     hero: s.symbol,
                     xp: s.xp || 0,
                     lv: s.lv || 0,
                     buffs: s.buffs || {},
-                    price: s.Price || s.price || 0,
                     lastUpdate: Date.now(),
                 };
             });
 
             refreshList();
         } catch (err) {
-            console.error("⚠️ Failed to reload heroes and buffs after nuke:", err);
+            console.error("⚠️ Failed to reload heroes after nuke:", err);
         }
     });
-
-    function refreshList() {
-        const now = Date.now();
-        const inactiveThreshold = 30_000;
-        const { minPrice, realMaxPrice } = getPriceLimits();
-
-        const topByXP = Object.values(heroes)
-            .filter((h) => h.xp > 0 && h.price >= minPrice && h.price <= realMaxPrice)
-            .sort((a, b) => {
-                if (b.lv !== a.lv) return b.lv - a.lv;
-                return b.xp - a.xp;
-            })
-            .slice(0, 13);
-
-        const sorted = topByXP
-            .map((h) => ({
-                ...h,
-                score: calculateScore(h.buffs, h.score || 0),
-            }))
-            .sort((a, b) => b.score - a.score);
-
-        container.innerHTML = sorted
-            .map((h) => {
-                const bg = getSymbolColor(h.hero);
-                const age = now - (h.lastUpdate || 0);
-                const dullStyle = age > inactiveThreshold ? "opacity: 0.4; filter: grayscale(0.8);" : "";
-
-                const buffIcons = Object.entries(h.buffs || {})
-                    .filter(([key]) => !key.includes("vol") && key !== "volume" && key !== "newHigh" && key !== "bounceBack")
-                    .map(([key, val]) => (typeof val === "object" && val.icon ? val.icon : globalBuffs[key]?.icon || ""))
-                    .join(" ");
-
-                return `
-                    <div class="xp-line ellipsis" style="${dullStyle}">
-                        <strong class="symbol" style="background: ${bg};">${h.hero} <span class="lv">${formatPrice(h.price)}</span></strong>
-                        <span class="score" title="${generateScoreTooltip(h)}">${h.score}</span>
-                        <span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
-                    </div>`;
-            })
-            .join("");
-
-        container.querySelectorAll(".symbol").forEach((el) => {
-            el.addEventListener("click", (e) => {
-                const hero = el.textContent.trim().split(" ")[0].replace("$", "");
-                try {
-                    navigator.clipboard.writeText(hero);
-                    if (window.activeAPI?.setActiveTicker) {
-                        window.activeAPI.setActiveTicker(hero);
-                    }
-                    el.classList.add("symbol-clicked");
-                    setTimeout(() => el.classList.remove("symbol-clicked"), 200);
-                } catch (err) {
-                    console.error(`⚠️ Failed to handle click for ${hero}:`, err);
-                }
-                e.stopPropagation();
-            });
-        });
-    }
 });
-
-// Helpers
-function getPriceLimits() {
-    const minPrice = Number(window.settings?.top?.minPrice) || 0;
-    const max = Number(window.settings?.top?.maxPrice) || 0;
-    const realMaxPrice = max > 0 ? max : Infinity;
-    return { minPrice, realMaxPrice };
-}
 
 function generateScoreTooltip(hero) {
     const base = hero.score - calculateScore(hero.buffs, 0);
@@ -207,7 +189,7 @@ function generateScoreTooltip(hero) {
     let hasNeutral = false;
 
     Object.entries(hero.buffs || {}).forEach(([key, buff]) => {
-        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh" || key === "bounceBack") return;
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh") return;
 
         const ref = typeof buff === "object" ? buff : globalBuffs[key];
         if (!ref || typeof ref.score !== "number") return;
@@ -262,7 +244,7 @@ function calculateScore(heroBuffs = {}, baseScore = 0) {
     let hasBearish = false;
 
     for (const key in heroBuffs) {
-        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh" || key === "bounceBack") continue;
+        if (key === "volume" || key.startsWith("vol") || key.includes("Vol") || key === "newHigh") continue;
 
         const buff = heroBuffs[key];
         const ref = typeof buff === "object" ? buff : globalBuffs[key];

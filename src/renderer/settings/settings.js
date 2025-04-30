@@ -16,36 +16,6 @@ function openTab(evt, tabId) {
     if (evt) evt.currentTarget.classList.add("active"); // Ensure evt exists
 }
 
-const HARDCODED_ATTRIBUTES = {
-    live: {
-        Price: false,
-        alertChangePercent: false,
-        cumulativeUpChange: false,
-        cumulativeDownChange: false,
-        fiveMinVolume: false,
-        Score: false,
-        Bonuses: false,
-    },
-    focus: {
-        Price: false,
-        alertChangePercent: false,
-        cumulativeUpChange: false,
-        cumulativeDownChange: false,
-        fiveMinVolume: false,
-        Score: false,
-        Bonuses: false,
-    },
-    daily: {
-        Price: false,
-        alertChangePercent: false,
-        cumulativeUpChange: false,
-        cumulativeDownChange: false,
-        fiveMinVolume: false,
-        Score: false,
-        Bonuses: false,
-    },
-};
-
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
 
@@ -59,10 +29,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         initializeTopSection();
         initializeNewsSection();
         initializeAdminSection();
-
-        // await loadAttributeFilters("live", "live-filters");
-        // await loadAttributeFilters("focus", "focus-filters");
-        // await loadAttributeFilters("daily", "daily-filters");
 
         const defaultTab = document.querySelector(".tablinks.active");
         if (defaultTab) {
@@ -88,7 +54,7 @@ function initializeGeneralSection() {
     const showHeroesToggle = document.getElementById("show-heroes");
     showEventsToggle.checked = window.settings.windows.scannerWindow?.isOpen ?? false;
     showFrontlineToggle.checked = window.settings.windows.frontlineWindow?.isOpen ?? false;
-    showHeroesToggle.checked = window.settings.windows.focusWindow?.isOpen ?? false;
+    showHeroesToggle.checked = window.settings.windows.herosWindow?.isOpen ?? false;
 
     const showActiveToggle = document.getElementById("show-active");
     showActiveToggle.checked = window.settings.windows.activeWindow?.isOpen ?? false;
@@ -141,8 +107,8 @@ function initializeGeneralSection() {
             window.heroesAPI.deactivate();
         }
 
-        window.settings.windows.focusWindow = {
-            ...(window.settings.windows.focusWindow || {}),
+        window.settings.windows.herosWindow = {
+            ...(window.settings.windows.herosWindow || {}),
             isOpen: event.target.checked,
         };
         await window.settingsAPI.update(window.settings);
@@ -380,9 +346,8 @@ function initializeTopSection() {
     const minScoreInput = document.getElementById("min-score");
     const maxScoreInput = document.getElementById("max-score");
     // const topTransparentToggle = document.getElementById("top-transparent-toggle");
-    const liveLengthInput = document.getElementById("live-length");
-    const focusLengthInput = document.getElementById("focus-length");
-    const dailyLengthInput = document.getElementById("daily-length");
+    const frontlineLengthInput = document.getElementById("frontline-length");
+    const herosLengthInput = document.getElementById("heros-length");
 
     // ✅ Set placeholder to reflect "No limit" if 0 is set
     minPriceInput.placeholder = minPriceInput.value === "0" ? "No limit" : "";
@@ -410,9 +375,8 @@ function initializeTopSection() {
     // if (window.settings.top.transparent !== undefined) topTransparentToggle.checked = window.settings.top.transparent;
 
     // ✅ Load saved length settings
-    liveLengthInput.value = window.settings.top.liveListLength ?? 10;
-    focusLengthInput.value = window.settings.top.focusListLength ?? 3;
-    focusLengthInput.value = window.settings.top.focusListLength ?? 10;
+    frontlineLengthInput.value = window.settings.top.frontlineListLength ?? 10;
+    herosLengthInput.value = window.settings.top.herosListLength ?? 3;
 
     async function updatePriceFilter() {
         try {
@@ -559,7 +523,7 @@ function initializeTopSection() {
                 ...latestSettings,
                 top: {
                     ...latestSettings.top,
-                    [`${type}ListLength`]: newLength, // ✅ Updates liveListLength or focusListLength at the root
+                    [`${type}ListLength`]: newLength, // ✅ Updates frontlineListLength or herosListLength at the root
                 },
             };
 
@@ -584,86 +548,9 @@ function initializeTopSection() {
     maxScoreInput.addEventListener("input", updateScoreFilter);
 
     // topTransparentToggle.addEventListener("change", updateTransparency);
-    liveLengthInput.addEventListener("input", () => updateListLength("live", liveLengthInput));
-    liveLengthInput.addEventListener("input", () => updateListLength("frontline", liveLengthInput));
-    focusLengthInput.addEventListener("input", () => updateListLength("focus", focusLengthInput));
-    // dailyLengthInput.addEventListener("input", () => updateListLength("daily", dailyLengthInput));
+    frontlineLengthInput.addEventListener("input", () => updateListLength("frontline", frontlineLengthInput));
+    herosLengthInput.addEventListener("input", () => updateListLength("heros", herosLengthInput));
 }
-
-// async function loadAttributeFilters(listType, containerId) {
-//     try {
-//         console.log(`📥 Loading attributes for ${listType}...`);
-//         console.log("HARDCODED_ATTRIBUTES:", HARDCODED_ATTRIBUTES);
-//         console.log("window.settings.top.lists:", window.settings.top.lists);
-
-//         const attributes = Object.keys(HARDCODED_ATTRIBUTES[listType]); // Only include predefined attributes
-//         const container = document.getElementById(containerId);
-
-//         if (!container) {
-//             console.error(`❌ Container ${containerId} not found!`);
-//             return;
-//         }
-
-//         container.innerHTML = ""; // Clear previous checkboxes
-
-//         // ✅ Ensure settings exist before using them
-//         const selectedFilters = window.settings.top.lists?.[listType] || {};
-
-//         attributes.forEach((attr) => {
-//             const label = document.createElement("label");
-//             const checkbox = document.createElement("input");
-//             checkbox.type = "checkbox";
-//             checkbox.name = listType;
-//             checkbox.value = attr;
-//             checkbox.checked = selectedFilters[attr] ?? false; // ✅ Fetch value from settings
-
-//             checkbox.addEventListener("change", () => {
-//                 updateAttributeFilters(); // ✅ Save updates correctly
-//             });
-
-//             label.appendChild(checkbox);
-//             label.append(` ${attr}`);
-//             container.appendChild(label);
-//         });
-
-//         console.log(`✅ Attributes loaded dynamically from settings for ${listType}!`);
-//     } catch (error) {
-//         console.error(`❌ Error loading ${listType} attributes:`, error);
-//     }
-// }
-
-// async function updateAttributeFilters() {
-//     try {
-//         console.log("🔄 Fetching latest settings before updating filters...");
-//         const latestSettings = await window.settingsAPI.get();
-//         if (!latestSettings || !latestSettings.top) {
-//             console.error("❌ Failed to fetch latest settings. Skipping update.");
-//             return;
-//         }
-
-//         // ✅ Update settings dynamically while preserving other lists
-//         const updatedLists = {
-//             ...latestSettings.top.lists,
-//             live: Object.fromEntries(Array.from(document.querySelectorAll("input[name='live']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-//             focus: Object.fromEntries(Array.from(document.querySelectorAll("input[name='focus']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-//             daily: Object.fromEntries(Array.from(document.querySelectorAll("input[name='daily']")).map((checkbox) => [checkbox.value, checkbox.checked])),
-//         };
-
-//         // ✅ Spread everything and only update `lists`
-//         const newSettings = {
-//             ...latestSettings,
-//             top: {
-//                 ...latestSettings.top,
-//                 lists: updatedLists,
-//             },
-//         };
-
-//         console.log("💾 Saving updated filters:", newSettings);
-//         await window.settingsAPI.update(newSettings);
-//     } catch (error) {
-//         console.error("❌ Error updating filters:", error);
-//     }
-// }
 
 function initializeNewsSection() {
     if (!window.settings.news) {

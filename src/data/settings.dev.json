@@ -30,10 +30,12 @@
         "fiveMinVolume": false
       }
     },
-    "liveListLength": 9,
     "frontlineListLength": 10,
+    "heroesListLength": 3,
+    "liveListLength": 9,
     "focusListLength": 3,
-    "dailyListLength": 15
+    "dailyListLength": 15,
+    "heroListLength": 3
   },
   "news": {
     "showTrackedTickers": false,
@@ -79,7 +81,7 @@
       "height": 768,
       "x": 1190,
       "y": -768,
-      "isOpen": true
+      "isOpen": false
     },
     "settingsWindow": {
       "width": 759,
@@ -88,33 +90,12 @@
       "y": 874,
       "isOpen": false
     },
-    "liveWindow": {
-      "width": 358,
-      "height": 481,
-      "x": 884,
-      "y": 784,
-      "isOpen": false
-    },
-    "focusWindow": {
-      "width": 435,
-      "height": 457,
-      "x": 1655,
-      "y": -457,
-      "isOpen": true
-    },
-    "dailyWindow": {
-      "width": 907,
-      "height": 553,
-      "x": 1461,
-      "y": 0,
-      "isOpen": false
-    },
     "infobarWindow": {
       "width": 404,
       "height": 40,
       "x": 2153,
       "y": -710,
-      "isOpen": true
+      "isOpen": false
     },
     "wizardWindow": {
       "width": 2400,
@@ -136,15 +117,15 @@
     "frontlineWindow": {
       "width": 293,
       "height": 457,
-      "x": 1362,
-      "y": -457,
+      "x": 1879,
+      "y": 804,
       "isOpen": true
     },
     "activeWindow": {
       "width": 791,
       "height": 311,
-      "x": 1362,
-      "y": -768,
+      "x": 1879,
+      "y": 493,
       "isOpen": true
     },
     "traderviewWindow_MULN": {
@@ -379,15 +360,15 @@
     "scrollXpWindow": {
       "width": 191,
       "height": 457,
-      "x": 2090,
-      "y": -457,
+      "x": 2619,
+      "y": 796,
       "isOpen": true
     },
     "scrollStatsWindow": {
       "width": 275,
       "height": 457,
-      "x": 2281,
-      "y": -457,
+      "x": 2803,
+      "y": 812,
       "isOpen": true
     },
     "traderviewWindow_[object Object]": {
@@ -451,6 +432,16 @@
     },
     "traderviewWindow_OMH": {
       "isOpen": false
+    },
+    "heroesWindow": {
+      "width": 435,
+      "height": 458,
+      "x": 2173,
+      "y": 804,
+      "isOpen": false
+    },
+    "herosWindow": {
+      "isOpen": true
     }
   },
   "traderview": {

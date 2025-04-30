@@ -292,7 +292,7 @@ class Store extends EventEmitter {
     }
 
     // Rest of your existing functions remain exactly the same
-    transformToFocusEvent(alert) {
+    transformEvent(alert) {
         const isUp = alert.direction.toUpperCase() === "UP";
         const change = Math.abs(alert.change_percent || 0);
 
@@ -309,7 +309,7 @@ class Store extends EventEmitter {
         const ticker = this.symbols.get(symbol);
         if (!ticker) return;
 
-        const event = this.transformToFocusEvent(alert);
+        const event = this.transformEvent(alert);
 
         ticker.lastEvent = {
             hp: event.hp,

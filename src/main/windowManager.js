@@ -10,7 +10,7 @@ const fs = require("fs");
 
 const { createSettingsWindow } = require("./windows/settings");
 const { createFrontlineWindow } = require("./windows/frontline");
-const { createFocusWindow } = require("./windows/focus");
+const { createHeroesWindow } = require("./windows/heroes");
 const { createDailyWindow } = require("./windows/daily");
 const { createActiveWindow } = require("./windows/active");
 const { createScannerWindow } = require("./windows/scanner");
@@ -79,7 +79,7 @@ async function restoreWindows() {
     const windowKeyMap = {
         settings: "settingsWindow",
         frontline: "frontlineWindow",
-        focus: "focusWindow",
+        heroes: "heroesWindow",
         daily: "dailyWindow",
         scanner: "scannerWindow",
         infobar: "infobarWindow",
@@ -106,11 +106,11 @@ async function restoreWindows() {
     if (activeWindowState?.isOpen) {
         log.log("Restoring activeWindow (with dependency check)");
 
-        // Ensure focusWindow exists first (if needed)
-        const focusWindowState = getWindowState("focusWindow");
-        if (focusWindowState?.isOpen && !windows.focus) {
-            windows.focus = createWindow("focus", () => createWindowByName("focus"));
-            windows.focus.show();
+        // Ensure heroesWindow exists first (if needed)
+        const heroesWindowState = getWindowState("heroesWindow");
+        if (heroesWindowState?.isOpen && !windows.heroes) {
+            windows.heroes = createWindow("heroes", () => createWindowByName("heroes"));
+            windows.heroes.show();
         }
 
         // Create the active window
@@ -142,8 +142,8 @@ function createWindowByName(name) {
             return createSettingsWindow(isDevelopment);
         case "frontline":
             return createFrontlineWindow(isDevelopment);
-        case "focus":
-            return createFocusWindow(isDevelopment);
+        case "heroes":
+            return createHeroesWindow(isDevelopment);
         case "daily":
             return createDailyWindow(isDevelopment);
         case "active":
