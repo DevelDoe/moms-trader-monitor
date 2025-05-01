@@ -275,19 +275,7 @@ function startMockAlerts(baseInterval = 100, fluctuation = 1000) {
         }
     }
 
-    // Rest of your existing functions remain exactly the same
-    function transformEvent(alert) {
-        const isUp = alert.direction.toUpperCase() === "UP";
-        const change = Math.abs(alert.change_percent || 0);
-
-        return {
-            hero: alert.symbol,
-            hp: isUp ? change : 0,
-            dp: isUp ? 0 : change,
-            strength: alert.volume,
-            price: alert.price,
-        };
-    }
+    const loggedSymbols = new Set();
 
     function getWaveInterval() {
         wavePosition += 0.1;
@@ -308,10 +296,11 @@ function startMockAlerts(baseInterval = 100, fluctuation = 1000) {
 
 module.exports = { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts };
 
-// Rest of your existing functions remain exactly the same
 function transformEvent(alert) {
     const isUp = alert.direction.toUpperCase() === "UP";
     const change = Math.abs(alert.change_percent || 0);
+
+    log.log(`[transformEvent] ${alert.symbol} → str: ${alert.last_trade}, str1: ${alert.volume_1min}, str5: ${alert.volume_5min}`);
 
     return {
         hero: alert.symbol,
@@ -319,9 +308,11 @@ function transformEvent(alert) {
         dp: isUp ? 0 : change,
         strength: alert.volume,
         price: alert.price,
+        str: alert.last_trade,
+        str1: alert.volume_1min,
+        str5: alert.volume_5min,
     };
 }
-
 // Predefined alerts
 // const predefinedAlerts = [
 //     { symbol: "AKAN", direction: "UP", price: 2.2, volume: 340000, change_percent: 1 },

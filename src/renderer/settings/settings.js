@@ -54,7 +54,7 @@ function initializeGeneralSection() {
     const showHeroesToggle = document.getElementById("show-heroes");
     showEventsToggle.checked = window.settings.windows.scannerWindow?.isOpen ?? false;
     showFrontlineToggle.checked = window.settings.windows.frontlineWindow?.isOpen ?? false;
-    showHeroesToggle.checked = window.settings.windows.herosWindow?.isOpen ?? false;
+    showHeroesToggle.checked = window.settings.windows.heroesWindow?.isOpen ?? false;
 
     const showActiveToggle = document.getElementById("show-active");
     showActiveToggle.checked = window.settings.windows.activeWindow?.isOpen ?? false;
@@ -107,8 +107,8 @@ function initializeGeneralSection() {
             window.heroesAPI.deactivate();
         }
 
-        window.settings.windows.herosWindow = {
-            ...(window.settings.windows.herosWindow || {}),
+        window.settings.windows.heroesWindow = {
+            ...(window.settings.windows.heroesWindow || {}),
             isOpen: event.target.checked,
         };
         await window.settingsAPI.update(window.settings);

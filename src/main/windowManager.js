@@ -11,7 +11,6 @@ const fs = require("fs");
 const { createSettingsWindow } = require("./windows/settings");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createHeroesWindow } = require("./windows/heroes");
-const { createDailyWindow } = require("./windows/daily");
 const { createActiveWindow } = require("./windows/active");
 const { createScannerWindow } = require("./windows/scanner");
 const { createInfobarWindow } = require("./windows/infobar");
@@ -80,7 +79,6 @@ async function restoreWindows() {
         settings: "settingsWindow",
         frontline: "frontlineWindow",
         heroes: "heroesWindow",
-        daily: "dailyWindow",
         scanner: "scannerWindow",
         infobar: "infobarWindow",
         docker: "dockerWindow",
@@ -144,8 +142,6 @@ function createWindowByName(name) {
             return createFrontlineWindow(isDevelopment);
         case "heroes":
             return createHeroesWindow(isDevelopment);
-        case "daily":
-            return createDailyWindow(isDevelopment);
         case "active":
             return createActiveWindow(isDevelopment, global.sharedState?.activeTicker);
         case "scanner":
