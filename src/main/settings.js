@@ -37,6 +37,29 @@ log.log("Full settings path:", SETTINGS_FILE);
 log.log("File exists:", fs.existsSync(SETTINGS_FILE));
 const FIRST_RUN_FILE = path.join(app.getPath("userData"), "first-run.lock");
 
+// lists: {
+//     live: {
+//         Price: false,
+//         alertChangePercent: false,
+//         cumulativeUpChange: true,
+//         cumulativeDownChange: false,
+//         Score: true,
+//         Bonuses: true,
+//         length: 3,
+//         fiveMinVolume: false,
+//     },
+//     focus: {
+//         Price: false,
+//         alertChangePercent: false,
+//         cumulativeUpChange: true,
+//         cumulativeDownChange: false,
+//         Score: true,
+//         Bonuses: true,
+//         length: 3,
+//         fiveMinVolume: false,
+//     },
+// },
+
 const DEFAULT_SETTINGS = {
     top: {
         minPrice: 1,
@@ -47,28 +70,6 @@ const DEFAULT_SETTINGS = {
         maxScore: 0,
         minVolume: 0,
         maxVolume: 0,
-        lists: {
-            live: {
-                Price: false,
-                alertChangePercent: false,
-                cumulativeUpChange: true,
-                cumulativeDownChange: false,
-                Score: true,
-                Bonuses: true,
-                length: 3,
-                fiveMinVolume: false,
-            },
-            focus: {
-                Price: false,
-                alertChangePercent: false,
-                cumulativeUpChange: true,
-                cumulativeDownChange: false,
-                Score: true,
-                Bonuses: true,
-                length: 3,
-                fiveMinVolume: false,
-            },
-        },
         frontlineListLength: 14,
         heroesListLength: 3,
     },

@@ -16,6 +16,7 @@
                 height: 100px;
                 width: 100%;
                 overflow-x: hidden;
+                min-height: 63px;
             }
             .bonus-list,
             .news-list {
@@ -23,7 +24,7 @@
                 width: 100%;
                 height: 100%;
                 overflow: hidden;
-                font-size: 14px;
+                font-size: 12px;
                 color: #f0f0f0;
                 padding: 5px;
                 margin: 0 auto;
@@ -174,9 +175,18 @@
             .news-item .desc .scroll-inner {
                 display: inline-block;
             }
+            h2 {
+                padding: 0;
+                padding-top: 3px;
+                margin: 0 auto;
+                margin-left: 10px;
+                /* margin-top: 5px; */
+            }
         </style>
     </head>
     <body class="draggable">
+        <h2>📣 General Information Bar</h2>
+
         <ul class="bonus-list no-drag"></ul>
 
         <script>

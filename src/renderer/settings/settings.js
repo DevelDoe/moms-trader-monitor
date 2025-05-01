@@ -347,7 +347,7 @@ function initializeTopSection() {
     const maxScoreInput = document.getElementById("max-score");
     // const topTransparentToggle = document.getElementById("top-transparent-toggle");
     const frontlineLengthInput = document.getElementById("frontline-length");
-    const herosLengthInput = document.getElementById("heros-length");
+    const herosLengthInput = document.getElementById("heroes-length");
 
     // ✅ Set placeholder to reflect "No limit" if 0 is set
     minPriceInput.placeholder = minPriceInput.value === "0" ? "No limit" : "";

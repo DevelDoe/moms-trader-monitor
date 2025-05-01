@@ -8,8 +8,8 @@ function createInfobarWindow(isDevelopment) {
     const state = getWindowState("infobarWindow");
 
     const window = new BrowserWindow({
-        width: state.width || 850,
-        height: state.height || 660,
+        width: state.width || 465,
+        height: state.height || 63,
         x: state.x,
         y: state.y,
         frame: false,
@@ -36,12 +36,11 @@ function createInfobarWindow(isDevelopment) {
         const bounds = window.getBounds();
         setWindowBounds("infobarWindow", bounds);
     });
-    
+
     window.on("resize", () => {
         const bounds = window.getBounds();
         setWindowBounds("infobarWindow", bounds);
     });
-    
 
     return window; // ✅ Return the window instance
 }
