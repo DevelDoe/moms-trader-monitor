@@ -8,8 +8,7 @@
     { "key": "float50m", "threshold": 60000000, "icon": "50", "desc": "Float ~50M", "multiplier": 1, "score": 0 },
     { "key": "float100m", "threshold": 120000000, "icon": "100", "desc": "Float ~100M", "multiplier": 0.9, "score": -100, "isBuff": false },
     { "key": "float200m", "threshold": 230000000, "icon": "200", "desc": "Float ~200M", "multiplier": 0.6, "score": -200, "isBuff": false },
-    { "key": "float500m", "threshold": 550000000, "icon": "500", "desc": "Float ~500M", "multiplier": 0.4, "score": -400, "isBuff": false },
-    { "key": "float600m+", "threshold": 1e9, "icon": "600+", "desc": "Float 600M+", "multiplier": 0.1, "score": -1000, "isBuff": false },
+    { "key": "float500m", "threshold": 500000000, "icon": "500", "desc": "Float 500M+", "multiplier": 0.1, "score": -1000, "isBuff": false },
 
     {
         "category": "subCap",
