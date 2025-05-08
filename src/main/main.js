@@ -3,6 +3,17 @@
 // INIT
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
+
+// 🛡️ GLOBAL ERROR HANDLERS (PREVENT FATAL CRASH)
+process.on("uncaughtException", (err) => {
+    log.error("❌ Uncaught Exception:", err.message);
+    log.error(err.stack);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+    log.error("❌ Unhandled Promise Rejection:", reason);
+});
+
 const isDevelopment = process.env.NODE_ENV === "development";
 const DEBUG = process.env.DEBUG === "true";
 const forceUpdate = process.env.forceUpdate === "true";
