@@ -57,12 +57,16 @@ const connectMTP = () => {
 
         ws.onopen = () => {
             log.log("[mtp.js] Connected to WebSocket server");
-            ws.send(
-                JSON.stringify({
-                    type: "registration",
-                    client_id: clientId,
-                })
-            );
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(
+                    JSON.stringify({
+                        type: "registration",
+                        client_id: clientId,
+                    })
+                );
+            } else {
+                log.warn("[mtp.js] Attempted to send on a closed WebSocket");
+            }
         };
 
         ws.onmessage = async (event) => {
@@ -75,7 +79,11 @@ const connectMTP = () => {
             // Handle ping messages
             if (msg.type === "ping") {
                 log.log("[mtp.js] Received ping, sending pong");
-                ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
+                try {
+                    ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
+                } catch (err) {
+                    log.error("[mtp.js] Failed to send pong:", err.message);
+                }
                 return;
             }
 
@@ -135,6 +143,10 @@ const connectMTP = () => {
             }
         };
 
+        ws.on("unexpected-response", (req, res) => {
+            log.error("[mtp.js] Unexpected response from WS server:", res.statusCode);
+        });
+
         ws.onerror = (err) => {
             log.error("[mtp.js] WebSocket error:", err.message);
         };
@@ -144,6 +156,11 @@ const connectMTP = () => {
             // Reconnect after a delay
             setTimeout(createWebSocket, 5000); // 5 seconds delay before reconnect
         };
+
+        ws.on("close", (code, reason) => {
+            log.warn(`[mtp.js] WebSocket closed: code=${code}, reason=${reason}`);
+            setTimeout(createWebSocket, 5000);
+        });
     };
 
     // Initialize the first WebSocket connection

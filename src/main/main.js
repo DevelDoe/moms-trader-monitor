@@ -4,14 +4,25 @@
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 
-// 🛡️ GLOBAL ERROR HANDLERS (PREVENT FATAL CRASH)
 process.on("uncaughtException", (err) => {
     log.error("❌ Uncaught Exception:", err.message);
     log.error(err.stack);
+
+    log.warn("Attempting graceful app restart in 5 seconds...");
+    setTimeout(() => {
+        app.relaunch({ args: process.argv.slice(1).concat(["--scheduled-restart"]) });
+        app.exit(1);
+    }, 5000);
 });
 
-process.on("unhandledRejection", (reason, promise) => {
+process.on("unhandledRejection", (reason) => {
     log.error("❌ Unhandled Promise Rejection:", reason);
+
+    log.warn("Attempting graceful app restart in 5 seconds...");
+    setTimeout(() => {
+        app.relaunch({ args: process.argv.slice(1).concat(["--scheduled-restart"]) });
+        app.exit(1);
+    }, 5000);
 });
 
 const isDevelopment = process.env.NODE_ENV === "development";
