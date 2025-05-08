@@ -94,21 +94,21 @@
       "height": 479,
       "x": 1628,
       "y": 0,
-      "isOpen": true
+      "isOpen": false
     },
     "activeWindow": {
       "width": 802,
       "height": 404,
-      "x": 1553,
-      "y": 667,
-      "isOpen": true
+      "x": 1480,
+      "y": 519,
+      "isOpen": false
     },
     "heroesWindow": {
       "width": 435,
       "height": 458,
       "x": 1952,
       "y": 1,
-      "isOpen": true
+      "isOpen": false
     },
     "scrollXpWindow": {
       "isOpen": false

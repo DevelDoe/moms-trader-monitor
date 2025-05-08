@@ -228,7 +228,7 @@ function logVolumeSnapshot(timestamp, volumeTotal) {
     try {
         fs.writeFileSync(LOG_FILE, JSON.stringify(history, null, 2), "utf-8");
     } catch (err) {
-        console.warn("⚠️ Failed to write volume log:", err.message);
+        log.log("⚠️ Failed to write volume log:", err.message);
     }
 }
 

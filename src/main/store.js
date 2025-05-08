@@ -33,7 +33,7 @@ function loadSettingsAndBuffs() {
         bullishList = settings.news?.bullishList || [];
         bearishList = settings.news?.bearishList || [];
     } catch (err) {
-        console.warn("⚠️ Failed to load settings:", err.message);
+        log.warn("⚠️ Failed to load settings:", err.message);
         blockList = [];
         bullishList = [];
         bearishList = [];
@@ -43,7 +43,7 @@ function loadSettingsAndBuffs() {
         const buffsRaw = fs.readFileSync(BUFFS_FILE, "utf-8");
         buffs = JSON.parse(buffsRaw);
     } catch (err) {
-        console.warn("⚠️ Failed to load buffs:", err.message);
+        log.warn("⚠️ Failed to load buffs:", err.message);
         buffs = [];
     }
 }
@@ -563,7 +563,7 @@ class Store extends EventEmitter {
         const minimumStrength = 1000; // adjust this threshold as needed
         if (strength < minimumStrength) {
             if (debugXp) {
-                console.log(`⚡ [${ticker.symbol}] Skipped XP gain - Strength too low (${strength})`);
+                log.log(`⚡ [${ticker.symbol}] Skipped XP gain - Strength too low (${strength})`);
             }
             return 0; // No XP awarded
         }
@@ -599,21 +599,21 @@ class Store extends EventEmitter {
         while (ticker.totalXpGained >= requiredXp) {
             ticker.lv += 1;
             requiredXp = getRequiredXp(ticker.lv + 1);
-            if (debug) console.log(`✨ ${ticker.symbol} leveled up to LV ${ticker.lv}!`);
+            if (debug) log.log(`✨ ${ticker.symbol} leveled up to LV ${ticker.lv}!`);
         }
 
         if (debugXp) {
-            console.log(`⚡⚡⚡ [${ticker.symbol}] XP BREAKDOWN ⚡⚡⚡`);
-            console.log(`📜 ALERT → HP: ${hp.toFixed(2)} | DP: ${dp.toFixed(2)} | Strength: ${strength.toLocaleString()}`);
-            console.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
+            log.log(`⚡⚡⚡ [${ticker.symbol}] XP BREAKDOWN ⚡⚡⚡`);
+            log.log(`📜 ALERT → HP: ${hp.toFixed(2)} | DP: ${dp.toFixed(2)} | Strength: ${strength.toLocaleString()}`);
+            log.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
             if (volumeBuff?.desc) {
-                console.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
+                log.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
             }
-            console.log(`⚖️ Float Factor                Float: ${floatShares.toLocaleString()} Adjusted XP: ${finalXp}`);
-            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            console.log(`🎯 XP GAINED                   ${finalXp}`);
-            console.log(`🎼 CURRENT LV →                ${ticker.lv}`);
-            console.log(`🎼 TOTAL XP →                  ${ticker.totalXpGained}`);
+            log.log(`⚖️ Float Factor                Float: ${floatShares.toLocaleString()} Adjusted XP: ${finalXp}`);
+            log.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            log.log(`🎯 XP GAINED                   ${finalXp}`);
+            log.log(`🎼 CURRENT LV →                ${ticker.lv}`);
+            log.log(`🎼 TOTAL XP →                  ${ticker.totalXpGained}`);
         }
 
         return finalXp;

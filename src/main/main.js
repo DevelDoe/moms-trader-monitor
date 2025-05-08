@@ -515,7 +515,7 @@ tickerStore.on("hero-updated", (payload = []) => {
 });
 
 tickerStore.on("store-nuke", () => {
-    console.log("💣 Nuke triggered by store");
+    log.log("💣 Nuke triggered by store");
     BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send("store:nuke");
     });
@@ -528,7 +528,7 @@ tickerStore.on("store-nuke", () => {
 });
 
 ipcMain.on("admin-nuke", () => {
-    console.log("💣 Nuke state requested by renderer");
+    log.log("💣 Nuke state requested by renderer");
 
     tickerStore.nuke(); // << Trigger internal state reset
 });
@@ -760,7 +760,7 @@ ipcMain.on("set-enable-heroes", (event, enabled) => {
     if (!enabled) return;
 
     if (!Array.isArray(global.currentTopTickers) || global.currentTopTickers.length === 0) {
-        console.warn("[Traderview] EnableHeroes toggled but no top tickers available yet.");
+        log.log("[Traderview] EnableHeroes toggled but no top tickers available yet.");
         return;
     }
 

@@ -24,7 +24,15 @@ const subscribeToSymbolNews = (symbols) => {
             news: symbols,
         };
         log.log(`📡 Subscribing to Alpaca news for: ${symbols.join(", ")}`);
-        alpacaSocket.send(JSON.stringify(payload));
+        try {
+            if (alpacaSocket.readyState === WebSocket.OPEN) {
+                alpacaSocket.send(JSON.stringify(payload));
+            } else {
+                log.warn("Tried to send payload on closed WebSocket.");
+            }
+        } catch (err) {
+            log.error("WebSocket send error:", err.message);
+        }
         return;
     }
 
@@ -91,6 +99,14 @@ const subscribeToSymbolNews = (symbols) => {
         log.warn("WebSocket closed. Reconnecting in 5s...");
         setTimeout(() => subscribeToSymbolNews(symbols), 5000); // Reconnect and resubscribe
     };
+
+    alpacaSocket.on("unexpected-response", (req, res) => {
+        log.error("Alpaca WS unexpected response:", res.statusCode);
+    });
+
+    alpacaSocket.on("upgrade", (res) => {
+        log.log("Alpaca WS connection upgraded:", res.headers);
+    });
 
     alpacaSocket.onerror = (error) => {
         log.error("WebSocket error:", error.message);
