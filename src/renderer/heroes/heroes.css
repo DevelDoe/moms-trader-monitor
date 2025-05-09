@@ -27,7 +27,7 @@ body::-webkit-scrollbar {
     background-color: #2a2d36;
     border: 2px solid #444;
     border-radius: 8px;
-    padding: 12px;
+    padding: 6px;
     display: flex;
     flex-direction: column; /* Changed to column for better alignment */
     margin: 5px;
@@ -164,6 +164,9 @@ h2 {
 #change {
     position: absolute;
     left: -35px;
+    z-index: 999;
+    background-color: #2a2d36;
+    height: 90%;
 }
 .hp-boost,
 .dp-damage {
@@ -185,14 +188,15 @@ h2 {
 /* Boost Animation */
 .boost {
     position: absolute;
-    left: opx;
+    left: 0px;
     top: -6px;
     font-size: 10px;
     padding: 2px 4px;
     border-radius: 4px;
     opacity: 1;
-    animation: floatOut 6s ease-out forwards;
+    animation: floatOut 7s ease-out forwards;
     pointer-events: none;
+    background-color: #2a2d36;
 }
 
 .boost.hp {
@@ -207,11 +211,11 @@ h2 {
 @keyframes floatOut {
     0% {
         opacity: 1;
-        transform: translateY(10px); /* Start 20px below its final position */
+        transform: translateY(40px); /* Start 20px below its final position */
     }
     60% {
         opacity: 1;
-        transform: translateY(10px); /* End at its original position */
+        transform: translateY(40px); /* End at its original position */
     }
     100% {
         opacity: 0;
@@ -297,6 +301,7 @@ h2 {
     align-items: flex-end;
     gap: 3px;
     padding-top: 0px;
+    margin-top: -5px;
     height: 65px;
 }
 
@@ -305,7 +310,9 @@ h2 {
     gap: 2px;
     font-size: 12px;
     /* box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); */
-
+    min-height: 10px; /* or whatever fits your icons */
+    display: flex;
+    gap: 4px;
     margin-bottom: 0px;
 }
 

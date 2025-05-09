@@ -402,7 +402,7 @@ function renderCard({ hero, price, hp, dp, strength, buffs }) {
     const row = getSpriteRowFromState(state);
     const yOffset = row * 100;
 
-    const topPosition = 200;
+    const topPosition = 0;
     const strengthCap = price < 1.5 ? 800000 : 400000;
 
     const volumeImpact = window.hlpsFunctions.calculateImpact(strength, price, window.buffs);
@@ -432,19 +432,21 @@ function renderCard({ hero, price, hp, dp, strength, buffs }) {
     const recentlyUpdated = now - (state.lastUpdate || 0) <= 30000;
     const fadeStyle = recentlyUpdated ? "" : "opacity: 0.5; filter: grayscale(0.4);";
 
+    const placeholder = `<span class="buff-icon" style="opacity: 0;">•</span>`;
+
     const buffHtml = `
     <div class="buff-container">
         <div class="buff-row positive">
-            ${positiveBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+            ${positiveBuffs.length ? positiveBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
         </div>
         <div class="buff-row neutral">
-            ${neutralBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+            ${neutralBuffs.length ? neutralBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
         </div>
         <div class="buff-row negative">
-            ${negativeBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("")}
+            ${negativeBuffs.length ? negativeBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
         </div>
     </div>
-    `;
+`;
 
     card.innerHTML = `
     <div class="ticker-header-grid">
