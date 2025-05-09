@@ -109,6 +109,19 @@ let windows = {};
 ////////////////////////////////////////////////////////////////////////////////////// START APP
 
 const isScheduledRestart = process.argv.includes("--scheduled-restart");
+const { spawn } = require("child_process");
+
+let mtpProcess;
+function launchMtpCollector() {
+    const binaryPath = path.join(__dirname, "collectors", "mtp_collector.exe");
+
+    mtpProcess = spawn(binaryPath, [], {
+        detached: false, // make it controllable
+        stdio: isDevelopment ? "inherit" : "ignore",
+    });
+
+    if (isDevelopment) log.log("🚀 MTP collector launched");
+}
 
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
@@ -157,7 +170,9 @@ app.on("ready", async () => {
 
         restoreWindows();
 
-        connectMTP();
+        // connectMTP();
+        require("./collectors/pipeMTP");
+        launchMtpCollector();
         flushMessageQueue();
 
         if (!isDevelopment) connectBridge();
@@ -173,8 +188,8 @@ app.on("ready", async () => {
         });
 
         if (isDevelopment) {
-            startMockAlerts();
-            startMockNews();
+            // startMockAlerts();
+            // startMockNews();
         }
     });
 
@@ -196,6 +211,13 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
+});
+
+app.on("before-quit", () => {
+    if (mtpProcess && !mtpProcess.killed) {
+        mtpProcess.kill();
+        console.log("🛑 MTP collector terminated on app quit");
+    }
 });
 
 process.on("exit", () => {
