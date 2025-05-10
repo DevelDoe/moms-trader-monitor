@@ -166,6 +166,11 @@ function updateFrontlineStateFromEvent(event) {
 
     let hero = frontlineState[event.hero];
 
+    if (!hero) {
+        console.warn("❌ Frontline state missing for hero:", event.hero, "Full event:", event);
+        return; // Prevents crash on `hero.price = ...`
+    }
+
     hero.price = event.price;
 
     // Handle HP changes

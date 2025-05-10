@@ -54,8 +54,8 @@
     "scannerWindow": {
       "width": 183,
       "height": 479,
-      "x": 1445,
-      "y": 0,
+      "x": 2572,
+      "y": -902,
       "isOpen": true
     },
     "settingsWindow": {
@@ -91,9 +91,9 @@
     },
     "frontlineWindow": {
       "width": 321,
-      "height": 479,
-      "x": 1628,
-      "y": 0,
+      "height": 389,
+      "x": 2776,
+      "y": -888,
       "isOpen": true
     },
     "activeWindow": {
@@ -106,8 +106,8 @@
     "heroesWindow": {
       "width": 435,
       "height": 458,
-      "x": 1964,
-      "y": 398,
+      "x": 2775,
+      "y": -482,
       "isOpen": true
     },
     "scrollXpWindow": {
