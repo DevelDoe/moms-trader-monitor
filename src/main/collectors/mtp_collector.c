@@ -2,6 +2,7 @@
 #include <json-c/json.h>
 #include <libwebsockets.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
@@ -10,7 +11,7 @@
 // 🔧 CONFIGURATION
 // ─────────────────────────────────────────────
 #define PIPE_NAME "\\\\.\\pipe\\mtp_pipe"
-#define CLIENT_ID "C_CLIENT"
+#define CLIENT_ID "CLIENT"
 #define WS_HOST "172.232.155.62"
 #define WS_PORT 8000
 #define WS_PATH "/ws"
@@ -46,8 +47,9 @@ static struct lws_protocols protocols[] = {{WS_PROTOCOL, ws_callback, 0, 4096},
                                            {NULL, NULL, 0, 0}};
 
 static AppState app = {0};
-
 volatile int running = 1;
+static struct lws_sorted_usec_list sul_reconnect;
+static char client_id[64] = {0}; // Global
 
 // ─────────────────────────────────────────────
 // 🏁 MAIN ENTRY
@@ -72,6 +74,18 @@ int main(void) {
 // ─────────────────────────────────────────────
 // 📡 WEBSOCKET LOGIC
 // ─────────────────────────────────────────────
+
+void reconnect_websocket(struct lws_sorted_usec_list *sul) {
+  fprintf(stderr, "🔁 Reconnecting WebSocket...\n");
+
+  if (app.context) {
+    lws_context_destroy(app.context); // ✅ Destroy previous context
+    app.context = NULL;
+  }
+
+  connect_websocket(&app);
+}
+
 void connect_websocket(AppState *state) {
   struct lws_context_creation_info info = {0};
   info.port = CONTEXT_PORT_NO_LISTEN;
@@ -95,6 +109,7 @@ void connect_websocket(AppState *state) {
   state->wsi = lws_client_connect_via_info(&conn);
   if (!state->wsi) {
     fprintf(stderr, "❌ WebSocket connection failed\n");
+    CloseHandle(state->pipe); // Cleanup before exit
     exit(1);
   }
 }
@@ -110,7 +125,12 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
   case LWS_CALLBACK_CLIENT_RECEIVE: {
     char *text = (char *)in;
+    if (len >= 4096) {
+      fprintf(stderr, "⚠️ Oversized message\n");
+      break;
+    }
     text[len] = '\0';
+    text[len < 4095 ? len : 4095] = '\0'; // Avoid writing out of bounds
 
     struct json_object *obj = json_tokener_parse(text);
     if (!obj)
@@ -119,6 +139,32 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user,
     struct json_object *type;
     if (json_object_object_get_ex(obj, "type", &type)) {
       const char *t = json_object_get_string(type);
+
+      if (strcmp(t, "welcome") == 0) {
+        struct json_object *id_obj;
+        if (json_object_object_get_ex(obj, "client_id", &id_obj)) {
+          const char *id = json_object_get_string(id_obj);
+          snprintf(client_id, sizeof(client_id), "%s", id);
+          printf("🎉 Assigned client_id: %s\n", client_id);
+        }
+      }
+
+      if (strcmp(t, "ping") == 0) {
+        if (strlen(client_id) == 0) {
+          printf("⚠️ Can't respond to ping — client_id not assigned yet\n");
+          break;
+        }
+
+        char pong_msg[128];
+        snprintf(pong_msg, sizeof(pong_msg),
+                 "{\"type\":\"pong\",\"client_id\":\"%s\"}", client_id);
+
+        unsigned char buf[LWS_PRE + 128];
+        int len = snprintf((char *)buf + LWS_PRE, 128, "%s", pong_msg);
+        lws_write(wsi, buf + LWS_PRE, len, LWS_WRITE_TEXT);
+        printf("🔁 Responded with pong as %s\n", client_id);
+      }
+
       if (strcmp(t, "alert") == 0 || strcmp(t, "symbol_update") == 0) {
         const char *json_str = json_object_to_json_string(obj);
         write_json_to_pipe(app.pipe, json_str);
@@ -130,8 +176,7 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user,
   }
 
   case LWS_CALLBACK_CLIENT_WRITEABLE: {
-    const char *msg =
-        "{\"type\":\"registration\",\"client_id\":\"" CLIENT_ID "\"}";
+    const char *msg = "{\"type\":\"register\",\"role\":\"client\"}";
     unsigned char buf[LWS_PRE + 256];
     int len = snprintf((char *)buf + LWS_PRE, 256, "%s", msg);
     lws_write(wsi, buf + LWS_PRE, len, LWS_WRITE_TEXT);
@@ -140,7 +185,10 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
   case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
   case LWS_CALLBACK_CLOSED:
-    fprintf(stderr, "⚠️ WebSocket closed or failed\n");
+    fprintf(stderr, "⚠️ WebSocket disconnected, reconnecting...\n");
+    lws_sul_schedule(app.context, 0, &sul_reconnect, reconnect_websocket,
+                     3 * LWS_US_PER_SEC);
+
     break;
 
   default:
@@ -190,8 +238,17 @@ int init_named_pipe(AppState *state) {
 }
 
 void write_json_to_pipe(HANDLE pipe, const char *json) {
+  if (pipe == INVALID_HANDLE_VALUE || json == NULL) {
+    fprintf(stderr, "⚠️ Pipe not valid, skipping write\n");
+    return;
+  }
+
   DWORD written;
-  WriteFile(pipe, json, strlen(json), &written, NULL);
+  BOOL success = WriteFile(pipe, json, strlen(json), &written, NULL);
+  if (!success) {
+    fprintf(stderr, "⚠️ Pipe write failed: %lu\n", GetLastError());
+    return;
+  }
   WriteFile(pipe, "\n", 1, &written, NULL);
 }
 

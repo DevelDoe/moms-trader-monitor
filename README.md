@@ -1,3 +1,5 @@
+gcc mtp_collector.c -o mtp_collector.exe -lwebsockets -ljson-c -lws2_32
+
 💡 Some “spells” your toast system could whisper:
 “A reversal rises… the tide turns.” 🌊📉→📈
 

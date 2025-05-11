@@ -170,9 +170,9 @@ app.on("ready", async () => {
 
         restoreWindows();
 
-        // connectMTP();
-        require("./collectors/pipeMTP");
-        launchMtpCollector();
+        connectMTP();
+        // require("./collectors/pipeMTP");
+        // launchMtpCollector();
         flushMessageQueue();
 
         if (!isDevelopment) connectBridge();
@@ -225,7 +225,7 @@ process.on("exit", () => {
     // saveSettings(appSettings);
 });
 
-function scheduleDailyRestart(targetHour = 3, targetMinute = 50) {
+function scheduleDailyRestart(targetHour = 3, targetMinute = 30) {
     // Current time in Eastern Time
     const etNow = DateTime.now().setZone("America/New_York");
 

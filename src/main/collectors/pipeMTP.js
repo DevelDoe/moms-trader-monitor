@@ -31,7 +31,7 @@ function handleMessage(msg) {
         tickerStore.addEvent(msg.data);
 
         // 🔍 Log the raw alert before transform
-        log.log("[pipeMTP] Incoming alert payload:", JSON.stringify(msg.data));
+        // log.log("[pipeMTP] Incoming alert payload:", JSON.stringify(msg.data));
 
         const event = transformEvent(msg.data);
         if (!event || typeof event.price !== "number" || typeof event.hero !== "string") {
@@ -124,7 +124,7 @@ function transformEvent(alert) {
     const isUp = alert.direction.toUpperCase() === "UP";
     const change = Math.abs(alert.change_percent || 0);
 
-    log.log(`[transformEvent] ${alert.symbol} → str: ${alert.last_trade}, str1: ${alert.volume_1min}, str5: ${alert.volume_5min}`);
+    // log.log(`[transformEvent] ${alert.symbol} → str: ${alert.last_trade}, str1: ${alert.volume_1min}, str5: ${alert.volume_5min}`);
 
     return {
         hero: alert.symbol,
