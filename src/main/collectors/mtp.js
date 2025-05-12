@@ -16,6 +16,12 @@ let isFetchingSymbols = false; // Prevent multiple fetches
 let lastUpdateTime = 0;
 let messageQueue = [];
 
+const FIREHOSE_CAPACITY = 8192;
+const DISPATCH_HZ = 30;
+const DISPATCH_RATE_MS = Math.round(1000 / DISPATCH_HZ);
+const DISPATCH_BATCH = 1;
+let droppedAlerts = 0;
+
 const debug = false;
 
 function flushMessageQueue(scannerWindow) {
@@ -89,33 +95,11 @@ const connectMTP = () => {
 
             // Handle alert messages
             if (msg.type === "alert" && msg.data) {
-                const tickerStore = require("../store");
-
-                if (tickerStore?.addEvent) {
-                    tickerStore.addEvent(msg.data);
-                }
-
-                const scannerWindow = windows.scanner;
-                if (scannerWindow?.webContents && !scannerWindow.webContents.isDestroyed()) {
-                    scannerWindow.webContents.send("ws-alert", msg.data);
-                } else {
+                if (messageQueue.length < FIREHOSE_CAPACITY) {
                     messageQueue.push(msg.data);
-                }
-
-                const heroesWindow = windows.heroes;
-                if (heroesWindow?.webContents && !heroesWindow.webContents.isDestroyed()) {
-                    const heroesEvent = transformEvent(msg.data); // ✅ define it
-                    heroesWindow.webContents.send("ws-events", [heroesEvent]);
-                }
-                const frontlineWindow = windows.frontline;
-                if (frontlineWindow?.webContents && !frontlineWindow.webContents.isDestroyed()) {
-                    const frontlineEvent = transformEvent(msg.data); // ✅ define it
-                    frontlineWindow.webContents.send("ws-events", [frontlineEvent]);
-                }
-                const progressWindow = windows.progress;
-                if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
-                    const progressEvent = transformEvent(msg.data); // ✅ define it
-                    progressWindow.webContents.send("ws-events", [progressEvent]);
+                } else {
+                    log.warn("[FIREHOSE] Dropping alert: buffer full");
+                    droppedAlerts++;
                 }
             }
 
@@ -166,6 +150,41 @@ const connectMTP = () => {
     // Initialize the first WebSocket connection
     createWebSocket();
 };
+
+setInterval(() => {
+    if (messageQueue.length === 0) return;
+
+    const scannerWindow = windows.scanner;
+    const batch = messageQueue.splice(0, ALERT_DISPATCH_BATCH);
+
+    for (const alert of batch) {
+        const event = transformEvent(alert);
+
+        // Store
+        const tickerStore = require("../store");
+        if (tickerStore?.addEvent) tickerStore.addEvent(alert);
+
+        // Scanner
+        if (scannerWindow?.webContents && !scannerWindow.webContents.isDestroyed()) {
+            scannerWindow.webContents.send("ws-alert", alert);
+        }
+
+        // Heroes
+        if (windows.heroes?.webContents && !windows.heroes.isDestroyed()) {
+            windows.heroes.webContents.send("ws-events", [event]);
+        }
+
+        // Frontline
+        if (windows.frontline?.webContents && !windows.frontline.isDestroyed()) {
+            windows.frontline.webContents.send("ws-events", [event]);
+        }
+
+        // Progress
+        if (windows.progress?.webContents && !windows.progress.isDestroyed()) {
+            windows.progress.webContents.send("ws-events", [event]);
+        }
+    }
+}, ALERT_DISPATCH_INTERVAL);
 
 // ✅ Debounced function (Ensures only one fetch per second)
 const debouncedFetchSymbols = debounce(async () => {
