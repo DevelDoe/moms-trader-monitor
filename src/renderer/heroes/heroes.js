@@ -117,6 +117,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (debug) console.log(`🚫 ${event.hero} skipped — price $${event.price} outside range $${minPrice}-$${maxPrice}`);
                     return;
                 }
+
+                if (!heroesState[event.hero]) {
+                    heroesState[event.hero] = {
+                        hero: event.hero,
+                        hp: 0,
+                        dp: 0,
+                        score: 0,
+                        xp: 0,
+                        lv: 1,
+                        totalXpGained: 0,
+                        lastEvent: { hp: 0, dp: 0 },
+                        floatValue: 0,
+                        buffs: {},
+                        highestPrice: event.price || 1,
+                    };
+
+                    if (debug) console.log(`🆕 Initialized new hero from alert: ${event.hero}`);
+                }
+
                 updateheroesStateFromEvent(event);
             });
         });

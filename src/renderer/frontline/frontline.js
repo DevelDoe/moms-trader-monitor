@@ -104,6 +104,31 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (debug) console.log(`🚫 ${event.hero} skipped — price $${event.price} outside range $${minPrice}-$${maxPrice}`);
                     return;
                 }
+
+                // 🔧 Add this:
+                if (!frontlineState[event.hero]) {
+                    frontlineState[event.hero] = {
+                        hero: event.hero,
+                        price: event.price || 1,
+                        hp: 0,
+                        dp: 0,
+                        strength: 0,
+                        xp: 0,
+                        lv: 0,
+                        score: 0,
+                        lastEvent: {
+                            hp: 0,
+                            dp: 0,
+                            xp: 0,
+                        },
+                        floatValue: 0,
+                        buffs: {},
+                        highestPrice: event.price || 1,
+                    };
+
+                    if (debug) console.log(`🆕 Initialized new hero from alert: ${event.hero}`);
+                }
+
                 updateFrontlineStateFromEvent(event);
             });
         });
