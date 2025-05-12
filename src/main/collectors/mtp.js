@@ -16,7 +16,7 @@ let isFetchingSymbols = false; // Prevent multiple fetches
 let lastUpdateTime = 0;
 let messageQueue = [];
 
-const FIREHOSE_CAPACITY = 8192;
+const FIREHOSE_CAPACITY = 1024;
 const DISPATCH_HZ = 30;
 const DISPATCH_RATE_MS = Math.round(1000 / DISPATCH_HZ);
 const DISPATCH_BATCH = 1;
@@ -95,12 +95,17 @@ const connectMTP = () => {
 
             // Handle alert messages
             if (msg.type === "alert" && msg.data) {
-                if (messageQueue.length < FIREHOSE_CAPACITY) {
-                    messageQueue.push(msg.data);
-                } else {
-                    log.warn("[FIREHOSE] Dropping alert: buffer full");
+                if (messageQueue.length >= FIREHOSE_CAPACITY) {
+                    messageQueue.shift(); // Drop oldest to keep the latest alert
                     droppedAlerts++;
+                    log.warn("[FIREHOSE] Dropped oldest alert: buffer full");
+
+                    if (droppedAlerts % 50 === 0) {
+                        log.warn(`[FIREHOSE] 🔥 ${droppedAlerts} total alerts dropped so far.`);
+                    }
                 }
+
+                messageQueue.push(msg.data);
             }
 
             // Handle symbol updates with deduplication
