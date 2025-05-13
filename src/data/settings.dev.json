@@ -52,10 +52,10 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 171,
-      "height": 900,
-      "x": 3822,
-      "y": -908,
+      "width": 172,
+      "height": 768,
+      "x": 1197,
+      "y": 148,
       "isOpen": true
     },
     "settingsWindow": {
