@@ -30,6 +30,10 @@ Yesss!! 🙌 That amber 🔥 on #1b1f24 is like a sunspell cast over midnight fo
 Pair that amber (#ffb700) with a mint highlight or deep violet shadow and suddenly your app looks like it’s channeling energy — not just displaying info. It's the visual version of a market momentum surge.
 ============================================================================= */
 
+.green{
+    color: hsla(160, 100%, 37%, 1);
+}
+
 /* Reset */
 body,
 h1,
@@ -139,6 +143,7 @@ h2 {
 /* Utility Colors */
 .text-bullish {
     color: #2ecc97;
+    color: hsla(160, 100%, 37%, 1);
 }
 .text-bearish {
     color: #e74c3c;
