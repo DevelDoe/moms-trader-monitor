@@ -90,31 +90,39 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 321,
-      "height": 389,
-      "x": 2097,
-      "y": 319,
+      "width": 293,
+      "height": 420,
+      "x": 1362,
+      "y": -430,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 802,
-      "height": 404,
-      "x": 1480,
-      "y": 519,
+      "width": 791,
+      "height": 338,
+      "x": 1362,
+      "y": -768,
       "isOpen": true
     },
     "heroesWindow": {
       "width": 435,
-      "height": 458,
-      "x": 2234,
-      "y": 795,
+      "height": 421,
+      "x": 1655,
+      "y": -430,
       "isOpen": true
     },
     "scrollXpWindow": {
-      "isOpen": true
+      "isOpen": true,
+      "width": 191,
+      "height": 421,
+      "x": 2090,
+      "y": -430
     },
     "scrollStatsWindow": {
-      "isOpen": true
+      "isOpen": true,
+      "width": 275,
+      "height": 421,
+      "x": 2281,
+      "y": -430
     }
   },
   "traderview": {
