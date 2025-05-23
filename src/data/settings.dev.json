@@ -53,9 +53,9 @@
   "windows": {
     "scannerWindow": {
       "width": 172,
-      "height": 768,
-      "x": 1197,
-      "y": 148,
+      "height": 760,
+      "x": 1190,
+      "y": -768,
       "isOpen": true
     },
     "settingsWindow": {
@@ -97,7 +97,7 @@
       "isOpen": true
     },
     "activeWindow": {
-      "width": 791,
+      "width": 798,
       "height": 338,
       "x": 1362,
       "y": -768,

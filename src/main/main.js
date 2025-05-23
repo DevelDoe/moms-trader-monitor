@@ -188,8 +188,8 @@ app.on("ready", async () => {
         });
 
         if (isDevelopment) {
-            startMockAlerts();
-            startMockNews();
+            // startMockAlerts();
+            // startMockNews();
         }
     });
 

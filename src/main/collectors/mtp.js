@@ -58,21 +58,22 @@ const connectMTP = () => {
         }
     };
 
+    let reconnecting = false;
+
     // Function to create the WebSocket connection
     const createWebSocket = () => {
+        if (reconnecting) return;
+        reconnecting = true;
         ws = new WebSocket(process.env.MTP_WS);
 
         ws.onopen = () => {
-            log.log("[mtp.js] Connected to WebSocket server");
+            log.log("[mtp.js] Connected");
+            reconnecting = false;
+
             if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(
-                    JSON.stringify({
-                        type: "registration",
-                        client_id: clientId,
-                    })
-                );
+                ws.send(JSON.stringify({ type: "registration", client_id: clientId }));
             } else {
-                log.warn("[mtp.js] Attempted to send on a closed WebSocket");
+                log.warn("[mtp.js] Attempted to send registration on a non-open WebSocket");
             }
         };
 
@@ -87,7 +88,11 @@ const connectMTP = () => {
             if (msg.type === "ping") {
                 log.log("[mtp.js] Received ping, sending pong");
                 try {
-                    ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
+                    } else {
+                        log.warn("[mtp.js] Cannot send pong — WebSocket not open");
+                    }
                 } catch (err) {
                     log.error("[mtp.js] Failed to send pong:", err.message);
                 }
@@ -141,15 +146,14 @@ const connectMTP = () => {
             log.error("[mtp.js] WebSocket error:", err.message);
         };
 
-        ws.onclose = (event) => {
-            log.log("[mtp.js] WebSocket closed. Attempting to reconnect...");
-            // Reconnect after a delay
-            setTimeout(createWebSocket, 5000); // 5 seconds delay before reconnect
-        };
-
         ws.on("close", (code, reason) => {
-            log.warn(`[mtp.js] WebSocket closed: code=${code}, reason=${reason}`);
-            setTimeout(createWebSocket, 5000);
+            if (ws && ws.readyState !== WebSocket.CLOSED) {
+                ws.terminate(); // force cleanup
+            }
+            setTimeout(() => {
+                reconnecting = false; // ✅ Allow retry
+                createWebSocket();
+            }, 5000);
         });
     };
 
