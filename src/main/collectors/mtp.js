@@ -17,7 +17,7 @@ let lastUpdateTime = 0;
 let messageQueue = [];
 
 const FIREHOSE_CAPACITY = 1024;
-const ALERT_DISPATCH_HZ = 30;
+const ALERT_DISPATCH_HZ = 5;
 const ALERT_DISPATCH_BATCH = 1;
 const ALERT_DISPATCH_INTERVAL = Math.floor(1000 / ALERT_DISPATCH_HZ); // or `+ 0.5` for rounding
 
