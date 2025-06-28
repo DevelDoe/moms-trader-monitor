@@ -662,9 +662,9 @@ function computeVolumeScore(hero, event) {
     return score;
 }
 
-function getHeroBuff(hero, key) {
-    return hero?.buffs?.[key] ?? {};
-}
+// function getHeroBuff(hero, key) {
+//     return hero?.buffs?.[key] ?? {};
+// }
 
 function getFloatScore(floatValue) {
     if (!floatValue || !Number.isFinite(floatValue)) return 1;

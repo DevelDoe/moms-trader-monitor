@@ -550,21 +550,21 @@ function calculateScore(hero, event) {
             // baseScore *= floatMult;
             // logStep(floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️", `Float Mult (${abbreviatedValues(hero.floatValue)})`, floatMult);
 
-            const volumeBuff = getHeroBuff(hero, "volume");
-            const volMult = volumeBuff?.multiplier ?? 1;
-            baseScore *= volMult;
-            logStep("📢", volumeBuff?.message ?? `No volume buff (${abbreviatedValues(event.strength || 0)})`, volMult);
+            const volScore = computeVolumeScore(hero, event);
+            baseScore += volScore;
+            logStep("📢", "Crowd Participation Score", volScore);
         }
 
         if (event.dp > 0) {
             let dpScore = event.dp * 10;
 
-            const volMult = getHeroBuff(hero, "volume")?.multiplier ?? 1;
-            dpScore *= volMult;
+            const dpPenalty = computeVolumeScore(hero, event); // use same logic as crowd strength
+            dpScore += dpPenalty;
 
             baseScore -= dpScore;
             logStep("💥", "Base DP Deducted", dpScore);
         }
+
     } catch (err) {
         console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
         baseScore = 0;
@@ -579,9 +579,33 @@ function calculateScore(hero, event) {
     return baseScore;
 }
 
-function getHeroBuff(hero, key) {
-    return hero?.buffs?.[key] ?? {};
+function computeVolumeScore(hero, event) {
+    const price = hero.price || 1;
+    const strength = event.strength || 0;
+
+    if (strength < 1000) return 0;
+
+    const dollarVolume = price * strength;
+    let score = dollarVolume / 1000;
+
+    // Penny penalty
+    if (price < 2) score *= 0.8;
+
+    // Optional cap
+    score = Math.min(score, 1000);
+
+    if (debug && debugSamples < debugLimitSamples) {
+        const volStr = abbreviatedValues(strength);
+        const usdStr = abbreviatedValues(dollarVolume);
+        console.log(`📊 Volume Score: ${hero.hero} — ${volStr} @ $${price.toFixed(2)} → $${usdStr} → Score: ${score.toFixed(1)}`);
+    }
+
+    return score;
 }
+
+// function getHeroBuff(hero, key) {
+//     return hero?.buffs?.[key] ?? {};
+// }
 
 function startScoreDecay() {
     let decayTickCount = 0;
