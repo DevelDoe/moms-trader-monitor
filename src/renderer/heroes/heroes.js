@@ -612,16 +612,9 @@ function calculateScore(hero, event) {
             //     logStep(label, `Float Score (${formattedFloat})`, floatScore);
             // }
 
-            // Apply Volume score from precomputed buff
-            const volumeBuff = getHeroBuff(hero, "volume");
-            const volScore = volumeBuff?.score ?? 0;
+            const volScore = computeVolumeScore(hero, event);
             baseScore += volScore;
-
-            if (debug && debugSamples < debugLimitSamples) {
-                const volUsed = event.strength || 0;
-                const volMsg = volumeBuff?.message ?? `No volume buff (${abbreviatedValues(volUsed)})`;
-                logStep("📢", volMsg, volScore);
-            }
+            
             // Clamp total baseScore to positive only (no negative scoring on "up" events)
             baseScore = Math.max(0, baseScore);
         }
@@ -636,6 +629,37 @@ function calculateScore(hero, event) {
     if (debug && debugSamples < debugLimitSamples) console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
 
     return baseScore;
+}
+
+function computeVolumeScore(hero, event) {
+    const price = hero.price || 1;
+    const strength = event.strength || 0;
+
+    // Skip weak trades
+    if (strength < 1000) return 0;
+
+    // Estimated dollar volume
+    const dollarVolume = price * strength;
+
+    // Estimate number of participants (assume avg trade = $1000)
+    let score = dollarVolume / 1000;
+
+    // Penalize penny stocks
+    if (price < 2) {
+        score *= 0.8; // 20% penalty
+    }
+
+    // Optional clamp for extreme events
+    score = Math.min(score, 1000);
+
+    // Optional: logging
+    if (debug && debugSamples < debugLimitSamples) {
+        const displayVolume = abbreviatedValues(strength);
+        const displayDollarVol = abbreviatedValues(dollarVolume);
+        logStep("📊", `Volume Score (${displayVolume} @ $${price}) → $${displayDollarVol}`, score);
+    }
+
+    return score;
 }
 
 function getHeroBuff(hero, key) {
