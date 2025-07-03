@@ -1,4 +1,3 @@
-<!-- ./renderer/splash/splash.html  -->
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -6,6 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Splash</title>
         <link rel="stylesheet" href="./splash.css" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://scribe.arcanemonitor.com; child-src 'none';"
+        />
     </head>
     <body>
         <div id="splash-container">
@@ -13,42 +16,27 @@
                 <div id="title">
                     <img src="../../../assets/images/logo.png" alt="MTT" />
                     <div>
-                        <h1><span id="moms">Moms</span> <span id="trader">Trader</span> <span id="tools">Tools</span></h1>
+                        <h1>Arcane Monitor</h1>
                     </div>
                 </div>
             </header>
-            <div class="message">
-                <p>Hi, I’m Morgan, the developer of this app.</p>
-                <p>It’s still a work in progress, so expect some rough edges. Thanks for checking it out, and I hope it makes your trading a little easier!</p>
+
+            <div id="login-container">
+                <h1>Login</h1>
+                <form id="loginForm">
+                    <input type="email" id="email" placeholder="Email" value="root@arcanemonitor.com" required />
+                    <input type="password" id="password" placeholder="Password" value="clamp2-navy-aground" required />
+                    <button type="submit" id="login-button">Login</button>
+                    <div id="login-spinner" class="spinner hidden"></div>
+                </form>
+                <div id="error" class="error"></div>
             </div>
 
-            <div class="donate-buttons">
-                <a href="hhttps://www.paypal.com/donate/?hosted_button_id=X9DHS7MA9SDW6" class="btn paypal" target="_blank">Donate via PayPal</a>
-                <a href="https://buymeacoffee.com/develdoe" class="btn coffee" target="_blank">Buy Me a Coffee</a>
-            </div>
+            <!-- Spinner for loading animation -->
+            <div id="loading-spinner" class="spinner"></div>
+            <p id="symbols-status"></p>
 
-            <div id="symbols-status">Fetching symbols, please wait...</div>
-
-            <script>
-                document.addEventListener("DOMContentLoaded", () => {
-                    // Initially, symbols are not loaded, so clicking is disabled
-                    let symbolsLoaded = false;
-
-                    // Click listener
-                    document.addEventListener("click", () => {
-                        if (symbolsLoaded) {
-                            symbolsLoaded = false; // Prevent repeated clicks
-                            window.electronAPI.closeSplash();
-                        }
-                    });
-
-                    // Listen for symbols fetched event
-                    window.electronAPI.onSymbolsFetched((event, symbolCount) => {
-                        symbolsLoaded = true;
-                        document.getElementById("symbols-status").textContent = `Fetched ${symbolCount} symbols! Click anywhere to continue.`;
-                    });
-                });
-            </script>
+            <script src="./splash.js"></script>
         </div>
     </body>
 </html>

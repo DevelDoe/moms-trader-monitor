@@ -27,11 +27,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     const symbolUpticks = {}; // Track consecutive upticks per symbol
 
     function getSymbolColor(symbol) {
+        if (typeof symbol !== "string") {
+            console.warn("⚠️ getSymbolColor called with non-string:", symbol);
+            return "gray"; // fallback color
+        }
+    
         if (!symbolColors[symbol]) {
             const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
             const hue = (hash * 37) % 360;
             symbolColors[symbol] = `hsla(${hue}, 80%, 50%, 0.5)`;
         }
+    
         return symbolColors[symbol];
     }
 
@@ -113,14 +119,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function createAlertElement(alertData) {
-        const { symbol, price, change_percent = 0, direction = "", volume = 0, type = "" } = alertData;
+        const { hero, price, change_percent = 0, direction = "", volume = 0, type = "" } = alertData;
 
         const alertDiv = document.createElement("li");
 
         if (type === "new-high-price") {
             console.log("🔥 New High Alert Volume Check:", alertData.fiveMinVolume);
             if (parseVolumeValue(alertData?.fiveMinVolume || 0) < 10_000) {
-                console.log(`⏩ Skipping new-high alert for ${symbol} due to low volume (${alertData?.fiveMinVolume})`);
+                console.log(`⏩ Skipping new-high alert for ${hero} due to low volume (${alertData?.fiveMinVolume})`);
                 return null;
             }
             alertDiv.className = "alert new-high";
@@ -129,15 +135,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const symbolSpan = document.createElement("span");
             symbolSpan.className = "alert-symbol no-drag";
-            symbolSpan.textContent = symbol;
-            symbolSpan.style.backgroundColor = getSymbolColor(symbol);
+            symbolSpan.textContent = hero;
+            symbolSpan.style.backgroundColor = getSymbolColor(hero);
             symbolSpan.style.cursor = "pointer";
             symbolSpan.title = "Click to copy and set active ticker";
 
             symbolSpan.addEventListener("click", () => {
-                navigator.clipboard.writeText(symbol);
-                console.log(`📋 Copied ${symbol} to clipboard!`);
-                window.activeAPI.setActiveTicker(symbol);
+                navigator.clipboard.writeText(hero);
+                console.log(`📋 Copied ${hero} to clipboard!`);
+                window.activeAPI.setActiveTicker(hero);
             });
 
             const contentDiv = document.createElement("div"); // 🛠️ You were missing this line!
@@ -173,16 +179,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const symbolSpan = document.createElement("span");
         symbolSpan.className = "alert-symbol no-drag";
-        symbolSpan.textContent = symbol;
-        symbolSpan.style.backgroundColor = getSymbolColor(symbol);
+        symbolSpan.textContent = hero;
+        symbolSpan.style.backgroundColor = getSymbolColor(hero);
         symbolSpan.style.cursor = "pointer";
         symbolSpan.title = "Click to copy and set active ticker";
 
         // ✅ Click to copy and set active ticker
         symbolSpan.addEventListener("click", () => {
-            navigator.clipboard.writeText(symbol);
-            console.log(`📋 Copied ${symbol} to clipboard!`);
-            window.activeAPI.setActiveTicker(symbol);
+            navigator.clipboard.writeText(hero);
+            console.log(`📋 Copied ${hero} to clipboard!`);
+            window.activeAPI.setActiveTicker(hero);
         });
 
         const contentDiv = document.createElement("div");
@@ -244,49 +250,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.eventsAPI.onAlert((alertData) => {
         try {
             console.log("[CLIENT] Received via IPC:", alertData);
-
+    
             const topSettings = window.settings?.top || {};
             const scannerSettings = window.settings?.scanner || {};
-
+    
             const { minChangePercent = 0, minVolume = 0, direction = null, maxAlerts = 50 } = scannerSettings;
-
-            // ✅ minPrice and maxPrice always from top
+    
             const minPrice = topSettings.minPrice ?? 0;
             const maxPrice = topSettings.maxPrice ?? Infinity;
-
+    
+            const symbol = alertData.hero || alertData.symbol;
+            const hp = alertData.hp || 0;
+            const dp = alertData.dp || 0;
+    
             const passesFilters =
                 (minPrice === 0 || alertData.price >= minPrice) &&
                 (maxPrice === 0 || alertData.price <= maxPrice) &&
-                (minChangePercent === 0 || alertData.change_percent >= minChangePercent) &&
+                (minChangePercent === 0 || hp >= minChangePercent) &&
                 (minVolume === 0 || alertData.volume >= minVolume) &&
                 (!direction || alertData.direction === direction);
-
+    
             if (!passesFilters) {
-                if (debug) console.log(`⛔ Skipping alert for ${alertData.symbol} — filter mismatch.`);
+                if (debug) console.log(`⛔ Skipping alert for ${symbol} — filter mismatch.`);
                 return;
             }
-
-            // 🔔 Logic continues as normal
-            const currentMaxAlerts = maxAlerts;
-            const alertType = alertData.type || "standard";
-            const symbol = alertData.symbol;
-            const percent = alertData.direction === "DOWN" ? -alertData.change_percent : alertData.change_percent;
-
-            if (percent > 0) {
-                symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
-            } else {
-                symbolUpticks[symbol] = 0;
+    
+            // 🔔 Play sound if it's a strong up-move
+            if (hp > 0 && alertData.volume >= 30000) {
+                playAudioAlert(symbol, alertData.type || "standard", alertData.volume);
             }
-
-            if (alertData.direction === "UP" && alertData.volume >= 30000) {
-                playAudioAlert(symbol, alertType, alertData.volume);
-            }
-
+    
+            // 💬 Create and append alert element
             const alertElement = createAlertElement(alertData);
             if (alertElement instanceof Node) {
                 logElement.appendChild(alertElement);
-
-                while (logElement.children.length > currentMaxAlerts) {
+    
+                while (logElement.children.length > maxAlerts) {
                     logElement.removeChild(logElement.firstChild);
                 }
             }
@@ -294,4 +293,5 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.error("[CLIENT] Error handling alert:", error);
         }
     });
+    
 });

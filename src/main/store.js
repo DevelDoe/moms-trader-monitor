@@ -148,12 +148,26 @@ class Store extends EventEmitter {
         this.newsList = [];
         this.xpState = new Map();
 
+        this.user = {
+            id: null,
+            role: null,
+            permissions: [],
+            token: null,
+            loggedInAt: null,
+        };
+
         const today = getMarketDateString();
         const lastClear = loadStoreMeta();
 
         if (lastClear !== today) {
             this.xpState.clear();
             this.newsList = [];
+
+            // const savedUser = settings.user || {};
+            // if (savedUser.role === "admin" && savedUser.email && savedUser.password) {
+            //     this.autoLogin(savedUser.email, savedUser.password);
+            // }
+
             log.log("🧨 Full store reset at boot (new day)");
 
             this.emit("store-nuke");

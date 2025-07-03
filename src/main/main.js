@@ -70,6 +70,7 @@ const { DateTime } = require("luxon");
 
 const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
 const { startMockNews } = require("./collectors/news");
+const { chronos } = require("./collectors/chronos");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -123,11 +124,13 @@ function launchMtpCollector() {
     if (isDevelopment) log.log("🚀 MTP collector launched");
 }
 
+let authInfo = null;
+
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
 
     windows.splash = createSplashWindow(isDevelopment);
-    createWizardWindow;
+    // createWizardWindow;
 
     let symbolCount = 0;
 
@@ -164,13 +167,31 @@ app.on("ready", async () => {
     }
 
     windows.splash.once("closed", async () => {
-        log.log("Splash screen closed. Loading main app...");
+        log.log("Splash screen closed. Waiting for auth...");
+
+        // Wait for authInfo to arrive before continuing
+        let waited = 0;
+        while (!authInfo || !authInfo.token || !authInfo.userId) {
+            await new Promise((r) => setTimeout(r, 200));
+            waited += 200;
+            if (waited === 5000) {
+                log.warn("[main] ⏳ Still waiting for auth info after 5s...");
+            }
+            if (waited > 20000) {
+                log.error("[main] ❌ No auth received after 20s. Exiting.");
+                isQuitting = true;
+                app.quit();
+                return;
+            }
+        }
+
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
 
         restoreWindows();
 
-        connectMTP();
+        chronos(authInfo);
+        // connectMTP();
         // require("./collectors/pipeMTP");
         // launchMtpCollector();
         flushMessageQueue();
@@ -210,7 +231,11 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") app.quit();
+    if (!isQuitting && process.platform !== "darwin") {
+        log.warn("[main] ⚠️ Prevented quit — waiting for login or relaunch...");
+        return; // ⛔ prevent auto quit
+    }
+    app.quit(); // ✅ only quit when explicitly triggered
 });
 
 app.on("before-quit", () => {
@@ -414,6 +439,13 @@ ipcMain.on("resize-window-to-content", (event, { width, height }) => {
             height: Math.max(height, 1),
         });
     }
+});
+
+// Auth
+ipcMain.on("set-auth-info", (event, info) => {
+    log.log("[auth] Raw info from splash:", info); // 🕵️ add this
+    authInfo = info;
+    log.log(`[auth] ✅ Received auth info: ${info?.userId}`);
 });
 
 // Splash

@@ -15,6 +15,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
     nukeState: () => ipcRenderer.send("admin-nuke"),
     onXpReset: (cb) => ipcRenderer.on("xp-reset", cb),
+    getAuthInfo: () => ({
+        token: localStorage.getItem("token"),
+        role: localStorage.getItem("role"),
+        permissions: JSON.parse(localStorage.getItem("permissions") || "[]"),
+        userId: localStorage.getItem("userId"),
+    }),
+    sendAuthInfo: (info) => ipcRenderer.send("set-auth-info", info),
 });
 
 contextBridge.exposeInMainWorld("hlpsFunctions", {

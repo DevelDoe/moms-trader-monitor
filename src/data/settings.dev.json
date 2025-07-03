@@ -47,15 +47,15 @@
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 20,
+    "maxAlerts": 24,
     "scannerVolume": 0
   },
   "windows": {
     "scannerWindow": {
       "width": 172,
-      "height": 760,
-      "x": 1190,
-      "y": -768,
+      "height": 733,
+      "x": 1116,
+      "y": 685,
       "isOpen": true
     },
     "settingsWindow": {
@@ -70,7 +70,7 @@
       "height": 39,
       "x": 725,
       "y": -837,
-      "isOpen": true
+      "isOpen": false
     },
     "wizardWindow": {
       "width": 2400,
@@ -87,38 +87,38 @@
       "height": 14,
       "x": -253,
       "y": -13,
-      "isOpen": true
+      "isOpen": false
     },
     "frontlineWindow": {
-      "width": 293,
-      "height": 420,
+      "width": 280,
+      "height": 407,
       "x": 1362,
-      "y": -430,
-      "isOpen": true
+      "y": -417,
+      "isOpen": false
     },
     "activeWindow": {
       "width": 798,
       "height": 338,
       "x": 1362,
       "y": -768,
-      "isOpen": true
+      "isOpen": false
     },
     "heroesWindow": {
-      "width": 435,
-      "height": 421,
-      "x": 1655,
-      "y": -430,
-      "isOpen": true
+      "width": 447,
+      "height": 409,
+      "x": 1643,
+      "y": -418,
+      "isOpen": false
     },
     "scrollXpWindow": {
-      "isOpen": true,
+      "isOpen": false,
       "width": 191,
       "height": 421,
       "x": 2090,
       "y": -430
     },
     "scrollStatsWindow": {
-      "isOpen": true,
+      "isOpen": false,
       "width": 275,
       "height": 421,
       "x": 2281,

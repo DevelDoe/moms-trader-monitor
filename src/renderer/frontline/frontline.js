@@ -520,7 +520,6 @@ function getSpriteRowFromState({ hp, strength, lastEvent }) {
 }
 
 /////////////////////////////////// Calculations
-
 function calculateScore(hero, event) {
     if (event.strength < 1000) {
         if (debug && debugSamples < debugLimitSamples) {
@@ -744,7 +743,6 @@ function abbreviatedValues(num) {
 }
 
 /////////////////////////////////// state
-
 window.pauseEvents = () => {
     eventsPaused = true;
     if (debug) console.log("Events are now paused");
