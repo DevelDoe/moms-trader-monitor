@@ -91,7 +91,7 @@ const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
 
-const { createScannerWindow } = require("./windows/scanner");
+const { createScannerWindow } = require("./windows/events");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createHeroesWindow } = require("./windows/heroes");
 
@@ -612,7 +612,7 @@ ipcMain.on("admin-nuke", () => {
 // Events
 ipcMain.on("activate-events", () => {
     try {
-        const win = createWindow("scanner", () => createScannerWindow(isDevelopment));
+        const win = createWindow("scanner", () => createEventsWindow(isDevelopment));
         if (win) win.show();
         const settings = loadSettings();
         settings.scanner.scannerVolume = 1;
@@ -637,7 +637,7 @@ ipcMain.on("toggle-scanner", () => {
         destroyWindow("scanner"); // Destroy the window
     } else {
         log.log("[toggle-scanner] Creating scanner window");
-        windows.scanner = createWindow("scanner", () => createScannerWindow(isDevelopment));
+        windows.scanner = createWindow("scanner", () => createEventsWindow(isDevelopment));
         windows.scanner.show();
     }
 });

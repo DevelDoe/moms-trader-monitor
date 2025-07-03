@@ -78,6 +78,9 @@ const createWebSocket = () => {
             if (windows.scanner?.webContents && !windows.scanner.webContents.isDestroyed()) {
                 windows.scanner.webContents.send("ws-alert", msg.payload);
             }
+            if (windows.frontline?.webContents && !windows.frontline.webContents.isDestroyed()) {
+                windows.frontline.webContents.send("ws-alert", msg.payload);
+            }
         }
 
         if (msg.type === "register_ack") {

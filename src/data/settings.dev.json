@@ -47,16 +47,16 @@
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 24,
+    "maxAlerts": 34,
     "scannerVolume": 0
   },
   "windows": {
     "scannerWindow": {
-      "width": 172,
-      "height": 733,
-      "x": 1116,
-      "y": 685,
-      "isOpen": true
+      "width": 279,
+      "height": 1073,
+      "x": 960,
+      "y": 539,
+      "isOpen": false
     },
     "settingsWindow": {
       "width": 907,
@@ -66,10 +66,10 @@
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 465,
-      "height": 39,
-      "x": 725,
-      "y": -837,
+      "width": 655,
+      "height": 424,
+      "x": 2223,
+      "y": 604,
       "isOpen": false
     },
     "wizardWindow": {
@@ -83,46 +83,46 @@
       "isOpen": true
     },
     "progressWindow": {
-      "width": 1442,
-      "height": 14,
-      "x": -253,
-      "y": -13,
+      "width": 1908,
+      "height": 11,
+      "x": 972,
+      "y": 1609,
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 280,
-      "height": 407,
-      "x": 1362,
-      "y": -417,
-      "isOpen": false
+      "width": 389,
+      "height": 476,
+      "x": 758,
+      "y": -491,
+      "isOpen": true
     },
     "activeWindow": {
-      "width": 798,
-      "height": 338,
-      "x": 1362,
-      "y": -768,
+      "width": 985,
+      "height": 596,
+      "x": 1239,
+      "y": 539,
       "isOpen": false
     },
     "heroesWindow": {
-      "width": 447,
-      "height": 409,
-      "x": 1643,
-      "y": -418,
+      "width": 598,
+      "height": 476,
+      "x": 1627,
+      "y": 1134,
       "isOpen": false
     },
     "scrollXpWindow": {
       "isOpen": false,
-      "width": 191,
-      "height": 421,
-      "x": 2090,
-      "y": -430
+      "width": 279,
+      "height": 587,
+      "x": 2224,
+      "y": 1024
     },
     "scrollStatsWindow": {
       "isOpen": false,
-      "width": 275,
-      "height": 421,
-      "x": 2281,
-      "y": -430
+      "width": 380,
+      "height": 586,
+      "x": 2500,
+      "y": 1025
     }
   },
   "traderview": {

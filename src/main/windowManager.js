@@ -12,7 +12,7 @@ const { createSettingsWindow } = require("./windows/settings");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createHeroesWindow } = require("./windows/heroes");
 const { createActiveWindow } = require("./windows/active");
-const { createScannerWindow } = require("./windows/scanner");
+const { createEventsWindow } = require("./windows/events");
 const { createInfobarWindow } = require("./windows/infobar");
 const { createWizardWindow } = require("./windows/wizard");
 const { createProgressWindow } = require("./windows/progress");
@@ -145,7 +145,7 @@ function createWindowByName(name) {
         case "active":
             return createActiveWindow(isDevelopment, global.sharedState?.activeTicker);
         case "scanner":
-            return createScannerWindow(isDevelopment);
+            return createEventsWindow(isDevelopment);
         case "infobar":
             return createInfobarWindow(isDevelopment);
         case "wizard":
