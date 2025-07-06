@@ -245,7 +245,9 @@ class Store extends EventEmitter {
 
     addEvent(alert) {
         try {
-            const { symbol, direction, change_percent, price, volume } = alert;
+            const symbol = alert.hero;
+            const price = alert.price;
+            const volume = alert.strength ?? 0;
 
             if (!symbol || price === undefined || volume === undefined) {
                 log.warn(`[addEvent] Missing required fields for symbol ${symbol || "unknown"}.`);
@@ -253,6 +255,9 @@ class Store extends EventEmitter {
             }
 
             if (debug) log.log(`[addEvent] Processing alert for ${symbol}`);
+
+            const direction = alert.hp > 0 ? "UP" : alert.dp > 0 ? "DOWN" : "NEUTRAL";
+            const change_percent = alert.hp || alert.dp || 0;
 
             // Ensure symbol is tracked
             if (!this.symbols.has(symbol)) {
@@ -266,14 +271,13 @@ class Store extends EventEmitter {
             }
 
             const baseData = this.symbols.get(symbol);
-            const isNewHigh = price > (baseData.highestPrice || 0);
+
 
             // Merge & normalize the alert
             const mergedData = {
                 ...baseData,
                 Symbol: symbol,
                 Price: price,
-                highestPrice: isNewHigh ? price : baseData.highestPrice || price,
                 Direction: direction || "UNKNOWN",
                 alertChangePercent: Math.abs(change_percent).toFixed(2),
                 cumulativeUpChange: (baseData.cumulativeUpChange || 0) + (direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0),
@@ -284,84 +288,57 @@ class Store extends EventEmitter {
             this.symbols.set(symbol, mergedData);
 
             // Apply RPG-style buffs + event metadata
-            this.applyRpgEventMeta(symbol, alert, isNewHigh);
+            const isHighOfDay = alert.isHighOfDay === true;
+            this.applyRpgEventMeta(symbol, alert, isHighOfDay);
 
             // Emit general update
             this.emit("lists-update");
 
-            // Emit new high signal
-            if (isNewHigh) {
-                this.emit("new-high-price", {
-                    symbol,
-                    price,
-                    direction: direction || "UP",
-                    change_percent: change_percent || 0,
-                    fiveMinVolume: volume || 0,
-                    type: "new-high-price",
-                });
-            }
         } catch (error) {
             log.error(`[addEvent] Failed to process event: ${error.message}`);
         }
     }
 
-    // Rest of your existing functions remain exactly the same
-    transformEvent(alert) {
-        const isUp = alert.direction.toUpperCase() === "UP";
-        const change = Math.abs(alert.change_percent || 0);
-
-        return {
-            hero: alert.symbol,
-            hp: isUp ? change : 0,
-            dp: isUp ? 0 : change,
-            strength: alert.volume,
-            price: alert.price,
-        };
-    }
-
     applyRpgEventMeta(symbol, alert, isNewHigh = false) {
         const ticker = this.symbols.get(symbol);
         if (!ticker) return;
-
-        const event = this.transformEvent(alert);
-
+    
+        // Use alert directly (no transform)
         ticker.lastEvent = {
-            hp: event.hp,
-            dp: event.dp,
-            xp: alert.volume || 0,
+            hp: alert.hp || 0,
+            dp: alert.dp || 0,
+            xp: alert.strength || 0,
         };
-
-        const xpDelta = this.calculateXp(ticker, event);
-
+    
+        const xpDelta = this.calculateXp(ticker, alert);
+    
         ticker.firstXpTimestamp = ticker.firstXpTimestamp || Date.now();
         ticker.totalXpGained = (ticker.totalXpGained || 0) + xpDelta;
-
+    
         ticker.buffs = ticker.buffs || {};
-        ticker.buffs.volume = calculateVolumeImpact(alert.volume, alert.price, buffs);
-
-        // ✅ Use buff.json for bounceBack
-        if (event.dp > 0 && event.hp > 0) {
+        ticker.buffs.volume = calculateVolumeImpact(alert.strength, alert.price, buffs);
+    
+        if (alert.dp > 0 && alert.hp > 0) {
             const bounceBuff = this.getBuffFromJson("bounceBack");
             if (bounceBuff) ticker.buffs.bounceBack = bounceBuff;
         } else {
             delete ticker.buffs.bounceBack;
         }
-
-        // ✅ Use buff.json for newHigh
+    
         if (isNewHigh) {
             const highBuff = this.getBuffFromJson("newHigh");
             if (highBuff) ticker.buffs.newHigh = highBuff;
         } else {
             delete ticker.buffs.newHigh;
         }
-
+    
         if (debugXp)
             log.log(`[store] ${symbol} about to emit:`, {
                 xp: ticker.xp,
                 totalXpGained: ticker.totalXpGained,
                 calculatedXpDelta: xpDelta,
             });
-
+    
         this.emit("hero-updated", [
             {
                 hero: symbol,
@@ -372,18 +349,18 @@ class Store extends EventEmitter {
                 lv: ticker.lv,
                 price: ticker.Price || ticker.price || 0,
                 totalXpGained: ticker.totalXpGained || 0,
-                firstXpTimestamp: ticker.firstXpTimestamp || Date.now(), // fallback to now just in case
+                firstXpTimestamp: ticker.firstXpTimestamp || Date.now(),
             },
         ]);
-
-        // 🧠 ADD THIS:
+    
         this.xpState.set(symbol, {
             xp: ticker.totalXpGained || 0,
             lv: ticker.lv || 1,
         });
-
-        if (debug) log.log(`[store] Emitted hero-updated for: ${event.hero}`);
+    
+        if (debug) log.log(`[store] Emitted hero-updated for: ${symbol}`);
     }
+    
 
     // This function checks and attaches any news for the symbol in dailyData and sessionData
     attachNews(symbol) {

@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, 11);
+            .slice(0, 15);
 
         const xpPerMinutes = sorted.map((h) => parseFloat(getXpPerMinute(h)));
         const maxXpm = Math.max(...xpPerMinutes, 1); // fallback 1 to avoid division by 0

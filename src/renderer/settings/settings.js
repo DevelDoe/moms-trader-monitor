@@ -347,7 +347,7 @@ function initializeTopSection() {
     const maxScoreInput = document.getElementById("max-score");
     // const topTransparentToggle = document.getElementById("top-transparent-toggle");
     const frontlineLengthInput = document.getElementById("frontline-length");
-    const herosLengthInput = document.getElementById("heroes-length");
+    const heroesLengthInput = document.getElementById("heroes-length");
 
     // ✅ Set placeholder to reflect "No limit" if 0 is set
     minPriceInput.placeholder = minPriceInput.value === "0" ? "No limit" : "";
@@ -376,7 +376,7 @@ function initializeTopSection() {
 
     // ✅ Load saved length settings
     frontlineLengthInput.value = window.settings.top.frontlineListLength ?? 10;
-    herosLengthInput.value = window.settings.top.herosListLength ?? 3;
+    heroesLengthInput.value = window.settings.top.heroesListLength ?? 3;
 
     async function updatePriceFilter() {
         try {
@@ -523,7 +523,7 @@ function initializeTopSection() {
                 ...latestSettings,
                 top: {
                     ...latestSettings.top,
-                    [`${type}ListLength`]: newLength, // ✅ Updates frontlineListLength or herosListLength at the root
+                    [`${type}ListLength`]: newLength, // ✅ Updates frontlineListLength or heroesListLength at the root
                 },
             };
 
@@ -549,7 +549,7 @@ function initializeTopSection() {
 
     // topTransparentToggle.addEventListener("change", updateTransparency);
     frontlineLengthInput.addEventListener("input", () => updateListLength("frontline", frontlineLengthInput));
-    herosLengthInput.addEventListener("input", () => updateListLength("heros", herosLengthInput));
+    heroesLengthInput.addEventListener("input", () => updateListLength("heroes", heroesLengthInput));
 }
 
 function initializeNewsSection() {

@@ -43,8 +43,7 @@ body::-webkit-scrollbar {
 .ticker-header {
     display: grid;
     grid-template-columns: auto 1fr; /* 2 columns: sprite takes auto width, the rest takes the remaining space */
-    grid-gap: 10px; /* Space between columns */
-    align-items: left; /* Vertically center items */
+    gap: 4px; /* Space between symbol and info */
 }
 
 .ticker-info {
@@ -57,9 +56,9 @@ body::-webkit-scrollbar {
 }
 
 .ticker-card:nth-child(-n + 3) .ticker-symbol {
-    font-size: 24px;
+    font-size: 30px;
     width: 120px;
-    line-height: 14px;
+    line-height: 18px;
     padding: 6px 2px;
 }
 .ticker-symbol {
@@ -70,13 +69,13 @@ body::-webkit-scrollbar {
     color: antiquewhite !important;
     font-weight: 400;
     width: 95px;
-    font-size: 16px;
-    padding: 5px 2px;
+    font-size: 20px;
+    padding: 5px 4px;
     border-radius: 1px;
     cursor: pointer;
     margin-right: 4px;
     position: relative;
-    line-height: 12px; /* tune this if needed */
+    line-height: 22px; /* tune this if needed */
 }
 
 .ticker-symbol:hover {
@@ -111,13 +110,13 @@ body::-webkit-scrollbar {
     height: 8px;
     /* background: rgba(0, 0, 0, 00); */
     margin: 0px 0;
-    border-radius: 2px;
+    border-radius: 0px;
     overflow: hidden;
 }
 
 .ticker-card:nth-child(-n + 3) .bar {
     margin: 0px 0;
-    height: 2px;
+    height: 4px;
 }
 
 .bar-fill {
@@ -202,12 +201,6 @@ body::-webkit-scrollbar {
     transform: translateZ(0); /* GPU acceleration */
 }
 
-.ticker-header {
-    display: flex; /* Makes children align horizontally */
-    align-items: flex-start; /* Aligns items at the top */
-    gap: 4px; /* Space between symbol and info */
-}
-
 .ticker-info {
     display: flex;
     flex-direction: column; /* Stacks ticker-data and bars vertically */
@@ -231,7 +224,7 @@ body::-webkit-scrollbar {
 }
 
 .bar {
-    height: 1px;
+    height: 4px;
     background: rgba(0, 0, 0, 0); /* Background for empty part of bar */
     width: 100%;
 }

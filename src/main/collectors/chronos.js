@@ -3,6 +3,8 @@
 const WebSocket = require("ws");
 const createLogger = require("../../hlps/logger");
 const { windows } = require("../windowManager");
+const tickerStore = require("../store");
+
 const log = createLogger(__filename);
 
 const URL = "wss://chronos.arcanemonitor.com:8443/ws";
@@ -75,11 +77,21 @@ const createWebSocket = () => {
 
         if (msg.type === "alert") {
             log.log(`[chronos] 🚨 ALERT received: ${JSON.stringify(msg.payload)}`);
+
+            // Store
+            if (tickerStore?.addEvent) tickerStore.addEvent(msg.payload);
+
+            // Events
             if (windows.scanner?.webContents && !windows.scanner.webContents.isDestroyed()) {
                 windows.scanner.webContents.send("ws-alert", msg.payload);
             }
+            // Frontline
             if (windows.frontline?.webContents && !windows.frontline.webContents.isDestroyed()) {
                 windows.frontline.webContents.send("ws-alert", msg.payload);
+            }
+            // Heroes
+            if (windows.heroes?.webContents && !windows.heroes.isDestroyed()) {
+                windows.heroes.webContents.send("ws-alert", msg.payload);
             }
         }
 

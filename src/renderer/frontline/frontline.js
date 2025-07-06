@@ -1,185 +1,158 @@
+// frontlineState.js 
+// ======================= CONFIGURATION =======================
 const DECAY_INTERVAL_MS = 1000;
-const XP_DECAY_PER_TICK = 0.05; // Base decay per tick (you might lower this for longer duration)
-const SCORE_NORMALIZATION = 3; // Increase this value to reduce the impact of score on decay
-
-const frontlineState = {};
-let container;
-
-const symbolColors = {};
-
+const XP_DECAY_PER_TICK = 0.05; // Decay per tick
+const SCORE_NORMALIZATION = 3; // Higher = slower decay influence
 const BASE_MAX_SCORE = 100;
 const BASE_MAX_HP = 10;
 const SCALE_DOWN_THRESHOLD = 0.2; // 20%
 const SCALE_DOWN_FACTOR = 0.9; // Reduce by 10%
+const debugLimitSamples = 1500;
+
+// ======================= STATE =======================
+const frontlineState = {};
+let container;
 
 let maxHP = BASE_MAX_HP;
 let maxScore = BASE_MAX_SCORE;
 let lastTopHeroes = [];
-
 let eventsPaused = false;
-
-const { isDev } = window.appFlags;
-
-const freshStart = isDev;
-const debug = false;
-const debugScoreCalc = isDev;
-const debugXp = isDev;
-
-console.log("🎯 Fresh start mode:", freshStart);
-console.log("🐛 Debug mode:", debug);
-
-const debugLimitSamples = 1500;
-let debugSamples = 0;
-
 let buffs = [];
 
+// ======================= FLAGS =======================
+window.isDev = window.appFlags?.isDev === true;
+
+if (!window.isDev) {
+    console.log = () => {};
+    console.debug = () => {};
+    console.info = () => {};
+    console.warn = () => {};
+}
+
+// ======================= DEBUG =======================
+let debugSamples = 10;
+
+console.log("🎯 Fresh start mode:", window.isDev);
+console.log("🐛 isDev mode:", window.isDev);
+
+// ============================
+// Document Ready
+// ============================
 document.addEventListener("DOMContentLoaded", async () => {
-    if (debug) console.log("⚡ Frontline Dom loaded");
+    if (window.isDev) console.log("⚡ Frontline DOM loaded");
 
     try {
-        const fetchedBuffs = await window.electronAPI.getBuffs(); // ✅ pull buffs from preload
-        window.buffs = fetchedBuffs; // ✅ set to global
+        await initializeBuffs();
+        await initializeFrontline();
+        setupListeners();
+    } catch (err) {
+        console.error("❌ Frontline initialization failed:", err);
+    }
+});
+
+async function initializeBuffs() {
+    try {
+        const fetchedBuffs = await window.electronAPI.getBuffs();
+        window.buffs = fetchedBuffs;
 
         window.electronAPI.onBuffsUpdate((updatedBuffs) => {
-            if (debug) console.log("🔄 Buffs updated via IPC:", updatedBuffs);
-            window.buffs = updatedBuffs; // ✅ update global
+            if (window.isDev) console.log("🔄 Buffs updated via IPC:", updatedBuffs);
+            window.buffs = updatedBuffs;
         });
     } catch (err) {
         console.error("❌ Failed to load buffs:", err);
     }
+}
 
+async function initializeFrontline() {
     container = document.getElementById("frontline");
 
-    try {
-        // Load everything in parallel
-        const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.frontlineAPI.getSymbols(), loadState()]);
+    const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.frontlineAPI.getSymbols(), window.frontlineStateManager.loadState()]);
 
-        window.settings = settings;
+    window.settings = settings;
 
-        // Restore any saved state
-        if (restoredState) {
-            Object.assign(frontlineState, restoredState);
-        }
-
-        // Always hydrate missing entries from storeSymbols
-        storeSymbols.forEach((symbolData) => {
-            if (!frontlineState[symbolData.symbol]) {
-                frontlineState[symbolData.symbol] = {
-                    hero: symbolData.symbol,
-                    price: symbolData.price || 1,
-                    hp: 0,
-                    dp: 0,
-                    strength: 0,
-                    xp: 0,
-                    lv: 0,
-                    score: 0,
-                    lastEvent: {
-                        hp: 0,
-                        dp: 0,
-                        xp: 0,
-                    },
-                    floatValue: symbolData.statistics?.floatShares || 0,
-                    buffs: symbolData.buffs || {},
-                    highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
-                };
-            }
-        });
-
-        renderAll();
-        startScoreDecay();
-
-        // Set up listeners after initialization
-        window.settingsAPI.onUpdate(async (updatedSettings) => {
-            if (debug) console.log("🎯 Settings updated, applying changes...", updatedSettings);
-            window.settings = updatedSettings;
-            renderAll();
-        });
-
-        window.eventsAPI.onAlertEvents((events) => {
-            const minPrice = window.settings?.top?.minPrice ?? 0;
-            const maxPrice = window.settings?.top?.maxPrice ?? Infinity;
-
-            events.forEach((event) => {
-                if (event.price < minPrice || (maxPrice > 0 && event.price > maxPrice)) {
-                    if (debug) console.log(`🚫 ${event.hero} skipped — price $${event.price} outside range $${minPrice}-$${maxPrice}`);
-                    return;
-                }
-
-                // 🔧 Add this:
-                if (!frontlineState[event.hero]) {
-                    frontlineState[event.hero] = {
-                        hero: event.hero,
-                        price: event.price || 1,
-                        hp: 0,
-                        dp: 0,
-                        strength: 0,
-                        xp: 0,
-                        lv: 0,
-                        score: 0,
-                        lastEvent: {
-                            hp: 0,
-                            dp: 0,
-                            xp: 0,
-                        },
-                        floatValue: 0,
-                        buffs: {},
-                        highestPrice: event.price || 1,
-                    };
-
-                    if (debug) console.log(`🆕 Initialized new hero from alert: ${event.hero}`);
-                }
-
-                updateFrontlineStateFromEvent(event);
-            });
-        });
-
-        window.storeAPI.onHeroUpdate((updatedHeroes) => {
-            updatedHeroes.forEach((updated) => {
-                const hero = frontlineState[updated.hero];
-                if (!hero) return;
-
-                // Merge updated fields
-                hero.buffs = updated.buffs || hero.buffs;
-                hero.highestPrice = Math.max(hero.highestPrice || 0, updated.highestPrice || 0);
-                hero.lastEvent = updated.lastEvent || hero.lastEvent;
-                hero.xp = updated.xp ?? hero.xp;
-                hero.lv = updated.lv ?? hero.lv;
-
-                updateCardDOM(hero.hero);
-            });
-        });
-
-        window.electronAPI.onNukeState(async () => {
-            console.warn("🧨 Nuke signal received — clearing local state.");
-            clearState();
-
-            try {
-                const fetchedBuffs = await window.electronAPI.getBuffs();
-                window.buffs = fetchedBuffs;
-                console.log("🔄 Buffs reloaded after nuke:", fetchedBuffs.length);
-            } catch (err) {
-                console.error("⚠️ Failed to reload buffs after nuke:", err);
-            }
-
-            location.reload(); // 🔁 Ensures fresh init
-        });
-
-        window.electronAPI.onXpReset(() => {
-            console.log("🧼 XP Reset received — resetting XP and LV in frontline");
-
-            Object.values(frontlineState).forEach((hero) => {
-                hero.xp = 0;
-                hero.lv = 1;
-                updateCardDOM(hero.hero);
-            });
-
-            saveState(); // ✅ Persist the updated XP/LV state
-        });
-    } catch (error) {
-        console.error("Frontline initialization failed:", error);
-        // Add error recovery here if needed
+    if (restoredState) {
+        Object.assign(frontlineState, restoredState);
     }
-});
+
+    storeSymbols.forEach((symbolData) => {
+        if (!frontlineState[symbolData.symbol]) {
+            frontlineState[symbolData.symbol] = {
+                hero: symbolData.symbol,
+                price: symbolData.price || 1,
+                hp: 0,
+                dp: 0,
+                strength: 0,
+                xp: 0,
+                lv: 0,
+                score: 0,
+                lastEvent: { hp: 0, dp: 0, xp: 0 },
+                floatValue: symbolData.statistics?.floatShares || 0,
+                buffs: symbolData.buffs || {},
+                highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
+            };
+        }
+    });
+
+    renderAll();
+    window.helpers.startScoreDecay();
+}
+
+function setupListeners() {
+    window.settingsAPI.onUpdate((updatedSettings) => {
+        if (window.isDev) console.log("🎯 Settings updated:", updatedSettings);
+        window.settings = updatedSettings;
+        renderAll();
+    });
+
+    window.eventsAPI.onAlert(handleAlertEvent);
+    window.storeAPI.onHeroUpdate(window.frontlineStateManager.updateHeroData);
+    window.electronAPI.onNukeState(window.frontlineStateManager.handleNuke);
+    window.electronAPI.onXpReset(window.frontlineStateManager.resetXpLevels);
+}
+
+function handleAlertEvent(event) {
+    const minPrice = window.settings?.top?.minPrice ?? 0;
+    const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
+
+
+    if (event.price < minPrice || event.price > maxPrice) {
+        if (window.isDev) {
+            const isTooLow = event.price < minPrice;
+            const isTooHigh = event.price > maxPrice;
+
+            console.log(`🚫 ${event.hero} skipped — price $${event.price} outside range`);
+            console.log(`   ⤷ minPrice: $${minPrice}, maxPrice: $${maxPrice}`);
+            console.log(`   ⤷ Reason: ${isTooLow ? "below min" : ""}${isTooLow && isTooHigh ? " and " : ""}${isTooHigh ? "above max" : ""}`);
+            console.log("   ⤷ Full event:", event);
+        }
+        return;
+    }
+
+    if (!frontlineState[event.hero]) {
+        frontlineState[event.hero] = {
+            hero: event.hero,
+            hue: event.hue ?? 0,
+            price: event.price || 1,
+            hp: 0,
+            dp: 0,
+            strength: 0,
+            xp: 0,
+            lv: 0,
+            score: 0,
+            lastEvent: { hp: 0, dp: 0, xp: 0 },
+            floatValue: 0,
+            buffs: {},
+            highestPrice: event.price || 1,
+        };
+
+        if (window.isDev) {
+            console.log(`🆕 Initialized new hero from alert: ${event.hero}`);
+        }
+    }
+
+    updateFrontlineStateFromEvent(event);
+}
 
 function updateFrontlineStateFromEvent(event) {
     if (eventsPaused) return;
@@ -197,16 +170,17 @@ function updateFrontlineStateFromEvent(event) {
     }
 
     hero.price = event.price;
+    hero.hue = event.hue ?? hero.hue ?? 0;
 
     // Handle HP changes
     const wasDead = hero.hp === 0 && event.hp > 0;
     if (wasDead) {
-        if (debug) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
+        if (window.isDev) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
     }
 
     const isReversal = hero.lastEvent.dp > 0 && event.hp > 0;
     if (isReversal) {
-        if (debug) console.log(`🔄 ${hero.hero} REVERSAL!`);
+        if (window.isDev) console.log(`🔄 ${hero.hero} REVERSAL!`);
     }
 
     // Apply HP changes
@@ -214,7 +188,7 @@ function updateFrontlineStateFromEvent(event) {
     if (event.dp > 0) hero.hp = Math.max(hero.hp - event.dp, 0); // Essence fades, but never extinguishes
 
     // Update score
-    const scoreDelta = calculateScore(hero, event);
+    const scoreDelta = window.helpers.calculateScore(hero, event);
     hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
 
     hero.lastEvent = {
@@ -223,7 +197,7 @@ function updateFrontlineStateFromEvent(event) {
         score: scoreDelta,
     };
 
-    hero.strength = event.strength;
+    hero.strength = event.cumulative;
 
     // calculateXp(hero, event);
 
@@ -281,7 +255,7 @@ function updateFrontlineStateFromEvent(event) {
 
     hero.lastUpdate = Date.now();
 
-    saveState();
+    window.frontlineStateManager.saveState();
 }
 
 function renderAll() {
@@ -343,13 +317,13 @@ function updateCardDOM(hero) {
     const volImpact = window.hlpsFunctions.calculateImpact(state.strength, state.price, window.buffs);
     const strengthBar = card.querySelector(".bar-fill.strength");
     if (strengthBar) {
-        strengthBar.style.width = `${Math.min((state.strength / 400000) * 100, 100)}%`;
+        strengthBar.style.width = `${Math.min((state.strength / 2000000) * 100, 100)}%`;
         strengthBar.style.backgroundColor = volImpact.style.color;
     }
 
     const strengthText = card.querySelector(".bar-text");
     if (strengthText) {
-        strengthText.textContent = abbreviatedValues(state.strength);
+        strengthText.textContent = window.helpers.abbreviatedValues(state.strength);
         strengthText.style.color = volImpact.style.color;
     }
 
@@ -375,24 +349,17 @@ function updateCardDOM(hero) {
 }
 
 function renderCard(state) {
-    const { hero, price, hp, dp, strength, lastUpdate } = state;
+    const { hero, price, strength, lastEvent } = state;
 
     const card = document.createElement("div");
     card.className = "ticker-card";
     card.dataset.symbol = hero;
 
-    const change = state.lastEvent.hp ? `+${state.lastEvent.hp.toFixed(2)}%` : state.lastEvent.dp ? `-${state.lastEvent.dp.toFixed(2)}%` : "";
+    const change = lastEvent.hp ? `+${lastEvent.hp.toFixed(2)}%` : lastEvent.dp ? `-${lastEvent.dp.toFixed(2)}%` : "";
 
     const changeClass = state.lastEvent.hp ? "hp-boost" : state.lastEvent.dp ? "dp-damage" : "";
 
     const volumeImpact = window.hlpsFunctions.calculateImpact(strength, price, window.buffs);
-
-    // Store initial values for animation
-    const initialValues = {
-        score: state.score,
-        hp: state.hp,
-        strength: strength,
-    };
 
     const isVisiblyActive = state.lastEvent && (state.lastEvent.hp > 0 || state.lastEvent.dp > 0 || state.lastEvent.score > 0);
 
@@ -447,8 +414,6 @@ function renderCard(state) {
             return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
         });
 
-    // Extract buffs
-    const buffsArray = Object.values(state.buffs || {});
 
     // Merge and sort all buffs
     // Combine and sort buffs inline
@@ -458,10 +423,10 @@ function renderCard(state) {
     // Inject into ticker-data row ${buffsInline}
     card.innerHTML = `
 <div class="ticker-header">
-    <div class="ticker-symbol" style="background-color:${getSymbolColor(hero)}"> ${hero} <span class="lv">$${state.price.toFixed(2)}<span></div>
+    <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}"> ${hero} <span class="lv">$${state.price.toFixed(2)}<span></div>
     <div class="ticker-info">
         <div class="ticker-data">
-            <span class="bar-text" style="color:${volumeImpact.style.color}">${abbreviatedValues(strength)}</span>
+            <span class="bar-text" style="color:${volumeImpact.style.color}">${window.helpers.abbreviatedValues(strength)}</span>
             ${change ? `<span class="${changeClass}">${change}</span>` : ""}
             
         </div>
@@ -509,314 +474,4 @@ function renderCard(state) {
     };
 
     return card;
-}
-
-function getSpriteRowFromState({ hp, strength, lastEvent }) {
-    if (hp <= 0) return 6; // Die
-    if (lastEvent.dp > 0) return 5; // Taking damage
-    if (lastEvent.hp > 0) return 2 + Math.floor(Math.random() * 3); // Random attack (2, 3, or 4)
-    if (strength >= 200000) return 1; // Running
-    return 0; // Idle
-}
-
-/////////////////////////////////// Calculations
-function calculateScore(hero, event) {
-    if (event.strength < 1000) {
-        if (debug && debugSamples < debugLimitSamples) {
-            console.log(`⚠️ Skipping event due to low volume (strength: ${event.strength})`);
-        }
-        return 0;
-    }
-
-    debugSamples++;
-    const currentScore = Number(hero.score) || 0;
-
-    if (debug && debugSamples < debugLimitSamples) {
-        console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
-        console.log(`📜 INITIAL STATE → Price: ${hero.price} | Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
-    }
-
-    let baseScore = 0;
-    const logStep = (emoji, message, value) => console.log(`${emoji} ${message.padEnd(30)} ${(Number(value) || 0).toFixed(2)}`);
-
-    try {
-        if (event.hp > 0) {
-            baseScore += event.hp * 10;
-            logStep("💖", "Base HP Added", baseScore);
-
-            // const floatBuff = getHeroBuff(hero, "float");
-            // const floatMult = floatBuff?.multiplier ?? 1;
-            // baseScore *= floatMult;
-            // logStep(floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️", `Float Mult (${abbreviatedValues(hero.floatValue)})`, floatMult);
-
-            const volScore = computeVolumeScore(hero, event);
-            baseScore += volScore;
-            logStep("📢", "Crowd Participation Score", volScore);
-        }
-
-        if (event.dp > 0) {
-            let dpScore = event.dp * 10;
-
-            const dpPenalty = computeVolumeScore(hero, event); // use same logic as crowd strength
-            dpScore += dpPenalty;
-
-            baseScore -= dpScore;
-            logStep("💥", "Base DP Deducted", dpScore);
-        }
-
-    } catch (err) {
-        console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
-        baseScore = 0;
-    }
-
-    if (debug && debugSamples < debugLimitSamples) {
-        console.log("━".repeat(50));
-        logStep("🎯", "TOTAL SCORE CHANGE", baseScore);
-        console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
-    }
-
-    return baseScore;
-}
-
-function computeVolumeScore(hero, event) {
-    const price = hero.price || 1;
-    const strength = event.strength || 0;
-
-    if (strength < 1000) return 0;
-
-    const dollarVolume = price * strength;
-    let score = dollarVolume / 1000;
-
-    // Penny penalty
-    if (price < 2) score *= 0.8;
-
-    // Optional cap
-    score = Math.min(score, 1000);
-
-    if (debug && debugSamples < debugLimitSamples) {
-        const volStr = abbreviatedValues(strength);
-        const usdStr = abbreviatedValues(dollarVolume);
-        console.log(`📊 Volume Score: ${hero.hero} — ${volStr} @ $${price.toFixed(2)} → $${usdStr} → Score: ${score.toFixed(1)}`);
-    }
-
-    return score;
-}
-
-// function getHeroBuff(hero, key) {
-//     return hero?.buffs?.[key] ?? {};
-// }
-
-function startScoreDecay() {
-    let decayTickCount = 0;
-    const DECAY_TICKS_BETWEEN_LOGS = 5;
-
-    setInterval(() => {
-        decayTickCount++;
-        let changed = false;
-        let totalDecay = 0;
-        let heroesDecayed = 0;
-        const activeHeroes = [];
-
-        Object.values(frontlineState).forEach((hero) => {
-            if (hero.score > 0) {
-                const originalScore = hero.score;
-                const scale = 1 + hero.score / SCORE_NORMALIZATION;
-                const cling = 0.1;
-                const taper = Math.max(cling, Math.min(1, hero.score / 10));
-                const decayAmount = XP_DECAY_PER_TICK * scale * taper;
-                const newScore = Math.max(0, hero.score - decayAmount);
-
-                if (hero.score !== newScore) {
-                    hero.score = newScore;
-                    hero.lastEvent.hp = 0;
-                    hero.lastEvent.dp = 0;
-
-                    changed = true;
-                    totalDecay += originalScore - newScore;
-                    heroesDecayed++;
-                    activeHeroes.push(hero);
-                }
-            }
-        });
-
-        if (changed) {
-            renderAll();
-            saveState();
-        }
-    }, DECAY_INTERVAL_MS);
-}
-
-function abbreviatedValues(value) {
-    if (value === null || value === undefined || isNaN(value) || value === "") {
-        return "-";
-    }
-    const num = Number(value);
-    if (num >= 1_000_000_000) {
-        return (num / 1_000_000_000).toFixed(2) + "B";
-    }
-    if (num >= 1_000_000) {
-        return (num / 1_000_000).toFixed(2) + "M";
-    }
-    if (num >= 1_000) {
-        return (num / 1_000).toFixed(2) + "K";
-    }
-    return num.toLocaleString();
-}
-
-// function calculateVolumeImpact(volume = 0, price = 1) {
-//     const categories = Object.entries(window.buffs)
-//         .map(([category, data]) => ({ category, ...data }))
-//         .sort((a, b) => a.priceThreshold - b.priceThreshold);
-
-//     for (const category of categories) {
-//         if (price <= category.priceThreshold) {
-//             const sortedStages = [...category.volumeStages].sort((a, b) => a.volumeThreshold - b.volumeThreshold);
-
-//             const stageToUse =
-//                 sortedStages.find((stage, index) => {
-//                     const current = stage.volumeThreshold;
-//                     const prev = index === 0 ? 0 : sortedStages[index - 1].volumeThreshold;
-//                     if (index === sortedStages.length - 1) {
-//                         return volume >= prev;
-//                     }
-//                     return volume > prev && volume <= current;
-//                 }) || sortedStages[sortedStages.length - 1];
-
-//             // ✅ Only now we can safely use stageToUse
-//             return {
-//                 ...stageToUse, // ⬅️ brings icon, desc, isBuff, key, etc.
-//                 capAssigned: category.category,
-//                 volumeStage: stageToUse.key,
-//                 message: `${category.category} ${stageToUse.key} (${abbreviatedValues(volume)})`,
-//                 style: {
-//                     cssClass: `volume-${stageToUse.key.toLowerCase()}`,
-//                     color: getColorForStage(stageToUse.key),
-//                     animation: stageToUse.key === "parabolicVol" ? "pulse 1.5s infinite" : "none",
-//                 },
-//             };
-//         }
-//     }
-
-//     // Fallback if no category matched
-//     return {
-//         multiplier: 1,
-//         capAssigned: "None",
-//         volumeStage: "None",
-//         message: "No matching category found",
-//         style: {
-//             cssClass: "volume-none",
-//             icon: "",
-//             description: "No volume",
-//             color: "#cccccc",
-//             animation: "none",
-//         },
-//         score: 0,
-//     };
-// }
-
-function getSymbolColor(symbol) {
-    if (!symbolColors[symbol]) {
-        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const hue = (hash * 37) % 360;
-        const saturation = 80;
-        const lightness = 50;
-        const alpha = 0.5;
-        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
-    }
-    return symbolColors[symbol];
-}
-
-function getColorForStage(stageKey) {
-    const colors = {
-        lowVol: "#cccccc",
-        mediumVol: "#4caf50",
-        highVol: "#ff9800",
-        parabolicVol: "#f44336",
-    };
-    return colors[stageKey] || "#cccccc";
-}
-
-function abbreviatedValues(num) {
-    if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
-    return num.toString();
-}
-
-/////////////////////////////////// state
-window.pauseEvents = () => {
-    eventsPaused = true;
-    if (debug) console.log("Events are now paused");
-};
-
-window.resumeEvents = () => {
-    eventsPaused = false;
-    if (debug) console.log("Events are now resumed");
-};
-
-function getMarketDateString() {
-    const now = new Date();
-    const offset = -5 * 60; // EST offset in minutes (adjust for DST if needed)
-    const localOffset = now.getTimezoneOffset();
-    const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
-    return estDate.toISOString().split("T")[0];
-}
-
-function saveState() {
-    const existing = localStorage.getItem("frontlineState");
-    let sessionDate = getMarketDateString();
-
-    if (existing) {
-        try {
-            const parsed = JSON.parse(existing);
-            if (parsed.date && parsed.date !== sessionDate) {
-                if (debug) console.log("🧼 Overwriting old session from", parsed.date);
-            } else {
-                sessionDate = parsed.date || sessionDate;
-            }
-        } catch {
-            console.warn("⚠️ Invalid existing frontline state. Overwriting.");
-        }
-    }
-
-    const payload = {
-        date: sessionDate,
-        state: frontlineState,
-    };
-
-    localStorage.setItem("frontlineState", JSON.stringify(payload));
-}
-
-async function loadState() {
-    if (freshStart) {
-        console.log("🧪 loadState() overridden for testing — skipping restore");
-        return null;
-    }
-    const saved = localStorage.getItem("frontlineState");
-    if (!saved) return null;
-
-    try {
-        const parsed = JSON.parse(saved);
-        const today = getMarketDateString();
-
-        if (parsed.date === today) {
-            if (debug) console.log("🔄 Restored frontline state from earlier session.");
-            return parsed.state || null;
-        } else {
-            if (debug) console.log("🧼 Session from previous day. Skipping restore.");
-            localStorage.removeItem("frontlineState");
-            return null;
-        }
-    } catch (err) {
-        console.warn("⚠️ Could not parse frontline state. Clearing.");
-        localStorage.removeItem("frontlineState");
-        return null;
-    }
-}
-
-function clearState() {
-    localStorage.removeItem("frontlineState");
-    for (const key in frontlineState) {
-        delete frontlineState[key];
-    }
-    if (debug) console.log("🧹 Cleared saved and in-memory frontline state.");
 }

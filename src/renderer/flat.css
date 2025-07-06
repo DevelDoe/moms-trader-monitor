@@ -246,3 +246,14 @@ h2 {
     box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
     border-radius: 1px;
 }
+
+
+/* Hide scrollbars across all elements */
+* {
+    scrollbar-width: none;         /* Firefox */
+    -ms-overflow-style: none;      /* IE 10+ */
+  }
+  
+  *::-webkit-scrollbar {
+    display: none;                 /* Chrome, Safari, Opera */
+  }

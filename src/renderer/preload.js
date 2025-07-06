@@ -1,4 +1,15 @@
 const { contextBridge, ipcRenderer } = require("electron");
+const isDev = process.env.NODE_ENV === "development";
+
+contextBridge.exposeInMainWorld("log", {
+    debug: isDev ? (...args) => console.debug("[DEBUG]", ...args) : () => {},
+    info: isDev ? (...args) => console.info("[INFO]", ...args) : () => {},
+    warn: isDev ? (...args) => console.warn("[WARN]", ...args) : () => {},
+    error: (...args) => {
+        console.error("[ERROR]", ...args);
+        ipcRenderer.send("renderer-error", args.map(String).join(" "));
+    },
+});
 
 contextBridge.exposeInMainWorld("electronAPI", {
     onAppReady: (cb) => ipcRenderer.once("app-ready", cb),
@@ -66,7 +77,7 @@ contextBridge.exposeInMainWorld("eventsAPI", {
     activate: () => ipcRenderer.send("activate-events"),
     deactivate: () => ipcRenderer.send("deactivate-events"),
     onAlert: (callback) => ipcRenderer.on("ws-alert", (_, data) => callback(data)),
-    onAlertEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
+    // onAlertEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
 });
 
 contextBridge.exposeInMainWorld("frontlineAPI", {
@@ -82,7 +93,7 @@ contextBridge.exposeInMainWorld("heroesAPI", {
     onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
     applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
-    onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
+    // onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
     getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
     calculateVolumeImpact: (volume, price) => ipcRenderer.invoke("calculate-volume-impact", { volume, price }),
     getCurrentHeroes: () => ipcRenderer.invoke("get-tickers", "focus"),

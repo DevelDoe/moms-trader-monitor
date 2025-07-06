@@ -91,7 +91,7 @@ const { createSplashWindow } = require("./windows/splash");
 const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
 
-const { createScannerWindow } = require("./windows/events");
+const { createEventsWindow } = require("./windows/events");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createHeroesWindow } = require("./windows/heroes");
 
@@ -409,6 +409,7 @@ function updateShortcutIcon() {
 ////////////////////////////////////////////////////////////////////////////////////// IPC COMM
 
 let isQuitting = false;
+const errorLogPath = path.join(app.getPath("userData"), "renderer-errors.log");
 
 // General
 ipcMain.on("exit-app", () => {
@@ -427,6 +428,14 @@ ipcMain.on("restart-app", () => {
 app.on("before-quit", () => {
     isQuitting = true;
     windowManager.setQuitting(true);
+});
+
+ipcMain.on("renderer-error", (_event, message) => {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}\n`;
+    fs.appendFile(errorLogPath, logEntry, (err) => {
+        if (err) console.error("Failed to write error log:", err);
+    });
 });
 
 ipcMain.on("resize-window-to-content", (event, { width, height }) => {
@@ -629,35 +638,18 @@ ipcMain.on("deactivate-events", () => {
     saveSettings(settings);
 });
 
-ipcMain.on("toggle-scanner", () => {
-    const scanner = windowManager.windows.scanner;
+// ipcMain.on("toggle-scanner", () => {
+//     const scanner = windowManager.windows.scanner;
 
-    if (scanner && !scanner.isDestroyed()) {
-        log.log("[toggle-scanner] Destroying scanner window");
-        destroyWindow("scanner"); // Destroy the window
-    } else {
-        log.log("[toggle-scanner] Creating scanner window");
-        windows.scanner = createWindow("scanner", () => createEventsWindow(isDevelopment));
-        windows.scanner.show();
-    }
-});
-
-tickerStore.on("new-high-price", ({ symbol, price, direction, change_percent, fiveMinVolume }) => {
-    const eventWindow = windowManager.windows.scanner;
-    if (eventWindow && eventWindow.webContents) {
-        log.log(`Sending new high price alert to scanner window: ${symbol} - ${price}`);
-        eventWindow.webContents.send("ws-alert", {
-            symbol,
-            price,
-            direction: direction || "UP",
-            change_percent: change_percent || 0,
-            fiveMinVolume: fiveMinVolume || 0, // ✅ Corrected
-            type: "new-high-price",
-        });
-    } else {
-        log.warn("Scanner window not available.");
-    }
-});
+//     if (scanner && !scanner.isDestroyed()) {
+//         log.log("[toggle-scanner] Destroying scanner window");
+//         destroyWindow("scanner"); // Destroy the window
+//     } else {
+//         log.log("[toggle-scanner] Creating scanner window");
+//         windows.scanner = createWindow("scanner", () => createEventsWindow(isDevelopment));
+//         windows.scanner.show();
+//     }
+// });
 
 // Frontline
 ipcMain.on("activate-frontline", () => {
