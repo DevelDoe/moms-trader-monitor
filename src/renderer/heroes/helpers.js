@@ -107,13 +107,13 @@
 
     function computeVolumeScore(hero, event) {
         const price = hero.price || 1;
-        const strength = event.strength || 0;
+        event.strength = event.strength || 0;
     
         // Skip weak trades
-        if (strength < 1000) return 0;
+        if (event.strength < 1000) return 0;
     
         // Estimated dollar volume
-        const dollarVolume = price * strength;
+        const dollarVolume = price * event.strength;
     
         // Estimate number of participants (assume avg trade = $1000)
         let score = dollarVolume / 1000;
@@ -128,7 +128,7 @@
     
         // Optional: logging
         if (window.isDev && debugSamples < debugLimitSamples) {
-            const displayVolume = abbreviatedValues(strength);
+            const displayVolume = abbreviatedValues(event.strength);
             const displayDollarVol = abbreviatedValues(dollarVolume);
             logStep("📊", `Volume Score (${displayVolume} @ $${price}) → $${displayDollarVol}`, score);
         }

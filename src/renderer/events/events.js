@@ -147,14 +147,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (isNewHigh) {
             alertDiv.classList.add("new-high");
-            contentDiv.innerHTML += `<div class="progress-bar"><span style="color: gold; font-weight: bold;">✨ High of Day</span></div>`;
+            // contentDiv.innerHTML += `<div class="progress-bar"><span style="color: gold; font-weight: bold;">✨ High of Day</span></div>`;
             magicDustAudio.currentTime = 0;
             magicDustAudio.play();
         }
 
         if (isNewEntry) {
             alertDiv.classList.add("new-entry");
-            contentDiv.innerHTML += `<div class="progress-bar"><span style="color: lightblue; font-weight: bold;">🆕 New Entry</span></div>`;
+            // contentDiv.innerHTML += `<div class="progress-bar"><span style="color: lightblue; font-weight: bold;">🆕 New Entry</span></div>`;
         }
 
         if (isUp && volume > 9000) alertDiv.classList.add("blinking-alert");

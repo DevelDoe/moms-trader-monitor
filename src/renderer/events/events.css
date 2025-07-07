@@ -1,3 +1,17 @@
+/* Body Styles */
+html,
+body,
+* {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE 10+ */
+}
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;                 /* Chrome, Safari, Edge */
+}
+
 body {
     color: #e0e0e0;
     font-size: 10px;

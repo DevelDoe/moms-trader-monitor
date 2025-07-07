@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
         symbolsLoaded = true;
         spinner.style.display = "none"; // Hide the spinner
         loginForm.classList.remove("hidden"); // Show the login form
-        document.getElementById("symbols-status").textContent = `Fetched ${symbolCount} symbols! Click anywhere to continue.`;
+        console.log(`Fetched ${symbolCount} symbols! Click anywhere to continue.`);
         console.log("Symbols fetched, spinner hidden, login form shown");
     });
 

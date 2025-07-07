@@ -17,9 +17,9 @@
     }
 
     function calculateScore(hero, event) {
-        if (event.strength < 1000) {
+        if (event.one_min_volume < 1000) {
             if (window.isDev && debugSamples < debugLimitSamples) {
-                console.log(`⚠️ Skipping event due to low volume (strength: ${event.strength})`);
+                console.log(`⚠️ Skipping event ${hero.hero} to low volume (strength: ${event.one_min_volume})`);
             }
             return 0;
         }
@@ -75,7 +75,7 @@
 
     function computeVolumeScore(hero, event) {
         const price = hero.price || 1;
-        const strength = event.strength || 0;
+        const strength = event.one_min_volume || 0;
 
         if (strength < 1000) return 0;
 

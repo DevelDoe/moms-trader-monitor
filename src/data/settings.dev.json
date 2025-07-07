@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 1,
+    "minPrice": 0,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -53,8 +53,8 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 291,
-      "height": 1082,
+      "width": 293,
+      "height": 1083,
       "x": 960,
       "y": 539,
       "isOpen": true
@@ -91,10 +91,10 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 397,
-      "height": 550,
-      "x": 1251,
-      "y": 1070,
+      "width": 396,
+      "height": 552,
+      "x": 1253,
+      "y": 1069,
       "isOpen": true
     },
     "activeWindow": {

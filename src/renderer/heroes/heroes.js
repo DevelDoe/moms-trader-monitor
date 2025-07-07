@@ -10,6 +10,7 @@ const SCALE_DOWN_FACTOR = 0.9;
 const debugLimitSamples = 1500;
 const ACTIVE_TICKER_UPDATE_INTERVAL = 3 * 60 * 1000; // 3 minutes
 const MIN_UPDATE_INTERVAL = 5000;
+const MAX_STRENGTH = 1_000_000;
 
 // ======================= STATE =======================
 const heroesState = {};
@@ -79,6 +80,7 @@ async function initializeHeroes() {
             heroesState[s.symbol] = {
                 hero: s.symbol,
                 price: s.price || 1,
+                hue: s.hue ?? 0,
                 hp: 0,
                 dp: 0,
                 score: 0,
@@ -88,7 +90,6 @@ async function initializeHeroes() {
                 lastEvent: { hp: 0, dp: 0 },
                 floatValue: s.statistics?.floatShares || 0,
                 buffs: s.buffs || {},
-                hue: s.hue ?? 0,
                 highestPrice: s.highestPrice ?? s.price ?? 1,
             };
         }
@@ -125,6 +126,7 @@ function handleAlertEvent(event) {
             hero: event.hero,
             hue: event.hue ?? 0,
             price: event.price || 1,
+            strength: event.one_min_volume || 0,
             hp: 0,
             dp: 0,
             score: 0,
@@ -152,6 +154,8 @@ function updateHeroFromEvent(event) {
     let hero = heroesState[event.hero];
 
     hero.price = event.price;
+    hero.hue = event.hue ?? hero.hue ?? 0;
+    hero.strength = event.one_min_volume ?? hero.strength ?? 0;
 
     const wasDead = hero.hp === 0 && event.hp > 0;
     if (wasDead && window.isDev) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
@@ -246,30 +250,28 @@ function updateHeroFromEvent(event) {
 function renderAll() {
     container.innerHTML = "";
 
-    Object.values(heroesState)
+    // 🔁 Calculate top heroes only once
+    const topN = window.settings?.top?.heroesListLength ?? 3;
+    const topHeroes = Object.values(heroesState)
         .filter((s) => s.score > 0)
         .sort((a, b) => b.score - a.score)
-        .slice(0, window.settings?.top?.heroesListLength ?? 3)
-        .forEach((data) => {
-            const card = renderCard(data);
-            container.appendChild(card); // ✅ Append created card
-        });
+        .slice(0, topN);
 
-    // ✅ After rendering all top heroes, remove any zombie cards
-    const topSymbols = Object.values(heroesState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, window.settings?.top?.heroesListLength ?? 3)
-        .map((s) => s.hero);
+    // 🧱 Render top hero cards
+    topHeroes.forEach((data) => {
+        const card = renderCard(data);
+        container.appendChild(card);
+    });
 
-    // 🔍 Remove all cards not in the top list
+    // 🧼 Clean up any zombie cards
+    const topSymbols = topHeroes.map((s) => s.hero);
     document.querySelectorAll(".ticker-card").forEach((card) => {
-        const sym = card.dataset.symbol;
-        if (!topSymbols.includes(sym)) {
+        if (!topSymbols.includes(card.dataset.symbol)) {
             card.remove();
         }
     });
 }
+
 
 function updateCardDOM(hero) {
     if (!hero || !heroesState[hero]) {
@@ -278,21 +280,22 @@ function updateCardDOM(hero) {
     }
 
     const topN = window.settings?.top?.heroesListLength ?? 10;
-    const topHeroes = Object.values(heroesState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => (b?.score || 0) - (a?.score || 0))
-        .slice(0, topN)
-        .map((s) => s?.hero)
-        .filter(Boolean);
 
-    if (!topHeroes.includes(hero)) return;
+    // 🎯 Determine if this hero is in the current top list
+    const topSymbols = Object.values(heroesState)
+        .filter((s) => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, topN)
+        .map((s) => s.hero);
+
+    if (!topSymbols.includes(hero)) return;
 
     const existing = document.querySelector(`.ticker-card[data-symbol="${hero}"]`);
     if (!existing) return;
 
     const newCard = renderCard(heroesState[hero]);
 
-    // Copy old bar widths onto newCard before inserting
+    // ♻️ Preserve bar widths visually between replacement
     ["xp", "hp", "strength"].forEach((type) => {
         const oldBar = existing.querySelector(`.bar-fill.${type}`);
         const newBar = newCard.querySelector(`.bar-fill.${type}`);
@@ -301,42 +304,34 @@ function updateCardDOM(hero) {
         }
     });
 
-    // Replace immediately
+    // 🔄 Replace DOM card instantly
     existing.replaceWith(newCard);
 
-    // Animate to the new values
-    // Animate to the new values
+    // 🧠 Animate to new bar values
     requestAnimationFrame(() => {
         const state = heroesState[hero];
-        const strengthCap = state.price < 1.5 ? 800000 : 400000;
         const { xpPercent } = window.helpers.getXpProgress(state);
 
-        // Helper to update + pulse a bar
         function animateBar(selector, newWidth) {
             const bar = newCard.querySelector(selector);
-            if (bar) {
-                const oldWidth = parseFloat(bar.style.width) || 0;
-                const newWidthValue = parseFloat(newWidth);
+            if (!bar) return;
 
-                // Only pulse if width actually changes meaningfully
-                if (Math.abs(oldWidth - newWidthValue) > 1) {
-                    bar.classList.add("bar-animate");
-                    bar.addEventListener(
-                        "animationend",
-                        () => {
-                            bar.classList.remove("bar-animate");
-                        },
-                        { once: true }
-                    );
-                }
+            const oldWidth = parseFloat(bar.style.width) || 0;
+            const newWidthValue = parseFloat(newWidth);
 
-                bar.style.width = `${newWidth}`;
+            if (Math.abs(oldWidth - newWidthValue) > 1) {
+                bar.classList.add("bar-animate");
+                bar.addEventListener("animationend", () => {
+                    bar.classList.remove("bar-animate");
+                }, { once: true });
             }
+
+            bar.style.width = `${newWidth}`;
         }
 
         animateBar(".bar-fill.xp", `${xpPercent}%`);
         animateBar(".bar-fill.hp", `${Math.min((state.hp / maxHP) * 100, 100)}%`);
-        animateBar(".bar-fill.strength", `${Math.min((state.strength / strengthCap) * 100, 100)}%`);
+        animateBar(".bar-fill.strength", `${Math.min((state.strength / MAX_STRENGTH) * 100, 100)}%`);
     });
 }
 
@@ -357,104 +352,91 @@ function renderCard({ hero, price, hp, dp, strength, lastEvent }) {
     const change = lastEvent.hp ? `+${lastEvent.hp.toFixed(2)}%` : lastEvent.dp ? `-${lastEvent.dp.toFixed(2)}%` : "";
     const changeClass = state.lastEvent.hp ? "hp-boost" : state.lastEvent.dp ? "dp-damage" : "";
 
-    const topPosition = 0;
-    const strengthCap = price < 1.5 ? 800000 : 400000;
-
     const volumeImpact = window.hlpsFunctions.calculateImpact(strength, price, window.buffs);
-
     const { totalXp, xpForNextLevel, xpPercent } = window.helpers.getXpProgress(state);
+    const fadeStyle = Date.now() - (state.lastUpdate || 0) <= 30000 ? "" : "opacity: 0.5; filter: grayscale(0.4);";
 
-    // Buffs
-    const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
+    const sortOrder = [
+        "float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort",
+        "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"
+    ];
+
     const buffsArray = Object.entries(state.buffs || {}).map(([originalKey, b]) => ({
         ...b,
         key: originalKey,
         _sortKey: originalKey.toLowerCase().includes("vol") ? "volume" : originalKey,
     }));
 
-    const sortBuffs = (arr) =>
-        arr.sort((a, b) => {
-            const aIndex = sortOrder.indexOf(a._sortKey);
-            const bIndex = sortOrder.indexOf(b._sortKey);
-            return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-        });
+    const sortBuffs = (arr) => arr.sort((a, b) => {
+        const aIndex = sortOrder.indexOf(a._sortKey);
+        const bIndex = sortOrder.indexOf(b._sortKey);
+        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    });
 
     const positiveBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === true));
     const negativeBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === false));
     const neutralBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === undefined));
-
-    const now = Date.now();
-    const recentlyUpdated = now - (state.lastUpdate || 0) <= 30000;
-    const fadeStyle = recentlyUpdated ? "" : "opacity: 0.5; filter: grayscale(0.4);";
-
     const placeholder = `<span class="buff-icon" style="opacity: 0;">•</span>`;
 
     const buffHtml = `
-    <div class="buff-container">
-        <div class="buff-row positive">
-            ${positiveBuffs.length ? positiveBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
-        </div>
-        <div class="buff-row neutral">
-            ${neutralBuffs.length ? neutralBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
-        </div>
-        <div class="buff-row negative">
-            ${negativeBuffs.length ? negativeBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
-        </div>
-    </div>
-`;
-
-    card.innerHTML = `
-    <div class="ticker-header-grid">
-        <div class="ticker-info">
-            <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}; ${fadeStyle}">
-                $${hero}<span class="lv">$${state.price.toFixed(2)}</span>
+        <div class="buff-container">
+            <div class="buff-row positive">
+                ${positiveBuffs.length ? positiveBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
             </div>
-            <div id="change" style="top: 0 + ${topPosition}px;">${change ? `<div class="${changeClass}">${change}</div>` : ""}</div>
-            
-            <div id="lv"><span class="bar-text stats lv" style="font-size: 6px; margin-top:4px">L <span style="color:white;"> ${state.lv}</span></span></div>
-            <div id="x"><span class="bar-text stats x" style="font-size: 6px; margin-top:4px">X <span style="color:#04f370;">  ${totalXp}</span></span></div>
-            <div id="ch"><span class="bar-text stats ch" style="font-size: 6px; margin-top:4px">C <span style="color:#fd5151;"> ${hp.toFixed(0)}%</span></span></div>
-            <div id="vo"><span class="bar-text stats" style=" font-size: 6px; margin-top:4px">V <span style="color:${volumeImpact.style.color};">  ${window.helpers.abbreviatedValues(strength)}</span></span></div>
-        </div>
-        ${buffHtml}
-    </div>
-    <div class="bars">
-        <div class="bar">
-            <div class="bar-fill xp" style="width: ${xpPercent}%">
-                <span class="bar-text">XP: ${Math.floor(totalXp)} / ${xpForNextLevel}</span>
+            <div class="buff-row neutral">
+                ${neutralBuffs.length ? neutralBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
+            </div>
+            <div class="buff-row negative">
+                ${negativeBuffs.length ? negativeBuffs.map((buff) => `<span class="buff-icon" title="${buff.desc}">${buff.icon}</span>`).join("") : placeholder}
             </div>
         </div>
-        <div class="bar">
-            <div class="bar-fill hp" style="width: ${Math.min((hp / maxHP) * 100, 100)}%">
-                <span class="bar-text">CHANGE: ${hp.toFixed(0)}%</span>
-            </div>
-        </div>
-        <div class="bar">
-            <div class="bar-fill " style="background-color: ${volumeImpact.style.color}; width: ${Math.min((strength / strengthCap) * 100, 100)}%">
-                <span class="bar-text">VOLUME: ${Math.floor(strength / 1000)}k</span>
-            </div>
-        </div>
-    </div>
     `;
 
-    // <div id="score"><span class="bar-text score" style="font-size: 6px; margin-top:4px">SCORE: ${state.score.toFixed(0)}</span></div>
+    card.innerHTML = `
+        <div class="ticker-header-grid">
+            <div class="ticker-info">
+                <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}; ${fadeStyle}">
+                    $${hero}<span class="lv">$${state.price.toFixed(2)}</span>
+                </div>
+                <div id="change">${change ? `<div class="${changeClass}">${change}</div>` : ""}</div>
+               <div id="lv"><span class="bar-text stats lv" style="font-size: 6px; margin-top:4px">L <span style="color:white;"> ${state.lv}</span></span></div>
+                <div id="x"><span class="bar-text stats x" style="font-size: 6px; margin-top:4px">X <span style="color:#04f370;">  ${totalXp}</span></span></div>
+                <div id="ch"><span class="bar-text stats ch" style="font-size: 6px; margin-top:4px">C <span style="color:#fd5151;"> ${hp.toFixed(0)}%</span></span></div>
+                <div id="vo"><span class="bar-text stats" style=" font-size: 6px; margin-top:4px">V <span style="color:${volumeImpact.style.color};">  ${window.helpers.abbreviatedValues(strength)}</span></span></div>
+            </div>
+            ${buffHtml}
+        </div>
 
-    // Add click handler to the symbol element
+        <div class="bars">
+            <div class="bar">
+                <div class="bar-fill xp" style="width: ${xpPercent}%">
+                    <span class="bar-text">XP: ${Math.floor(totalXp)} / ${xpForNextLevel}</span>
+                </div>
+            </div>
+            <div class="bar">
+                <div class="bar-fill hp" style="width: ${Math.min((hp / maxHP) * 100, 100)}%">
+                    <span class="bar-text">CHANGE: ${hp.toFixed(0)}%</span>
+                </div>
+            </div>
+            <div class="bar">
+                <div class="bar-fill strength" style="background-color: ${volumeImpact.style.color}; width: ${Math.min((strength / MAX_STRENGTH) * 100, 100)}%">
+                    <span class="bar-text">VOLUME: ${Math.floor(strength / 1000)}k</span>
+                </div>
+            </div>
+        </div>
+    `;
+
     const symbolElement = card.querySelector(".ticker-symbol");
     symbolElement.onclick = (e) => {
         e.stopPropagation();
         try {
             navigator.clipboard.writeText(hero);
             console.log(`📋 Copied ${hero} to clipboard`);
-            if (window.activeAPI && window.activeAPI.setActiveTicker) {
-                window.activeAPI.setActiveTicker(hero);
-                console.log(`🎯 Set ${hero} as active ticker`);
-            }
+            window.activeAPI?.setActiveTicker?.(hero);
             lastClickedSymbol = hero;
+
             symbolElement.classList.add("symbol-clicked");
-            setTimeout(() => {
-                symbolElement.classList.remove("symbol-clicked");
-            }, 200);
+            setTimeout(() => symbolElement.classList.remove("symbol-clicked"), 200);
         } catch (err) {
             console.error(`⚠️ Failed to handle click for ${hero}:`, err);
         }

@@ -1,4 +1,4 @@
-// frontlineState.js 
+// frontlineState.js
 // ======================= CONFIGURATION =======================
 const DECAY_INTERVAL_MS = 1000;
 const XP_DECAY_PER_TICK = 0.05; // Decay per tick
@@ -82,7 +82,7 @@ async function initializeFrontline() {
                 price: symbolData.price || 1,
                 hp: 0,
                 dp: 0,
-                strength: 0,
+                strength: symbolData.one_min_volume || 0,
                 xp: 0,
                 lv: 0,
                 score: 0,
@@ -115,7 +115,6 @@ function handleAlertEvent(event) {
     const minPrice = window.settings?.top?.minPrice ?? 0;
     const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
 
-
     if (event.price < minPrice || event.price > maxPrice) {
         if (window.isDev) {
             const isTooLow = event.price < minPrice;
@@ -136,7 +135,7 @@ function handleAlertEvent(event) {
             price: event.price || 1,
             hp: 0,
             dp: 0,
-            strength: 0,
+            strength: event.one_min_volume,
             xp: 0,
             lv: 0,
             score: 0,
@@ -171,6 +170,7 @@ function updateFrontlineStateFromEvent(event) {
 
     hero.price = event.price;
     hero.hue = event.hue ?? hero.hue ?? 0;
+    hero.strength = event.one_min_volume ?? hero.strength ?? 0;
 
     // Handle HP changes
     const wasDead = hero.hp === 0 && event.hp > 0;
@@ -196,8 +196,6 @@ function updateFrontlineStateFromEvent(event) {
         dp: event.dp || 0,
         score: scoreDelta,
     };
-
-    hero.strength = event.cumulative;
 
     // calculateXp(hero, event);
 
@@ -317,7 +315,7 @@ function updateCardDOM(hero) {
     const volImpact = window.hlpsFunctions.calculateImpact(state.strength, state.price, window.buffs);
     const strengthBar = card.querySelector(".bar-fill.strength");
     if (strengthBar) {
-        strengthBar.style.width = `${Math.min((state.strength / 2000000) * 100, 100)}%`;
+        strengthBar.style.width = `${Math.min((state.strength / 1000000) * 100, 100)}%`;
         strengthBar.style.backgroundColor = volImpact.style.color;
     }
 
@@ -414,7 +412,6 @@ function renderCard(state) {
             return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
         });
 
-
     // Merge and sort all buffs
     // Combine and sort buffs inline
     const sortedBuffs = sortBuffs(Object.values(state.buffs || {}));
@@ -438,7 +435,7 @@ function renderCard(state) {
                 <div class="bar-fill hp" style="width: ${Math.min((state.hp / maxHP) * 100, 100)}%"></div>
             </div>
             <div class="bar">
-                <div class="bar-fill strength" style="width: ${Math.min((strength / 400000) * 100, 100)}%"></div>
+                <div class="bar-fill strength" style="width: ${Math.min((strength / 1000000) * 100, 100)}%"></div>
             </div>
         </div>
     </div>
