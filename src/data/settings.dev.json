@@ -62,8 +62,8 @@
     "settingsWindow": {
       "width": 907,
       "height": 755,
-      "x": 1351,
-      "y": 273,
+      "x": 26,
+      "y": 775,
       "isOpen": false
     },
     "infobarWindow": {
@@ -128,7 +128,7 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": false,
+    "enableHeroes": true,
     "autoClose": false
   }
 }

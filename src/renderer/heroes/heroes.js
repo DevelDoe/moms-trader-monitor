@@ -155,7 +155,7 @@ function updateHeroFromEvent(event) {
 
     hero.price = event.price;
     hero.hue = event.hue ?? hero.hue ?? 0;
-    hero.strength = event.one_min_volume ?? hero.strength ?? 0;
+    hero.strength = event.one_min_volume || 0;
 
     const wasDead = hero.hp === 0 && event.hp > 0;
     if (wasDead && window.isDev) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
@@ -171,8 +171,6 @@ function updateHeroFromEvent(event) {
         dp: event.dp || 0,
     };
 
-    hero.strength = event.cumulative;
-
     hero.history = hero.history || [];
     hero.history.push({
         hp: event.hp || 0,
@@ -184,7 +182,6 @@ function updateHeroFromEvent(event) {
     const scoreDelta = window.helpers.calculateScore(hero, event);
     hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
 
-    hero.strength = event.strength;
 
     let needsFullRender = false;
     if (hero.hp > maxHP) {

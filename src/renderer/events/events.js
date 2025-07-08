@@ -215,8 +215,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.log("🧪 Alert candidate:", { symbol, price, hp, dp, strength });
             }
 
-            const passesFilters = (minPrice === 0 || price >= minPrice) && (maxPrice === 0 || price <= maxPrice) && hp >= minChangePercent && strength >= minVolume;
-
+            const passesFilters =
+            (minPrice === 0 || price >= minPrice) &&
+            (maxPrice === 0 || price <= maxPrice) &&
+            (hp >= minChangePercent || dp >= minChangePercent) &&
+            strength >= minVolume;
+            
             if (!passesFilters) {
                 if (debugMode) console.log("⛔️ Filtered out:", symbol);
                 return;
