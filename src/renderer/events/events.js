@@ -14,6 +14,10 @@ let flushScheduled = false;
 // Audio
 let lastAudioTime = 0;
 const MIN_AUDIO_INTERVAL_MS = 93;
+const symbolPitchLevel = {};
+const lastHighTrigger = {}; // debounce tracker: { [symbol]: timestamp }
+const NEW_HIGH_COOLDOWN_MS = 60 * 1000; // 1 minute
+
 // ============================
 // Utility: Parse Volume String
 // ============================
@@ -65,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const semitoneSteps = [0, 2, 4, 5, 7, 9, 11]; // C major intervals: C D E F G A B
         const baseNote = 48; // C3 (~130.81 Hz)
         const scale = [];
-    
+
         for (let midi = baseNote; midi < 128; midi++) {
             const semitoneFromBase = (midi - baseNote) % 12;
             if (semitoneSteps.includes(semitoneFromBase)) {
@@ -75,7 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
         }
-    
+
         return scale;
     }
 
@@ -101,6 +105,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const rawFreq = baseFreq + uptickCount * 30; // less aggressive ramp
         const quantizedFreq = quantizeToFSharpMajor(rawFreq);
+        const noteIndex = fSharpMajorHz.indexOf(quantizedFreq); // ⬅️ Get position in scale
+        symbolPitchLevel[symbol] = noteIndex; // Save for this symbol
 
         oscillator.frequency.value = quantizedFreq;
         gainNode.gain.setValueAtTime(0.75, audioCtx.currentTime);
@@ -146,10 +152,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
 
         if (isNewHigh) {
-            alertDiv.classList.add("new-high");
-            // contentDiv.innerHTML += `<div class="progress-bar"><span style="color: gold; font-weight: bold;">✨ High of Day</span></div>`;
-            magicDustAudio.currentTime = 0;
-            magicDustAudio.play();
+            const now = Date.now();
+            const lastPlayed = lastHighTrigger[hero] ?? 0;
+        
+            if (now - lastPlayed >= NEW_HIGH_COOLDOWN_MS) {
+                lastHighTrigger[hero] = now;
+                alertDiv.classList.add("new-high");
+                magicDustAudio.currentTime = 0;
+                magicDustAudio.play();
+            } else if (debugMode) {
+                console.log(`🔕 Skipped magic sound for ${hero} — within cooldown.`);
+            }
         }
 
         if (isNewEntry) {
@@ -215,11 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.log("🧪 Alert candidate:", { symbol, price, hp, dp, strength });
             }
 
-            const passesFilters =
-            (minPrice === 0 || price >= minPrice) &&
-            (maxPrice === 0 || price <= maxPrice) &&
-            (hp >= minChangePercent || dp >= minChangePercent) &&
-            strength >= minVolume;
+            const passesFilters = (minPrice === 0 || price >= minPrice) && (maxPrice === 0 || price <= maxPrice) && (hp >= minChangePercent || dp >= minChangePercent) && strength >= minVolume;
 
             if (!passesFilters) {
                 if (debugMode) console.log("⛔️ Filtered out:", symbol);
@@ -230,10 +239,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const now = Date.now();
 
                 if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                    // Reset upticks only per symbol still (optional)
-                    symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
-                    playAudioAlert(symbol, strength);
-                    lastAudioTime = now;
+                    const prevNoteIndex = symbolPitchLevel[symbol] ?? -1;
+                    const newUptick = (symbolUpticks[symbol] || 0) + 1;
+
+                    let baseFreq = 60;
+                    if (strength > 5000) baseFreq = 320;
+                    const rawFreq = baseFreq + newUptick * 30;
+                    const quantizedFreq = quantizeToFSharpMajor(rawFreq);
+                    const newNoteIndex = fSharpMajorHz.indexOf(quantizedFreq);
+
+                    if (newNoteIndex > prevNoteIndex) {
+                        symbolUpticks[symbol] = newUptick;
+                        playAudioAlert(symbol, strength);
+                        lastAudioTime = Date.now();
+                    } else if (debugMode) {
+                        console.log(`🔕 Skipped repeat note for ${symbol} (note ${newNoteIndex})`);
+                    }
                 } else if (debugMode) {
                     console.log(`🔕 Skipped global alert (debounced, ${now - lastAudioTime}ms)`);
                 }
