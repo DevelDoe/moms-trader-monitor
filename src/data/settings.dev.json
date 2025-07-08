@@ -57,7 +57,7 @@
       "height": 1083,
       "x": 960,
       "y": 539,
-      "isOpen": false
+      "isOpen": true
     },
     "settingsWindow": {
       "width": 907,
@@ -95,7 +95,7 @@
       "height": 552,
       "x": 1253,
       "y": 1069,
-      "isOpen": false
+      "isOpen": true
     },
     "activeWindow": {
       "width": 928,
@@ -124,6 +124,27 @@
       "height": 551,
       "x": 2496,
       "y": 1069
+    },
+    "traderviewWindow_WKHS": {
+      "isOpen": false
+    },
+    "traderviewWindow_BTCS": {
+      "isOpen": false
+    },
+    "traderviewWindow_PROK": {
+      "isOpen": false
+    },
+    "traderviewWindow_WOLF": {
+      "isOpen": false
+    },
+    "traderviewWindow_ZVSA": {
+      "isOpen": false
+    },
+    "traderviewWindow_MBRX": {
+      "isOpen": false
+    },
+    "traderviewWindow_ICU": {
+      "isOpen": false
     }
   },
   "traderview": {

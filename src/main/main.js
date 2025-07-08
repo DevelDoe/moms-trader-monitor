@@ -214,7 +214,7 @@ app.on("ready", async () => {
         }
     });
 
-    scheduleDailyRestart(); // defaults to 03:50 AM
+    // scheduleDailyRestart(); // defaults to 00:00 AM
 });
 
 app.whenReady().then(() => {
@@ -250,7 +250,7 @@ process.on("exit", () => {
     // saveSettings(appSettings);
 });
 
-function scheduleDailyRestart(targetHour = 3, targetMinute = 30) {
+function scheduleDailyRestart(targetHour = 0, targetMinute = 0) {
     // Current time in Eastern Time
     const etNow = DateTime.now().setZone("America/New_York");
 
