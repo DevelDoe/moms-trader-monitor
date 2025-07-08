@@ -61,11 +61,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         return audioCtx;
     }
 
-    function buildFSharpMajorScale(minFreq = 20, maxFreq = 20000) {
-        const semitoneSteps = [0, 2, 4, 5, 7, 9, 11]; // intervals in major scale
-        const baseNote = 54; // F#3 ~ 185 Hz
+    function buildCMajorScale(minFreq = 20, maxFreq = 20000) {
+        const semitoneSteps = [0, 2, 4, 5, 7, 9, 11]; // C major intervals: C D E F G A B
+        const baseNote = 48; // C3 (~130.81 Hz)
         const scale = [];
-
+    
         for (let midi = baseNote; midi < 128; midi++) {
             const semitoneFromBase = (midi - baseNote) % 12;
             if (semitoneSteps.includes(semitoneFromBase)) {
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
         }
-
+    
         return scale;
     }
 
@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const uptickCount = symbolUpticks[symbol] || 0;
 
-        let baseFreq = 180; // was 216
+        let baseFreq = 60; // was 216
         let duration = 0.2; // was 0.3
 
         if (volumeValue > 5000) {
@@ -220,7 +220,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             (maxPrice === 0 || price <= maxPrice) &&
             (hp >= minChangePercent || dp >= minChangePercent) &&
             strength >= minVolume;
-            
+
             if (!passesFilters) {
                 if (debugMode) console.log("⛔️ Filtered out:", symbol);
                 return;
