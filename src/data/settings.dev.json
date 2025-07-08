@@ -57,7 +57,7 @@
       "height": 1083,
       "x": 960,
       "y": 539,
-      "isOpen": true
+      "isOpen": false
     },
     "settingsWindow": {
       "width": 907,
@@ -71,7 +71,7 @@
       "height": 431,
       "x": 2178,
       "y": 640,
-      "isOpen": true
+      "isOpen": false
     },
     "wizardWindow": {
       "width": 2400,
@@ -95,14 +95,14 @@
       "height": 552,
       "x": 1253,
       "y": 1069,
-      "isOpen": true
+      "isOpen": false
     },
     "activeWindow": {
       "width": 928,
       "height": 531,
       "x": 1251,
       "y": 539,
-      "isOpen": true
+      "isOpen": false
     },
     "heroesWindow": {
       "width": 531,
@@ -112,18 +112,25 @@
       "isOpen": true
     },
     "scrollXpWindow": {
-      "isOpen": true,
+      "isOpen": false,
       "width": 319,
       "height": 549,
       "x": 2177,
       "y": 1071
     },
     "scrollStatsWindow": {
-      "isOpen": true,
+      "isOpen": false,
       "width": 384,
       "height": 551,
       "x": 2496,
       "y": 1069
+    },
+    "traderviewWindow_ITP": {
+      "width": 743,
+      "height": 506,
+      "x": -7,
+      "y": 0,
+      "isOpen": false
     }
   },
   "traderview": {

@@ -247,7 +247,7 @@ class Store extends EventEmitter {
         try {
             const symbol = alert.hero;
             const price = alert.price;
-            const volume = alert.strength ?? 0;
+            const volume = alert.one_min_volume ?? 0;
 
             if (!symbol || price === undefined || volume === undefined) {
                 log.warn(`[addEvent] Missing required fields for symbol ${symbol || "unknown"}.`);
@@ -316,7 +316,7 @@ class Store extends EventEmitter {
         ticker.totalXpGained = (ticker.totalXpGained || 0) + xpDelta;
     
         ticker.buffs = ticker.buffs || {};
-        ticker.buffs.volume = calculateVolumeImpact(alert.strength, alert.price, buffs);
+        ticker.buffs.volume = calculateVolumeImpact(alert.one_min_volume, alert.price, buffs);
     
         if (alert.dp > 0 && alert.hp > 0) {
             const bounceBuff = this.getBuffFromJson("bounceBack");
