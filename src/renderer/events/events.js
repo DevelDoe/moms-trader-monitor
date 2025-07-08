@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     let audioCtx = null;
-    const fSharpMajorHz = buildFSharpMajorScale();
+    const fSharpMajorHz = buildCMajorScale();
 
     function getAudioCtx() {
         if (!audioCtx || audioCtx.state === "closed") {
