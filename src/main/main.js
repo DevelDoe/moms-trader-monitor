@@ -144,11 +144,13 @@ async function fetchSymbolsWithRetry(attempts = 5, delay = 2000) {
     }
 }
 
-
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
 
     windows.splash = createSplashWindow(isDevelopment);
+
+    // 🕐 Delay before symbol fetch to allow window to fully render
+    await new Promise((r) => setTimeout(r, 500));
     // createWizardWindow;
 
     let symbolCount = 0;
@@ -157,15 +159,13 @@ app.on("ready", async () => {
         symbolCount = await fetchSymbolsWithRetry();
     } catch (error) {
         log.error("❌ Failed to fetch symbols after 5 attempts:", error);
-        // Optionally show failure to splash window
         if (windows.splash?.webContents) {
-            windows.splash.webContents.send("symbols-fetched", 0); // 0 → fail marker
+            windows.splash.webContents.send("symbols-fetched", 0);
         }
-        setTimeout(() => app.quit(), 3000); // graceful exit
+        setTimeout(() => app.quit(), 3000);
         return;
     }
 
-    // Send symbol count to splash window
     if (windows.splash?.webContents) {
         windows.splash.webContents.send("symbols-fetched", symbolCount);
     }
@@ -208,7 +208,6 @@ app.on("ready", async () => {
                 return;
             }
         }
-
 
         windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
 
