@@ -1,39 +1,26 @@
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
     console.log("DOM fully loaded and parsed");
 
     const spinner = document.getElementById("loading-spinner");
     const loginForm = document.getElementById("login-container");
     const statusText = document.getElementById("symbols-status");
 
-    // 🔒 Start with spinner visible, login form visible, show loading message
+    // 🔒 Start with spinner visible, login form hidden
     spinner.style.display = "block";
-    loginForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
     statusText.textContent = "Fetching symbols...";
 
-    // 🌀 Symbol fetch with retry logic
-    async function fetchSymbolsWithRetry(attempts = 3, delay = 1500) {
-        for (let i = 0; i < attempts; i++) {
-            try {
-                const count = await window.electronAPI.fetchSymbols(); // assuming you expose it
-                return count;
-            } catch (err) {
-                console.warn(`Fetch attempt ${i + 1} failed`);
-                if (i < attempts - 1) await new Promise(r => setTimeout(r, delay));
-                else throw err;
-            }
-        }
-    }
+    // ✅ React to symbol fetch result from main process
+    window.electronAPI.onSymbolsFetched((_event, symbolCount) => {
+        spinner.style.display = "none";
+        loginForm.classList.remove("hidden");
 
-    try {
-        const symbolCount = await fetchSymbolsWithRetry();
-        spinner.style.display = "none";
-        statusText.textContent = `Fetched ${symbolCount} symbols.`;
-        console.log(`✅ Symbols fetched: ${symbolCount}`);
-    } catch (err) {
-        spinner.style.display = "none";
-        statusText.textContent = "⚠️ Failed to fetch symbols.";
-        console.error("❌ Failed to fetch symbols:", err);
-    }
+        if (symbolCount > 0) {
+            statusText.textContent = `✅ Fetched ${symbolCount} symbols.`;
+        } else {
+            statusText.textContent = "⚠️ Failed to fetch symbols.";
+        }
+    });
 
     // 🧾 Handle login
     document.getElementById("loginForm").addEventListener("submit", async function (event) {
