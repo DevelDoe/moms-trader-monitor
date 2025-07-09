@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
         userId: localStorage.getItem("userId"),
     }),
     sendAuthInfo: (info) => ipcRenderer.send("set-auth-info", info),
+    login: (email, password) => ipcRenderer.invoke("login", { email, password }),
 });
 
 contextBridge.exposeInMainWorld("hlpsFunctions", {

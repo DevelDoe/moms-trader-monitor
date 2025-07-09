@@ -25,41 +25,42 @@ document.addEventListener("DOMContentLoaded", () => {
     // 🧾 Handle login
     document.getElementById("loginForm").addEventListener("submit", async function (event) {
         event.preventDefault();
-
+    
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
         const loginButton = document.getElementById("login-button");
         const spinner = document.getElementById("login-spinner");
         const errorDisplay = document.getElementById("error");
-
+    
         loginButton.disabled = true;
         spinner.classList.remove("hidden");
         errorDisplay.textContent = "";
-
+    
         try {
-            const response = await fetch("https://scribe.arcanemonitor.com/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "Invalid credentials");
-
-            window.electronAPI.sendAuthInfo({
-                token: data.token,
-                role: data.role,
-                permissions: data.permissions || [],
-                userId: data.userId,
-            });
-
-            window.electronAPI.closeSplash();
-            window.location.href = "main.html";
+            const result = await window.electronAPI.login(email, password);
+    
+            if (result.success) {
+                const data = result.user;
+    
+                window.electronAPI.sendAuthInfo({
+                    token: data.token,
+                    role: data.role,
+                    permissions: data.permissions || [],
+                    userId: data.userId,
+                });
+    
+                window.electronAPI.closeSplash();
+                window.location.href = "main.html";
+            } else {
+                errorDisplay.textContent = result.error;
+            }
         } catch (error) {
-            errorDisplay.textContent = error.message;
+            errorDisplay.textContent = "Unexpected error occurred.";
+            console.error("Login error:", error);
         } finally {
             loginButton.disabled = false;
             spinner.classList.add("hidden");
         }
     });
+    
 });

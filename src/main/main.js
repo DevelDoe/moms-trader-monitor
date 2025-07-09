@@ -481,6 +481,27 @@ ipcMain.on("set-auth-info", (event, info) => {
     log.log(`[auth] ✅ Received auth info: ${info?.userId}`);
 });
 
+ipcMain.handle("login", async (_event, { email, password }) => {
+    const log = require("../hlps/logger")(__filename);
+
+    try {
+        const response = await fetch("https://scribe.arcanemonitor.com/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || "Invalid credentials");
+
+        return { success: true, user: data };
+    } catch (err) {
+        log.error("❌ Login failed:", err.message);
+        return { success: false, error: err.message };
+    }
+});
+
 // Splash
 ipcMain.on("close-splash", () => {
     if (windows.splash) {
