@@ -1,29 +1,41 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     console.log("DOM fully loaded and parsed");
 
-    // Initially, symbols are not loaded, so clicking is disabled
-    let symbolsLoaded = false;
-
-    // Show the loading spinner
     const spinner = document.getElementById("loading-spinner");
-    spinner.style.display = "block";
-    console.log("Spinner displayed");
-
-    // Hide the login form
     const loginForm = document.getElementById("login-container");
-    loginForm.classList.add("hidden");
-    console.log("Login form hidden");
+    const statusText = document.getElementById("symbols-status");
 
-    // Listen for symbols fetched event
-    window.electronAPI.onSymbolsFetched((event, symbolCount) => {
-        symbolsLoaded = true;
-        spinner.style.display = "none"; // Hide the spinner
-        loginForm.classList.remove("hidden"); // Show the login form
-        console.log(`Fetched ${symbolCount} symbols! Click anywhere to continue.`);
-        console.log("Symbols fetched, spinner hidden, login form shown");
-    });
+    // 🔒 Start with spinner visible, login form visible, show loading message
+    spinner.style.display = "block";
+    loginForm.classList.remove("hidden");
+    statusText.textContent = "Fetching symbols...";
 
-    // Login form
+    // 🌀 Symbol fetch with retry logic
+    async function fetchSymbolsWithRetry(attempts = 3, delay = 1500) {
+        for (let i = 0; i < attempts; i++) {
+            try {
+                const count = await window.electronAPI.fetchSymbols(); // assuming you expose it
+                return count;
+            } catch (err) {
+                console.warn(`Fetch attempt ${i + 1} failed`);
+                if (i < attempts - 1) await new Promise(r => setTimeout(r, delay));
+                else throw err;
+            }
+        }
+    }
+
+    try {
+        const symbolCount = await fetchSymbolsWithRetry();
+        spinner.style.display = "none";
+        statusText.textContent = `Fetched ${symbolCount} symbols.`;
+        console.log(`✅ Symbols fetched: ${symbolCount}`);
+    } catch (err) {
+        spinner.style.display = "none";
+        statusText.textContent = "⚠️ Failed to fetch symbols.";
+        console.error("❌ Failed to fetch symbols:", err);
+    }
+
+    // 🧾 Handle login
     document.getElementById("loginForm").addEventListener("submit", async function (event) {
         event.preventDefault();
 
@@ -33,7 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const spinner = document.getElementById("login-spinner");
         const errorDisplay = document.getElementById("error");
 
-        // Disable button & show spinner
         loginButton.disabled = true;
         spinner.classList.remove("hidden");
         errorDisplay.textContent = "";
@@ -41,17 +52,12 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch("https://scribe.arcanemonitor.com/auth/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
             });
 
             const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Invalid credentials");
-            }
+            if (!response.ok) throw new Error(data.error || "Invalid credentials");
 
             window.electronAPI.sendAuthInfo({
                 token: data.token,
@@ -65,7 +71,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             errorDisplay.textContent = error.message;
         } finally {
-            // Re-enable button and hide spinner
             loginButton.disabled = false;
             spinner.classList.add("hidden");
         }
