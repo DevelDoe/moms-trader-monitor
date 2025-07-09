@@ -124,6 +124,13 @@
       "height": 551,
       "x": 2496,
       "y": 1069
+    },
+    "traderviewWindow_CLDI": {
+      "width": 746,
+      "height": 507,
+      "x": 722,
+      "y": 499,
+      "isOpen": true
     }
   },
   "traderview": {

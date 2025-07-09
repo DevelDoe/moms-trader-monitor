@@ -1,11 +1,11 @@
 // frontlineState.js
 // ======================= CONFIGURATION =======================
 const DECAY_INTERVAL_MS = 1000;
-const XP_DECAY_PER_TICK = 0.05; // Decay per tick
-const SCORE_NORMALIZATION = 3; // Higher = slower decay influence
+const XP_DECAY_PER_TICK = 0.2; // Decay per tick
+const SCORE_NORMALIZATION = 2; // Higher = slower decay influence
 const BASE_MAX_SCORE = 100;
 const BASE_MAX_HP = 10;
-const SCALE_DOWN_THRESHOLD = 0.2; // 20%
+const SCALE_DOWN_THRESHOLD = 10; // 20%
 const SCALE_DOWN_FACTOR = 0.9; // Reduce by 10%
 const debugLimitSamples = 1500;
 

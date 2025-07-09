@@ -161,13 +161,11 @@
             let heroesDecayed = 0;
             const activeHeroes = [];
     
-            Object.values(heroesState).forEach((hero) => {
+            Object.entries(heroesState).forEach(([symbol, hero]) => {
                 if (hero.score > 0) {
                     const originalScore = hero.score;
                     const scale = 1 + hero.score / SCORE_NORMALIZATION;
-                    const cling = 0.2;
-                    const taper = Math.max(cling, Math.min(1, hero.score / 10)); // Tapers when score < 10
-                    const decayAmount = XP_DECAY_PER_TICK * scale * taper;
+                    const decayAmount = XP_DECAY_PER_TICK * scale;
                     const newScore = Math.max(0, hero.score - decayAmount);
     
                     if (hero.score !== newScore) {
@@ -180,6 +178,10 @@
                         heroesDecayed++;
                         activeHeroes.push(hero);
                     }
+                } else if (hero.score === 0) {
+                    if (window.isDev) console.log(`🧹 Removing ${symbol} from state (fully decayed)`);
+                    delete heroesState[symbol];
+                    changed = true;
                 }
             });
     

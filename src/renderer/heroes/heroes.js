@@ -3,10 +3,10 @@
 // ======================= CONFIGURATION =======================
 const DECAY_INTERVAL_MS = 6000;
 const XP_DECAY_PER_TICK = 0.2;
-const SCORE_NORMALIZATION = 5;
+const SCORE_NORMALIZATION = 1;
 const BASE_MAX_HP = 300;
 const SCALE_DOWN_THRESHOLD = 0.2;
-const SCALE_DOWN_FACTOR = 0.9;
+const SCALE_DOWN_FACTOR = 1;
 const debugLimitSamples = 1500;
 const ACTIVE_TICKER_UPDATE_INTERVAL = 3 * 60 * 1000; // 3 minutes
 const MIN_UPDATE_INTERVAL = 5000;

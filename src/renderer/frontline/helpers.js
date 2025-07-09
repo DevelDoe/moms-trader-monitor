@@ -50,15 +50,6 @@
                 logStep("📢", "Crowd Participation Score", volScore);
             }
 
-            if (event.dp > 0) {
-                let dpScore = event.dp * 10;
-
-                const dpPenalty = computeVolumeScore(hero, event); // use same logic as crowd strength
-                dpScore += dpPenalty;
-
-                baseScore -= dpScore;
-                logStep("💥", "Base DP Deducted", dpScore);
-            }
         } catch (err) {
             console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
             baseScore = 0;
@@ -108,14 +99,13 @@
             let heroesDecayed = 0;
             const activeHeroes = [];
     
-            Object.values(frontlineState).forEach((hero) => {
+            Object.entries(frontlineState).forEach(([symbol, hero]) => {
                 if (hero.score > 0) {
                     const originalScore = hero.score;
                     const scale = 1 + hero.score / SCORE_NORMALIZATION;
-                    const cling = 0.1;
-                    const taper = Math.max(cling, Math.min(1, hero.score / 10));
-                    const decayAmount = XP_DECAY_PER_TICK * scale * taper;
-                    const newScore = Math.max(0, hero.score - decayAmount);
+                    const decayAmount = XP_DECAY_PER_TICK * scale;
+                    let newScore = Math.max(0, hero.score - decayAmount);
+
     
                     if (hero.score !== newScore) {
                         hero.score = newScore;
@@ -127,6 +117,10 @@
                         heroesDecayed++;
                         activeHeroes.push(hero);
                     }
+                } else if (hero.score === 0) {
+                    if (window.isDev) console.log(`🧹 Removing ${symbol} from state (fully decayed)`);
+                    delete frontlineState[symbol];
+                    changed = true;
                 }
             });
     
