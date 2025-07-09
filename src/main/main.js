@@ -510,6 +510,26 @@ ipcMain.on("close-splash", () => {
     }
 });
 
+ipcMain.once("splash-ready", async () => {
+    log.log("✅ Splash renderer is ready, starting symbol fetch...");
+
+    let symbolCount = 0;
+    try {
+        symbolCount = await fetchSymbolsWithRetry();
+    } catch (error) {
+        log.error("❌ Failed to fetch symbols after 5 attempts:", error);
+        if (windows.splash?.webContents) {
+            windows.splash.webContents.send("symbols-fetched", 0);
+        }
+        setTimeout(() => app.quit(), 3000);
+        return;
+    }
+
+    if (windows.splash?.webContents) {
+        windows.splash.webContents.send("symbols-fetched", symbolCount);
+    }
+});
+
 // Shared data
 ipcMain.handle("buffs:get", () => {
     return buffManager.getBuffs();

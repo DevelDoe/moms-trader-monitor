@@ -36,6 +36,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     login: (email, password) => ipcRenderer.invoke("login", { email, password }),
 });
 
+contextBridge.exposeInMainWorld("splashAPI", {
+    notifyReady: () => ipcRenderer.send("splash-ready"),
+});
+
 contextBridge.exposeInMainWorld("hlpsFunctions", {
     calculateImpact: (vol, price, buffs) => calculateVolumeImpact(vol, price, buffs),
 });

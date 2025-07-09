@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     console.log("DOM fully loaded and parsed");
+    window.splashAPI?.notifyReady();
 
     const spinner = document.getElementById("loading-spinner");
     const loginForm = document.getElementById("login-container");
