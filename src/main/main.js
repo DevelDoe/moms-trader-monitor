@@ -137,32 +137,13 @@ async function fetchSymbolsOnce() {
     }
 }
 
-
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
 
+    // ✅ Create splash window only
     windows.splash = createSplashWindow(isDevelopment);
 
-    // 🕐 Delay before symbol fetch to allow window to fully render
-    await new Promise((r) => setTimeout(r, 500));
-    // createWizardWindow;
-
-    let symbolCount = 0;
-
-    try {
-        symbolCount = await fetchSymbolsOnce();
-    } catch (error) {
-        log.error("❌ Could not fetch symbols:", error);
-        if (windows.splash?.webContents) {
-            windows.splash.webContents.send("symbols-fetched", 0);
-        }
-        setTimeout(() => app.quit(), 3000);
-        return;
-    }
-
-    if (windows.splash?.webContents) {
-        windows.splash.webContents.send("symbols-fetched", symbolCount);
-    }
+    // ✅ Do NOT fetch symbols here — handled in ipcMain.once("splash-ready")
 
     // ✅ Set scannerVolume to 0 before creating windows
     try {
@@ -178,7 +159,7 @@ app.on("ready", async () => {
         log.error("Failed to initialize scanner volume:", error);
     }
 
-    // Check for scheduled restart and close splash immediately
+    // ✅ Check for scheduled restart and close splash immediately
     if (process.argv.includes("--scheduled-restart") && windows.splash) {
         log.log("Scheduled restart detected, closing splash screen...");
         windows.splash.close();
