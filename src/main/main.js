@@ -126,23 +126,17 @@ function launchMtpCollector() {
 
 let authInfo = null;
 
-async function fetchSymbolsWithRetry(attempts = 5, delay = 2000) {
-    for (let i = 1; i <= attempts; i++) {
-        try {
-            const count = await fetchSymbolsFromServer();
-            log.log(`✅ Fetched ${count} symbols on attempt ${i}.`);
-            return count;
-        } catch (err) {
-            log.warn(`❌ Attempt ${i} failed to fetch symbols:`, err);
-            if (i < attempts) {
-                log.log(`🔁 Retrying in ${delay / 1000}s...`);
-                await new Promise((r) => setTimeout(r, delay));
-            } else {
-                throw err;
-            }
-        }
+async function fetchSymbolsOnce() {
+    try {
+        const count = await fetchSymbolsFromServer();
+        log.log(`✅ Fetched ${count} symbols.`);
+        return count;
+    } catch (err) {
+        log.error("❌ Failed to fetch symbols:", err);
+        throw err;
     }
 }
+
 
 app.on("ready", async () => {
     log.log("App ready, bootstrapping...");
@@ -156,9 +150,9 @@ app.on("ready", async () => {
     let symbolCount = 0;
 
     try {
-        symbolCount = await fetchSymbolsWithRetry();
+        symbolCount = await fetchSymbolsOnce();
     } catch (error) {
-        log.error("❌ Failed to fetch symbols after 5 attempts:", error);
+        log.error("❌ Could not fetch symbols:", error);
         if (windows.splash?.webContents) {
             windows.splash.webContents.send("symbols-fetched", 0);
         }
@@ -515,7 +509,7 @@ ipcMain.once("splash-ready", async () => {
 
     let symbolCount = 0;
     try {
-        symbolCount = await fetchSymbolsWithRetry();
+        symbolCount = await fetchSymbolsOnce();
     } catch (error) {
         log.error("❌ Failed to fetch symbols after 5 attempts:", error);
         if (windows.splash?.webContents) {
