@@ -8,6 +8,8 @@ process.on("uncaughtException", (err) => {
     log.error("❌ Uncaught Exception:", err.message);
     log.error(err.stack);
 
+    if (isUpdating) return; // 🚫 Prevent relaunch if an update is installing
+
     log.warn("Attempting graceful app restart in 5 seconds...");
     setTimeout(() => {
         app.relaunch({ args: process.argv.slice(1).concat(["--scheduled-restart"]) });
@@ -17,6 +19,8 @@ process.on("uncaughtException", (err) => {
 
 process.on("unhandledRejection", (reason) => {
     log.error("❌ Unhandled Promise Rejection:", reason);
+
+    if (isUpdating) return;
 
     log.warn("Attempting graceful app restart in 5 seconds...");
     setTimeout(() => {
@@ -28,6 +32,7 @@ process.on("unhandledRejection", (reason) => {
 const isDevelopment = process.env.NODE_ENV === "development";
 const DEBUG = process.env.DEBUG === "true";
 const forceUpdate = process.env.forceUpdate === "true";
+let isUpdating = false;
 
 ////////////////////////////////////////////////////////////////////////////////////
 // PACKAGES
@@ -350,6 +355,8 @@ if (!isDevelopment || forceUpdate) {
     });
 
     autoUpdater.on("update-downloaded", () => {
+        isUpdating = true;
+
         if (appSettings.hasDonated) {
             // 🛠 Donors can choose when to install
             dialog
