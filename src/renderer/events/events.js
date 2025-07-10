@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                   title="Click to copy and set active ticker">${hero}</span>
             <span class="price">$${price.toFixed(2)}</span>
             <span class="${isUp ? "change-up" : "change-down"}">${percent.toFixed(2)}%</span>
-            <span class="size">${(volume / 1000).toFixed(1)}K</span>
+            <span class="size">${abbreviatedValues(volume)}</span>
         `;
         contentDiv.appendChild(valuesDiv);
 
