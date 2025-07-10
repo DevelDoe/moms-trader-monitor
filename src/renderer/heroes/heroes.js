@@ -179,8 +179,12 @@ function updateHeroFromEvent(event) {
     });
     if (hero.history.length > 10) hero.history.shift();
 
-    const scoreDelta = window.helpers.calculateScore(hero, event);
-    hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
+    if (event.one_min_volume > 30000) {
+        const scoreDelta = window.helpers.calculateScore(hero, event);
+        hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
+    } else {
+        console.log(`⚠️ Skipping event due to low volume (strength: ${event.one_min_volume})`);
+    }
 
 
     let needsFullRender = false;

@@ -22,12 +22,12 @@
     }
 
     function calculateScore(hero, event) {
-        if (event.strength < 1000) {
-            if (window.isDev && debugSamples < debugLimitSamples) {
-                console.log(`⚠️ Skipping event due to low volume (strength: ${event.strength})`);
-            }
-            return 0; // Skip this event entirely
-        }
+        // if (hero.strength < 30000) {
+        //     if (window.isDev && debugSamples < debugLimitSamples) {
+        //         console.log(`⚠️ Skipping event due to low volume (strength: ${hero.strength})`);
+        //     }
+        //     return 0; // Skip this event entirely
+        // }
     
         debugSamples++;
         const currentScore = Number(hero.score) || 0;
