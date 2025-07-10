@@ -194,9 +194,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         alertDiv.classList.remove("low-1", "low-2", "low-3", "low-4");
 
         let brightnessClass = "";
-        if (volume >= 7500) brightnessClass = "low-1";
-        else if (volume >= 5000) brightnessClass = "low-2";
-        else if (volume >= 2500) brightnessClass = "low-3";
+        if (volume >= 60_000) brightnessClass = "low-1";
+        else if (volume >= 30_00) brightnessClass = "low-2";
+        else if (volume >= 10_000) brightnessClass = "low-3";
         else brightnessClass = "low-4";
 
         if (hp > 0 || dp > 0) {
