@@ -17,12 +17,12 @@
     }
 
     function calculateScore(hero, event) {
-        if (event.one_min_volume < 1000) {
-            if (window.isDev && debugSamples < debugLimitSamples) {
-                console.log(`⚠️ Skipping event ${hero.hero} to low volume (strength: ${event.one_min_volume})`);
-            }
-            return 0;
-        }
+        // if (event.one_min_volume < 1000) {
+        //     if (window.isDev && debugSamples < debugLimitSamples) {
+        //         console.log(`⚠️ Skipping event ${hero.hero} to low volume (strength: ${event.one_min_volume})`);
+        //     }
+        //     return 0;
+        // }
 
         debugSamples++;
         const currentScore = Number(hero.score) || 0;
