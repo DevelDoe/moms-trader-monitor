@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let baseFreq = 60;
         let duration = 0.2;
 
-        if (volumeValue > 1_000_000) {
+        if (volumeValue > 30_000) {
             baseFreq = 180;
             duration = 0.5;
         }
@@ -264,7 +264,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return estHours === 8 && estMinutes >= 0 && estMinutes < 12;
             })();
 
-            if (hp > 0 && strength >= 10000) {
+            if (hp > 0 && strength >= 10_000) {
                 if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
                     const newUptick = (symbolUpticks[symbol] || 0) + 1;
 
