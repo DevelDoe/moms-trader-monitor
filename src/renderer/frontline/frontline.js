@@ -188,7 +188,7 @@ function updateFrontlineStateFromEvent(event) {
     if (event.dp > 0) hero.hp = Math.max(hero.hp - event.dp, 0); // Essence fades, but never extinguishes
 
     // Update score
-    if (event.one_min_volume > 2000) {
+    if (event.one_min_volume > 10000) {
         const scoreDelta = window.helpers.calculateScore(hero, event);
         hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
     } else {
