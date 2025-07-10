@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let baseFreq = 60;
         let duration = 0.2;
 
-        if (volumeValue > 500000) {
+        if (volumeValue > 1_000_000) {
             baseFreq = 180;
             duration = 0.5;
         }
