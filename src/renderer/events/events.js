@@ -31,6 +31,14 @@ function parseVolumeValue(str) {
     return value;
 }
 
+// Utility function to check if current time is quiet time (8:00-8:12 EST)
+function isQuietTimeEST() {
+    const estNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const estHours = estNow.getHours();
+    const estMinutes = estNow.getMinutes();
+    return estHours === 8 && estMinutes >= 0 && estMinutes < 12;
+}
+
 // ============================
 // App Initialization
 // ============================
@@ -90,40 +98,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function playAudioAlert(symbol, volumeValue = 0) {
         const audioCtx = getAudioCtx();
-    
+
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         const filter = audioCtx.createBiquadFilter();
-    
+
         // 🎚️ Configure the filter
-        filter.type = "lowpass";         // You can also try "bandpass" or "peaking"
-        filter.frequency.value = 1300;   // Center frequency
-        filter.Q.value = 1;              // Quality factor (sharpness of the curve)
-    
+        filter.type = "lowpass"; // You can also try "bandpass" or "peaking"
+        filter.frequency.value = 1300; // Center frequency
+        filter.Q.value = 1; // Quality factor (sharpness of the curve)
+
         // Connect chain: Oscillator → Filter → Gain → Output
         oscillator.connect(filter).connect(gainNode).connect(audioCtx.destination);
-    
+
         const uptickCount = symbolUpticks[symbol] || 0;
-    
+
         let baseFreq = 60;
         let duration = 0.2;
-    
+
         if (volumeValue > 5000) {
             baseFreq = 180;
             duration = 0.5;
         }
-    
+
         const rawFreq = baseFreq + uptickCount * 30;
         const quantizedFreq = quantizeToFSharpMajor(rawFreq);
-    
+
         oscillator.frequency.value = quantizedFreq;
         gainNode.gain.setValueAtTime(0.75, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-    
+
         oscillator.start();
         oscillator.stop(audioCtx.currentTime + duration);
     }
-    
 
     function createAlertElement(alertData) {
         const { hero, price, strength = 0, type = "", hp = 0, dp = 0, fiveMinVolume = 0 } = alertData;
@@ -157,6 +164,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
 
+        // In createAlertElement, for high-of-day sound:
         if (isNewHigh) {
             const now = Date.now();
             const lastPlayed = lastHighTrigger[hero] ?? 0;
@@ -164,10 +172,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (now - lastPlayed >= NEW_HIGH_COOLDOWN_MS) {
                 lastHighTrigger[hero] = now;
                 alertDiv.classList.add("new-high");
-                // Adjust volume based on strength
-                magicDustAudio.volume = Math.min(1.0, Math.max(0.1, volume / 10000));
-                magicDustAudio.currentTime = 0;
-                magicDustAudio.play();
+                if (!isQuietTimeEST()) {
+                    magicDustAudio.volume = Math.min(1.0, Math.max(0.1, volume / 10000));
+                    magicDustAudio.currentTime = 0;
+                    magicDustAudio.play();
+                } else if (debugMode) {
+                    console.log(`🔕 Magic dust audio suppressed during quiet time (8:00-8:12 EST)`);
+                }
             } else if (debugMode) {
                 console.log(`🔕 Skipped magic sound for ${hero} — within cooldown.`);
             }
@@ -242,10 +253,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (debugMode) console.log("⛔️ Filtered out:", symbol);
                 return;
             }
+
             const now = Date.now(); // 🧼 keep only this one at the top of the block
+
+            // Check quiet time fresh on every alert
+            const quietTime = (() => {
+                const estNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+                const estHours = estNow.getHours();
+                const estMinutes = estNow.getMinutes();
+                return estHours === 8 && estMinutes >= 0 && estMinutes < 12;
+            })();
+
             if (hp > 0 && strength >= 1000) {
                 if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                    
                     const newUptick = (symbolUpticks[symbol] || 0) + 1;
                     let baseFreq = 60;
                     if (strength > 5000) baseFreq = 320;
@@ -257,8 +277,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (now - lastPlayed >= AUDIO_DEBOUNCE_MS) {
                         symbolDebounceTime[symbol] = now;
                         symbolUpticks[symbol] = newUptick;
-                        playAudioAlert(symbol, strength);
-                        lastAudioTime = now;
+                        // Only play audio if NOT quiet time
+                        if (!quietTime) {
+                            playAudioAlert(symbol, strength);
+                            lastAudioTime = now;
+                        } else if (debugMode) {
+                            console.log(`🔕 Audio suppressed during quiet time (8:00-8:12 EST)`);
+                        }
                     } else if (debugMode) {
                         console.log(`🔕 Skipped ${symbol} (debounced: ${now - lastPlayed}ms)`);
                     }
@@ -280,4 +305,4 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 });
-// 
+//
