@@ -39,6 +39,12 @@ function isQuietTimeEST() {
     return estHours === 8 && estMinutes >= 0 && estMinutes < 12;
 }
 
+function abbreviatedValues(num) {
+    if (num < 1000) return num.toString();          // No abbreviation under 1K
+    if (num < 1_000_000) return (num / 1_000).toFixed(1) + "K";
+    return (num / 1_000_000).toFixed(1) + "M";
+}
+
 // ============================
 // App Initialization
 // ============================
@@ -195,7 +201,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         let brightnessClass = "";
         if (volume >= 60_000) brightnessClass = "low-1";
-        else if (volume >= 30_00) brightnessClass = "low-2";
+        else if (volume >= 30_000) brightnessClass = "low-2";
         else if (volume >= 10_000) brightnessClass = "low-3";
         else brightnessClass = "low-4";
 
