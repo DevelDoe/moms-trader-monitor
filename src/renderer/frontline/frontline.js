@@ -67,13 +67,18 @@ async function initializeBuffs() {
 async function initializeFrontline() {
     container = document.getElementById("frontline");
 
-    const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.frontlineAPI.getSymbols(), window.frontlineStateManager.loadState()]);
+    const [settings, storeSymbols, restoredState] = await Promise.all([
+        window.settingsAPI.get(), 
+        window.frontlineAPI.getSymbols(), 
+        // window.frontlineStateManager.loadState()
+    ]);
 
     window.settings = settings;
 
-    if (restoredState) {
-        Object.assign(frontlineState, restoredState);
-    }
+    // const restoredState = null; // skip restore for now
+    // if (restoredState) {
+    //     Object.assign(frontlineState, restoredState);
+    // }
 
     storeSymbols.forEach((symbolData) => {
         if (!frontlineState[symbolData.symbol]) {
@@ -260,7 +265,7 @@ function updateFrontlineStateFromEvent(event) {
 
     hero.lastUpdate = Date.now();
 
-    window.frontlineStateManager.saveState();
+    // window.frontlineStateManager.saveState();
 }
 
 function renderAll() {

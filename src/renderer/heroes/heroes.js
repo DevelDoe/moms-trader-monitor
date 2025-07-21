@@ -69,7 +69,7 @@ async function initializeHeroes() {
     const [settings, storeSymbols, restoredState] = await Promise.all([
         window.settingsAPI.get(),
         window.heroesAPI.getSymbols(),
-        window.heroesStateManager.loadState(),
+        // window.heroesStateManager.loadState(),
     ]);
 
     window.settings = settings;
@@ -245,7 +245,7 @@ function updateHeroFromEvent(event) {
     }
 
     hero.lastUpdate = Date.now();
-    window.heroesStateManager.saveState();
+    // window.heroesStateManager.saveState();
 }
 
 function renderAll() {
