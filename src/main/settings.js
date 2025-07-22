@@ -7,7 +7,10 @@ const log = require("../hlps/logger")(__filename);
 
 const CURRENT_VERSION = app.getVersion();
 const VERSION_LOCK_FILE = path.join(app.getPath("userData"), "version.lock");
+
 let cacheCleared = false;
+
+
 
 // Use system settings file for production, separate file for development
 const isDevelopment = process.env.NODE_ENV === "development";

@@ -41,6 +41,29 @@ log.log("Init app");
 const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
+
+// 🔒 Encrypted password storage
+const PASSWORD_FILE = path.join(app.getPath("userData"), "password.json");
+
+// Simple static key + IV for fast local crypto (not secure for high-sensitivity apps)
+const algorithm = "aes-256-cbc";
+const secretKey = crypto.createHash("sha256").update("arcane-magic-key").digest();
+const iv = Buffer.alloc(16, 0);
+
+function encrypt(text) {
+    const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    return encrypted;
+}
+
+function decrypt(encryptedText) {
+    const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
+    let decrypted = decipher.update(encryptedText, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+}
 
 // 🧠 Set unique userData path for dev builds to avoid cache conflict
 if (process.env.NODE_ENV === "development") {
@@ -207,7 +230,20 @@ app.on("ready", async () => {
 
         const settings = loadSettings(); // load once, reuse
 
-        Object.values(windows).forEach((win) => {
+        Object.values(windows).forEach((win) => {function encrypt(text) {
+            const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+            let encrypted = cipher.update(text, "utf8", "hex");
+            encrypted += cipher.final("hex");
+            return encrypted;
+        }
+        
+        function decrypt(encryptedText) {
+            const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
+            let decrypted = decipher.update(encryptedText, "hex", "utf8");
+            decrypted += decipher.final("utf8");
+            return decrypted;
+        }
+
             safeSend(win, "settings-updated", settings);
         });
 
@@ -217,7 +253,7 @@ app.on("ready", async () => {
         }
     });
 
-    // scheduleDailyRestart(); // defaults to 00:00 AM
+    scheduleDailyRestart(); // defaults to 00:00 AM
 });
 
 app.whenReady().then(() => {
@@ -509,6 +545,31 @@ ipcMain.once("splash-ready", async () => {
 
     if (windows.splash?.webContents) {
         windows.splash.webContents.send("symbols-fetched", symbolCount);
+    }
+});
+
+ipcMain.handle("credentials:get", () => {
+    try {
+        if (fs.existsSync(PASSWORD_FILE)) {
+            const data = JSON.parse(fs.readFileSync(PASSWORD_FILE, "utf8"));
+            return {
+                email: data.email,
+                password: decrypt(data.password),
+            };
+        }
+    } catch (err) {
+        console.error("❌ Failed to read or decrypt password.json:", err);
+    }
+    return null;
+});
+
+ipcMain.handle("credentials:save", (_event, { email, password }) => {
+    try {
+        const encrypted = encrypt(password);
+        const data = { email, password: encrypted };
+        fs.writeFileSync(PASSWORD_FILE, JSON.stringify(data), "utf8");
+    } catch (err) {
+        console.error("❌ Failed to write encrypted password.json:", err);
     }
 });
 

@@ -19,7 +19,7 @@ function createSplashWindow(isDevelopment) {
         useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
-            nodeIntegration: false,
+            nodeIntegration: true,
             contextIsolation: true,
         },
     });

@@ -1,6 +1,12 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const isDev = process.env.NODE_ENV === "development";
 
+
+contextBridge.exposeInMainWorld("autoLogin", {
+    getCredentials: () => ipcRenderer.invoke("credentials:get"),
+    saveCredentials: (data) => ipcRenderer.invoke("credentials:save", data),
+});
+
 contextBridge.exposeInMainWorld("log", {
     debug: isDev ? (...args) => console.debug("[DEBUG]", ...args) : () => {},
     info: isDev ? (...args) => console.info("[INFO]", ...args) : () => {},

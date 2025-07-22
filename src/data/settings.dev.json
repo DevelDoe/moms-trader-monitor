@@ -53,7 +53,7 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 268,
+      "width": 267,
       "height": 900,
       "x": -250,
       "y": -900,
@@ -91,24 +91,24 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 450,
-      "height": 446,
-      "x": 18,
-      "y": -444,
+      "width": 451,
+      "height": 445,
+      "x": 17,
+      "y": -443,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 928,
-      "height": 531,
-      "x": 1251,
-      "y": 539,
-      "isOpen": false
+      "width": 965,
+      "height": 457,
+      "x": 16,
+      "y": -900,
+      "isOpen": true
     },
     "heroesWindow": {
-      "width": 511,
-      "height": 447,
+      "width": 513,
+      "height": 446,
       "x": 468,
-      "y": -444,
+      "y": -443,
       "isOpen": true
     },
     "scrollXpWindow": {
