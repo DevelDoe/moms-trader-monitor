@@ -3,7 +3,7 @@
 const DECAY_INTERVAL_MS = 1000;
 const XP_DECAY_PER_TICK = 0.2; // Decay per tick
 const SCORE_NORMALIZATION = 2; // Higher = slower decay influence
-const BASE_MAX_SCORE = 10_000;
+const BASE_MAX_SCORE = 20_000;
 const BASE_MAX_HP = 10;
 const SCALE_DOWN_THRESHOLD = 1; // 20%
 const SCALE_DOWN_FACTOR = 0.9; // Reduce by 10%

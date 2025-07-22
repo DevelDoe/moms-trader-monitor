@@ -166,9 +166,12 @@ body {
 }
 
 .alert.new-high {
-    border-left: 10px solid gold;
+    filter: grayscale(0%) brightness(1);
+    box-sizing: border-box;
+    border: 1px solid gold;
     background-color: #333d2a;
     animation: pulseNewHigh 0.5s infinite;
+    width: 100vw;
 }
 
 @keyframes pulseNewHigh {
@@ -181,9 +184,12 @@ body {
 }
 
 .alert.new-entry {
+    box-sizing: border-box;
+    filter: grayscale(0%) brightness(1);
     background-color: #324865;
-    border-left: 4px solid #55aaff;
+    border: 1px solid #55aaff;
     animation: pulseNewEntry 0.8s ease-in-out;
+    width: 100vw;
 }
 
 @keyframes pulseNewEntry {

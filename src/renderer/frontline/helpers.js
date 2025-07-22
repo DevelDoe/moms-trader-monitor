@@ -17,12 +17,6 @@
     }
 
     function calculateScore(hero, event) {
-        // if (event.one_min_volume < 1000) {
-        //     if (window.isDev && debugSamples < debugLimitSamples) {
-        //         console.log(`⚠️ Skipping event ${hero.hero} to low volume (strength: ${event.one_min_volume})`);
-        //     }
-        //     return 0;
-        // }
 
         debugSamples++;
         const currentScore = Number(hero.score) || 0;
@@ -39,17 +33,20 @@
             if (event.hp > 0) {
                 baseScore += event.hp * 10;
                 logStep("💖", "Base HP Added", baseScore);
-
-                // const floatBuff = getHeroBuff(hero, "float");
-                // const floatMult = floatBuff?.multiplier ?? 1;
-                // baseScore *= floatMult;
-                // logStep(floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️", `Float Mult (${abbreviatedValues(hero.floatValue)})`, floatMult);
-
+        
                 const volScore = computeVolumeScore(hero, event);
                 baseScore += volScore;
                 logStep("📢", "Crowd Participation Score", volScore);
+            } else if (event.dp > 0) {
+                const reverseScore = event.dp * 8; // Slightly weaker than up-score
+                baseScore -= reverseScore;
+                logStep("💔", "Down Pressure Penalty", -reverseScore);
+        
+                // Optionally, volume can dampen or amplify penalty:
+                const volPenalty = computeVolumeScore(hero, event) * 0.5;
+                baseScore -= volPenalty;
+                logStep("🔻", "Volume-Backed Selloff", -volPenalty);
             }
-
         } catch (err) {
             console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
             baseScore = 0;
