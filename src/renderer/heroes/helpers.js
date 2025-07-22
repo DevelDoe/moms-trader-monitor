@@ -149,7 +149,7 @@
         return score;
     }
 
-    function isSurging(hero, { slice = 4, minUps = 3, direction = "hp" } = {}) {
+    function isSurging(hero, { slice = 3, minUps = 2, direction = "hp" } = {}) {
         if (!hero?.history?.length) return false;
 
         const recent = hero.history.slice(-slice);
