@@ -53,10 +53,10 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 276,
-      "height": 1083,
-      "x": 960,
-      "y": 539,
+      "width": 257,
+      "height": 900,
+      "x": -250,
+      "y": -900,
       "isOpen": true
     },
     "settingsWindow": {
@@ -113,10 +113,10 @@
     },
     "scrollXpWindow": {
       "isOpen": true,
-      "width": 207,
-      "height": 443,
-      "x": 983,
-      "y": -442
+      "width": 210,
+      "height": 445,
+      "x": 980,
+      "y": -444
     },
     "scrollStatsWindow": {
       "isOpen": false,

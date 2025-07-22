@@ -338,6 +338,13 @@ function updateCardDOM(hero) {
         bar.style.width = `${fill * 100}%`;
     }
 
+    const volumeEl = card.querySelector(".bar-text");
+    if (volumeEl) {
+        const volumeImpact = window.hlpsFunctions.calculateImpact(state.strength, state.price, window.buffs);
+        volumeEl.textContent = window.helpers.abbreviatedValues(state.strength);
+        volumeEl.style.color = volumeImpact.style.color;
+    }
+
     // ✅ Update price label
     const priceEl = card.querySelector(".lv");
     if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
