@@ -3,7 +3,7 @@
 const DECAY_INTERVAL_MS = 1000;
 const XP_DECAY_PER_TICK = 0.2; // Decay per tick
 const SCORE_NORMALIZATION = 2; // Higher = slower decay influence
-const BASE_MAX_SCORE = 100;
+const BASE_MAX_SCORE = 10_000;
 const BASE_MAX_HP = 10;
 const SCALE_DOWN_THRESHOLD = 1; // 20%
 const SCALE_DOWN_FACTOR = 0.9; // Reduce by 10%
@@ -67,15 +67,14 @@ async function initializeBuffs() {
 async function initializeFrontline() {
     container = document.getElementById("frontline");
 
-    const [settings, storeSymbols, restoredState] = await Promise.all([
-        window.settingsAPI.get(), 
-        window.frontlineAPI.getSymbols(), 
-    ]);
-    
-    console.log("🧾 Store symbols received:", storeSymbols.map(s => s.symbol));
+    const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.frontlineAPI.getSymbols()]);
+
+    console.log(
+        "🧾 Store symbols received:",
+        storeSymbols.map((s) => s.symbol)
+    );
 
     window.settings = settings;
-
 
     if (restoredState) {
         Object.assign(frontlineState, restoredState);
@@ -121,7 +120,7 @@ function handleAlertEvent(event) {
     const minPrice = window.settings?.top?.minPrice ?? 0;
     const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
 
-    if (event.one_min_volume < 10000) {
+    if (event.one_min_volume < 100) {
         if (window.isDev) console.log(`⚠️ Skipping ${event.hero} due to low 1-min volume: ${event.one_min_volume}`);
         return;
     }
@@ -182,6 +181,15 @@ function updateFrontlineStateFromEvent(event) {
     hero.price = event.price;
     hero.hue = event.hue ?? hero.hue ?? 0;
     hero.strength = event.one_min_volume ?? hero.strength ?? 0;
+    hero.lastChangeText = hero.lastChangeText || "";
+
+    if (event.hp > 0) {
+        hero.hp += event.hp;
+        hero.lastChangeText = `+${event.hp.toFixed(2)}%`;
+    } else if (event.dp > 0) {
+        hero.hp = Math.max(hero.hp - event.dp, 0);
+        hero.lastChangeText = `-${event.dp.toFixed(2)}%`;
+    }
 
     // Handle HP changes
     const wasDead = hero.hp === 0 && event.hp > 0;
@@ -193,18 +201,11 @@ function updateFrontlineStateFromEvent(event) {
     if (isReversal) {
         if (window.isDev) console.log(`🔄 ${hero.hero} REVERSAL!`);
     }
-
-    // Apply HP changes
-    if (event.hp > 0) hero.hp += event.hp;
-    if (event.dp > 0) hero.hp = Math.max(hero.hp - event.dp, 0); // Essence fades, but never extinguishes
-
     // Update score
     let scoreDelta = 0;
 
-
     scoreDelta = window.helpers.calculateScore(hero, event);
     hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
-
 
     hero.lastEvent = {
         hp: event.hp || 0,
@@ -267,7 +268,6 @@ function updateFrontlineStateFromEvent(event) {
     }
 
     hero.lastUpdate = Date.now();
-
 }
 
 // Debounce helper
@@ -281,7 +281,6 @@ function debounce(fn, delay) {
 
 const debouncedRenderAll = debounce(renderAll, 80);
 const debouncedUpdateCardDOM = debounce(updateCardDOM, 30);
-
 
 function renderAll() {
     const topN = window.settings?.top?.frontlineListLength ?? 3;
@@ -333,7 +332,10 @@ function updateCardDOM(hero) {
     // ✅ Score bar only
     const bar = card.querySelector(`.bar-fill.score`);
     if (bar) {
-        bar.style.width = `${Math.min((state.score / maxScore) * 100, 100)}%`;
+        const exponent = 0.35; // Lower = flatter early growth, steeper late
+        const normalized = Math.min(state.score / maxScore, 1);
+        const fill = Math.pow(normalized, exponent);
+        bar.style.width = `${fill * 100}%`;
     }
 
     // ✅ Update price label
@@ -354,6 +356,27 @@ function updateCardDOM(hero) {
         card.classList.add("card-update-highlight");
         setTimeout(() => card.classList.remove("card-update-highlight"), 300);
     }
+
+    // ✅ HP / DP change display
+    const changeEl = card.querySelector(".change-placeholder");
+    if (changeEl) {
+        const hadHp = state.lastEvent.hp > 0;
+        const hadDp = state.lastEvent.dp > 0;
+
+        if (hadHp) {
+            changeEl.classList.remove("dp-damage");
+            changeEl.classList.add("hp-boost");
+            state.lastChangeText = `+${state.lastEvent.hp.toFixed(2)}%`;
+        } else if (hadDp) {
+            changeEl.classList.remove("hp-boost");
+            changeEl.classList.add("dp-damage");
+            state.lastChangeText = `-${state.lastEvent.dp.toFixed(2)}%`;
+        }
+
+        changeEl.textContent = state.lastChangeText || "";
+        changeEl.classList.add("change-flash");
+        setTimeout(() => changeEl.classList.remove("change-flash"), 400);
+    }
 }
 
 function renderCard(state) {
@@ -370,12 +393,34 @@ function renderCard(state) {
 
     const sortOrder = ["volume", "float", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
     const buffCategoryMap = {
-        minVol: "volume", lowVol: "volume", mediumVol: "volume", highVol: "volume", parabolicVol: "volume",
-        float1m: "float", float5m: "float", float10m: "float", float50m: "float", float100m: "float", float200m: "float",
-        float500m: "float", float600m: "float", float600mPlus: "float", floatCorrupt: "float", floatUnranked: "float",
-        news: "news", bounceBack: "bounceBack", highShort: "highShort", newHigh: "newHigh",
-        netLoss: "netLoss", hasS3: "hasS3", dilutionRisk: "dilutionRisk", china: "china",
-        bio: "bio", weed: "weed", space: "space", lockedShares: "lockedShares"
+        minVol: "volume",
+        lowVol: "volume",
+        mediumVol: "volume",
+        highVol: "volume",
+        parabolicVol: "volume",
+        float1m: "float",
+        float5m: "float",
+        float10m: "float",
+        float50m: "float",
+        float100m: "float",
+        float200m: "float",
+        float500m: "float",
+        float600m: "float",
+        float600mPlus: "float",
+        floatCorrupt: "float",
+        floatUnranked: "float",
+        news: "news",
+        bounceBack: "bounceBack",
+        highShort: "highShort",
+        newHigh: "newHigh",
+        netLoss: "netLoss",
+        hasS3: "hasS3",
+        dilutionRisk: "dilutionRisk",
+        china: "china",
+        bio: "bio",
+        weed: "weed",
+        space: "space",
+        lockedShares: "lockedShares",
     };
 
     const sortBuffs = (arr) =>
@@ -386,9 +431,7 @@ function renderCard(state) {
         });
 
     const sortedBuffs = sortBuffs(Object.values(state.buffs || {}));
-    const buffsInline = sortedBuffs.map((buff) =>
-        `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`
-    ).join("");
+    const buffsInline = sortedBuffs.map((buff) => `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`).join("");
 
     card.innerHTML = `
 <div class="ticker-header">
@@ -400,7 +443,7 @@ function renderCard(state) {
             <span class="bar-text" style="color:${volumeImpact.style.color}">
                 ${window.helpers.abbreviatedValues(strength)}
             </span>
-            ${change ? `<span class="${changeClass}">${change}</span>` : ""}
+            <span class="change-placeholder ${changeClass}">${change}</span>
             ${buffsInline}
         </div>
         <div class="bars">
@@ -427,4 +470,3 @@ function renderCard(state) {
 
     return card;
 }
-

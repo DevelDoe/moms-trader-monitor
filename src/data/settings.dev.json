@@ -8,8 +8,8 @@
     "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
-    "frontlineListLength": 14,
-    "heroesListLength": 4,
+    "frontlineListLength": 10,
+    "heroesListLength": 3,
     "herosListLength": 4
   },
   "news": {
@@ -91,10 +91,10 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 459,
-      "height": 552,
-      "x": 1236,
-      "y": 1069,
+      "width": 424,
+      "height": 446,
+      "x": 8,
+      "y": -444,
       "isOpen": true
     },
     "activeWindow": {
@@ -105,18 +105,18 @@
       "isOpen": false
     },
     "heroesWindow": {
-      "width": 489,
-      "height": 551,
-      "x": 1690,
-      "y": 1070,
+      "width": 546,
+      "height": 447,
+      "x": 433,
+      "y": -444,
       "isOpen": true
     },
     "scrollXpWindow": {
       "isOpen": true,
-      "width": 319,
-      "height": 549,
-      "x": 2177,
-      "y": 1071
+      "width": 207,
+      "height": 443,
+      "x": 983,
+      "y": -442
     },
     "scrollStatsWindow": {
       "isOpen": false,

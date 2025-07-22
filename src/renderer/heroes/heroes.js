@@ -116,7 +116,7 @@ function handleAlertEvent(event) {
     const minPrice = window.settings?.top?.minPrice ?? 0;
     const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
 
-    if (event.one_min_volume <= 30000) {
+    if (event.one_min_volume <= 10000) {
         if (window.isDev) console.log(`⛔ Skipped ${event.hero} — low volume (${event.one_min_volume})`);
         return;
     }

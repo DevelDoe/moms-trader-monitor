@@ -136,13 +136,6 @@ body::-webkit-scrollbar {
     background: linear-gradient(90deg, #263cff, #00aeff);
 } */
 
-.hp-boost,
-.dp-damage {
-    display: inline-block;
-    margin-left: 6px;
-    font-size: 10px;
-}
-
 .hp-boost {
     color: #00ff00;
 }
@@ -230,36 +223,6 @@ body::-webkit-scrollbar {
     width: 100%;
 }
 
-/* .bar-text.volume-none {
-    color: #cccccc;
-} 
-.bar-text.volume-lowvol {
-    color: #6b7280;
-} 
-.bar-text.volume-mediumvol {
-    color: #3b82f6;
-} 
-.bar-text.volume-highvol {
-    color: #ef4444;
-} 
-.bar-text.volume-parabolicvol {
-    color: #f59e0b;
-    animation: pulse 1.5s infinite;
-} */
-
-/* Pulse animation for parabolic volume */
-/* @keyframes pulse {
-    0% {
-        opacity: 0.8;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0.8;
-    }
-} */
-
 /* buff icons  */
 .ticker-data .buff-icon {
     font-size: 10px;
@@ -296,4 +259,28 @@ body::-webkit-scrollbar {
     opacity: 0.4;
     filter: grayscale(0.8);
     transition: opacity 0.5s ease, filter 0.5s ease; /* ✅ Smooth fade out only */
+}
+
+
+.change-flash {
+    animation: flashScale 0.3s ease;
+}
+
+@keyframes flashScale {
+    0% {  opacity: 1; }
+    100% {  opacity: 1; }
+}
+
+.change-placeholder {
+    position: absolute;
+    right: 30px;
+    font-size: 12px;
+}
+
+.change-placeholder.hp-boost {
+    color: #00ff00;
+}
+
+.change-placeholder.dp-damage {
+    color: #ff0040;
 }
