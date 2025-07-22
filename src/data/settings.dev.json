@@ -91,7 +91,7 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 413,
+      "width": 459,
       "height": 552,
       "x": 1236,
       "y": 1069,
@@ -105,14 +105,14 @@
       "isOpen": false
     },
     "heroesWindow": {
-      "width": 531,
+      "width": 489,
       "height": 551,
-      "x": 1648,
+      "x": 1690,
       "y": 1070,
       "isOpen": true
     },
     "scrollXpWindow": {
-      "isOpen": false,
+      "isOpen": true,
       "width": 319,
       "height": 549,
       "x": 2177,

@@ -126,7 +126,7 @@
     
             if (changed) {
                 renderAll();
-                window.frontlineStateManager.saveState();
+                // window.frontlineStateManager.saveState();
             }
         }, DECAY_INTERVAL_MS);
     }

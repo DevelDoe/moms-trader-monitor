@@ -1,9 +1,9 @@
 (() => {
     function exposeStateManager() {
         window.heroesStateManager = {
-            saveState,
-            loadState,
-            clearState,
+            // saveState,
+            // loadState,
+            // clearState,
             updateHeroData,
             nukeState,
             resetXpLevels,
@@ -26,67 +26,67 @@
         return estDate.toISOString().split("T")[0];
     }
 
-    function saveState() {
-        const existing = localStorage.getItem("heroesState");
-        let sessionDate = getMarketDateString();
+    // function saveState() {
+    //     const existing = localStorage.getItem("heroesState");
+    //     let sessionDate = getMarketDateString();
     
-        if (existing) {
-            try {
-                const parsed = JSON.parse(existing);
-                if (parsed.date && parsed.date !== sessionDate) {
-                    if (window.isDev) console.log("🧼 Overwriting old session from", parsed.date);
-                } else {
-                    sessionDate = parsed.date || sessionDate;
-                }
-            } catch {
-                console.warn("⚠️ Invalid existing heroes state. Overwriting.");
-            }
-        }
+    //     if (existing) {
+    //         try {
+    //             const parsed = JSON.parse(existing);
+    //             if (parsed.date && parsed.date !== sessionDate) {
+    //                 if (window.isDev) console.log("🧼 Overwriting old session from", parsed.date);
+    //             } else {
+    //                 sessionDate = parsed.date || sessionDate;
+    //             }
+    //         } catch {
+    //             console.warn("⚠️ Invalid existing heroes state. Overwriting.");
+    //         }
+    //     }
     
-        const payload = {
-            date: sessionDate,
-            state: heroesState,
-        };
+    //     const payload = {
+    //         date: sessionDate,
+    //         state: heroesState,
+    //     };
     
-        localStorage.setItem("heroesState", JSON.stringify(payload));
-    }
+    //     localStorage.setItem("heroesState", JSON.stringify(payload));
+    // }
     
 
-    async function loadState() {
-        if (window.isDev) {
-            console.log("🧪 loadState() overridden for testing — skipping restore");
-            return false;
-        }
+    // async function loadState() {
+    //     if (window.isDev) {
+    //         console.log("🧪 loadState() overridden for testing — skipping restore");
+    //         return false;
+    //     }
     
-        const saved = localStorage.getItem("heroesState");
-        if (!saved) return false;
+    //     const saved = localStorage.getItem("heroesState");
+    //     if (!saved) return false;
     
-        try {
-            const parsed = JSON.parse(saved);
-            const today = getMarketDateString();
+    //     try {
+    //         const parsed = JSON.parse(saved);
+    //         const today = getMarketDateString();
     
-            if (parsed.date === today) {
-                if (window.isDev) console.log("🔄 Restored heroes state from earlier session.");
-                return parsed.state;
-            } else {
-                if (window.isDev) console.log("🧼 Session from previous day. Skipping restore.");
-                localStorage.removeItem("heroesState");
-                return false;
-            }
-        } catch (err) {
-            console.warn("⚠️ Could not parse heroes state. Clearing.");
-            localStorage.removeItem("heroesState");
-            return false;
-        }
-    }
+    //         if (parsed.date === today) {
+    //             if (window.isDev) console.log("🔄 Restored heroes state from earlier session.");
+    //             return parsed.state;
+    //         } else {
+    //             if (window.isDev) console.log("🧼 Session from previous day. Skipping restore.");
+    //             localStorage.removeItem("heroesState");
+    //             return false;
+    //         }
+    //     } catch (err) {
+    //         console.warn("⚠️ Could not parse heroes state. Clearing.");
+    //         localStorage.removeItem("heroesState");
+    //         return false;
+    //     }
+    // }
 
-    function clearState() {
-        localStorage.removeItem("heroesState");
-        for (const key in heroesState) {
-            delete heroesState[key];
-        }
-        if (window.isDev) console.log("🧹 Cleared saved and in-memory heroes state.");
-    }
+    // function clearState() {
+    //     localStorage.removeItem("heroesState");
+    //     for (const key in heroesState) {
+    //         delete heroesState[key];
+    //     }
+    //     if (window.isDev) console.log("🧹 Cleared saved and in-memory heroes state.");
+    // }
     
 
     function updateHeroData(updatedHeroes) {
@@ -108,7 +108,7 @@
 
     function nukeState() {
         console.warn("🧨 Nuke signal received — clearing state.");
-        window.heroesStateManager.clearState();
+        // window.heroesStateManager.clearState();
         location.reload();
     }
 
@@ -119,6 +119,6 @@
             hero.lv = 1;
             updateCardDOM(hero.hero);
         });
-        window.heroesStateManager.saveState();
+        // window.heroesStateManager.saveState();
     }
 })();

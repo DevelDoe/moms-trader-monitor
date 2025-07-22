@@ -68,7 +68,6 @@ body {
 }
 
 .alert-symbol {
-    
     min-width: 42px;
     text-align: center;
     font-weight: bold;
@@ -133,19 +132,19 @@ body {
 */
 
 .low-1 {
-    filter: grayscale(60%) brightness(0.8);
+    filter: grayscale(60%) brightness(1);
 }
 
 .low-2 {
-    filter: grayscale(45%) brightness(0.6);
+    filter: grayscale(45%) brightness(0.8);
 }
 
 .low-3 {
-    filter: grayscale(30%) brightness(0.4);
+    filter: grayscale(30%) brightness(0.6);
 }
 
 .low-4 {
-    filter: grayscale(15%) brightness(0.2);
+    filter: grayscale(15%) brightness(0.4);
 }
 
 /* CSS for blinking effect with opacity */

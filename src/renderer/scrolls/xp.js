@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             })
             .slice(0, 15);
 
-        const xpPerMinutes = sorted.map((h) => parseFloat(getXpPerMinute(h)));
+        const xpPerMinutes = sorted.map((h) => parseFloat(getXpPerSecond(h)));
         const maxXpm = Math.max(...xpPerMinutes, 1); // fallback 1 to avoid division by 0
 
         container.innerHTML = sorted
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const isInactive = age > inactiveThreshold;
                 const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
 
-                const xpm = parseFloat(getXpPerMinute(h));
+                const xpm = parseFloat(getXpPerSecond(h));
                 const xpmColor = getXpmColor(xpm, maxXpm);
 
                 return `
@@ -185,12 +185,12 @@ function formatPrice(price) {
     return typeof price === "number" ? `$${price.toFixed(2)}` : "—";
 }
 
-function getXpPerMinute(hero) {
+function getXpPerSecond(hero) {
     const now = Date.now();
     const start = hero.firstXpTimestamp || now;
-    const minutes = (now - start) / 60000;
+    const seconds = (now - start) / 1000;
     const gained = hero.totalXpGained || 0;
-    return minutes > 0 ? `${(gained / minutes).toFixed(0)}` : "—";
+    return seconds > 0 ? `${(gained / seconds).toFixed(0)}` : "—";
 }
 
 function getXpmColor(xpm, maxXpm) {

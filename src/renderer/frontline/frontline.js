@@ -70,15 +70,16 @@ async function initializeFrontline() {
     const [settings, storeSymbols, restoredState] = await Promise.all([
         window.settingsAPI.get(), 
         window.frontlineAPI.getSymbols(), 
-        // window.frontlineStateManager.loadState()
     ]);
+    
+    console.log("🧾 Store symbols received:", storeSymbols.map(s => s.symbol));
 
     window.settings = settings;
 
-    // const restoredState = null; // skip restore for now
-    // if (restoredState) {
-    //     Object.assign(frontlineState, restoredState);
-    // }
+
+    if (restoredState) {
+        Object.assign(frontlineState, restoredState);
+    }
 
     storeSymbols.forEach((symbolData) => {
         if (!frontlineState[symbolData.symbol]) {
@@ -99,7 +100,7 @@ async function initializeFrontline() {
         }
     });
 
-    renderAll();
+    debouncedRenderAll();
     window.helpers.startScoreDecay();
 }
 
@@ -107,7 +108,7 @@ function setupListeners() {
     window.settingsAPI.onUpdate((updatedSettings) => {
         if (window.isDev) console.log("🎯 Settings updated:", updatedSettings);
         window.settings = updatedSettings;
-        renderAll();
+        debouncedRenderAll();
     });
 
     window.eventsAPI.onAlert(handleAlertEvent);
@@ -119,6 +120,11 @@ function setupListeners() {
 function handleAlertEvent(event) {
     const minPrice = window.settings?.top?.minPrice ?? 0;
     const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
+
+    if (event.one_min_volume < 10000) {
+        if (window.isDev) console.log(`⚠️ Skipping ${event.hero} due to low 1-min volume: ${event.one_min_volume}`);
+        return;
+    }
 
     if (event.price < minPrice || event.price > maxPrice) {
         if (window.isDev) {
@@ -195,13 +201,10 @@ function updateFrontlineStateFromEvent(event) {
     // Update score
     let scoreDelta = 0;
 
-    if (event.one_min_volume > 10000) {
-        scoreDelta = window.helpers.calculateScore(hero, event);
-        hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
-    } else {
-        console.log(`⚠️ Skipping event due to low volume (strength: ${event.one_min_volume})`);
-    }
-    
+
+    scoreDelta = window.helpers.calculateScore(hero, event);
+    hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
+
 
     hero.lastEvent = {
         hp: event.hp || 0,
@@ -258,15 +261,27 @@ function updateFrontlineStateFromEvent(event) {
     // Render updates
     if (needsFullRender || currentTopHeroes.join(",") !== lastTopHeroes.join(",")) {
         lastTopHeroes = currentTopHeroes;
-        renderAll();
+        debouncedRenderAll();
     } else {
-        updateCardDOM(event.hero);
+        debouncedUpdateCardDOM(event.hero);
     }
 
     hero.lastUpdate = Date.now();
 
-    // window.frontlineStateManager.saveState();
 }
+
+// Debounce helper
+function debounce(fn, delay) {
+    let timer = null;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+const debouncedRenderAll = debounce(renderAll, 80);
+const debouncedUpdateCardDOM = debounce(updateCardDOM, 30);
+
 
 function renderAll() {
     const topN = window.settings?.top?.frontlineListLength ?? 3;
@@ -315,40 +330,23 @@ function updateCardDOM(hero) {
     const card = document.querySelector(`.ticker-card[data-symbol="${hero}"]`);
     if (!card) return;
 
-    // Update bars
-    const setBarWidth = (selector, value, max) => {
-        const bar = card.querySelector(`.bar-fill.${selector}`);
-        if (bar) bar.style.width = `${Math.min((value / max) * 100, 100)}%`;
-    };
-
-    setBarWidth("score", state.score, maxScore);
-    setBarWidth("hp", state.hp, maxHP);
-    // Volume impact-based coloring
-    const volImpact = window.hlpsFunctions.calculateImpact(state.strength, state.price, window.buffs);
-    const strengthBar = card.querySelector(".bar-fill.strength");
-    if (strengthBar) {
-        strengthBar.style.width = `${Math.min((state.strength / 1000000) * 100, 100)}%`;
-        strengthBar.style.backgroundColor = volImpact.style.color;
+    // ✅ Score bar only
+    const bar = card.querySelector(`.bar-fill.score`);
+    if (bar) {
+        bar.style.width = `${Math.min((state.score / maxScore) * 100, 100)}%`;
     }
 
-    const strengthText = card.querySelector(".bar-text");
-    if (strengthText) {
-        strengthText.textContent = window.helpers.abbreviatedValues(state.strength);
-        strengthText.style.color = volImpact.style.color;
-    }
-
-    // Update label
+    // ✅ Update price label
     const priceEl = card.querySelector(".lv");
     if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
 
-    // Fade logic
+    // ✅ Fade logic
     const now = Date.now();
     const lastUpdate = state.lastUpdate || now;
     const timeSinceUpdate = now - lastUpdate;
     const inactiveThreshold = 7000;
-    const shouldFadeOut = timeSinceUpdate > inactiveThreshold;
 
-    if (shouldFadeOut) {
+    if (timeSinceUpdate > inactiveThreshold) {
         card.classList.add("fade-out");
         card.classList.remove("card-update-highlight");
     } else {
@@ -366,117 +364,62 @@ function renderCard(state) {
     card.dataset.symbol = hero;
 
     const change = lastEvent.hp ? `+${lastEvent.hp.toFixed(2)}%` : lastEvent.dp ? `-${lastEvent.dp.toFixed(2)}%` : "";
-
-    const changeClass = state.lastEvent.hp ? "hp-boost" : state.lastEvent.dp ? "dp-damage" : "";
+    const changeClass = lastEvent.hp ? "hp-boost" : lastEvent.dp ? "dp-damage" : "";
 
     const volumeImpact = window.hlpsFunctions.calculateImpact(strength, price, window.buffs);
 
-    const isVisiblyActive = state.lastEvent && (state.lastEvent.hp > 0 || state.lastEvent.dp > 0 || state.lastEvent.score > 0);
-
-    // Buffs
-    // ✅ 1. Define sort priority (group/category level)
     const sortOrder = ["volume", "float", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
-
-    // ✅ 2. Map specific keys to general categories
     const buffCategoryMap = {
-        // Volume
-        minVol: "volume",
-        lowVol: "volume",
-        mediumVol: "volume",
-        highVol: "volume",
-        parabolicVol: "volume",
-
-        // Float
-        float1m: "float",
-        float5m: "float",
-        float10m: "float",
-        float50m: "float",
-        float100m: "float",
-        float200m: "float",
-        float500m: "float",
-        float600m: "float",
-        float600mPlus: "float",
-        floatCorrupt: "float",
-        floatUnranked: "float",
-
-        // Everything else
-        news: "news",
-        bounceBack: "bounceBack",
-        highShort: "highShort",
-        newHigh: "newHigh",
-        netLoss: "netLoss",
-        hasS3: "hasS3",
-        dilutionRisk: "dilutionRisk",
-        china: "china",
-        bio: "bio",
-        weed: "weed",
-        space: "space",
-        lockedShares: "lockedShares",
+        minVol: "volume", lowVol: "volume", mediumVol: "volume", highVol: "volume", parabolicVol: "volume",
+        float1m: "float", float5m: "float", float10m: "float", float50m: "float", float100m: "float", float200m: "float",
+        float500m: "float", float600m: "float", float600mPlus: "float", floatCorrupt: "float", floatUnranked: "float",
+        news: "news", bounceBack: "bounceBack", highShort: "highShort", newHigh: "newHigh",
+        netLoss: "netLoss", hasS3: "hasS3", dilutionRisk: "dilutionRisk", china: "china",
+        bio: "bio", weed: "weed", space: "space", lockedShares: "lockedShares"
     };
 
-    // ✅ 3. Sorting helper using mapped categories
     const sortBuffs = (arr) =>
         arr.sort((a, b) => {
-            const keyA = buffCategoryMap[a.key] || a.key;
-            const keyB = buffCategoryMap[b.key] || b.key;
-            const aIndex = sortOrder.indexOf(keyA);
-            const bIndex = sortOrder.indexOf(keyB);
-            return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+            const aKey = buffCategoryMap[a.key] || a.key;
+            const bKey = buffCategoryMap[b.key] || b.key;
+            return (sortOrder.indexOf(aKey) || 999) - (sortOrder.indexOf(bKey) || 999);
         });
 
-    // Merge and sort all buffs
-    // Combine and sort buffs inline
     const sortedBuffs = sortBuffs(Object.values(state.buffs || {}));
-    const buffsInline = sortedBuffs.map((buff) => `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`).join("");
+    const buffsInline = sortedBuffs.map((buff) =>
+        `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`
+    ).join("");
 
-    // Inject into ticker-data row ${buffsInline}
     card.innerHTML = `
 <div class="ticker-header">
-    <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}"> ${hero} <span class="lv">$${state.price.toFixed(2)}<span></div>
+    <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}">
+        ${hero} <span class="lv">$${price.toFixed(2)}</span>
+    </div>
     <div class="ticker-info">
         <div class="ticker-data">
-            <span class="bar-text" style="color:${volumeImpact.style.color}">${window.helpers.abbreviatedValues(strength)}</span>
+            <span class="bar-text" style="color:${volumeImpact.style.color}">
+                ${window.helpers.abbreviatedValues(strength)}
+            </span>
             ${change ? `<span class="${changeClass}">${change}</span>` : ""}
-            
+            ${buffsInline}
         </div>
         <div class="bars">
             <div class="bar">
                 <div class="bar-fill score" style="width: ${Math.min((state.score / maxScore) * 100, 100)}%"></div>
             </div>
-            <div class="bar">
-                <div class="bar-fill hp" style="width: ${Math.min((state.hp / maxHP) * 100, 100)}%"></div>
-            </div>
-            <div class="bar">
-                <div class="bar-fill strength" style="width: ${Math.min((strength / 1000000) * 100, 100)}%"></div>
-            </div>
         </div>
     </div>
 </div>`;
 
-    // Add click handler to the symbol element
     const symbolElement = card.querySelector(".ticker-symbol");
     symbolElement.onclick = (e) => {
-        e.stopPropagation(); // Prevent event bubbling
-
+        e.stopPropagation();
         try {
-            // Copy to clipboard
             navigator.clipboard.writeText(hero);
-            console.log(`📋 Copied ${hero} to clipboard`);
-
-            // Set as active ticker if the API exists
-            if (window.activeAPI && window.activeAPI.setActiveTicker) {
-                window.activeAPI.setActiveTicker(hero);
-                console.log(`🎯 Set ${hero} as active ticker`);
-            }
-
-            // Store last clicked symbol
+            if (window.activeAPI?.setActiveTicker) window.activeAPI.setActiveTicker(hero);
             lastClickedSymbol = hero;
-
-            // Optional: Add visual feedback
             symbolElement.classList.add("symbol-clicked");
-            setTimeout(() => {
-                symbolElement.classList.remove("symbol-clicked");
-            }, 200);
+            setTimeout(() => symbolElement.classList.remove("symbol-clicked"), 200);
         } catch (err) {
             console.error(`⚠️ Failed to handle click for ${hero}:`, err);
         }
@@ -484,3 +427,4 @@ function renderCard(state) {
 
     return card;
 }
+

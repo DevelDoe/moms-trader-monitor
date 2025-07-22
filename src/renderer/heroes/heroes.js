@@ -95,7 +95,7 @@ async function initializeHeroes() {
         }
     });
 
-    renderAll();
+    debouncedRenderAll();
     window.helpers.startScoreDecay();
 }
 
@@ -103,7 +103,7 @@ function setupListeners() {
     window.settingsAPI.onUpdate((updatedSettings) => {
         if (window.isDev) console.log("🎯 Settings updated:", updatedSettings);
         window.settings = updatedSettings;
-        renderAll();
+        debouncedRenderAll();
     });
 
     window.eventsAPI.onAlert(handleAlertEvent);
@@ -115,6 +115,11 @@ function setupListeners() {
 function handleAlertEvent(event) {
     const minPrice = window.settings?.top?.minPrice ?? 0;
     const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
+
+    if (event.one_min_volume <= 30000) {
+        if (window.isDev) console.log(`⛔ Skipped ${event.hero} — low volume (${event.one_min_volume})`);
+        return;
+    }
 
     if (event.price < minPrice || event.price > maxPrice) {
         if (window.isDev) console.log(`🚫 ${event.hero} skipped — price $${event.price} out of range`);
@@ -179,12 +184,8 @@ function updateHeroFromEvent(event) {
     });
     if (hero.history.length > 10) hero.history.shift();
 
-    if (event.one_min_volume > 30000) {
-        const scoreDelta = window.helpers.calculateScore(hero, event);
-        hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
-    } else {
-        console.log(`⚠️ Skipping event due to low volume (strength: ${event.one_min_volume})`);
-    }
+    const scoreDelta = window.helpers.calculateScore(hero, event);
+    hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
 
 
     let needsFullRender = false;
@@ -232,7 +233,7 @@ function updateHeroFromEvent(event) {
 
     if (needsFullRender || currentTopHeroes.join(",") !== lastTopHeroes.join(",")) {
         lastTopHeroes = currentTopHeroes;
-        renderAll();
+        debouncedRenderAll();
         if (window.traderviewAPI?.setTopTickers && Date.now() - lastTickerSetAt > MIN_UPDATE_INTERVAL) {
             const traderviewWindowCount = window.settings?.top?.traderviewWindowCount ?? 3;
             const topForTradingView = currentTopHeroes.slice(0, traderviewWindowCount);
@@ -241,12 +242,24 @@ function updateHeroFromEvent(event) {
             if (window.isDev) console.log(`🪞 Updated TradingView windows to:`, topForTradingView);
         }
     } else {
-        updateCardDOM(event.hero);
+        debouncedUpdateCardDOM(event.hero);
     }
 
     hero.lastUpdate = Date.now();
     // window.heroesStateManager.saveState();
 }
+
+// Debounce helper
+function debounce(fn, delay) {
+    let timer = null;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+const debouncedRenderAll = debounce(renderAll, 80);
+const debouncedUpdateCardDOM = debounce(updateCardDOM, 30);
 
 function renderAll() {
     container.innerHTML = "";
@@ -416,12 +429,12 @@ function renderCard({ hero, price, hp, dp, strength, lastEvent }) {
             </div>
             <div class="bar">
                 <div class="bar-fill hp" style="width: ${Math.min((hp / maxHP) * 100, 100)}%">
-                    <span class="bar-text">CHANGE: ${hp.toFixed(0)}%</span>
+                    <span class="bar-text">HP: ${hp.toFixed(0)}</span>
                 </div>
             </div>
             <div class="bar">
                 <div class="bar-fill strength" style="background-color: ${volumeImpact.style.color}; width: ${Math.min((strength / MAX_STRENGTH) * 100, 100)}%">
-                    <span class="bar-text">VOLUME: ${Math.floor(strength / 1000)}k</span>
+                    <span class="bar-text">STRENGTH: ${Math.floor(strength / 1000)}k</span>
                 </div>
             </div>
         </div>

@@ -206,7 +206,7 @@
                 }
     
                 renderAll();
-                window.heroesStateManager.saveState();
+                // window.heroesStateManager.saveState();
             }
         }, DECAY_INTERVAL_MS);
     }

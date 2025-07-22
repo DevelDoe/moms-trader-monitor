@@ -1,9 +1,9 @@
 (() => {
     function exposeStateManager() {
         window.frontlineStateManager = {
-            saveState,
-            loadState,
-            clearState,
+            // saveState,
+            // loadState,
+            // clearState,
             updateHeroData,
             handleNuke,
             resetXpLevels,
@@ -19,75 +19,83 @@
         exposeStateManager(); // DOM already ready
     }
 
-    // Returns YYYY-MM-DD string in EST
-    function getMarketDateString() {
-        const now = new Date();
-        const offset = -5 * 60; // EST offset in minutes
-        const localOffset = now.getTimezoneOffset();
-        const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
-        return estDate.toISOString().split("T")[0];
-    }
+/**
+ * The `getMarketDateString()` function returns the current date in "YYYY-MM-DD" format in the Eastern
+ * Standard Time (EST) timezone.
+ * @returns The `getMarketDateString()` function returns a string in the format "YYYY-MM-DD"
+ * representing the current date in the Eastern Standard Time (EST) timezone.
+ */
+    // // Returns YYYY-MM-DD string in EST
+    // function /* The `getMarketDateString()` function is used to get the current date in the format
+    // "YYYY-MM-DD" in the Eastern Standard Time (EST) timezone. */
+    // getMarketDateString() {
+    //     const now = new Date();
+    //     const offset = -5 * 60; // EST offset in minutes
+    //     const localOffset = now.getTimezoneOffset();
+    //     const estDate = new Date(now.getTime() + (localOffset - offset) * 60000);
+    //     return estDate.toISOString().split("T")[0];
+    // }
 
-    function saveState() {
-        const existing = localStorage.getItem("frontlineState");
-        let sessionDate = getMarketDateString();
+    // function saveState() {
+    //     const existing = localStorage.getItem("frontlineState");
+    //     let sessionDate = getMarketDateString();
 
-        if (existing) {
-            try {
-                const parsed = JSON.parse(existing);
-                if (parsed.date && parsed.date !== sessionDate) {
-                    if (window.isDev) console.log("🧼 Overwriting old session from", parsed.date);
-                } else {
-                    sessionDate = parsed.date || sessionDate;
-                }
-            } catch {
-                console.warn("⚠️ Invalid existing frontline state. Overwriting.");
-            }
-        }
+    //     if (existing) {
+    //         try {
+    //             const parsed = JSON.parse(existing);
+    //             if (parsed.date && parsed.date !== sessionDate) {
+    //                 if (window.isDev) console.log("🧼 Overwriting old session from", parsed.date);
+    //             } else {
+    //                 sessionDate = parsed.date || sessionDate;
+    //             }
+    //         } catch {
+    //             console.warn("⚠️ Invalid existing frontline state. Overwriting.");
+    //         }
+    //     }
 
-        const payload = {
-            date: sessionDate,
-            state: frontlineState,
-        };
+    //     const payload = {
+    //         date: sessionDate,
+    //         state: frontlineState,
+    //     };
 
-        localStorage.setItem("frontlineState", JSON.stringify(payload));
-    }
+    //     localStorage.setItem("frontlineState", JSON.stringify(payload));
+    // }
 
-    async function loadState() {
-        if (window.isDev) {
-            console.log("🧪 loadState() overridden for testing — skipping restore");
-            return null;
-        }
+    // async function loadState() {
+    //     if (window.isDev) {
+    //         console.log("🧪 loadState() overridden for testing — skipping restore");
+    //         return null;
+    //     }
 
-        const saved = localStorage.getItem("frontlineState");
-        if (!saved) return null;
+    //     const saved = localStorage.getItem("frontlineState");
+    //     if (!saved) return null;
 
-        try {
-            const parsed = JSON.parse(saved);
-            const today = getMarketDateString();
+    //     try {
+    //         const parsed = JSON.parse(saved);
+    //         const today = getMarketDateString();
 
-            if (parsed.date === today) {
-                if (window.isDev) console.log("🔄 Restored frontline state from earlier session.");
-                return parsed.state || null;
-            } else {
-                if (window.isDev) console.log("🧼 Session from previous day. Skipping restore.");
-                localStorage.removeItem("frontlineState");
-                return null;
-            }
-        } catch (err) {
-            console.warn("⚠️ Could not parse frontline state. Clearing.");
-            localStorage.removeItem("frontlineState");
-            return null;
-        }
-    }
+    //         if (parsed.date === today) {
+    //             if (window.isDev) console.log("🔄 Restored frontline state from earlier session.");
+    //             return parsed.state || null;
+    //         } else {
+    //             if (window.isDev) console.log("🧼 Session from previous day. Skipping restore.");
+    //             localStorage.removeItem("frontlineState");
+    //             return null;
+    //         }
+    //     } catch (err) {
+    //         console.warn("⚠️ Could not parse frontline state. Clearing.");
+    //         localStorage.removeItem("frontlineState");
+    //         return null;
+    //     }
+    // }
 
-    function clearState() {
-        localStorage.removeItem("frontlineState");
-        for (const key in frontlineState) {
-            delete frontlineState[key];
-        }
-        if (window.isDev) console.log("🧹 Cleared saved and in-memory frontline state.");
-    }
+    // function clearState() {
+    //     localStorage.removeItem("frontlineState");
+    //     for (const key in frontlineState) {
+    //         delete frontlineState[key];
+    //     }
+    //     if (window.isDev) console.log("🧹 Cleared saved and in-memory frontline state.");
+    // }
 
     function updateHeroData(updatedHeroes) {
         updatedHeroes.forEach((updated) => {

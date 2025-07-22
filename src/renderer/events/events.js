@@ -36,7 +36,7 @@ function isQuietTimeEST() {
     const estNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
     const estHours = estNow.getHours();
     const estMinutes = estNow.getMinutes();
-    return estHours === 8 && estMinutes >= 0 && estMinutes < 5;
+    return estHours === 8 && estMinutes >= 0 && estMinutes < 3;
 }
 
 function abbreviatedValues(num) {
