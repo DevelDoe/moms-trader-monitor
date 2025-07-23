@@ -14,10 +14,6 @@ let flushScheduled = false;
 // Audio
 let lastAudioTime = 0;
 const MIN_AUDIO_INTERVAL_MS = 93;
-const symbolDebounceTime = {};
-const AUDIO_DEBOUNCE_MS = 3 * 1000; // Tune this per your taste
-const lastHighTrigger = {}; // debounce tracker: { [symbol]: timestamp }
-const NEW_HIGH_COOLDOWN_MS = 60 * 1000; // 1 minute
 
 // ============================
 // Utility: Parse Volume String
@@ -173,20 +169,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         // In createAlertElement, for high-of-day sound:
         if (isNewHigh) {
             const now = Date.now();
-            const lastPlayed = lastHighTrigger[hero] ?? 0;
-
-            if (now - lastPlayed >= NEW_HIGH_COOLDOWN_MS) {
-                lastHighTrigger[hero] = now;
+            if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
                 alertDiv.classList.add("new-high");
                 if (!isQuietTimeEST()) {
                     magicDustAudio.volume = Math.min(1.0, Math.max(0.1, volume / 10000));
                     magicDustAudio.currentTime = 0;
                     magicDustAudio.play();
+                    lastAudioTime = now;
                 } else if (debugMode) {
                     console.log(`🔕 Magic dust audio suppressed during quiet time (8:00-8:12 EST)`);
                 }
             } else if (debugMode) {
-                console.log(`🔕 Skipped magic sound for ${hero} — within cooldown.`);
+                console.log(`🔕 Skipped magic sound (debounced, ${now - lastAudioTime}ms)`);
             }
         }
 
@@ -270,24 +264,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return estHours === 8 && estMinutes >= 0 && estMinutes < 12;
             })();
 
-            if (hp > 0 && strength >= 10_000) {
+            if (hp > 0 && strength >= 1000) {
                 if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                    const newUptick = (symbolUpticks[symbol] || 0) + 1;
-
-                    const lastPlayed = symbolDebounceTime[symbol] ?? 0;
-
-                    if (now - lastPlayed >= AUDIO_DEBOUNCE_MS) {
-                        symbolDebounceTime[symbol] = now;
-                        symbolUpticks[symbol] = newUptick;
-                        // Only play audio if NOT quiet time
-                        if (!quietTime) {
-                            playAudioAlert(symbol, strength);
-                            lastAudioTime = now;
-                        } else if (debugMode) {
-                            console.log(`🔕 Audio suppressed during quiet time (8:00-8:12 EST)`);
-                        }
+                    symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
+            
+                    if (!quietTime) {
+                        playAudioAlert(symbol, strength);
+                        lastAudioTime = now;
                     } else if (debugMode) {
-                        console.log(`🔕 Skipped ${symbol} (debounced: ${now - lastPlayed}ms)`);
+                        console.log(`🔕 Audio suppressed during quiet time (8:00-8:12 EST)`);
                     }
                 } else if (debugMode) {
                     console.log(`🔕 Skipped global alert (debounced, ${now - lastAudioTime}ms)`);
