@@ -42,59 +42,39 @@
 
         try {
             // If it's an "up" event (hp > 0)
-            if (event.hp > 0 && isSurging(hero, { slice: 5, minUps: 2 })) {
+            if (event.hp > 0 && isSurging(hero, { slice: 3, minUps: 2 })) {
                 baseScore += event.hp * 10;
                 if (window.isDev && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
 
-                // 💪 Add bonus score per level (100 points per level) only if surging
+                // 💪 Base level boost
+                const level = hero.lv || 1;
+                const levelBoost = level * 100;
+                baseScore += levelBoost;
 
-                // 🧠 Evaluate surge once
-                const surging = isSurging(hero);
-
-                if (surging) {
-                    // 💪 Base level boost
-                    const level = hero.lv || 1;
-                    const levelBoost = level * 100;
-                    baseScore += levelBoost;
-
-                    if (window.isDev && debugSamples < debugLimitSamples) {
-                        logStep("⚡", `Surge Detected! Level Boost (LV ${level})`, levelBoost);
-                    }
-
-                    // 🧪 Rookie tier bonus (amplify surge for LV 1–3)
-                    if (level <= 3) {
-                        const tierBoostMultiplier = 1.5 - (level - 1) * 0.1;
-                        const boostedScore = baseScore * tierBoostMultiplier;
-
-                        if (window.isDev && debugSamples < debugLimitSamples) {
-                            logStep("🧪", `Tier Surge Bonus (x${tierBoostMultiplier.toFixed(2)})`, boostedScore - baseScore);
-                        }
-
-                        baseScore = boostedScore;
-                    }
-                } else if (window.isDev && debugSamples < debugLimitSamples) {
-                    logStep("💤", "No surge — Level Boost skipped", 0);
+                if (window.isDev && debugSamples < debugLimitSamples) {
+                    logStep("⚡", `Surge Detected! Level Boost (LV ${level})`, levelBoost);
                 }
 
-                // Apply Float score
-                // const floatBuff = getHeroBuff(hero, "float");
-                // const floatScore = floatBuff?.score ?? 0;
-                // baseScore += floatScore;
+                // 🧪 Rookie tier bonus (amplify surge for LV 1–3)
+                if (level <= 3) {
+                    const tierBoostMultiplier = 1.5 - (level - 1) * 0.1;
+                    const boostedScore = baseScore * tierBoostMultiplier;
 
-                // if (debug && debugSamples < debugLimitSamples) {
-                //     const label = floatBuff?.key === "floatCorrupt" ? "🧨" : "🏷️";
-                //     const formattedFloat = abbreviatedValues(hero.floatValue) || "N/A";
-                //     logStep(label, `Float Score (${formattedFloat})`, floatScore);
-                // }
+                    if (window.isDev && debugSamples < debugLimitSamples) {
+                        logStep("🧪", `Tier Surge Bonus (x${tierBoostMultiplier.toFixed(2)})`, boostedScore - baseScore);
+                    }
+
+                    baseScore = boostedScore;
+                }
 
                 const volScore = computeVolumeScore(hero, event);
                 baseScore += volScore;
 
-                // Clamp total baseScore to positive only (no negative scoring on "up" events)
                 baseScore = Math.max(0, baseScore);
             }
+
             // If it's a "down" event
-            else if (event.dp > 0) {
+            if (event.dp > 0 && isSurging(hero, { slice: 3, minUps: 2, direction: "dp" })) {
                 const reverseScore = event.dp * 8; // Slightly weaker than up-score
                 baseScore -= reverseScore;
 
