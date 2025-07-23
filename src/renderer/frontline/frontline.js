@@ -3,7 +3,7 @@
 const DECAY_INTERVAL_MS = 1000;
 const XP_DECAY_PER_TICK = 0.1; // Decay per tick
 const SCORE_NORMALIZATION = 2; // Higher = slower decay influence
-const BASE_MAX_SCORE = 20_000;
+const BASE_MAX_SCORE = 3000;
 const BASE_MAX_HP = 10;
 const SCALE_DOWN_THRESHOLD = 1; // 20%
 const SCALE_DOWN_FACTOR = 0.9; // Reduce by 10%
@@ -137,7 +137,7 @@ function handleAlertEvent(event) {
     const minPrice = window.settings?.top?.minPrice ?? 0;
     const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
 
-    if (event.one_min_volume < 1000) {
+    if (event.one_min_volume < 5000) {
         if (window.isDev) console.log(`⚠️ Skipping ${event.hero} due to low 1-min volume: ${event.one_min_volume}`);
         return;
     }
@@ -403,6 +403,11 @@ function updateCardDOM(hero) {
         changeEl.classList.add("change-flash");
         setTimeout(() => changeEl.classList.remove("change-flash"), 400);
     }
+
+    const sortOrder = [
+        "float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort",
+        "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"
+    ];
 
     const sortBuffs = (arr) => arr.sort((a, b) => {
         const aIndex = sortOrder.indexOf(a._sortKey);

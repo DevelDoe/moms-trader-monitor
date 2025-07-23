@@ -4,7 +4,7 @@
 const DECAY_INTERVAL_MS = 6000;
 const XP_DECAY_PER_TICK = 0.2;
 const SCORE_NORMALIZATION = 5;
-const BASE_MAX_HP = 300;
+const BASE_MAX_HP = 30;
 const SCALE_DOWN_THRESHOLD = 0.2;
 const SCALE_DOWN_FACTOR = 0.9;
 const debugLimitSamples = 1500;
@@ -133,7 +133,7 @@ function handleAlertEvent(event) {
     const minPrice = window.settings?.top?.minPrice ?? 0;
     const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
 
-    if (event.one_min_volume <= 10_000) {
+    if (event.one_min_volume <= 30_000) {
         if (window.isDev) console.log(`⛔ Skipped ${event.hero} — low volume (${event.one_min_volume})`);
         return;
     }
@@ -464,7 +464,7 @@ function renderCard({ hero, price, hp, dp, strength, lastEvent }) {
             </div>
             <div class="bar">
                 <div class="bar-fill strength" style="background-color: ${volumeImpact.style.color}; width: ${Math.min((strength / MAX_STRENGTH) * 100, 100)}%">
-                    <span class="bar-text">STRENGTH: ${Math.floor(strength / 1000)}k</span>
+                    <span class="bar-text">STRENGTH: ${Math.floor(strength / 100_000)}k</span>
                 </div>
             </div>
         </div>

@@ -16,6 +16,9 @@ let lastAudioTime = 0;
 const MIN_AUDIO_INTERVAL_MS = 93;
 const symbolDownticks = {}; // symbol → count of consecutive downticks
 
+const symbolChangeTracker = {}; // Keeps net HP-DP per symbol
+const AUDIO_THRESHOLD = 2; // Or your chosen % for cumulative change
+
 // ============================
 // Utility: Parse Volume String
 // ============================
@@ -35,13 +38,13 @@ function isQuietTimeEST() {
     const m = estNow.getMinutes();
 
     return (
-        (h === 8 && m < 3) ||              // 08:00–08:02
-        (h === 9 && m >= 30 && m < 34)     // 09:30–09:33
+        (h === 8 && m < 3) || // 08:00–08:02
+        (h === 9 && m >= 30 && m < 34) // 09:30–09:33
     );
 }
 
 function abbreviatedValues(num) {
-    if (num < 1000) return num.toString();          // No abbreviation under 1K
+    if (num < 1000) return num.toString(); // No abbreviation under 1K
     if (num < 1_000_000) return (num / 1_000).toFixed(1) + "K";
     return (num / 1_000_000).toFixed(1) + "M";
 }
@@ -94,41 +97,44 @@ document.addEventListener("DOMContentLoaded", async () => {
         return fSharpMajorHz.reduce((prev, curr) => (Math.abs(curr - freq) < Math.abs(prev - freq) ? curr : prev));
     }
 
-    function playAudioAlert(symbol, volumeValue = 0) {
+    function playAudioAlert(symbol, volumeValue = 0, cumulativeChange = 0) {
         const audioCtx = getAudioCtx();
-
+    
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         const filter = audioCtx.createBiquadFilter();
-
+    
         // 🎚️ Configure the filter
-        filter.type = "lowpass"; // You can also try "bandpass" or "peaking"
-        filter.frequency.value = 1300; // Center frequency
-        filter.Q.value = 1; // Quality factor (sharpness of the curve)
-
-        // Connect chain: Oscillator → Filter → Gain → Output
+        filter.type = "lowpass";
+        filter.frequency.value = 1300;
+        filter.Q.value = 1;
+    
+        // Connect chain
         oscillator.connect(filter).connect(gainNode).connect(audioCtx.destination);
-
-        const uptickCount = symbolUpticks[symbol] || 0;
-
+    
+        // 🔁 Use cumulativeChange to determine base pitch
         let baseFreq = 60;
         let duration = 0.2;
-
+    
         if (volumeValue > 30_000) {
             baseFreq = 180;
             duration = 0.5;
         }
-
-        const rawFreq = baseFreq + uptickCount * 30;
+    
+        // 🔺 Increase pitch based on magnitude of the cumulative move
+        const pitchBoost = Math.min(cumulativeChange * 80, 400); // Cap max pitch boost
+        const rawFreq = baseFreq + pitchBoost;
+    
         const quantizedFreq = quantizeToFSharpMajor(rawFreq);
-
+    
         oscillator.frequency.value = quantizedFreq;
         gainNode.gain.setValueAtTime(0.75, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-
+    
         oscillator.start();
         oscillator.stop(audioCtx.currentTime + duration);
     }
+    
 
     function createAlertElement(alertData) {
         const { hero, price, strength = 0, type = "", hp = 0, dp = 0, fiveMinVolume = 0 } = alertData;
@@ -237,6 +243,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             const symbol = alertData.hero || alertData.symbol;
             const { price = 0, hp = 0, dp = 0, strength = 0 } = alertData;
 
+            const netDelta = hp - dp;
+            symbolChangeTracker[symbol] = (symbolChangeTracker[symbol] || 0) + netDelta;
+
+            // Debug cumulative change
+            if (debugMode) {
+                console.log(`↕️ [${symbol}] Cumulative Change: ${symbolChangeTracker[symbol].toFixed(2)}%`);
+            }
+
             // 🔍 Debug the actual filter values and the incoming data
             if (debugMode) {
                 console.log("🧪 Settings:", { minPrice, maxPrice, minChangePercent, minVolume });
@@ -254,38 +268,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const quietTime = isQuietTimeEST();
 
-            if (hp > 0 && strength >= 0) {
-                symbolDownticks[symbol] = 0; // ✅ reset downtick streak on uptick
+            // Only fire alert on significant *cumulative* move
+            if (symbolChangeTracker[symbol] >= AUDIO_THRESHOLD && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+                symbolDownticks[symbol] = 0;
                 symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
-                const uptickCount = symbolUpticks[symbol];
-            
-                if (uptickCount >= 2) {
-                    if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                        if (!quietTime) {
-                            playAudioAlert(symbol, strength);
-                            lastAudioTime = now;
-                        } else if (debugMode) {
-                            console.log(`🔕 Audio suppressed during quiet time (EST)`);
-                        }
-                    } else if (debugMode) {
-                        console.log(`🔕 Skipped global alert (debounced, ${now - lastAudioTime}ms)`);
-                    }
+
+                if (!quietTime) {
+                    playAudioAlert(symbol, strength, symbolChangeTracker[symbol]);
+                    lastAudioTime = now;
+                    symbolChangeTracker[symbol] = 0; // Reset after triggering
                 } else if (debugMode) {
-                    console.log(`🔕 Skipped ${symbol} (first uptick, no sound)`);
+                    console.log(`🔕 Audio suppressed during quiet time`);
                 }
             } else if (dp > 0) {
                 symbolDownticks[symbol] = (symbolDownticks[symbol] || 0) + 1;
-            
-                if (symbolDownticks[symbol] >= 3) {
+
+                if (symbolDownticks[symbol] >= 2) {
                     symbolUpticks[symbol] = 0;
                     symbolDownticks[symbol] = 0;
-                    if (debugMode) console.log(`🔻 ${symbol} — reset after 3 consecutive downticks`);
+                    if (debugMode) console.log(`🔻 ${symbol} — reset after 2 consecutive downticks`);
                 } else {
-                    if (debugMode) console.log(`🔻 ${symbol} — ${symbolDownticks[symbol]} downtick(s) allowed, upticks preserved`);
+                    if (debugMode) console.log(`🔻 ${symbol} — 1st downtick allowed, upticks preserved`);
                 }
             }
-            
-            
 
             alertQueue.push(alertData);
             if (!flushScheduled) {

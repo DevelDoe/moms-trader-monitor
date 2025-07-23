@@ -48,7 +48,7 @@
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 35,
+    "maxAlerts": 100,
     "scannerVolume": 0
   },
   "windows": {
@@ -62,8 +62,8 @@
     "settingsWindow": {
       "width": 907,
       "height": 755,
-      "x": 231,
-      "y": 778,
+      "x": 428,
+      "y": 1117,
       "isOpen": false
     },
     "infobarWindow": {
@@ -128,7 +128,7 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": false,
+    "enableHeroes": true,
     "autoClose": false
   }
 }
