@@ -373,3 +373,17 @@ h2 {
     will-change: width;
     transform: translateZ(0);
 }
+
+/* Shake and pink flash animation */
+@keyframes shakePink {
+    0% { transform: translate(0, 0); background-color: #2a2d36; }
+    20% { transform: translate(-2px, 0); background-color: #442a36; }
+    40% { transform: translate(2px, 0); background-color: #5a2d44; }
+    60% { transform: translate(-2px, 0); background-color: #442a36; }
+    80% { transform: translate(2px, 0); background-color: #5a2d44; }
+    100% { transform: translate(0, 0); background-color: #2a2d36; }
+}
+
+.ticker-card.dp-shake {
+    animation: shakePink 0.3s ease;
+}

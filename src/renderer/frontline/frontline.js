@@ -1,7 +1,7 @@
 // frontlineState.js
 // ======================= CONFIGURATION =======================
 const DECAY_INTERVAL_MS = 1000;
-const XP_DECAY_PER_TICK = 0.2; // Decay per tick
+const XP_DECAY_PER_TICK = 0.1; // Decay per tick
 const SCORE_NORMALIZATION = 2; // Higher = slower decay influence
 const BASE_MAX_SCORE = 20_000;
 const BASE_MAX_HP = 10;
@@ -11,6 +11,23 @@ const debugLimitSamples = 1500;
 
 // ======================= STATE =======================
 const frontlineState = {};
+
+const renderQueue = new Set();
+let renderQueueTimer = null;
+
+function queueCardUpdate(symbol) {
+    renderQueue.add(symbol);
+
+    if (!renderQueueTimer) {
+        renderQueueTimer = setTimeout(() => {
+            renderQueue.forEach((sym) => updateCardDOM(sym));
+            renderQueue.clear();
+            renderQueueTimer = null;
+        }, 40); // Slight delay to batch updates
+    }
+}
+
+
 let container;
 
 let maxHP = BASE_MAX_HP;
@@ -151,7 +168,7 @@ function handleAlertEvent(event) {
             score: 0,
             lastEvent: { hp: 0, dp: 0, xp: 0 },
             floatValue: 0,
-            buffs: {},
+            buffs: event.buffs || {},
             highestPrice: event.price || 1,
         };
 
@@ -172,7 +189,7 @@ function updateFrontlineStateFromEvent(event) {
     }
 
     let hero = frontlineState[event.hero];
-
+    
     if (!hero) {
         console.warn("❌ Frontline state missing for hero:", event.hero, "Full event:", event);
         return; // Prevents crash on `hero.price = ...`
@@ -182,6 +199,10 @@ function updateFrontlineStateFromEvent(event) {
     hero.hue = event.hue ?? hero.hue ?? 0;
     hero.strength = event.one_min_volume ?? hero.strength ?? 0;
     hero.lastChangeText = hero.lastChangeText || "";
+
+    if (event.buffs && Object.keys(event.buffs).length > 0) {
+        hero.buffs = event.buffs;
+    }
 
     if (event.hp > 0) {
         hero.hp += event.hp;
@@ -264,7 +285,8 @@ function updateFrontlineStateFromEvent(event) {
         lastTopHeroes = currentTopHeroes;
         debouncedRenderAll();
     } else {
-        debouncedUpdateCardDOM(event.hero);
+        queueCardUpdate(event.hero);
+
     }
 
     hero.lastUpdate = Date.now();
@@ -329,10 +351,10 @@ function updateCardDOM(hero) {
     const card = document.querySelector(`.ticker-card[data-symbol="${hero}"]`);
     if (!card) return;
 
-    // ✅ Score bar only
+    // Existing updates (score bar, volume, price, fade logic, HP/DP)
     const bar = card.querySelector(`.bar-fill.score`);
     if (bar) {
-        const exponent = 0.35; // Lower = flatter early growth, steeper late
+        const exponent = 0.35;
         const normalized = Math.min(state.score / maxScore, 1);
         const fill = Math.pow(normalized, exponent);
         bar.style.width = `${fill * 100}%`;
@@ -345,11 +367,9 @@ function updateCardDOM(hero) {
         volumeEl.style.color = volumeImpact.style.color;
     }
 
-    // ✅ Update price label
     const priceEl = card.querySelector(".lv");
     if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
 
-    // ✅ Fade logic
     const now = Date.now();
     const lastUpdate = state.lastUpdate || now;
     const timeSinceUpdate = now - lastUpdate;
@@ -364,7 +384,6 @@ function updateCardDOM(hero) {
         setTimeout(() => card.classList.remove("card-update-highlight"), 300);
     }
 
-    // ✅ HP / DP change display
     const changeEl = card.querySelector(".change-placeholder");
     if (changeEl) {
         const hadHp = state.lastEvent.hp > 0;
@@ -383,6 +402,20 @@ function updateCardDOM(hero) {
         changeEl.textContent = state.lastChangeText || "";
         changeEl.classList.add("change-flash");
         setTimeout(() => changeEl.classList.remove("change-flash"), 400);
+    }
+
+    const sortBuffs = (arr) => arr.sort((a, b) => {
+        const aIndex = sortOrder.indexOf(a._sortKey);
+        const bIndex = sortOrder.indexOf(b._sortKey);
+        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    });
+
+    // Add buffs update
+    const buffsContainer = card.querySelector(".buffs-container");
+    if (buffsContainer) {
+        const sortedBuffs = sortBuffs(Object.values(state.buffs || {}));
+        const buffsInline = sortedBuffs.map((buff) => `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`).join("");
+        buffsContainer.innerHTML = buffsInline;
     }
 }
 
@@ -441,25 +474,27 @@ function renderCard(state) {
     const buffsInline = sortedBuffs.map((buff) => `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`).join("");
 
     card.innerHTML = `
-<div class="ticker-header">
-    <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}">
-        ${hero} <span class="lv">$${price.toFixed(2)}</span>
-    </div>
-    <div class="ticker-info">
-        <div class="ticker-data">
-            <span class="bar-text" style="color:${volumeImpact.style.color}">
-                ${window.helpers.abbreviatedValues(strength)}
-            </span>
-            <span class="change-placeholder ${changeClass}">${change}</span>
-            ${buffsInline}
+    <div class="ticker-header">
+        <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}">
+            ${hero} <span class="lv">$${price.toFixed(2)}</span>
         </div>
-        <div class="bars">
-            <div class="bar">
-                <div class="bar-fill score" style="width: ${Math.min((state.score / maxScore) * 100, 100)}%"></div>
+        <div class="ticker-info">
+            <div class="ticker-data">
+                <span class="bar-text" style="color:${volumeImpact.style.color}">
+                    ${window.helpers.abbreviatedValues(strength)}
+                </span>
+                <span class="change-placeholder ${changeClass}">${change}</span>
+                <div class="buffs-container">
+                    ${buffsInline}
+                </div>
+            </div>
+            <div class="bars">
+                <div class="bar">
+                    <div class="bar-fill score" style="width: ${Math.min((state.score / maxScore) * 100, 100)}%"></div>
+                </div>
             </div>
         </div>
-    </div>
-</div>`;
+    </div>`;
 
     const symbolElement = card.querySelector(".ticker-symbol");
     symbolElement.onclick = (e) => {

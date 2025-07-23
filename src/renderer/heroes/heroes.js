@@ -14,6 +14,23 @@ const MAX_STRENGTH = 1_000_000;
 
 // ======================= STATE =======================
 const heroesState = {};
+
+const renderQueue = new Set();
+let renderQueueTimer = null;
+
+function queueCardUpdate(symbol) {
+    renderQueue.add(symbol);
+
+    if (!renderQueueTimer) {
+        renderQueueTimer = setTimeout(() => {
+            renderQueue.forEach((sym) => updateCardDOM(sym));
+            renderQueue.clear();
+            renderQueueTimer = null;
+        }, 40); // Slight delay to batch updates
+    }
+}
+
+
 let container;
 
 let maxHP = BASE_MAX_HP;
@@ -140,7 +157,7 @@ function handleAlertEvent(event) {
             totalXpGained: 0,
             lastEvent: { hp: 0, dp: 0 },
             floatValue: 0,
-            buffs: {},
+            buffs: event.buffs || {},
             highestPrice: event.price || 1,
         };
         if (window.isDev) console.log(`🆕 Initialized new hero from alert: ${event.hero}`);
@@ -158,9 +175,18 @@ function updateHeroFromEvent(event) {
 
     let hero = heroesState[event.hero];
 
+    if (!hero) {
+        console.warn("❌ Heroes state missing, Full event:", event);
+        return; // Prevents crash on `hero.price = ...`
+    }
+
     hero.price = event.price;
     hero.hue = event.hue ?? hero.hue ?? 0;
     hero.strength = event.one_min_volume || 0;
+
+    if (event.buffs && Object.keys(event.buffs).length > 0) {
+        hero.buffs = event.buffs;
+    }
 
     const wasDead = hero.hp === 0 && event.hp > 0;
     if (wasDead && window.isDev) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
@@ -242,7 +268,7 @@ function updateHeroFromEvent(event) {
             if (window.isDev) console.log(`🪞 Updated TradingView windows to:`, topForTradingView);
         }
     } else {
-        debouncedUpdateCardDOM(event.hero);
+        queueCardUpdate(event.hero);
     }
 
     hero.lastUpdate = Date.now();
@@ -323,6 +349,10 @@ function updateCardDOM(hero) {
 
     // 🧠 Animate to new bar values
     requestAnimationFrame(() => {
+        if (heroesState[hero].lastEvent.dp > 0) {
+            newCard.classList.add("dp-shake");
+            setTimeout(() => newCard.classList.remove("dp-shake"), 300);
+        }
         const state = heroesState[hero];
         const { xpPercent } = window.helpers.getXpProgress(state);
 
