@@ -256,30 +256,35 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (hp > 0 && strength >= 0) {
                 symbolDownticks[symbol] = 0; // ✅ reset downtick streak on uptick
+                symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
+                const uptickCount = symbolUpticks[symbol];
             
-                if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                    symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
-            
-                    if (!quietTime) {
-                        playAudioAlert(symbol, strength);
-                        lastAudioTime = now;
+                if (uptickCount >= 2) {
+                    if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+                        if (!quietTime) {
+                            playAudioAlert(symbol, strength);
+                            lastAudioTime = now;
+                        } else if (debugMode) {
+                            console.log(`🔕 Audio suppressed during quiet time (EST)`);
+                        }
                     } else if (debugMode) {
-                        console.log(`🔕 Audio suppressed during quiet time (8:00-8:12 EST)`);
+                        console.log(`🔕 Skipped global alert (debounced, ${now - lastAudioTime}ms)`);
                     }
                 } else if (debugMode) {
-                    console.log(`🔕 Skipped global alert (debounced, ${now - lastAudioTime}ms)`);
+                    console.log(`🔕 Skipped ${symbol} (first uptick, no sound)`);
                 }
             } else if (dp > 0) {
                 symbolDownticks[symbol] = (symbolDownticks[symbol] || 0) + 1;
             
-                if (symbolDownticks[symbol] >= 2) {
+                if (symbolDownticks[symbol] >= 3) {
                     symbolUpticks[symbol] = 0;
                     symbolDownticks[symbol] = 0;
-                    if (debugMode) console.log(`🔻 ${symbol} — reset after 2 consecutive downticks`);
+                    if (debugMode) console.log(`🔻 ${symbol} — reset after 3 consecutive downticks`);
                 } else {
-                    if (debugMode) console.log(`🔻 ${symbol} — 1st downtick allowed, upticks preserved`);
+                    if (debugMode) console.log(`🔻 ${symbol} — ${symbolDownticks[symbol]} downtick(s) allowed, upticks preserved`);
                 }
             }
+            
             
 
             alertQueue.push(alertData);
