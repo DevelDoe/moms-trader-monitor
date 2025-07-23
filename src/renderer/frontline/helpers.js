@@ -38,7 +38,7 @@
                 baseScore += volScore;
                 logStep("📢", "Crowd Participation Score", volScore);
             } else if (event.dp > 0) {
-                const reverseScore = event.dp * 8; // Slightly weaker than up-score
+                const reverseScore = event.dp * 5 // Slightly weaker than up-score
                 baseScore -= reverseScore;
                 logStep("💔", "Down Pressure Penalty", -reverseScore);
         

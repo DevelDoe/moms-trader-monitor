@@ -75,7 +75,7 @@
 
             // If it's a "down" event
             if (event.dp > 0 ) {
-                const reverseScore = event.dp * 8; // Slightly weaker than up-score
+                const reverseScore = event.dp * 5; // Slightly weaker than up-score
                 baseScore -= reverseScore;
 
                 if (window.isDev && debugSamples < debugLimitSamples) logStep("💔", "Down Pressure Penalty", -reverseScore);
