@@ -53,7 +53,7 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 265,
+      "width": 266,
       "height": 900,
       "x": -250,
       "y": -900,
@@ -91,9 +91,9 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 451,
+      "width": 452,
       "height": 445,
-      "x": 17,
+      "x": 16,
       "y": -443,
       "isOpen": true
     },
@@ -102,7 +102,7 @@
       "height": 457,
       "x": 16,
       "y": -900,
-      "isOpen": true
+      "isOpen": false
     },
     "heroesWindow": {
       "width": 513,
