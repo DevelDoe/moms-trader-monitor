@@ -42,7 +42,7 @@
 
         try {
             // If it's an "up" event (hp > 0)
-            if (event.hp > 0 && isSurging(hero, { slice: 3, minUps: 2 })) {
+            if (event.hp > 0) {
                 baseScore += event.hp * 10;
                 if (window.isDev && debugSamples < debugLimitSamples) logStep("💖", "Base HP Added", baseScore);
 
@@ -74,7 +74,7 @@
             }
 
             // If it's a "down" event
-            if (event.dp > 0 && isSurging(hero, { slice: 3, minUps: 2, direction: "dp" })) {
+            if (event.dp > 0 ) {
                 const reverseScore = event.dp * 8; // Slightly weaker than up-score
                 baseScore -= reverseScore;
 

@@ -124,6 +124,13 @@
       "height": 551,
       "x": 2496,
       "y": 1069
+    },
+    "traderviewWindow_WBUY": {
+      "width": 514,
+      "height": 506,
+      "x": 992,
+      "y": 0,
+      "isOpen": true
     }
   },
   "traderview": {
