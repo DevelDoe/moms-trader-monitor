@@ -14,6 +14,7 @@ let flushScheduled = false;
 // Audio
 let lastAudioTime = 0;
 const MIN_AUDIO_INTERVAL_MS = 93;
+const symbolDownticks = {}; // symbol → count of consecutive downticks
 
 // ============================
 // Utility: Parse Volume String
@@ -30,9 +31,13 @@ function parseVolumeValue(str) {
 // Utility function to check if current time is quiet time (8:00-8:12 EST)
 function isQuietTimeEST() {
     const estNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-    const estHours = estNow.getHours();
-    const estMinutes = estNow.getMinutes();
-    return estHours === 8 && estMinutes >= 0 && estMinutes < 3;
+    const h = estNow.getHours();
+    const m = estNow.getMinutes();
+
+    return (
+        (h === 8 && m < 3) ||              // 08:00–08:02
+        (h === 9 && m >= 30 && m < 34)     // 09:30–09:33
+    );
 }
 
 function abbreviatedValues(num) {
@@ -65,7 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     let audioCtx = null;
-    const fSharpMajorHz = buildCMajorScale();
+    const fSharpMajorHz = buildChromaticScale();
 
     function getAudioCtx() {
         if (!audioCtx || audioCtx.state === "closed") {
@@ -76,21 +81,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         return audioCtx;
     }
 
-    function buildCMajorScale(minFreq = 20, maxFreq = 20000) {
-        const semitoneSteps = [0, 2, 4, 5, 7, 9, 11]; // C major intervals: C D E F G A B
-        const baseNote = 48; // C3 (~130.81 Hz)
+    function buildChromaticScale(minFreq = 20, maxFreq = 20000) {
         const scale = [];
-
-        for (let midi = baseNote; midi < 128; midi++) {
-            const semitoneFromBase = (midi - baseNote) % 12;
-            if (semitoneSteps.includes(semitoneFromBase)) {
-                const freq = 440 * Math.pow(2, (midi - 69) / 12);
-                if (freq >= minFreq && freq <= maxFreq) {
-                    scale.push(freq);
-                }
-            }
+        for (let midi = 30; midi < 128; midi++) {
+            const freq = 440 * Math.pow(2, (midi - 69) / 12);
+            if (freq >= minFreq && freq <= maxFreq) scale.push(freq);
         }
-
         return scale;
     }
 
@@ -256,15 +252,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const now = Date.now(); // 🧼 keep only this one at the top of the block
 
-            // Check quiet time fresh on every alert
-            const quietTime = (() => {
-                const estNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-                const estHours = estNow.getHours();
-                const estMinutes = estNow.getMinutes();
-                return estHours === 8 && estMinutes >= 0 && estMinutes < 12;
-            })();
+            const quietTime = isQuietTimeEST();
 
-            if (hp > 0 && strength >= 1000) {
+            if (hp > 0 && strength >= 0) {
+                symbolDownticks[symbol] = 0; // ✅ reset downtick streak on uptick
+            
                 if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
                     symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
             
@@ -278,9 +270,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                     console.log(`🔕 Skipped global alert (debounced, ${now - lastAudioTime}ms)`);
                 }
             } else if (dp > 0) {
-                // ⬇️ Reset pitch counter and pitch level on downtick
-                symbolUpticks[symbol] = 0;
+                symbolDownticks[symbol] = (symbolDownticks[symbol] || 0) + 1;
+            
+                if (symbolDownticks[symbol] >= 2) {
+                    symbolUpticks[symbol] = 0;
+                    symbolDownticks[symbol] = 0;
+                    if (debugMode) console.log(`🔻 ${symbol} — reset after 2 consecutive downticks`);
+                } else {
+                    if (debugMode) console.log(`🔻 ${symbol} — 1st downtick allowed, upticks preserved`);
+                }
             }
+            
 
             alertQueue.push(alertData);
             if (!flushScheduled) {
