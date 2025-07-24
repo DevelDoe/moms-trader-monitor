@@ -320,7 +320,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const quietTime = isQuietTimeEST();
 
             if (hp > 0 && strength >= minVolume) {
-                // 🎯 Combo logic — as you already have
+                // ✅ Valid uptick with enough volume — apply combo logic
                 const currentLevel = symbolNoteIndices[symbol] ?? 1;
                 const nextLevel = currentLevel + 1;
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
@@ -329,7 +329,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     clearTimeout(symbolUptickTimers[symbol]);
 
                     if (strength >= requiredVolume) {
-                        // ✅ Volume OK → advance combo
+                        // 🚀 Combo advances
                         symbolNoteIndices[symbol] = nextLevel;
 
                         const note = fSharpMajorHz[Math.min(nextLevel, fSharpMajorHz.length - 1)];
@@ -339,34 +339,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                             if (debugMode) console.log(`🎵 ${symbol} combo advanced to ${nextLevel} (${note.toFixed(1)} Hz)`);
                         }
                     } else {
-                        // ❌ Volume too low → combo fails
+                        // 🚫 Not enough volume — combo fails
                         if (debugMode) console.log(`❌ ${symbol} combo reset — volume ${strength} < ${requiredVolume}`);
                         resetCombo(symbol);
-                        return; // skip alert
+                        return;
                     }
                 } else {
-                    // 🆕 First uptick → start combo
+                    // 🆕 First uptick — start combo if volume is acceptable
                     if (strength >= COMBO_VOLUME_REQUIREMENTS[1]) {
                         symbolNoteIndices[symbol] = 1;
                         if (debugMode) console.log(`🆕 ${symbol} combo started`);
                     } else {
                         if (debugMode) console.log(`❌ ${symbol} combo not started — weak volume`);
-                        return; // skip alert
+                        return;
                     }
                 }
 
-                // 🕐 Reset timer (for timeout-based reset)
+                // ⏱ Set/reset timeout for combo expiration
                 symbolUptickTimers[symbol] = setTimeout(() => {
                     resetCombo(symbol);
                 }, UPTICK_WINDOW_MS);
-            } else if (dp > 0) {
-                // ⛔️ Downtick: do nothing, don’t reset combo
-                if (debugMode) console.log(`🛑 ${symbol} downtick — combo preserved`);
-                // you *could* visually dim it here, but that’s optional
-            } else {
-                // 🪫 Any other case (low volume, malformed alert): reset
-                if (debugMode) console.log(`⚠️ ${symbol} alert did not qualify as up/down, combo reset`);
-                resetCombo(symbol);
             }
 
             alertQueue.push(alertData);
