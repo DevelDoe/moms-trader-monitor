@@ -10,7 +10,7 @@ if (!debugMode) {
 }
 // Alert Queue
 const alertQueue = [];
-let flushScheduled = false;      
+let flushScheduled = false;
 
 // Audio
 let lastAudioTime = 0;
@@ -18,7 +18,7 @@ const MIN_AUDIO_INTERVAL_MS = 93;
 
 const symbolUptickTimers = {};
 const symbolNoteIndices = {};
-const UPTICK_WINDOW_MS = 30_000;
+const UPTICK_WINDOW_MS = 15_000;
 
 const fSharpMajorHz = [
     92.5, // F#2
@@ -163,7 +163,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         fillDiv.className = "combo-fill";
         alertDiv.appendChild(fillDiv);
 
-
         const contentDiv = document.createElement("div");
         contentDiv.className = "alert-content";
 
@@ -226,20 +225,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         alertDiv.appendChild(contentDiv);
         if (hp > 0 && comboLevel >= 2) {
             fillDiv.style.width = `${comboPercent}%`;
-        
-            fillDiv.style.background = `linear-gradient(
-                120deg,
-                rgba(180, 0, 40, 1) 0%,
-                rgba(255, 0, 60, 1) 50%,
-                rgba(180, 0, 40, 1) 100%
-            )`;
+
+            // 🔴 Add combo border to alert card itself
+            alertDiv.classList.add("combo-active");
 
             // 🎵 Add pulse class based on combo level
+
             fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
             const pulseStep = Math.min(4, Math.floor(comboLevel / 2)); // 0–4
             if (pulseStep >= 1) fillDiv.classList.add(`combo-pulse-${pulseStep}`);
         }
-        
+
         return alertDiv;
     }
 
@@ -301,8 +297,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     symbolNoteIndices[symbol] = (symbolNoteIndices[symbol] ?? 1) + 1;
                     symbolNoteIndices[symbol] = Math.min(symbolNoteIndices[symbol], 16);
 
-
-
                     const noteIndex = symbolNoteIndices[symbol];
                     const note = fSharpMajorHz[Math.min(noteIndex, fSharpMajorHz.length - 1)];
 
@@ -321,19 +315,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                 symbolUptickTimers[symbol] = setTimeout(() => {
                     delete symbolUptickTimers[symbol];
                     delete symbolNoteIndices[symbol];
-                
+
                     // 🧹 Remove pulse classes + reset fill style
-                    document.querySelectorAll(`.alert[data-symbol="${symbol}"] .combo-fill`).forEach((fillDiv) => {
-                        fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
-                        fillDiv.style.width = "0%";
-                        fillDiv.style.borderTop = "";
-                        fillDiv.style.borderBottom = "";
-                        fillDiv.style.background = "";
+                    document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((alertDiv) => {
+                        alertDiv.classList.remove("combo-active");
+                        const fillDiv = alertDiv.querySelector(".combo-fill");
+                        if (fillDiv) {
+                            fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+                            fillDiv.style.width = "0%";
+                            fillDiv.style.background = "";
+                        }
                     });
-                
+                    
+
                     if (debugMode) console.log(`⌛ ${symbol} combo expired`);
                 }, UPTICK_WINDOW_MS);
-                
             }
 
             alertQueue.push(alertData);

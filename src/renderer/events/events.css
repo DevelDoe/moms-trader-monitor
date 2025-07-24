@@ -76,6 +76,7 @@ body {
     border-radius: 0px;
     margin-right: 0px;
     z-index: 2;
+    cursor: pointer;
 }
 
 .alert-content {
@@ -171,7 +172,7 @@ body {
     border-top: 1px solid gold;
     border-bottom: 1px solid gold;
     background-color: #333d2a;
-    animation: pulseNewHigh 0.5s infinite;
+    animation: pulseNewHigh 1.2s infinite;
     width: 100vw;
 }
 
@@ -190,22 +191,8 @@ body {
     background-color: #223144;
     border-top: 1px solid #55aaff;
     border-bottom: 1px solid #55aaff;
-    animation: pulseNewEntry 0.8s ease-in-out;
     width: 100vw;
 }
-
-@keyframes pulseNewEntry {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.03);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
 
 .combo-fill {
     position: absolute;
@@ -216,13 +203,17 @@ body {
     width: 0%;
     pointer-events: none;
     z-index: 0;
-    background: linear-gradient(120deg, rgba(120, 0, 0, 0.5), rgba(180, 0, 0, 0.4), rgba(120, 0, 0, 0.5));
+    background: rgba(255, 78, 78, 0.3);
     background-size: 200% 100%;
-    transition: width 0.2s ease-out, background 0.2s ease-out;
+    transition: width 0.6s ease-out, background 0.2s linear;
     will-change: width;
     mix-blend-mode: screen;
-    border-top: 1px solid rgba(255, 50, 100, 1) !important;
-    border-bottom: 1px solid rgba(255, 50, 100, 1) !important;
+}
+
+.alert.combo-active {
+    border-top: 1px solid #ff0000;
+    border-bottom: 1px solid #ff0000;
+    filter: grayscale(0%) brightness(1);
 }
 
 .alert {
@@ -238,14 +229,14 @@ body {
 }
 
 .combo-pulse-1 {
-    animation: comboPulse 2s ease-in-out infinite;
+    animation: comboPulse 1.4s ease-in-out infinite;
 }
 .combo-pulse-2 {
-    animation: comboPulse 1.5s ease-in-out infinite;
-}
-.combo-pulse-3 {
     animation: comboPulse 1s ease-in-out infinite;
 }
+.combo-pulse-3 {
+    animation: comboPulse 06s ease-in-out infinite;
+}
 .combo-pulse-4 {
-    animation: comboPulse 0.6s ease-in-out infinite;
+    animation: comboPulse 0.2s ease-in-out infinite;
 }
