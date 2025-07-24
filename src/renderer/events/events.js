@@ -54,6 +54,18 @@ const fSharpMajorHz = [
     1567.98, // G#6
 ];
 
+// Minimum volume required to reach each combo level
+const COMBO_VOLUME_REQUIREMENTS = [
+    0, // combo 0 (not used)
+    0, // combo 1 (initial uptick, allow anything)
+    500, // combo 2: must have 3K+
+    1000, // combo 3: must have 6K+
+    3000, // combo 4: must have 10K+
+    6000, // combo 5: must have 20K+
+    9000, // combo 6: must have 40K+
+    10000, // combo 7+: very strong only
+];
+
 // ============================
 // Utility: Parse Volume String
 // ============================
@@ -292,18 +304,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (hp > 0 && strength >= minVolume) {
                 if (symbolUptickTimers[symbol]) {
-                    // 🟢 Combo in progress → advance note
                     clearTimeout(symbolUptickTimers[symbol]);
-                    symbolNoteIndices[symbol] = (symbolNoteIndices[symbol] ?? 1) + 1;
-                    symbolNoteIndices[symbol] = Math.min(symbolNoteIndices[symbol], 16);
 
-                    const noteIndex = symbolNoteIndices[symbol];
-                    const note = fSharpMajorHz[Math.min(noteIndex, fSharpMajorHz.length - 1)];
+                    const currentLevel = symbolNoteIndices[symbol] ?? 1;
+                    const nextLevel = currentLevel + 1;
+                    const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
 
-                    if (!quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                        playNote(note, strength);
-                        lastAudioTime = now;
-                        if (debugMode) console.log(`🎵 ${symbol} playing note #${noteIndex} → ${note.toFixed(1)} Hz`);
+                    if (strength >= requiredVolume) {
+                        symbolNoteIndices[symbol] = Math.min(nextLevel, 16);
+
+                        if (debugMode) {
+                            console.log(`⚡ Combo advanced → ${symbol} now at combo level ${nextLevel}, volume: ${strength} (required: ${requiredVolume})`);
+                        }
+
+                        const note = fSharpMajorHz[Math.min(nextLevel, fSharpMajorHz.length - 1)];
+                        if (!quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+                            playNote(note, strength);
+                            lastAudioTime = now;
+                            if (debugMode) console.log(`🎵 ${symbol} playing note #${nextLevel} → ${note.toFixed(1)} Hz`);
+                        }
+                    } else {
+                        if (debugMode) {
+                            console.log(`⛔ Combo BLOCKED → ${symbol} volume too low for level ${nextLevel} (got: ${strength}, required: ${requiredVolume})`);
+                        }
+                        // Don't increment combo level, don't play note
                     }
                 } else {
                     // 🆕 First uptick → start combo timer, no sound
@@ -326,7 +350,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                             fillDiv.style.background = "";
                         }
                     });
-                    
 
                     if (debugMode) console.log(`⌛ ${symbol} combo expired`);
                 }, UPTICK_WINDOW_MS);

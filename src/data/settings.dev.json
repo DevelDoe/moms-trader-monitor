@@ -125,20 +125,8 @@
       "x": 2496,
       "y": 1069
     },
-    "traderviewWindow_XFOR": {
-      "isOpen": false
-    },
-    "traderviewWindow_ONDS": {
-      "isOpen": false
-    },
-    "traderviewWindow_PSTV": {
-      "isOpen": false
-    },
-    "traderviewWindow_LIDR": {
-      "isOpen": false
-    },
-    "traderviewWindow_AEO": {
-      "isOpen": false
+    "traderviewWindow_WBD": {
+      "isOpen": true
     }
   },
   "traderview": {

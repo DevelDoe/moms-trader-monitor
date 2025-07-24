@@ -229,14 +229,14 @@ body {
 }
 
 .combo-pulse-1 {
-    animation: comboPulse 1.4s ease-in-out infinite;
+    animation: comboPulse 6s ease-in-out infinite;
 }
 .combo-pulse-2 {
-    animation: comboPulse 1s ease-in-out infinite;
+    animation: comboPulse 5s ease-in-out infinite;
 }
 .combo-pulse-3 {
-    animation: comboPulse 06s ease-in-out infinite;
+    animation: comboPulse 04s ease-in-out infinite;
 }
 .combo-pulse-4 {
-    animation: comboPulse 0.2s ease-in-out infinite;
+    animation: comboPulse 0.3s ease-in-out infinite;
 }

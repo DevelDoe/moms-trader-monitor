@@ -351,7 +351,7 @@ function updateCardDOM(hero) {
     requestAnimationFrame(() => {
         if (heroesState[hero].lastEvent.dp > 0) {
             newCard.classList.add("dp-shake");
-            setTimeout(() => newCard.classList.remove("dp-shake"), 500);
+            setTimeout(() => newCard.classList.remove("dp-shake"), 400);
         }
         const state = heroesState[hero];
         const { xpPercent } = window.helpers.getXpProgress(state);
