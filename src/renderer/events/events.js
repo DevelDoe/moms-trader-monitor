@@ -18,7 +18,7 @@ const MIN_AUDIO_INTERVAL_MS = 93;
 
 const symbolUptickTimers = {};
 const symbolNoteIndices = {};
-const UPTICK_WINDOW_MS = 20_000;
+const UPTICK_WINDOW_MS = 40_000;
 
 const fSharpMajorHz = [
     92.5, // F#2
@@ -56,14 +56,14 @@ const fSharpMajorHz = [
 
 // Minimum volume required to reach each combo level
 const COMBO_VOLUME_REQUIREMENTS = [
-    0,      // combo 0 (not used)
-    0,      // combo 1 (initial uptick, allow anything)
-    3000,   // combo 2: must have 3K+
-    6000,   // combo 3: must have 6K+
-    10000,  // combo 4: must have 10K+
-    20000,  // combo 5: must have 20K+
-    40000,  // combo 6: must have 40K+
-    60000,  // combo 7+: very strong only
+    0, // combo 0 (not used)
+    0, // combo 1 (initial uptick, allow anything)
+    500, // combo 2: must have 3K+
+    3000, // combo 3: must have 6K+
+    10000, // combo 4: must have 10K+
+    20000, // combo 5: must have 20K+
+    40000, // combo 6: must have 40K+
+    60000, // combo 7+: very strong only
 ];
 
 // ============================
@@ -273,7 +273,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function resetCombo(symbol) {
         delete symbolUptickTimers[symbol];
         delete symbolNoteIndices[symbol];
-    
+
         document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((alertDiv) => {
             alertDiv.classList.remove("combo-active");
             const fillDiv = alertDiv.querySelector(".combo-fill");
@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 fillDiv.style.background = "";
             }
         });
-    
+
         if (debugMode) console.log(`🔄 ${symbol} combo fully reset`);
     }
 
@@ -320,17 +320,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             const quietTime = isQuietTimeEST();
 
             if (hp > 0 && strength >= minVolume) {
+                // 🎯 Combo logic — as you already have
                 const currentLevel = symbolNoteIndices[symbol] ?? 1;
                 const nextLevel = currentLevel + 1;
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
-            
+
                 if (symbolUptickTimers[symbol]) {
                     clearTimeout(symbolUptickTimers[symbol]);
-            
+
                     if (strength >= requiredVolume) {
                         // ✅ Volume OK → advance combo
                         symbolNoteIndices[symbol] = nextLevel;
-            
+
                         const note = fSharpMajorHz[Math.min(nextLevel, fSharpMajorHz.length - 1)];
                         if (!quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
                             playNote(note, strength);
@@ -353,13 +354,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                         return; // skip alert
                     }
                 }
-            
+
                 // 🕐 Reset timer (for timeout-based reset)
                 symbolUptickTimers[symbol] = setTimeout(() => {
                     resetCombo(symbol);
                 }, UPTICK_WINDOW_MS);
+            } else if (dp > 0) {
+                // ⛔️ Downtick: do nothing, don’t reset combo
+                if (debugMode) console.log(`🛑 ${symbol} downtick — combo preserved`);
+                // you *could* visually dim it here, but that’s optional
+            } else {
+                // 🪫 Any other case (low volume, malformed alert): reset
+                if (debugMode) console.log(`⚠️ ${symbol} alert did not qualify as up/down, combo reset`);
+                resetCombo(symbol);
             }
-            
 
             alertQueue.push(alertData);
             if (!flushScheduled) {

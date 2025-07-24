@@ -128,7 +128,7 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": false,
+    "enableHeroes": true,
     "autoClose": false
   }
 }
