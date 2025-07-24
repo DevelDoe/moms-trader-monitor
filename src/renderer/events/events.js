@@ -18,7 +18,7 @@ const MIN_AUDIO_INTERVAL_MS = 93;
 
 const symbolUptickTimers = {};
 const symbolNoteIndices = {};
-const UPTICK_WINDOW_MS = 35_000;
+const UPTICK_WINDOW_MS = 30_000;
 
 const fSharpMajorHz = [
     92.5, // F#2
@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 rgba(255, 0, 60, 1) 50%,
                 rgba(180, 0, 40, 1) 100%
             )`;
-            
+
             // 🎵 Add pulse class based on combo level
             fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
             const pulseStep = Math.min(4, Math.floor(comboLevel / 2)); // 0–4
