@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 0.2,
+    "minPrice": 0.3,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -48,7 +48,7 @@
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 100,
+    "maxAlerts": 35,
     "scannerVolume": 0
   },
   "windows": {

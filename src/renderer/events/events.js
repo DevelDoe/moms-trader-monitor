@@ -14,10 +14,44 @@ let flushScheduled = false;
 // Audio
 let lastAudioTime = 0;
 const MIN_AUDIO_INTERVAL_MS = 93;
-const symbolDownticks = {}; // symbol → count of consecutive downticks
 
-const symbolChangeTracker = {}; // Keeps net HP-DP per symbol
-const AUDIO_THRESHOLD = 2; // Or your chosen % for cumulative change
+const symbolUptickTimers = {};
+const symbolNoteIndices = {};
+const UPTICK_WINDOW_MS = 30_000;
+
+const fSharpMajorHz = [
+    92.5, // F#2
+    110.0, // G#2
+    123.47, // A#2
+    138.59, // B2
+    155.56, // D#3
+    174.61, // F3
+    196.0, // G#3
+
+    185.0, // F#3
+    220.0, // G#3
+    246.94, // A#3
+    277.18, // B3
+    311.13, // D#4
+    349.23, // F4
+    392.0, // G#4
+
+    369.99, // F#4
+    440.0, // G#4
+    493.88, // A#4
+    554.37, // B4
+    622.25, // D#5
+    698.46, // F5
+    783.99, // G#5
+
+    739.99, // F#5
+    880.0, // G#5
+    987.77, // A#5
+    1108.73, // B5
+    1244.51, // D#6
+    1396.91, // F6
+    1567.98, // G#6
+];
 
 // ============================
 // Utility: Parse Volume String
@@ -73,7 +107,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     let audioCtx = null;
-    const fSharpMajorHz = buildChromaticScale();
 
     function getAudioCtx() {
         if (!audioCtx || audioCtx.state === "closed") {
@@ -84,60 +117,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         return audioCtx;
     }
 
-    function buildChromaticScale(minFreq = 20, maxFreq = 20000) {
-        const scale = [];
-        for (let midi = 30; midi < 128; midi++) {
-            const freq = 440 * Math.pow(2, (midi - 69) / 12);
-            if (freq >= minFreq && freq <= maxFreq) scale.push(freq);
-        }
-        return scale;
-    }
-
-    function quantizeToFSharpMajor(freq) {
-        return fSharpMajorHz.reduce((prev, curr) => (Math.abs(curr - freq) < Math.abs(prev - freq) ? curr : prev));
-    }
-
-    function playAudioAlert(symbol, volumeValue = 0, cumulativeChange = 0) {
+    function playNote(frequency, volumeValue = 0) {
         const audioCtx = getAudioCtx();
-    
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         const filter = audioCtx.createBiquadFilter();
-    
-        // 🎚️ Configure the filter
+
         filter.type = "lowpass";
         filter.frequency.value = 1300;
         filter.Q.value = 1;
-    
-        // Connect chain
+
         oscillator.connect(filter).connect(gainNode).connect(audioCtx.destination);
-    
-        // 🔁 Use cumulativeChange to determine base pitch
-        let baseFreq = 60;
-        let duration = 0.2;
-    
-        if (volumeValue > 30_000) {
-            baseFreq = 180;
-            duration = 0.5;
-        }
-    
-        // 🔺 Increase pitch based on magnitude of the cumulative move
-        const pitchBoost = Math.min(cumulativeChange * 80, 400); // Cap max pitch boost
-        const rawFreq = baseFreq + pitchBoost;
-    
-        const quantizedFreq = quantizeToFSharpMajor(rawFreq);
-    
-        oscillator.frequency.value = quantizedFreq;
+
+        oscillator.frequency.value = frequency;
+
+        // ⏱️ Duration based on volume
+        let duration = 0.93;
+        if (volumeValue > 60_000) duration = 0.6;
+        else if (volumeValue > 30_000) duration = 0.45;
+        else if (volumeValue > 10_000) duration = 0.35;
+
         gainNode.gain.setValueAtTime(0.75, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-    
+
         oscillator.start();
         oscillator.stop(audioCtx.currentTime + duration);
     }
-    
 
     function createAlertElement(alertData) {
         const { hero, price, strength = 0, type = "", hp = 0, dp = 0, fiveMinVolume = 0 } = alertData;
+        const comboLevel = Math.max(0, symbolNoteIndices[hero] ?? -1);
+        const maxCombo = 6;
+        const comboPercent = Math.min(comboLevel / maxCombo, 1) * 100;
         const percent = hp || -dp;
         const isUp = hp > 0;
         const volume = strength;
@@ -146,15 +157,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const alertDiv = document.createElement("li");
 
+        const fillDiv = document.createElement("div");
+        fillDiv.className = "combo-fill";
+        alertDiv.appendChild(fillDiv);
+
         const contentDiv = document.createElement("div");
         contentDiv.className = "alert-content";
 
         const valuesDiv = document.createElement("div");
         valuesDiv.className = "alert-values";
         valuesDiv.innerHTML = `
-            <span class="alert-symbol no-drag"
-                  style="background-color: ${getSymbolColor(alertData.hue || 0)}"
-                  title="Click to copy and set active ticker">${hero}</span>
+            <span class="alert-symbol no-drag" style="background-color: ${getSymbolColor(alertData.hue || 0)}" title="Click to copy and set active ticker">${hero}</span>
             <span class="price">$${price.toFixed(2)}</span>
             <span class="${isUp ? "change-up" : "change-down"}">${percent.toFixed(2)}%</span>
             <span class="size">${abbreviatedValues(volume)}</span>
@@ -165,6 +178,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             navigator.clipboard.writeText(hero);
             window.activeAPI.setActiveTicker(hero);
         };
+
+        const symbolEl = valuesDiv.querySelector(".alert-symbol");
+
+        if (comboLevel >= 5) {
+            symbolEl.style.boxShadow = "0 0 12px rgba(255, 0, 0, 0.8), 0 0 18px rgba(255, 20, 60, 0.6)";
+            symbolEl.style.border = "1px solid rgba(255, 80, 120, 0.6)";
+            symbolEl.style.backgroundColor = "rgba(60, 0, 0, 0.7)";
+        } else if (comboLevel >= 3) {
+            symbolEl.style.boxShadow = "0 0 6px rgba(255, 50, 100, 0.5), 0 0 10px rgba(255, 30, 60, 0.3)";
+            symbolEl.style.border = "1px solid rgba(255, 80, 120, 0.4)";
+            symbolEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";
+        } else {
+            symbolEl.style.boxShadow = "";
+            symbolEl.style.border = "";
+            symbolEl.style.backgroundColor = "";
+        }
 
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
 
@@ -206,6 +235,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         alertDiv.appendChild(contentDiv);
+
+        fillDiv.style.width = `${comboPercent}%`;
+        fillDiv.style.background = `linear-gradient(to right, hsla(${180 + comboLevel * 6}, 80%, 50%, 0.3), transparent)`;
         return alertDiv;
     }
 
@@ -243,14 +275,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             const symbol = alertData.hero || alertData.symbol;
             const { price = 0, hp = 0, dp = 0, strength = 0 } = alertData;
 
-            const netDelta = hp - dp;
-            symbolChangeTracker[symbol] = (symbolChangeTracker[symbol] || 0) + netDelta;
-
-            // Debug cumulative change
-            if (debugMode) {
-                console.log(`↕️ [${symbol}] Cumulative Change: ${symbolChangeTracker[symbol].toFixed(2)}%`);
-            }
-
             // 🔍 Debug the actual filter values and the incoming data
             if (debugMode) {
                 console.log("🧪 Settings:", { minPrice, maxPrice, minChangePercent, minVolume });
@@ -268,28 +292,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const quietTime = isQuietTimeEST();
 
-            // Only fire alert on significant *cumulative* move
-            if (symbolChangeTracker[symbol] >= AUDIO_THRESHOLD && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                symbolDownticks[symbol] = 0;
-                symbolUpticks[symbol] = (symbolUpticks[symbol] || 0) + 1;
+            if (hp > 0 && strength >= minVolume) {
+                if (symbolUptickTimers[symbol]) {
+                    // 🟢 Combo in progress → advance note
+                    clearTimeout(symbolUptickTimers[symbol]);
+                    symbolNoteIndices[symbol] = (symbolNoteIndices[symbol] ?? -1) + 1;
 
-                if (!quietTime) {
-                    playAudioAlert(symbol, strength, symbolChangeTracker[symbol]);
-                    lastAudioTime = now;
-                    symbolChangeTracker[symbol] = 0; // Reset after triggering
-                } else if (debugMode) {
-                    console.log(`🔕 Audio suppressed during quiet time`);
-                }
-            } else if (dp > 0) {
-                symbolDownticks[symbol] = (symbolDownticks[symbol] || 0) + 1;
+                    const noteIndex = symbolNoteIndices[symbol];
+                    const note = fSharpMajorHz[Math.min(noteIndex, fSharpMajorHz.length - 1)];
 
-                if (symbolDownticks[symbol] >= 2) {
-                    symbolUpticks[symbol] = 0;
-                    symbolDownticks[symbol] = 0;
-                    if (debugMode) console.log(`🔻 ${symbol} — reset after 2 consecutive downticks`);
+                    if (!quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+                        playNote(note, strength);
+                        lastAudioTime = now;
+                        if (debugMode) console.log(`🎵 ${symbol} playing note #${noteIndex} → ${note.toFixed(1)} Hz`);
+                    }
                 } else {
-                    if (debugMode) console.log(`🔻 ${symbol} — 1st downtick allowed, upticks preserved`);
+                    // 🆕 First uptick → start combo timer, no sound
+                    symbolNoteIndices[symbol] = -1;
+                    if (debugMode) console.log(`🕐 ${symbol} combo started`);
                 }
+
+                // (Re)start combo timer
+                symbolUptickTimers[symbol] = setTimeout(() => {
+                    delete symbolUptickTimers[symbol];
+                    delete symbolNoteIndices[symbol];
+                    if (debugMode) console.log(`⌛ ${symbol} combo expired`);
+                }, UPTICK_WINDOW_MS);
             }
 
             alertQueue.push(alertData);

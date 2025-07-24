@@ -9,7 +9,7 @@ body,
 }
 body::-webkit-scrollbar,
 *::-webkit-scrollbar {
-  display: none !important;                 /* Chrome, Safari, Edge */
+    display: none !important; /* Chrome, Safari, Edge */
 }
 
 body {
@@ -29,12 +29,12 @@ body {
     width: 100vw;
     font-size: 16px;
     position: fixed;
-    bottom: -2px;
+    bottom: 0px;
     list-style-type: none;
     margin: 0px auto;
     box-sizing: border-box;
     overflow-x: hidden;
-    padding-right: 12px
+    padding-right: 12px;
 }
 .alert {
     display: flex;
@@ -58,7 +58,6 @@ body {
     width: 100%;
 }
 
-
 .alert.up {
     border-left-color: #28a745;
 }
@@ -74,8 +73,9 @@ body {
     color: white;
     background-color: hsla(var(--hue, 200), 80%, 30%, 0.8);
     padding: 3px 6px;
-    border-radius: 1px;
+    border-radius: 0px;
     margin-right: 0px;
+    z-index: 2;
 }
 
 .alert-content {
@@ -168,7 +168,8 @@ body {
 .alert.new-high {
     filter: grayscale(0%) brightness(1);
     box-sizing: border-box;
-    border: 1px solid gold;
+    border-top: 1px solid gold;
+    border-bottom: 1px solid gold;
     background-color: #333d2a;
     animation: pulseNewHigh 0.5s infinite;
     width: 100vw;
@@ -187,13 +188,81 @@ body {
     box-sizing: border-box;
     filter: grayscale(0%) brightness(1);
     background-color: #324865;
-    border: 1px solid #55aaff;
+    border-top: 1px solid #55aaff;
+    border-bottom: 1px solid #55aaff;
     animation: pulseNewEntry 0.8s ease-in-out;
     width: 100vw;
 }
 
 @keyframes pulseNewEntry {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.03); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.03);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 200% 50%;
+    }
+}
+
+.combo-fill {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    pointer-events: none;
+    z-index: 0;
+    background: linear-gradient(120deg, rgba(120, 0, 0, 0.5), rgba(180, 0, 0, 0.4), rgba(120, 0, 0, 0.5));
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+    transition: width 0.3s ease;
+    mix-blend-mode: screen;
+}
+
+.combo-fill::before,
+.combo-fill::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    height: 1px;
+    width: 100%;
+    background-color: rgba(255, 50, 100, 0.9); /* elegant scarlet glow */
+    box-shadow: 0 0 6px rgba(255, 50, 100, 0.6);
+}
+
+/* .combo-fill::before {
+    top: 1px;
+} */
+
+.combo-fill::after {
+    bottom: 1px;
+}
+
+.alert {
+    position: relative; /* make sure fill overlays work */
+    z-index: 1;
+    overflow: visible;
+}
+
+.alert-symbol.glow-symbol {
+    position: relative;
+    z-index: 2;
+    box-shadow:
+        0 0 3px rgba(255, 50, 100, 0.6),
+        0 0 8px rgba(255, 50, 100, 0.5),
+        0 0 12px rgba(255, 20, 60, 0.4);
+    border: 1px solid rgba(255, 80, 120, 0.4);
+    background-color: rgba(30, 0, 0, 0.6); /* dark base so it pops */
 }
