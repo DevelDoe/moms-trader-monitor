@@ -18,7 +18,7 @@ const MIN_AUDIO_INTERVAL_MS = 93;
 
 const symbolUptickTimers = {};
 const symbolNoteIndices = {};
-const UPTICK_WINDOW_MS = 12_000;
+const UPTICK_WINDOW_MS = 20_000;
 
 const fSharpMajorHz = [
     92.5, // F#2
@@ -270,6 +270,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         alertQueue.length = 0;
     }
 
+    function resetCombo(symbol) {
+        delete symbolUptickTimers[symbol];
+        delete symbolNoteIndices[symbol];
+    
+        document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((alertDiv) => {
+            alertDiv.classList.remove("combo-active");
+            const fillDiv = alertDiv.querySelector(".combo-fill");
+            if (fillDiv) {
+                fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+                fillDiv.style.width = "0%";
+                fillDiv.style.background = "";
+            }
+        });
+    
+        if (debugMode) console.log(`🔄 ${symbol} combo fully reset`);
+    }
+
     // ============================
     // Alert Event Listener
     // ============================
@@ -303,46 +320,46 @@ document.addEventListener("DOMContentLoaded", async () => {
             const quietTime = isQuietTimeEST();
 
             if (hp > 0 && strength >= minVolume) {
+                const currentLevel = symbolNoteIndices[symbol] ?? 1;
+                const nextLevel = currentLevel + 1;
+                const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
+            
                 if (symbolUptickTimers[symbol]) {
-                    // 🟢 Combo in progress → advance note
                     clearTimeout(symbolUptickTimers[symbol]);
-                    symbolNoteIndices[symbol] = (symbolNoteIndices[symbol] ?? 1) + 1;
-                    symbolNoteIndices[symbol] = Math.min(symbolNoteIndices[symbol], 16);
-
-                    const noteIndex = symbolNoteIndices[symbol];
-                    const note = fSharpMajorHz[Math.min(noteIndex, fSharpMajorHz.length - 1)];
-
-                    if (!quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                        playNote(note, strength);
-                        lastAudioTime = now;
-                        if (debugMode) console.log(`🎵 ${symbol} playing note #${noteIndex} → ${note.toFixed(1)} Hz`);
+            
+                    if (strength >= requiredVolume) {
+                        // ✅ Volume OK → advance combo
+                        symbolNoteIndices[symbol] = nextLevel;
+            
+                        const note = fSharpMajorHz[Math.min(nextLevel, fSharpMajorHz.length - 1)];
+                        if (!quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+                            playNote(note, strength);
+                            lastAudioTime = now;
+                            if (debugMode) console.log(`🎵 ${symbol} combo advanced to ${nextLevel} (${note.toFixed(1)} Hz)`);
+                        }
+                    } else {
+                        // ❌ Volume too low → combo fails
+                        if (debugMode) console.log(`❌ ${symbol} combo reset — volume ${strength} < ${requiredVolume}`);
+                        resetCombo(symbol);
+                        return; // skip alert
                     }
                 } else {
-                    // 🆕 First uptick → start combo timer, no sound
-                    symbolNoteIndices[symbol] = 1;
-                    if (debugMode) console.log(`🕐 ${symbol} combo started`);
+                    // 🆕 First uptick → start combo
+                    if (strength >= COMBO_VOLUME_REQUIREMENTS[1]) {
+                        symbolNoteIndices[symbol] = 1;
+                        if (debugMode) console.log(`🆕 ${symbol} combo started`);
+                    } else {
+                        if (debugMode) console.log(`❌ ${symbol} combo not started — weak volume`);
+                        return; // skip alert
+                    }
                 }
-
-                // (Re)start combo timer
+            
+                // 🕐 Reset timer (for timeout-based reset)
                 symbolUptickTimers[symbol] = setTimeout(() => {
-                    delete symbolUptickTimers[symbol];
-                    delete symbolNoteIndices[symbol];
-
-                    // 🧹 Remove pulse classes + reset fill style
-                    document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((alertDiv) => {
-                        alertDiv.classList.remove("combo-active");
-                        const fillDiv = alertDiv.querySelector(".combo-fill");
-                        if (fillDiv) {
-                            fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
-                            fillDiv.style.width = "0%";
-                            fillDiv.style.background = "";
-                        }
-                    });
-                    
-
-                    if (debugMode) console.log(`⌛ ${symbol} combo expired`);
+                    resetCombo(symbol);
                 }, UPTICK_WINDOW_MS);
             }
+            
 
             alertQueue.push(alertData);
             if (!flushScheduled) {

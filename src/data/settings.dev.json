@@ -124,14 +124,11 @@
       "height": 551,
       "x": 2496,
       "y": 1069
-    },
-    "traderviewWindow_WBD": {
-      "isOpen": true
     }
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": true,
+    "enableHeroes": false,
     "autoClose": false
   }
 }
