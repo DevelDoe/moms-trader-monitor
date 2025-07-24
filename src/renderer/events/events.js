@@ -18,7 +18,7 @@ const MIN_AUDIO_INTERVAL_MS = 93;
 
 const symbolUptickTimers = {};
 const symbolNoteIndices = {};
-const UPTICK_WINDOW_MS = 15_000;
+const UPTICK_WINDOW_MS = 30_000;
 
 const fSharpMajorHz = [
     92.5, // F#2
