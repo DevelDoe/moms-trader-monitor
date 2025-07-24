@@ -18,7 +18,7 @@ const MIN_AUDIO_INTERVAL_MS = 93;
 
 const symbolUptickTimers = {};
 const symbolNoteIndices = {};
-const UPTICK_WINDOW_MS = 20_000;
+const UPTICK_WINDOW_MS = 15_000;
 
 const fSharpMajorHz = [
     92.5, // F#2
@@ -148,8 +148,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     function createAlertElement(alertData) {
         const { hero, price, strength = 0, hp = 0, dp = 0 } = alertData;
         const comboLevel = Math.max(0, symbolNoteIndices[hero] ?? -1);
-        const maxCombo = 6;
-        const comboPercent = Math.min(comboLevel / maxCombo, 1) * 100;
+        const maxCombo = 16;
+        const comboPercent = Math.min(1, Math.pow(comboLevel / maxCombo, 0.65)) * 100;
         const percent = hp || -dp;
         const isUp = hp > 0;
         const volume = strength;
@@ -157,6 +157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const isNewEntry = alertData.isNewEntry === true;
 
         const alertDiv = document.createElement("li");
+        alertDiv.dataset.symbol = hero;
 
         const fillDiv = document.createElement("div");
         fillDiv.className = "combo-fill";
@@ -223,16 +224,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         alertDiv.appendChild(contentDiv);
-        if (hp > 0) {
+        if (hp > 0 && comboLevel >= 2) {
             fillDiv.style.width = `${comboPercent}%`;
-            const redAlpha = Math.min(0.2 + comboLevel * 0.1, 0.6);
+        
+            const redAlpha = Math.min(0.3 + comboLevel * 0.07, 0.85);
             fillDiv.style.background = `linear-gradient(
                 120deg,
                 rgba(180, 0, 40, ${redAlpha}) 0%,
                 rgba(255, 0, 60, ${redAlpha * 0.9}) 50%,
                 rgba(180, 0, 40, ${redAlpha}) 100%
             )`;
+        
+            const borderAlpha = Math.min(comboLevel / 4, 1) * 0.35;
+            fillDiv.style.borderTop = `1px solid rgba(255, 50, 100, ${borderAlpha.toFixed(2)})`;
+            fillDiv.style.borderBottom = `1px solid rgba(255, 50, 100, ${borderAlpha.toFixed(2)})`;
+        
+            // 🎵 Add pulse class based on combo level
+            fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+            const pulseStep = Math.min(4, Math.floor(comboLevel / 2)); // 0–4
+            if (pulseStep >= 1) fillDiv.classList.add(`combo-pulse-${pulseStep}`);
         }
+        
         return alertDiv;
     }
 
@@ -291,7 +303,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (symbolUptickTimers[symbol]) {
                     // 🟢 Combo in progress → advance note
                     clearTimeout(symbolUptickTimers[symbol]);
-                    symbolNoteIndices[symbol] = (symbolNoteIndices[symbol] ?? -1) + 1;
+                    symbolNoteIndices[symbol] = (symbolNoteIndices[symbol] ?? 1) + 1;
+                    symbolNoteIndices[symbol] = Math.min(symbolNoteIndices[symbol], 16);
+
+
 
                     const noteIndex = symbolNoteIndices[symbol];
                     const note = fSharpMajorHz[Math.min(noteIndex, fSharpMajorHz.length - 1)];
@@ -303,7 +318,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 } else {
                     // 🆕 First uptick → start combo timer, no sound
-                    symbolNoteIndices[symbol] = -1;
+                    symbolNoteIndices[symbol] = 1;
                     if (debugMode) console.log(`🕐 ${symbol} combo started`);
                 }
 
@@ -311,8 +326,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                 symbolUptickTimers[symbol] = setTimeout(() => {
                     delete symbolUptickTimers[symbol];
                     delete symbolNoteIndices[symbol];
+                
+                    // 🧹 Remove pulse classes + reset fill style
+                    document.querySelectorAll(`.alert[data-symbol="${symbol}"] .combo-fill`).forEach((fillDiv) => {
+                        fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+                        fillDiv.style.width = "0%";
+                        fillDiv.style.borderTop = "";
+                        fillDiv.style.borderBottom = "";
+                        fillDiv.style.background = "";
+                    });
+                
                     if (debugMode) console.log(`⌛ ${symbol} combo expired`);
                 }, UPTICK_WINDOW_MS);
+                
             }
 
             alertQueue.push(alertData);

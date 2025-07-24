@@ -223,11 +223,10 @@ body {
     height: 100%;
     width: 0%;
     pointer-events: none;
-    z-index: 0;
     background: linear-gradient(120deg, rgba(120, 0, 0, 0.5), rgba(180, 0, 0, 0.4), rgba(120, 0, 0, 0.5));
     background-size: 200% 100%;
     animation: shimmer 2s linear infinite;
-    transition: width 0.2s ease-out, background 0.2s ease-out;
+    transition: width 0.2s ease-out, background 0.2s ease-out, border-color 0.2s ease-out;
     will-change: width;
     mix-blend-mode: screen;
 }
@@ -237,4 +236,23 @@ body {
     position: relative; /* make sure fill overlays work */
     z-index: 1;
     overflow: visible;
+}
+
+@keyframes comboPulse {
+    0%   { opacity: 0.3; }
+    50%  { opacity: 0.8; }
+    100% { opacity: 0.3; }
+}
+
+.combo-pulse-1 {
+    animation: comboPulse 2s ease-in-out infinite;
+}
+.combo-pulse-2 {
+    animation: comboPulse 1.5s ease-in-out infinite;
+}
+.combo-pulse-3 {
+    animation: comboPulse 1s ease-in-out infinite;
+}
+.combo-pulse-4 {
+    animation: comboPulse 0.6s ease-in-out infinite;
 }

@@ -53,7 +53,7 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 274,
+      "width": 271,
       "height": 900,
       "x": -250,
       "y": -900,
@@ -62,8 +62,8 @@
     "settingsWindow": {
       "width": 907,
       "height": 755,
-      "x": 428,
-      "y": 1117,
+      "x": 432,
+      "y": 1114,
       "isOpen": false
     },
     "infobarWindow": {
@@ -95,7 +95,7 @@
       "height": 551,
       "x": 24,
       "y": -549,
-      "isOpen": true
+      "isOpen": false
     },
     "activeWindow": {
       "width": 965,
@@ -105,10 +105,10 @@
       "isOpen": false
     },
     "heroesWindow": {
-      "width": 513,
+      "width": 504,
       "height": 551,
-      "x": 468,
-      "y": -548,
+      "x": 1498,
+      "y": 498,
       "isOpen": true
     },
     "scrollXpWindow": {
