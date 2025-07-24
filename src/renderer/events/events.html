@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" /> -->
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Chronicle</title>
@@ -13,45 +13,5 @@
             <ul id="log" class="draggable"></ul>
             <script src="./events.js"></script>
         </div>
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                const log = document.getElementById("log");
-        
-                function createDummyAlert(hero, comboLevel, isUp = true, volume = 12345) {
-                    const alert = document.createElement("li");
-                    alert.className = `alert ${isUp ? "up" : "down"}`;
-        
-                    // Fill bar
-                    const fill = document.createElement("div");
-                    fill.className = "combo-fill";
-                    fill.style.width = `${(comboLevel / 6) * 100}%`;
-                    fill.style.background = `linear-gradient(to right, hsla(${180 + comboLevel * 6}, 80%, 50%, 0.3), transparent)`;
-                    alert.appendChild(fill);
-        
-                    // Content
-                    const content = document.createElement("div");
-                    content.className = "alert-content";
-        
-                    const values = document.createElement("div");
-                    values.className = "alert-values";
-                    values.innerHTML = `
-                        <span class="alert-symbol no-drag" style="background-color: hsla(${comboLevel * 40}, 80%, 50%, 0.6)">${hero}</span>
-                        <span class="price">$4.20</span>
-                        <span class="${isUp ? "change-up" : "change-down"}">${isUp ? "+" : "-"}3.3%</span>
-                        <span class="size">${(volume / 1000).toFixed(1)}K</span>
-                    `;
-        
-                    content.appendChild(values);
-                    alert.appendChild(content);
-                    log.appendChild(alert);
-                }
-        
-                createDummyAlert("TESTA", 0);
-                createDummyAlert("TESTB", 2);
-                createDummyAlert("FURY", 4);
-                createDummyAlert("RAGE", 6);
-            });
-        </script>
-        
     </body>
 </html>

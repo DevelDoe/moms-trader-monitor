@@ -187,7 +187,7 @@ body {
 .alert.new-entry {
     box-sizing: border-box;
     filter: grayscale(0%) brightness(1);
-    background-color: #324865;
+    background-color: #223144;
     border-top: 1px solid #55aaff;
     border-bottom: 1px solid #55aaff;
     animation: pulseNewEntry 0.8s ease-in-out;
@@ -227,42 +227,13 @@ body {
     background: linear-gradient(120deg, rgba(120, 0, 0, 0.5), rgba(180, 0, 0, 0.4), rgba(120, 0, 0, 0.5));
     background-size: 200% 100%;
     animation: shimmer 2s linear infinite;
-    transition: width 0.3s ease;
+    transition: width 0.2s ease-out, background 0.2s ease-out;
+    will-change: width;
     mix-blend-mode: screen;
-}
-
-.combo-fill::before,
-.combo-fill::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    height: 1px;
-    width: 100%;
-    background-color: rgba(255, 50, 100, 0.9); /* elegant scarlet glow */
-    box-shadow: 0 0 6px rgba(255, 50, 100, 0.6);
-}
-
-/* .combo-fill::before {
-    top: 1px;
-} */
-
-.combo-fill::after {
-    bottom: 1px;
 }
 
 .alert {
     position: relative; /* make sure fill overlays work */
     z-index: 1;
     overflow: visible;
-}
-
-.alert-symbol.glow-symbol {
-    position: relative;
-    z-index: 2;
-    box-shadow:
-        0 0 3px rgba(255, 50, 100, 0.6),
-        0 0 8px rgba(255, 50, 100, 0.5),
-        0 0 12px rgba(255, 20, 60, 0.4);
-    border: 1px solid rgba(255, 80, 120, 0.4);
-    background-color: rgba(30, 0, 0, 0.6); /* dark base so it pops */
 }

@@ -124,6 +124,9 @@
       "height": 551,
       "x": 2496,
       "y": 1069
+    },
+    "traderviewWindow_TGL": {
+      "isOpen": true
     }
   },
   "traderview": {

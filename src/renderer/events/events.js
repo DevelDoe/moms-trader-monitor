@@ -10,14 +10,15 @@ if (!debugMode) {
 }
 // Alert Queue
 const alertQueue = [];
-let flushScheduled = false;
+let flushScheduled = false;      
+
 // Audio
 let lastAudioTime = 0;
 const MIN_AUDIO_INTERVAL_MS = 93;
 
 const symbolUptickTimers = {};
 const symbolNoteIndices = {};
-const UPTICK_WINDOW_MS = 30_000;
+const UPTICK_WINDOW_MS = 20_000;
 
 const fSharpMajorHz = [
     92.5, // F#2
@@ -124,7 +125,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const filter = audioCtx.createBiquadFilter();
 
         filter.type = "lowpass";
-        filter.frequency.value = 1300;
+        filter.frequency.value = 1000;
         filter.Q.value = 1;
 
         oscillator.connect(filter).connect(gainNode).connect(audioCtx.destination);
@@ -145,7 +146,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function createAlertElement(alertData) {
-        const { hero, price, strength = 0, type = "", hp = 0, dp = 0, fiveMinVolume = 0 } = alertData;
+        const { hero, price, strength = 0, hp = 0, dp = 0 } = alertData;
         const comboLevel = Math.max(0, symbolNoteIndices[hero] ?? -1);
         const maxCombo = 6;
         const comboPercent = Math.min(comboLevel / maxCombo, 1) * 100;
@@ -160,6 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const fillDiv = document.createElement("div");
         fillDiv.className = "combo-fill";
         alertDiv.appendChild(fillDiv);
+
 
         const contentDiv = document.createElement("div");
         contentDiv.className = "alert-content";
@@ -180,20 +182,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
 
         const symbolEl = valuesDiv.querySelector(".alert-symbol");
-
-        if (comboLevel >= 5) {
-            symbolEl.style.boxShadow = "0 0 12px rgba(255, 0, 0, 0.8), 0 0 18px rgba(255, 20, 60, 0.6)";
-            symbolEl.style.border = "1px solid rgba(255, 80, 120, 0.6)";
-            symbolEl.style.backgroundColor = "rgba(60, 0, 0, 0.7)";
-        } else if (comboLevel >= 3) {
-            symbolEl.style.boxShadow = "0 0 6px rgba(255, 50, 100, 0.5), 0 0 10px rgba(255, 30, 60, 0.3)";
-            symbolEl.style.border = "1px solid rgba(255, 80, 120, 0.4)";
-            symbolEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";
-        } else {
-            symbolEl.style.boxShadow = "";
-            symbolEl.style.border = "";
-            symbolEl.style.backgroundColor = "";
-        }
 
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
 
@@ -235,9 +223,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         alertDiv.appendChild(contentDiv);
-
-        fillDiv.style.width = `${comboPercent}%`;
-        fillDiv.style.background = `linear-gradient(to right, hsla(${180 + comboLevel * 6}, 80%, 50%, 0.3), transparent)`;
+        if (hp > 0) {
+            fillDiv.style.width = `${comboPercent}%`;
+            const redAlpha = Math.min(0.2 + comboLevel * 0.1, 0.6);
+            fillDiv.style.background = `linear-gradient(
+                120deg,
+                rgba(180, 0, 40, ${redAlpha}) 0%,
+                rgba(255, 0, 60, ${redAlpha * 0.9}) 50%,
+                rgba(180, 0, 40, ${redAlpha}) 100%
+            )`;
+        }
         return alertDiv;
     }
 
