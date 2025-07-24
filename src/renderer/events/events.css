@@ -206,14 +206,6 @@ body {
     }
 }
 
-@keyframes shimmer {
-    0% {
-        background-position: 0% 50%;
-    }
-    100% {
-        background-position: 200% 50%;
-    }
-}
 
 .combo-fill {
     position: absolute;
@@ -223,14 +215,15 @@ body {
     height: 100%;
     width: 0%;
     pointer-events: none;
+    z-index: 0;
     background: linear-gradient(120deg, rgba(120, 0, 0, 0.5), rgba(180, 0, 0, 0.4), rgba(120, 0, 0, 0.5));
     background-size: 200% 100%;
-    animation: shimmer 2s linear infinite;
-    transition: width 0.2s ease-out, background 0.2s ease-out, border-color 0.2s ease-out;
+    transition: width 0.2s ease-out, background 0.2s ease-out;
     will-change: width;
     mix-blend-mode: screen;
+    border-top: 1px solid rgba(255, 50, 100, 1) !important;
+    border-bottom: 1px solid rgba(255, 50, 100, 1) !important;
 }
-
 
 .alert {
     position: relative; /* make sure fill overlays work */

@@ -53,7 +53,7 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 271,
+      "width": 274,
       "height": 900,
       "x": -250,
       "y": -900,
@@ -95,7 +95,7 @@
       "height": 551,
       "x": 24,
       "y": -549,
-      "isOpen": false
+      "isOpen": true
     },
     "activeWindow": {
       "width": 965,
@@ -107,8 +107,8 @@
     "heroesWindow": {
       "width": 504,
       "height": 551,
-      "x": 1498,
-      "y": 498,
+      "x": 469,
+      "y": -549,
       "isOpen": true
     },
     "scrollXpWindow": {
@@ -124,6 +124,21 @@
       "height": 551,
       "x": 2496,
       "y": 1069
+    },
+    "traderviewWindow_LIDR": {
+      "isOpen": false
+    },
+    "traderviewWindow_IXHL": {
+      "isOpen": false
+    },
+    "traderviewWindow_SUGP": {
+      "isOpen": false
+    },
+    "traderviewWindow_FTEL": {
+      "isOpen": false
+    },
+    "traderviewWindow_UAVS": {
+      "isOpen": false
     }
   },
   "traderview": {
