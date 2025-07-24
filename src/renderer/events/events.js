@@ -60,10 +60,10 @@ const COMBO_VOLUME_REQUIREMENTS = [
     0, // combo 1 (initial uptick, allow anything)
     500, // combo 2: must have 3K+
     1000, // combo 3: must have 6K+
-    3000, // combo 4: must have 10K+
-    6000, // combo 5: must have 20K+
-    9000, // combo 6: must have 40K+
-    10000, // combo 7+: very strong only
+    5000, // combo 4: must have 10K+
+    10_000, // combo 5: must have 20K+
+    20_000, // combo 6: must have 40K+
+    30_000, // combo 7+: very strong only
 ];
 
 // ============================
