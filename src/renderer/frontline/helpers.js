@@ -1,4 +1,6 @@
 (() => {
+    const logScoring = false;
+
     function exposeHelpers() {
         window.helpers = {
             calculateScore,
@@ -22,12 +24,19 @@
         const currentScore = Number(hero.score) || 0;
 
         if (window.isDev && debugSamples < debugLimitSamples) {
-            console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
-            console.log(`📜 INITIAL STATE → Price: ${hero.price} | Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
+            if(logScoring) console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
+            if(logScoring) console.log(`📜 INITIAL STATE → Price: ${hero.price} | Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
         }
 
         let baseScore = 0;
-        const logStep = (emoji, message, value) => console.log(`${emoji} ${message.padEnd(30)} ${(Number(value) || 0).toFixed(2)}`);
+
+        
+
+        const logStep = (emoji, message, value) => {
+            if (!logScoring) return;
+            console.log(`${emoji} ${message.padEnd(30)} ${(Number(value) || 0).toFixed(2)}`);
+        };
+
 
         try {
             if (event.hp > 0) {
@@ -52,7 +61,7 @@
             baseScore = 0;
         }
 
-        if (window.isDev && debugSamples < debugLimitSamples) {
+        if (logScoring) {
             console.log("━".repeat(50));
             logStep("🎯", "TOTAL SCORE CHANGE", baseScore);
             console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
@@ -107,7 +116,7 @@
                         activeHeroes.push(hero);
                     }
                 } else if (hero.score === 0) {
-                    if (window.isDev) console.log(`🧹 Removing ${symbol} from state (fully decayed)`);
+                    if (logScoring) console.log(`🧹 Removing ${symbol} from state (fully decayed)`);
                     delete frontlineState[symbol];
                     changed = true;
                 }
