@@ -58,12 +58,12 @@ const fSharpMajorHz = [
 const COMBO_VOLUME_REQUIREMENTS = [
     0, // combo 0 (not used)
     0, // combo 1 (initial uptick, allow anything)
-    500, // combo 2: must have 3K+
-    3000, // combo 3: must have 6K+
-    10000, // combo 4: must have 10K+
-    20000, // combo 5: must have 20K+
-    40000, // combo 6: must have 40K+
-    60000, // combo 7+: very strong only
+    500, // combo 2: 
+    1500, // combo 3: 
+    10000, // combo 4: 
+    20000, // combo 5:
+    40000, // combo 6: 
+    60000, // combo 7+: 
 ];
 
 // ============================

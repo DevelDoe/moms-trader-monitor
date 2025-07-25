@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 0,
+    "minPrice": 0.3,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -128,7 +128,7 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": false,
+    "enableHeroes": true,
     "autoClose": false
   }
 }
