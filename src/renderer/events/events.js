@@ -54,7 +54,7 @@ const fSharpMajorHz = [
     1567.98, // G#6
 ];
 
-// Minimum volume required to reach each combo level
+// Minimum volume required to reach each combo leve
 const COMBO_VOLUME_REQUIREMENTS = [
     0, // combo 0 (not used)
     0, // combo 1 (initial uptick, allow anything)
