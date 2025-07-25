@@ -253,7 +253,7 @@ app.on("ready", async () => {
         }
     });
 
-    scheduleDailyRestart(); // defaults to 00:00 AM
+    scheduleDailyRestart(1, 11); // defaults to 00:00 AM
 });
 
 app.whenReady().then(() => {
