@@ -211,8 +211,8 @@ body {
 }
 
 .alert.combo-active {
-    border-top: 1px solid #00ff6a;
-    border-bottom: 1px solid #00ff6a;
+    border-top: 2px solid #00ff6a;
+    border-bottom: 2px solid #00ff6a;
     filter: grayscale(0%) brightness(1);
 }
 
@@ -242,7 +242,7 @@ body {
 }
 
 .combo-fill.down {
-    background: rgba(255, 78, 78, 0.1); /* 🔴 Red tone with same opacity */
+    background: rgba(255, 78, 78, 0.2); /* 🔴 Red tone with same opacity */
     left: auto;
     right: 0; /* Start filling from the right side */
     transform-origin: right center;
@@ -251,7 +251,9 @@ body {
 }
 
 .alert.combo-active.down-combo {
-    border-top: 1px solid #ff4e4e;
-    border-bottom: 1px solid #ff4e4e;
+    /* border-top: 1px solid #ff4e4e; */
+    /* border-bottom: 1px solid #ff4e4e; */
+    border-top: none;
+    border-bottom: none;
     filter: grayscale(0%) brightness(1);
 }

@@ -74,16 +74,19 @@
         const price = hero.price || 1;
         const strength = event.one_min_volume || 0;
     
-        if (strength < 1000) return 0;
+        if (strength < 100) return 0;
     
         const dollarVolume = price * strength;
     
         // Experimental log-based score (volume decoupled from hard domination)
-        let score = Math.log10(dollarVolume + 1) * 15;
+        let score = Math.log10(dollarVolume + 1) * 100;
     
         if (price < 2) score *= 0.8;
+        if (price > 12) score *= 0.9;
+        if (price > 20) score *= 0.8;
     
-        return Math.min(score, 200);
+        // return Math.min(score, 1000);
+        return score;
     }
 
     function startScoreDecay() {
