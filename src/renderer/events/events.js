@@ -23,7 +23,10 @@ const symbolNoteIndices = {};
 const symbolDowntickTimers = {};
 const symbolDownNoteIndices = {};
 
-const UPTICK_WINDOW_MS = 20_000;
+const symbolComboLastPrice = {};
+const symbolDownComboLastPrice = {};
+
+const UPTICK_WINDOW_MS = 60_000;
 
 const fSharpMajorHz = [
     92.5, // F#2
@@ -63,8 +66,8 @@ const fSharpMajorHz = [
 const COMBO_VOLUME_REQUIREMENTS = [
     0, // Level 0 → just started, no requirement
     500, // Level 1 → first real alert
-    3000, // Level 2
-    100, // Level 3
+    1000, // Level 2
+    3000, // Level 3
     100, // Level 4
     100, // Level 5
     100, // Level 6+ → no requirement, just allow progression
@@ -154,7 +157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         else if (volumeValue > 30_000) duration = 0.45;
         else if (volumeValue > 10_000) duration = 0.35;
 
-        gainNode.gain.setValueAtTime(0.75, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
         oscillator.start();
@@ -256,7 +259,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             fillDiv.style.width = `${comboPercent}%`;
             fillDiv.classList.add("down"); // 🔴 mark as red fill
             alertDiv.classList.add("combo-active", "down-combo"); // 🔴 red borders
-
         }
 
         return alertDiv;
@@ -283,13 +285,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function resetCombo(symbol, isDown = false) {
         if (isDown) {
+            clearTimeout(symbolDowntickTimers[symbol]);
             delete symbolDowntickTimers[symbol];
             delete symbolDownNoteIndices[symbol];
+            delete symbolDownComboLastPrice[symbol];
         } else {
+            clearTimeout(symbolUptickTimers[symbol]);
             delete symbolUptickTimers[symbol];
             delete symbolNoteIndices[symbol];
+            delete symbolComboLastPrice[symbol];
         }
-
+    
         document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((alertDiv) => {
             alertDiv.classList.remove("combo-active", "down-combo");
             const fillDiv = alertDiv.querySelector(".combo-fill");
@@ -299,9 +305,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 fillDiv.style.background = "";
             }
         });
-
+    
         if (debugMode) console.log(`🔄 ${symbol} ${isDown ? "down-combo" : "combo"} fully reset`);
     }
+    
 
     // ============================
     // Alert Event Listener
@@ -354,35 +361,40 @@ document.addEventListener("DOMContentLoaded", async () => {
                     clearTimeout(symbolUptickTimers[symbol]);
 
                     if (strength >= requiredVolume) {
-                        symbolNoteIndices[symbol] = nextLevel;
+                        const lastPrice = symbolComboLastPrice[symbol] ?? 0;
 
-                        if (nextLevel >= 1 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                            const note = fSharpMajorHz[Math.min(nextLevel, fSharpMajorHz.length - 1)];
-                            playNote(note, strength);
-                            lastAudioTime = now;
-                            if (debugMode && debugCombo) console.log(`🎵 ${symbol} combo advanced to LV${nextLevel}`);
+                        if (price > lastPrice) {
+                            symbolNoteIndices[symbol] = nextLevel;
+                            symbolComboLastPrice[symbol] = price;
+
+                            if (nextLevel >= 1 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+                                const note = fSharpMajorHz[Math.min(nextLevel, fSharpMajorHz.length - 1)];
+                                playNote(note, strength);
+                                lastAudioTime = now;
+                                if (debugMode && debugCombo) console.log(`🎵 ${symbol} combo advanced to LV${nextLevel}`);
+                            }
+
+                            symbolUptickTimers[symbol] = setTimeout(() => {
+                                if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
+                                resetCombo(symbol);
+                            }, UPTICK_WINDOW_MS);
+                        } else {
+                            if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not higher than last combo price (${price} ≤ ${lastPrice})`);
+                            return; // stop combo progression
                         }
-
-                        // 🔁 Restart timer on successful uptick
-                        symbolUptickTimers[symbol] = setTimeout(() => {
-                            if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
-                            resetCombo(symbol);
-                        }, UPTICK_WINDOW_MS);
-                    } else {
-                        if (debugMode && debugCombo) console.log(`❌ ${symbol} combo reset — volume too low`);
-                        resetCombo(symbol);
-                        return;
                     }
                 } else {
                     // First uptick — start tracking
                     symbolNoteIndices[symbol] = 0;
                     if (debugMode && debugCombo) console.log(`🧪 ${symbol} started tracking (LV0)`);
-
+                
                     symbolUptickTimers[symbol] = setTimeout(() => {
                         if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
                         resetCombo(symbol);
                     }, UPTICK_WINDOW_MS);
-                }
+                } 
+                
+                
             }
 
             if (dp > 0 && strength >= minVolume) {
@@ -402,28 +414,32 @@ document.addEventListener("DOMContentLoaded", async () => {
                     clearTimeout(symbolDowntickTimers[symbol]);
 
                     if (strength >= requiredVolume) {
-                        symbolDownNoteIndices[symbol] = nextLevel;
+                        const lastDownPrice = symbolDownComboLastPrice[symbol] ?? Infinity;
 
-                        if (debugMode && debugCombo) console.log(`🔥 ${symbol} down-combo advanced to LV${nextLevel}`);
+                        if (price < lastDownPrice) {
+                            symbolDownNoteIndices[symbol] = nextLevel;
+                            symbolDownComboLastPrice[symbol] = price;
 
+                            if (debugMode && debugCombo) console.log(`🔥 ${symbol} down-combo advanced to LV${nextLevel}`);
+
+                            symbolDowntickTimers[symbol] = setTimeout(() => {
+                                if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
+                                resetCombo(symbol, true);
+                            }, UPTICK_WINDOW_MS);
+                        } else {
+                            if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not lower than last down-combo price (${price} ≥ ${lastDownPrice})`);
+                            return; // stop combo progression
+                        }
+                    }  else  {
+                        // First downtick — start tracking
+                        symbolDownNoteIndices[symbol] = 0;
+                        if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
+                    
                         symbolDowntickTimers[symbol] = setTimeout(() => {
                             if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
-                            resetCombo(symbol, true); // 👈 pass second arg to indicate "down"
+                            resetCombo(symbol, true);
                         }, UPTICK_WINDOW_MS);
-                    } else {
-                        if (debugMode && debugCombo) console.log(`❌ ${symbol} down-combo reset — volume too low`);
-                        resetCombo(symbol, true);
-                        return;
-                    }
-                } else {
-                    // First downtick — start tracking
-                    symbolDownNoteIndices[symbol] = 0;
-                    if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
-
-                    symbolDowntickTimers[symbol] = setTimeout(() => {
-                        if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
-                        resetCombo(symbol, true);
-                    }, UPTICK_WINDOW_MS);
+                    } 
                 }
             }
 

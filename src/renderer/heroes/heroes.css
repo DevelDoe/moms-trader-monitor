@@ -223,7 +223,7 @@ h2 {
     }
 }
 
-/* Sprite Styles */
+/* Sprite Styles
 .sprite-container {
     position: absolute;
     right: 254px;
@@ -245,7 +245,7 @@ h2 {
 
 .sprite-active {
     opacity: 1;
-}
+} */
 
 @keyframes soldier-walk {
     from {

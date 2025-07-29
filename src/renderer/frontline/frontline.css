@@ -256,7 +256,7 @@ body::-webkit-scrollbar {
 }
 
 .ticker-card.fade-out {
-    opacity: 0.4;
+    opacity: 0.8;
     filter: grayscale(0.8);
     transition: opacity 0.5s ease, filter 0.5s ease; /* ✅ Smooth fade out only */
 }

@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 0.3,
+    "minPrice": 0,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -43,12 +43,12 @@
     "allowMultiSymbols": false
   },
   "scanner": {
-    "minPrice": 5,
+    "minPrice": 0,
     "maxPrice": 0,
     "direction": null,
     "minChangePercent": 0,
     "minVolume": 0,
-    "maxAlerts": 50,
+    "maxAlerts": 35,
     "scannerVolume": 0
   },
   "windows": {
@@ -124,6 +124,12 @@
       "height": 551,
       "x": 2496,
       "y": 1069
+    },
+    "traderviewWindow_SLRX": {
+      "isOpen": true
+    },
+    "traderviewWindow_BENF": {
+      "isOpen": true
     }
   },
   "traderview": {

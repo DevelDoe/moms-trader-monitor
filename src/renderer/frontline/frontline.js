@@ -354,7 +354,7 @@ function updateCardDOM(hero) {
     // Existing updates (score bar, volume, price, fade logic, HP/DP)
     const bar = card.querySelector(`.bar-fill.score`);
     if (bar) {
-        const exponent = 0.35;
+        const exponent = 0.75;
         const normalized = Math.min(state.score / maxScore, 1);
         const fill = Math.pow(normalized, exponent);
         bar.style.width = `${fill * 100}%`;

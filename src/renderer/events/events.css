@@ -242,9 +242,9 @@ body {
 }
 
 .combo-fill.down {
-    background: rgba(255, 78, 78, 0.2); /* 🔴 Red tone with same opacity */
-    left: auto;
-    right: 0; /* Start filling from the right side */
+    background: rgba(255, 78, 78, 0.2);
+    left: unset;        /* ✅ Cancel the default left fill */
+    right: 0;           /* ✅ Start from right side */
     transform-origin: right center;
     transition: width 0.6s ease-out, background 0.2s linear;
     mix-blend-mode: screen;

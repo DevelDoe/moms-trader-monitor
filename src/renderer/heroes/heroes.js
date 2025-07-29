@@ -398,7 +398,7 @@ function renderCard({ hero, price, hp, dp, strength, lastEvent }) {
 
     const volumeImpact = window.hlpsFunctions.calculateImpact(strength, price, window.buffs);
     const { totalXp, xpForNextLevel, xpPercent } = window.helpers.getXpProgress(state);
-    const fadeStyle = Date.now() - (state.lastUpdate || 0) <= 30000 ? "" : "opacity: 0.5; filter: grayscale(0.4);";
+    const fadeStyle = Date.now() - (state.lastUpdate || 0) <= 10_0000 ? "" : "opacity: 0.8; filter: grayscale(0.8);";
 
     const sortOrder = [
         "float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort",
