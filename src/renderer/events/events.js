@@ -58,12 +58,12 @@ const fSharpMajorHz = [
 // Minimum volume required to reach each combo leve
 const COMBO_VOLUME_REQUIREMENTS = [
     0,      // Level 0 → just started, no requirement
-    50,    // Level 1 → first real alert
-    150,   // Level 2
-    1000,  // Level 3
-    2000,  // Level 4
-    4000,  // Level 5
-    6000,  // Level 6+
+    500,     // Level 1 → first real alert
+    3000,    // Level 2
+    100,    // Level 3
+    100,   // Level 4
+    100,   // Level 5
+    100       // Level 6+ → no requirement, just allow progression
 ];
 
 // ============================

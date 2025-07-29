@@ -53,9 +53,9 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 274,
+      "width": 272,
       "height": 900,
-      "x": -245,
+      "x": 918,
       "y": -900,
       "isOpen": true
     },
@@ -105,7 +105,7 @@
       "isOpen": false
     },
     "heroesWindow": {
-      "width": 504,
+      "width": 445,
       "height": 551,
       "x": 469,
       "y": -549,
@@ -128,7 +128,7 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": false,
+    "enableHeroes": true,
     "autoClose": false
   }
 }
