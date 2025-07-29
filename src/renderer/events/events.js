@@ -170,8 +170,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const downLevel = symbolDownNoteIndices[hero] ?? -1;
         const comboLevel = Math.max(upLevel, downLevel, 0);
         const maxCombo = 16;
-        const comboPercent = Math.min(1, Math.pow(comboLevel / maxCombo, 0.65)) * 100;
-        const percent = hp || -dp;
+        let ratio = comboLevel / maxCombo;
+        let comboPercent;
+        
+        if (comboLevel <= 1) {
+            comboPercent = 30; // Force early fill to 35%
+        } else {
+            comboPercent = Math.min(1, Math.pow(ratio, 0.65)) * 100;
+        }        const percent = hp || -dp;
         const isUp = hp > 0;
         const volume = strength;
         const isNewHigh = alertData.isHighOfDay === true;

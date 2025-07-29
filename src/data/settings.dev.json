@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 0,
+    "minPrice": 0.3,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -125,10 +125,11 @@
       "x": 2496,
       "y": 1069
     },
-    "traderviewWindow_SLRX": {
-      "isOpen": true
-    },
-    "traderviewWindow_BENF": {
+    "traderviewWindow_CRDF": {
+      "width": 514,
+      "height": 508,
+      "x": 992,
+      "y": 499,
       "isOpen": true
     }
   },
