@@ -19,6 +19,10 @@ const MIN_AUDIO_INTERVAL_MS = 93;
 
 const symbolUptickTimers = {};
 const symbolNoteIndices = {};
+
+const symbolDowntickTimers = {};
+const symbolDownNoteIndices = {};
+
 const UPTICK_WINDOW_MS = 20_000;
 
 const fSharpMajorHz = [
@@ -57,13 +61,13 @@ const fSharpMajorHz = [
 
 // Minimum volume required to reach each combo leve
 const COMBO_VOLUME_REQUIREMENTS = [
-    0,      // Level 0 → just started, no requirement
-    500,     // Level 1 → first real alert
-    3000,    // Level 2
-    100,    // Level 3
-    100,   // Level 4
-    100,   // Level 5
-    100       // Level 6+ → no requirement, just allow progression
+    0, // Level 0 → just started, no requirement
+    500, // Level 1 → first real alert
+    3000, // Level 2
+    100, // Level 3
+    100, // Level 4
+    100, // Level 5
+    100, // Level 6+ → no requirement, just allow progression
 ];
 
 // ============================
@@ -145,7 +149,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         oscillator.frequency.value = frequency;
 
         // ⏱️ Duration based on volume
-        let duration = 0.150;
+        let duration = 0.15;
         if (volumeValue > 60_000) duration = 0.6;
         else if (volumeValue > 30_000) duration = 0.45;
         else if (volumeValue > 10_000) duration = 0.35;
@@ -159,7 +163,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function createAlertElement(alertData) {
         const { hero, price, strength = 0, hp = 0, dp = 0 } = alertData;
-        const comboLevel = Math.max(0, symbolNoteIndices[hero] ?? -1);
+        const upLevel = symbolNoteIndices[hero] ?? -1;
+        const downLevel = symbolDownNoteIndices[hero] ?? -1;
+        const comboLevel = Math.max(upLevel, downLevel, 0);
         const maxCombo = 16;
         const comboPercent = Math.min(1, Math.pow(comboLevel / maxCombo, 0.65)) * 100;
         const percent = hp || -dp;
@@ -246,6 +252,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (pulseStep >= 1) fillDiv.classList.add(`combo-pulse-${pulseStep}`);
         }
 
+        if (dp > 0 && comboLevel >= 1) {
+            fillDiv.style.width = `${comboPercent}%`;
+            fillDiv.classList.add("down"); // 🔴 mark as red fill
+            alertDiv.classList.add("combo-active", "down-combo"); // 🔴 red borders
+
+        }
+
         return alertDiv;
     }
 
@@ -268,21 +281,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         alertQueue.length = 0;
     }
 
-    function resetCombo(symbol) {
-        delete symbolUptickTimers[symbol];
-        delete symbolNoteIndices[symbol];
+    function resetCombo(symbol, isDown = false) {
+        if (isDown) {
+            delete symbolDowntickTimers[symbol];
+            delete symbolDownNoteIndices[symbol];
+        } else {
+            delete symbolUptickTimers[symbol];
+            delete symbolNoteIndices[symbol];
+        }
 
         document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((alertDiv) => {
-            alertDiv.classList.remove("combo-active");
+            alertDiv.classList.remove("combo-active", "down-combo");
             const fillDiv = alertDiv.querySelector(".combo-fill");
             if (fillDiv) {
-                fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+                fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4", "down");
                 fillDiv.style.width = "0%";
                 fillDiv.style.background = "";
             }
         });
 
-        if (debugMode) console.log(`🔄 ${symbol} combo fully reset`);
+        if (debugMode) console.log(`🔄 ${symbol} ${isDown ? "down-combo" : "combo"} fully reset`);
     }
 
     // ============================
@@ -320,7 +338,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (hp > 0 && strength >= minVolume) {
                 if (debugMode && debugCombo) console.log(`🔍 ${symbol} tick detected — HP: ${hp.toFixed(2)} | Volume: ${strength}`);
 
-
                 if (debugMode && debugCombo) {
                     console.log(`\n📌 ${symbol} — Incoming Tick`);
                     console.log(`   🧭 Previous Level: ${symbolNoteIndices[symbol] ?? "N/A (defaulting to 0)"}`);
@@ -329,29 +346,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 const currentLevel = symbolNoteIndices[symbol] ?? -1;
                 const nextLevel = currentLevel + 1;
-                
+
                 const currentRequiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(currentLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
-                
+
                 if (symbolUptickTimers[symbol]) {
                     clearTimeout(symbolUptickTimers[symbol]);
-                
+
                     if (strength >= requiredVolume) {
                         symbolNoteIndices[symbol] = nextLevel;
-                
+
                         if (nextLevel >= 1 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
                             const note = fSharpMajorHz[Math.min(nextLevel, fSharpMajorHz.length - 1)];
                             playNote(note, strength);
                             lastAudioTime = now;
                             if (debugMode && debugCombo) console.log(`🎵 ${symbol} combo advanced to LV${nextLevel}`);
                         }
-                
+
                         // 🔁 Restart timer on successful uptick
                         symbolUptickTimers[symbol] = setTimeout(() => {
                             if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
                             resetCombo(symbol);
                         }, UPTICK_WINDOW_MS);
-                
                     } else {
                         if (debugMode && debugCombo) console.log(`❌ ${symbol} combo reset — volume too low`);
                         resetCombo(symbol);
@@ -361,10 +377,52 @@ document.addEventListener("DOMContentLoaded", async () => {
                     // First uptick — start tracking
                     symbolNoteIndices[symbol] = 0;
                     if (debugMode && debugCombo) console.log(`🧪 ${symbol} started tracking (LV0)`);
-                
+
                     symbolUptickTimers[symbol] = setTimeout(() => {
                         if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
                         resetCombo(symbol);
+                    }, UPTICK_WINDOW_MS);
+                }
+            }
+
+            if (dp > 0 && strength >= minVolume) {
+                if (debugMode && debugCombo) {
+                    console.log(`🔍 ${symbol} tick detected — DP: ${dp.toFixed(2)} | Volume: ${strength}`);
+                    console.log(`\n📌 ${symbol} — Incoming Down Tick`);
+                    console.log(`   🧭 Previous Down Level: ${symbolDownNoteIndices[symbol] ?? "N/A (defaulting to 0)"}`);
+                    console.log(`   💪 Volume: ${strength} | 🔻 DP: ${dp.toFixed(2)}`);
+                }
+
+                const currentLevel = symbolDownNoteIndices[symbol] ?? -1;
+                const nextLevel = currentLevel + 1;
+
+                const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
+
+                if (symbolDowntickTimers[symbol]) {
+                    clearTimeout(symbolDowntickTimers[symbol]);
+
+                    if (strength >= requiredVolume) {
+                        symbolDownNoteIndices[symbol] = nextLevel;
+
+                        if (debugMode && debugCombo) console.log(`🔥 ${symbol} down-combo advanced to LV${nextLevel}`);
+
+                        symbolDowntickTimers[symbol] = setTimeout(() => {
+                            if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
+                            resetCombo(symbol, true); // 👈 pass second arg to indicate "down"
+                        }, UPTICK_WINDOW_MS);
+                    } else {
+                        if (debugMode && debugCombo) console.log(`❌ ${symbol} down-combo reset — volume too low`);
+                        resetCombo(symbol, true);
+                        return;
+                    }
+                } else {
+                    // First downtick — start tracking
+                    symbolDownNoteIndices[symbol] = 0;
+                    if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
+
+                    symbolDowntickTimers[symbol] = setTimeout(() => {
+                        if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
+                        resetCombo(symbol, true);
                     }, UPTICK_WINDOW_MS);
                 }
             }

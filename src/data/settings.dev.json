@@ -53,9 +53,9 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 272,
+      "width": 275,
       "height": 900,
-      "x": 918,
+      "x": -250,
       "y": -900,
       "isOpen": true
     },
