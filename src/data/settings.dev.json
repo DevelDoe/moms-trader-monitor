@@ -81,11 +81,11 @@
       "isOpen": false
     },
     "dockerWindow": {
+      "isOpen": true,
       "width": 400,
       "height": 85,
       "x": 3321,
-      "y": 1899,
-      "isOpen": true
+      "y": 1899
     },
     "progressWindow": {
       "width": 1442,
@@ -99,7 +99,7 @@
       "height": 551,
       "x": 28,
       "y": -549,
-      "isOpen": true
+      "isOpen": false
     },
     "activeWindow": {
       "width": 965,
@@ -128,6 +128,27 @@
       "height": 551,
       "x": 2496,
       "y": 1069
+    },
+    "traderviewWindow_IXHL": {
+      "isOpen": false
+    },
+    "traderviewWindow_BGLC": {
+      "isOpen": false
+    },
+    "traderviewWindow_VWAV": {
+      "isOpen": false
+    },
+    "traderviewWindow_ATNF": {
+      "isOpen": false
+    },
+    "traderviewWindow_SGD": {
+      "isOpen": false
+    },
+    "traderviewWindow_XBP": {
+      "isOpen": false
+    },
+    "traderviewWindow_SOFI": {
+      "isOpen": false
     }
   },
   "traderview": {
