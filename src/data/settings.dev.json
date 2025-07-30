@@ -81,6 +81,10 @@
       "isOpen": false
     },
     "dockerWindow": {
+      "width": 400,
+      "height": 85,
+      "x": 3321,
+      "y": 1899,
       "isOpen": true
     },
     "progressWindow": {

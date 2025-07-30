@@ -8,6 +8,7 @@ const { debounce } = require("./utils//debounce");
 const path = require("path");
 const fs = require("fs");
 
+const { createDockerWindow } = require("./windows/docker");
 const { createSettingsWindow } = require("./windows/settings");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createHeroesWindow } = require("./windows/heroes");
@@ -123,8 +124,9 @@ async function restoreWindows() {
         }
     }
 
-    // Show docker window explicitly
-    if (windows.docker) {
+    if (!windows.docker) {
+        log.log("Manually restoring docker window...");
+        windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
         windows.docker.show();
     }
 
@@ -136,6 +138,8 @@ async function restoreWindows() {
 
 function createWindowByName(name) {
     switch (name) {
+        case "docker":
+            return createDockerWindow(isDevelopment); 
         case "settings":
             return createSettingsWindow(isDevelopment);
         case "frontline":

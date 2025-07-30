@@ -1,12 +1,16 @@
-// ./src/main/windows/docker.js
-
 const { BrowserWindow } = require("electron");
 const path = require("path");
+const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { debounce } = require("../utils/debounce");
 
 function createDockerWindow(isDevelopment) {
+    const state = getWindowState("dockerWindow");
+
     const window = new BrowserWindow({
-        width: 400,
-        height: 85,
+        width: state.width || 400,
+        height: state.height || 85,
+        x: state.x,
+        y: state.y,
         frame: false,
         alwaysOnTop: true,
         resizable: true,
@@ -24,10 +28,23 @@ function createDockerWindow(isDevelopment) {
 
     window.loadFile(path.join(__dirname, "../../renderer/docker/docker.html"));
 
+    // Save window position/size on move/resize
+    const saveBounds = () => {
+        if (!window.isDestroyed()) {
+            setWindowBounds("dockerWindow", window.getBounds());
+        }
+    };
+
+    const debouncedSave = debounce(saveBounds, 300);
+    window.on("move", debouncedSave);
+    window.on("resize", debouncedSave);
+
+    // Optional devtools
     // if (isDevelopment) {
     //     window.webContents.openDevTools({ mode: "detach" });
     // }
-    return window; // ✅ Return the window instance
+
+    return window;
 }
 
 module.exports = { createDockerWindow };
