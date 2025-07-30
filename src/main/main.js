@@ -188,10 +188,10 @@ app.on("ready", async () => {
     }
 
     // ✅ Check for scheduled restart and close splash immediately
-    if (process.argv.includes("--scheduled-restart") && windows.splash) {
-        log.log("Scheduled restart detected, closing splash screen...");
-        windows.splash.close();
-    }
+    // if (process.argv.includes("--scheduled-restart") && windows.splash) {
+    //     log.log("Scheduled restart detected, closing splash screen...");
+    //     windows.splash.close();
+    // }
 
     windows.splash.once("closed", async () => {
         log.log("Splash screen closed. Waiting for auth...");
@@ -253,7 +253,7 @@ app.on("ready", async () => {
         }
     });
 
-    scheduleDailyRestart(1, 11); // defaults to 00:00 AM
+    scheduleDailyRestart(3, 0); // defaults to 00:00 AM
 });
 
 app.whenReady().then(() => {

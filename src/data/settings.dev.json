@@ -124,18 +124,11 @@
       "height": 551,
       "x": 2496,
       "y": 1069
-    },
-    "traderviewWindow_CRDF": {
-      "width": 514,
-      "height": 508,
-      "x": 992,
-      "y": 499,
-      "isOpen": true
     }
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": true,
+    "enableHeroes": false,
     "autoClose": false
   }
 }
