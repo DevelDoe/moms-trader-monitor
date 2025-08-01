@@ -85,15 +85,15 @@ function parseVolumeValue(str) {
     return value;
 }
 
-// Utility function to check if current time is quiet time (8:00-8:12 EST)
+// Utility function to check if current time is quiet time (08:00 and 09:30 EST only)
 function isQuietTimeEST() {
     const estNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
     const h = estNow.getHours();
     const m = estNow.getMinutes();
 
     return (
-        (h === 8 && m < 3) || // 08:00–08:02
-        (h === 9 && m >= 30 && m < 34) // 09:30–09:33
+        (h === 8 && m === 0) ||         // 08:00–08:00:59
+        (h === 9 && m === 30)           // 09:30–09:30:59
     );
 }
 
@@ -172,12 +172,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         const maxCombo = 16;
         let ratio = comboLevel / maxCombo;
         let comboPercent;
-        
+
         if (comboLevel <= 1) {
             comboPercent = 30; // Force early fill to 35%
         } else {
             comboPercent = Math.min(1, Math.pow(ratio, 0.65)) * 100;
-        }        const percent = hp || -dp;
+        }
+        const percent = hp || -dp;
         const isUp = hp > 0;
         const volume = strength;
         const isNewHigh = alertData.isHighOfDay === true;
@@ -213,34 +214,42 @@ document.addEventListener("DOMContentLoaded", async () => {
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
 
         // In createAlertElement, for high-of-day sound:
-        if (isNewHigh) {
-            const now = Date.now();
-            if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                alertDiv.classList.add("new-high");
-                if (!isQuietTimeEST()) {
-                    magicDustAudio.volume = Math.min(1.0, Math.max(0.1, volume / 10000));
-                    magicDustAudio.currentTime = 0;
-                    magicDustAudio.play();
-                    lastAudioTime = now;
-                } else if (debugMode) {
-                    console.log(`🔕 Magic dust audio suppressed during quiet time (8:00-8:12 EST)`);
-                }
-            }
-        }
+        // if (isNewHigh) {
+        //     const now = Date.now();
+        //     if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+        //         alertDiv.classList.add("new-high");
+        //         if (!isQuietTimeEST()) {
+        //             magicDustAudio.volume = Math.min(1.0, Math.max(0.1, volume / 10000));
+        //             magicDustAudio.currentTime = 0;
+        //             magicDustAudio.play();
+        //             lastAudioTime = now;
+        //         } else if (debugMode) {
+        //             console.log(`🔕 Magic dust audio suppressed during quiet time (8:00-8:12 EST)`);
+        //         }
+        //     }
+        // }
 
         if (isNewEntry) {
             alertDiv.classList.add("new-entry");
             // contentDiv.innerHTML += `<div class="progress-bar"><span style="color: lightblue; font-weight: bold;">🆕 New Entry</span></div>`;
         }
 
-        if (isUp && volume > 9000) alertDiv.classList.add("blinking-alert");
+        // Remove any existing blink classes
+        alertDiv.classList.remove("blink-soft", "blink-medium", "blink-intense");
+
+        // Apply new blink intensity based on volume
+        if (isUp) {
+            if (volume >= 100_000) alertDiv.classList.add("blink-intense");
+            else if (volume >= 50_000) alertDiv.classList.add("blink-medium");
+            else if (volume >= 10_000) alertDiv.classList.add("blink-soft");
+        }
 
         alertDiv.classList.remove("low-1", "low-2", "low-3", "low-4");
 
         let brightnessClass = "";
-        if (volume >= 30_000) brightnessClass = "low-1";
-        else if (volume >= 10_000) brightnessClass = "low-2";
-        else if (volume >= 4_000) brightnessClass = "low-3";
+        if (volume >= 10_000) brightnessClass = "low-1";
+        else if (volume >= 5_000) brightnessClass = "low-2";
+        else if (volume >= 1000) brightnessClass = "low-3";
         else brightnessClass = "low-4";
 
         if (hp > 0 || dp > 0) {
@@ -301,7 +310,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             delete symbolNoteIndices[symbol];
             delete symbolComboLastPrice[symbol];
         }
-    
+
         document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((alertDiv) => {
             alertDiv.classList.remove("combo-active", "down-combo");
             const fillDiv = alertDiv.querySelector(".combo-fill");
@@ -311,10 +320,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 fillDiv.style.background = "";
             }
         });
-    
+
         if (debugMode) console.log(`🔄 ${symbol} ${isDown ? "down-combo" : "combo"} fully reset`);
     }
-    
 
     // ============================
     // Alert Event Listener
@@ -393,14 +401,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     // First uptick — start tracking
                     symbolNoteIndices[symbol] = 0;
                     if (debugMode && debugCombo) console.log(`🧪 ${symbol} started tracking (LV0)`);
-                
+
                     symbolUptickTimers[symbol] = setTimeout(() => {
                         if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
                         resetCombo(symbol);
                     }, UPTICK_WINDOW_MS);
-                } 
-                
-                
+                }
             }
 
             if (dp > 0 && strength >= minVolume) {
@@ -436,16 +442,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                             if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not lower than last down-combo price (${price} ≥ ${lastDownPrice})`);
                             return; // stop combo progression
                         }
-                    }  else  {
+                    } else {
                         // First downtick — start tracking
                         symbolDownNoteIndices[symbol] = 0;
                         if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
-                    
+
                         symbolDowntickTimers[symbol] = setTimeout(() => {
                             if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                             resetCombo(symbol, true);
                         }, UPTICK_WINDOW_MS);
-                    } 
+                    }
                 }
             }
 
