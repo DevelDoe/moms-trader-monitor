@@ -214,21 +214,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
 
         // In createAlertElement, for high-of-day sound:
-        // if (isNewHigh) {
-        //     const now = Date.now();
-        //     if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-        //         alertDiv.classList.add("new-high");
-        //         if (!isQuietTimeEST()) {
-        //             magicDustAudio.volume = Math.min(1.0, Math.max(0.1, volume / 10000));
-        //             magicDustAudio.currentTime = 0;
-        //             magicDustAudio.play();
-        //             lastAudioTime = now;
-        //         } else if (debugMode) {
-        //             console.log(`🔕 Magic dust audio suppressed during quiet time (8:00-8:12 EST)`);
-        //         }
-        //     }
-        // }
-        //
+        if (isNewHigh) {
+            const now = Date.now();
+            if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+                alertDiv.classList.add("new-high");
+                // if (!isQuietTimeEST()) {
+                //     magicDustAudio.volume = Math.min(1.0, Math.max(0.1, volume / 10000));
+                //     magicDustAudio.currentTime = 0;
+                //     magicDustAudio.play();
+                //     lastAudioTime = now;
+                // } else if (debugMode) {
+                //     console.log(`🔕 Magic dust audio suppressed during quiet time (8:00-8:12 EST)`);
+                // }
+            }
+        }
+        
 
         if (isNewEntry) {
             alertDiv.classList.add("new-entry");
