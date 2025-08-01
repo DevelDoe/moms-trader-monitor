@@ -228,6 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         //         }
         //     }
         // }
+        //
 
         if (isNewEntry) {
             alertDiv.classList.add("new-entry");
