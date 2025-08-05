@@ -148,32 +148,6 @@ body {
     filter: grayscale(15%) brightness(0.4);
 }
 
-@keyframes blink-soft {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
-}
-
-@keyframes blink-medium {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
-
-@keyframes blink-intense {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-
-.blink-soft {
-    animation: blink-soft 1.2s infinite;
-}
-
-.blink-medium {
-    animation: blink-medium 0.6s infinite;
-}
-
-.blink-intense {
-    animation: blink-intense 0.3s infinite;
-}
 
 .alert.new-high {
     filter: grayscale(0%) brightness(1);
@@ -274,3 +248,29 @@ body {
     /* filter: grayscale(0%) brightness(1); */
 }
 
+@keyframes blink-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+@keyframes blink-medium {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes blink-intense {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.blink-soft {
+    animation: blink-soft 1.2s infinite;
+}
+
+.blink-medium {
+    animation: blink-medium 0.6s infinite;
+}
+
+.blink-intense {
+    animation: blink-intense 0.3s infinite;
+}

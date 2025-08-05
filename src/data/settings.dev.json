@@ -67,11 +67,11 @@
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 702,
-      "height": 431,
-      "x": 2178,
-      "y": 640,
-      "isOpen": false
+      "width": 518,
+      "height": 532,
+      "x": 2362,
+      "y": 539,
+      "isOpen": true
     },
     "wizardWindow": {
       "width": 2400,
@@ -103,10 +103,10 @@
     },
     "activeWindow": {
       "width": 965,
-      "height": 457,
-      "x": 16,
-      "y": -900,
-      "isOpen": false
+      "height": 489,
+      "x": 1397,
+      "y": 539,
+      "isOpen": true
     },
     "heroesWindow": {
       "width": 445,
@@ -116,14 +116,14 @@
       "isOpen": true
     },
     "scrollXpWindow": {
-      "isOpen": false,
+      "isOpen": true,
       "width": 210,
       "height": 445,
       "x": 980,
       "y": -444
     },
     "scrollStatsWindow": {
-      "isOpen": false,
+      "isOpen": true,
       "width": 384,
       "height": 551,
       "x": 2496,

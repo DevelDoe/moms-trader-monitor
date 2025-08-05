@@ -65,10 +65,10 @@ const fSharpMajorHz = [
 // Minimum volume required to reach each combo leve
 const COMBO_VOLUME_REQUIREMENTS = [
     0, // Level 0 → just started, no requirement
-    500, // Level 1 → first real alert
-    1000, // Level 2
-    3000, // Level 3
-    100, // Level 4
+    100, // Level 1 → first real alert
+    500, // Level 2
+    1000, // Level 3
+    2000, // Level 4
     100, // Level 5
     100, // Level 6+ → no requirement, just allow progression
 ];
@@ -90,12 +90,14 @@ function isQuietTimeEST() {
     const estNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
     const h = estNow.getHours();
     const m = estNow.getMinutes();
+    const s = estNow.getSeconds();
 
     return (
-        (h === 8 && m === 0) ||         // 08:00–08:00:59
-        (h === 9 && m === 30)           // 09:30–09:30:59
+        (h === 8 && m === 0 && s <= 10) ||      // 08:00:00 to 08:00:10
+        (h === 9 && m === 30 && s <= 10)        // 09:30:00 to 09:30:10
     );
 }
+
 
 function abbreviatedValues(num) {
     if (num < 1000) return num.toString(); // No abbreviation under 1K
@@ -248,9 +250,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         alertDiv.classList.remove("low-1", "low-2", "low-3", "low-4");
 
         let brightnessClass = "";
-        if (volume >= 10_000) brightnessClass = "low-1";
-        else if (volume >= 5_000) brightnessClass = "low-2";
-        else if (volume >= 1000) brightnessClass = "low-3";
+        if (volume >= 5_000) brightnessClass = "low-1";
+        else if (volume >= 2500) brightnessClass = "low-2";
+        else if (volume >= 500) brightnessClass = "low-3";
         else brightnessClass = "low-4";
 
         if (hp > 0 || dp > 0) {
