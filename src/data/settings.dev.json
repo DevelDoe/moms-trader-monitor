@@ -12,7 +12,7 @@
     "heroesListLength": 4
   },
   "news": {
-    "showTrackedTickers": true,
+    "showTrackedTickers": false,
     "filteredTickers": [],
     "blockList": [
       "nasdaq surges",
@@ -41,21 +41,21 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "ATNF",
-      "WBTN",
-      "GBIO",
+      "RIOX",
+      "QUIK",
       "TEST",
-      "NNVC",
-      "CRE",
-      "PXLW",
-      "CMPX",
-      "SMWB",
-      "TNYA",
-      "SRFM",
-      "BSLK",
-      "GUTS",
-      "ADN",
-      "DFDV"
+      "ETNB",
+      "BTAI",
+      "PSQH",
+      "MCVT",
+      "FEMY",
+      "CORZ",
+      "BTOG",
+      "OLB",
+      "CXAI",
+      "CASK",
+      "KSCP",
+      "URGN"
     ]
   },
   "scanner": {
@@ -80,11 +80,11 @@
       "height": 755,
       "x": 707,
       "y": 375,
-      "isOpen": true
+      "isOpen": false
     },
     "infobarWindow": {
-      "width": 692,
-      "height": 85,
+      "width": 834,
+      "height": 64,
       "x": 978,
       "y": 523,
       "isOpen": true

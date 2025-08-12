@@ -13,7 +13,7 @@ function createInfobarWindow(isDevelopment) {
         x: state.x,
         y: state.y,
         frame: false,
-        alwaysOnTop: true,
+        alwaysOnTop: false,
         resizable: true,
         transparent: false,
         hasShadow: false,

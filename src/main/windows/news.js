@@ -9,7 +9,7 @@ function createNewsWindow(isDevelopment) {
         width: 500,
         height: 500,
         frame: false,
-        alwaysOnTop: true,
+        alwaysOnTop: false,
         resizable: true,
         transparent: false,
         hasShadow: false,
