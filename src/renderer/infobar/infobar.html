@@ -28,6 +28,7 @@
                 color: #f0f0f0;
                 padding: 5px;
                 margin: 0 auto;
+                text-overflow: ellipsis;
             }
 
             h2 {
@@ -47,11 +48,15 @@
             .bonus-item.show {
                 animation: slideIn 10s linear forwards;
                 opacity: 1;
+                white-space: nowrap;
+                text-overflow: ellipsis;
             }
 
             .news-item {
                 font-weight: bold;
                 cursor: pointer;
+                white-space: nowrap;
+                text-overflow: ellipsis;
             }
 
             .news-item.show {

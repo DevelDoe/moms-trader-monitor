@@ -41,21 +41,21 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "ACDC",
+      "AXGN",
       "CRE",
-      "TLRY",
+      "TGEN",
+      "CORZ",
+      "LAZR",
+      "QUIK",
+      "PXLW",
       "LODE",
-      "DRD",
-      "WBTN",
+      "ACDC",
+      "PSTV",
+      "ISSC",
+      "ADN",
+      "SDM",
       "TEST",
-      "GEVO",
-      "INVZ",
-      "DERM",
-      "PROP",
-      "NUWE",
-      "BSLK",
-      "PHGE",
-      "OPEN"
+      "HOLO"
     ]
   },
   "scanner": {
@@ -83,10 +83,10 @@
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 834,
-      "height": 64,
-      "x": 978,
-      "y": 523,
+      "width": 532,
+      "height": 63,
+      "x": 270,
+      "y": 513,
       "isOpen": true
     },
     "wizardWindow": {
@@ -97,7 +97,11 @@
       "isOpen": false
     },
     "dockerWindow": {
-      "isOpen": true
+      "isOpen": true,
+      "width": 400,
+      "height": 85,
+      "x": 1472,
+      "y": 1125
     },
     "progressWindow": {
       "width": 1442,
