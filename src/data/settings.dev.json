@@ -66,11 +66,11 @@
       "isOpen": true
     },
     "infobarWindow": {
-      "width": 465,
-      "height": 39,
-      "x": 725,
-      "y": -837,
-      "isOpen": false
+      "width": 692,
+      "height": 85,
+      "x": 1523,
+      "y": 667,
+      "isOpen": true
     },
     "wizardWindow": {
       "width": 2400,
@@ -121,10 +121,10 @@
       "isOpen": false
     },
     "newsWindow": {
-      "width": 641,
-      "height": 479,
-      "x": 1517,
-      "y": 812,
+      "width": 693,
+      "height": 383,
+      "x": 222,
+      "y": -681,
       "isOpen": true
     }
   },
