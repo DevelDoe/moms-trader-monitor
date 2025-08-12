@@ -41,19 +41,19 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "AIRJ",
+      "SLS",
+      "CLNE",
       "TEST",
-      "EMPD",
-      "PSKY",
-      "CYCU",
-      "SAFX",
-      "KAVL",
-      "HE",
-      "MCTR",
+      "CWD",
+      "GCTS",
+      "DFDV",
+      "WLDS",
+      "MSOX",
       "SHOT",
-      "CGTX",
-      "PMN",
-      "BTOG"
+      "BINI",
+      "CRE",
+      "BITF",
+      "GNS"
     ]
   },
   "scanner": {
@@ -133,15 +133,15 @@
       "isOpen": true,
       "width": 239,
       "height": 564,
-      "x": 2048,
-      "y": 711
+      "x": 2070,
+      "y": 300
     },
     "scrollStatsWindow": {
       "isOpen": true,
       "width": 850,
-      "height": 660,
-      "x": 2293,
-      "y": 707
+      "height": 563,
+      "x": 2309,
+      "y": 301
     },
     "newsWindow": {
       "width": 630,

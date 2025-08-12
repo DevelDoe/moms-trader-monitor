@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, symbolLength);
+            .slice(0, 15);
 
         // Step 2: Sort that pool by buff score
         // Step 2: Sort that pool by buff score
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <strong class="symbol" style="background: ${bg};">
                         ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
                     </strong>
-                    <span class="buffs" style="margin-left: 8px; color: #e74c3c;">${buffIcons}</span>
+                    <span class="buffs" style="margin-left: 8px; color: #e74c3c; font-size: 1rem;">${buffIcons}</span>
                 </div>`;
             })
 

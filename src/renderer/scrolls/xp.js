@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <strong class="symbol" style="background: ${bg};">
                     ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
                 </strong>
-                <span style="font-weight: 600; color: ${getXpColorByRank(i, sorted.length)}; opacity: 0.85; margin-left: 4px; font-size: 1.3rem;">
+                <span style="font-weight: 600; color: ${getXpColorByRank(i, sorted.length)}; opacity: 0.85; margin-left: 4px; font-size: 1rem;">
                     ${abbreviateXp(h.totalXpGained)}
                 </span>
             </div>`;
