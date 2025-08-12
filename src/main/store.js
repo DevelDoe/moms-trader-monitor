@@ -2,12 +2,11 @@ const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 const { fetchHistoricalNews, subscribeToSymbolNews } = require("./collectors/news");
-const { computeBuffsForSymbol, calculateVolumeImpact, getHeroBuff } = require("./utils/buffLogic");
+const { computeBuffsForSymbol, calculateVolumeImpact } = require("./utils/buffLogic");
 const { DateTime } = require("luxon");
 
 const path = require("path");
 const fs = require("fs");
-const os = require("os");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -156,17 +155,15 @@ class Store extends EventEmitter {
             loggedInAt: null,
         };
 
+        this._needsDailyReset = false;
+
         const today = getMarketDateString();
         const lastClear = loadStoreMeta();
 
         if (lastClear !== today) {
+            this._needsDailyReset = true;
             this.xpState.clear();
             this.newsList = [];
-
-            // const savedUser = settings.user || {};
-            // if (savedUser.role === "admin" && savedUser.email && savedUser.password) {
-            //     this.autoLogin(savedUser.email, savedUser.password);
-            // }
 
             log.log("🧨 Full store reset at boot (new day)");
 
@@ -176,7 +173,6 @@ class Store extends EventEmitter {
             log.log("✅ Store is up to date — no daily reset needed");
         }
 
-        // ✅ Start the XP reset timer!
         this.startXpResetScheduler();
     }
 
@@ -186,8 +182,6 @@ class Store extends EventEmitter {
 
     nuke() {
         this.xpState.clear();
-        // this.sessionData.clear();
-        // this.dailyData.clear();
         this.newsList = [];
 
         log.warn("🔥 Manual nuke: Store state cleared");
@@ -196,24 +190,34 @@ class Store extends EventEmitter {
     }
 
     updateSymbols(symbolList) {
-        // 🔥 Clear old symbols
-        this.symbols.clear();
+        const prev = this.symbols; // keep old map
 
         this.symbols = new Map(
             symbolList.map((s) => {
-                // Extract necessary values
                 const sharesShort = s.statistics?.sharesShort ?? 0;
                 const floatShares = s.statistics?.floatShares ?? 0;
-                const institutionsFloatPercentHeld = s.ownership?.institutionsFloatPercentHeld ?? 0;
 
-                // ✅ Compute `shortPercentOfFloat ^ floatHeldByInstitutions
-                const shortPercentOfFloat = floatShares > 0 ? parseFloat(((sharesShort / floatShares) * 100).toFixed(2)) : 0.0;
-                const floatHeldByInstitutions = parseFloat((floatShares * institutionsFloatPercentHeld).toFixed(2));
+                const instHeld = s.ownership?.institutionsFloatPercentHeld ?? 0;
+                const instHeld01 = instHeld > 1 ? instHeld / 100 : instHeld;
 
-                // ✅ Compute buffs
+                const shortPercentOfFloat = floatShares > 0 ? Number(((sharesShort / floatShares) * 100).toFixed(2)) : 0;
+
+                const floatHeldByInstitutions = Number((floatShares * instHeld01).toFixed(2));
+
                 const computedBuffs = computeBuffsForSymbol(s, buffs, blockList);
 
-                // ✅ Attach computed values before storing
+                // bring forward session fields if we had this symbol already
+                const old = prev.get(s.symbol) || {};
+                const sessionCarry = {
+                    xp: old.xp ?? 0,
+                    lv: old.lv ?? 1,
+                    totalXpGained: old.totalXpGained ?? 0,
+                    firstXpTimestamp: old.firstXpTimestamp,
+                    lastEvent: old.lastEvent,
+                    // keep existing buffs if you want them to persist; or prefer computedBuffs
+                    buffs: old.buffs ?? computedBuffs,
+                };
+
                 return [
                     s.symbol,
                     {
@@ -223,7 +227,7 @@ class Store extends EventEmitter {
                             shortPercentOfFloat,
                             floatHeldByInstitutions,
                         },
-                        buffs: computedBuffs, // ⬅️ Inject here
+                        ...sessionCarry,
                     },
                 ];
             })
@@ -231,16 +235,23 @@ class Store extends EventEmitter {
 
         log.log(`[updateSymbols] Symbols list updated. Total symbols:`, this.symbols.size);
 
-        if (!isDevelopment) {
-            subscribeToSymbolNews(Array.from(this.symbols.keys()));
+        if (this._needsDailyReset) {
+            this.resetXpAndLv({ quiet: true });
+            this._needsDailyReset = false;
+        }
 
+        if (!isDevelopment) {
+            const keys = Array.from(this.symbols.keys());
+            subscribeToSymbolNews(keys);
             (async () => {
-                for (const symbol of this.symbols.keys()) {
+                for (const symbol of keys) {
                     await fetchHistoricalNews(symbol);
-                    await sleep(200); // ⏳ Add 500ms delay between requests
+                    await sleep(200);
                 }
             })();
         }
+
+        this.emit("lists-update");
     }
 
     addEvent(alert) {
@@ -272,7 +283,6 @@ class Store extends EventEmitter {
 
             const baseData = this.symbols.get(symbol);
 
-
             // Merge & normalize the alert
             const mergedData = {
                 ...baseData,
@@ -293,52 +303,81 @@ class Store extends EventEmitter {
 
             // Emit general update
             this.emit("lists-update");
-
         } catch (error) {
             log.error(`[addEvent] Failed to process event: ${error.message}`);
+        }
+    }
+
+    requiredTotalXpForLevel(level) {
+        if (level <= 1) return 0;
+        return ((level - 1) * level * 1000) / 2;
+    }
+
+    calculateXp(ticker, event) {
+        // backend already did: xp = round(price * (hp|dp) * strength * penalties)
+        const xp = Number.isFinite(event?.xp) ? Math.max(0, Math.round(event.xp)) : 0;
+        if (xp === 0) return;
+
+        // normalize existing values to ints (optional safety)
+        ticker.totalXpGained = Math.trunc(ticker.totalXpGained ?? 0) + xp;
+        ticker.xp = Math.trunc(ticker.xp ?? 0) + xp;
+        ticker.lv = Math.max(1, Math.trunc(ticker.lv ?? 1));
+
+        // level up as many steps as needed
+        while (ticker.totalXpGained >= this.requiredTotalXpForLevel(ticker.lv + 1)) {
+            ticker.lv += 1;
+            if (debug) log.log(`✨ ${ticker.symbol} leveled up to LV ${ticker.lv}!`);
+        }
+
+        if (debugXp) {
+            const hp = event.hp || 0,
+                dp = event.dp || 0,
+                strength = event.strength || 0;
+            log.log(`⚡ [${ticker.symbol}] XP +${xp} | hp:${hp.toFixed(2)} dp:${dp.toFixed(2)} strength:${strength.toLocaleString()}`);
         }
     }
 
     applyRpgEventMeta(symbol, alert, isNewHigh = false) {
         const ticker = this.symbols.get(symbol);
         if (!ticker) return;
-    
+
         // Use alert directly (no transform)
         ticker.lastEvent = {
             hp: alert.hp || 0,
             dp: alert.dp || 0,
-            xp: alert.strength || 0,
+            xp: Math.max(0, Math.round(alert.xp || 0)),
         };
-    
-        const xpDelta = this.calculateXp(ticker, alert);
-    
+
+        this.calculateXp(ticker, alert); // this mutates ticker.xp/totalXpGained/lv
         ticker.firstXpTimestamp = ticker.firstXpTimestamp || Date.now();
-        ticker.totalXpGained = (ticker.totalXpGained || 0) + xpDelta;
-    
+
+        // 🔊 buffs
         ticker.buffs = ticker.buffs || {};
         ticker.buffs.volume = calculateVolumeImpact(alert.one_min_volume, alert.price, buffs);
-    
+
+        // This branch is effectively unreachable if alerts are single-sided, but harmless:
         if (alert.dp > 0 && alert.hp > 0) {
             const bounceBuff = this.getBuffFromJson("bounceBack");
             if (bounceBuff) ticker.buffs.bounceBack = bounceBuff;
         } else {
             delete ticker.buffs.bounceBack;
         }
-    
+
         if (isNewHigh) {
             const highBuff = this.getBuffFromJson("newHigh");
             if (highBuff) ticker.buffs.newHigh = highBuff;
         } else {
             delete ticker.buffs.newHigh;
         }
-    
-        if (debugXp)
+
+        if (debugXp) {
             log.log(`[store] ${symbol} about to emit:`, {
                 xp: ticker.xp,
                 totalXpGained: ticker.totalXpGained,
-                calculatedXpDelta: xpDelta,
+                xpAdded: Math.max(0, Math.round(alert.xp || 0)),
             });
-    
+        }
+
         this.emit("hero-updated", [
             {
                 hero: symbol,
@@ -352,15 +391,14 @@ class Store extends EventEmitter {
                 firstXpTimestamp: ticker.firstXpTimestamp || Date.now(),
             },
         ]);
-    
+
         this.xpState.set(symbol, {
             xp: ticker.totalXpGained || 0,
             lv: ticker.lv || 1,
         });
-    
+
         if (debug) log.log(`[store] Emitted hero-updated for: ${symbol}`);
     }
-    
 
     // This function checks and attaches any news for the symbol in dailyData and sessionData
     attachNews(symbol) {
@@ -443,15 +481,15 @@ class Store extends EventEmitter {
                 ticker.buffs = ticker.buffs || {};
 
                 // Remove any existing opposing news buff first
-                if (newsBuff.key === "bullishNews") {
-                    delete ticker.buffs["bearishNews"];
-                } else if (newsBuff.key === "bearishNews") {
-                    delete ticker.buffs["bullishNews"];
+                if (newsBuff.key === "hasBullishNews") {
+                    delete ticker.buffs["hasBearishNews"];
+                } else if (newsBuff.key === "hasBearishNews") {
+                    delete ticker.buffs["hasBullishNews"];
                 }
 
                 // Apply only if not already both
-                const hasBullish = "bullishNews" in ticker.buffs;
-                const hasBearish = "bearishNews" in ticker.buffs;
+                const hasBullish = "hasBullishNews" in ticker.buffs;
+                const hasBearish = "hasBearishNews" in ticker.buffs;
 
                 if (!(hasBullish && hasBearish)) {
                     ticker.buffs[newsBuff.key] = newsBuff;
@@ -526,90 +564,6 @@ class Store extends EventEmitter {
         }
     }
 
-    applyFloatAdjustment(baseXp, floatShares) {
-        const safeFloat = floatShares || 1_000_000;
-
-        if (safeFloat < 1_000_000) {
-            // 📈 Small float (<1M): Slight XP boost up to +15%
-            const scale = 1.0 + ((1_000_000 - safeFloat) / 1_000_000) * 0.15;
-            const cappedScale = Math.min(scale, 1.15); // Max boost = +15%
-            return Math.round(baseXp * cappedScale);
-        } else if (safeFloat >= 100_000_000) {
-            // 📉 Large float (>100M): Max XP reduction −10%
-            return Math.round(baseXp * 0.9);
-        } else {
-            // 📉 Smooth curve (1M–100M): Linearly reduce XP up to −10%
-            const scale = 1.0 - ((safeFloat - 1_000_000) / 99_000_000) * 0.1;
-            return Math.round(baseXp * scale);
-        }
-    }
-
-    calculateXp(ticker, event) {
-        const hp = event.hp || 0;
-        const dp = event.dp || 0;
-        const totalMove = hp + dp;
-        const strength = event.strength || 0;
-
-        // 🚨 NEW: Require minimum strength
-        const minimumStrength = 1000; // adjust this threshold as needed
-        if (strength < minimumStrength) {
-            if (debugXp) {
-                log.log(`⚡ [${ticker.symbol}] Skipped XP gain - Strength too low (${strength})`);
-            }
-            return 0; // No XP awarded
-        }
-
-        let baseXp = totalMove * 10;
-
-        // 📈 Apply volume buff (existing)
-        const volumeBuff = getHeroBuff(ticker, "volume");
-        const volMult = volumeBuff?.multiplier ?? 1;
-        baseXp = baseXp * volMult;
-
-        // 🧠 NEW: Apply float adjustment
-        const floatShares = ticker.floatValue || 1_000_000; // default safe fallback
-        const finalXp = this.applyFloatAdjustment(baseXp, floatShares);
-
-        // 📚 Store XP
-        ticker.totalXpGained = (ticker.totalXpGained || 0) + finalXp;
-        ticker.xp = (ticker.xp || 0) + finalXp;
-
-        ticker.lv = Math.max(1, ticker.lv || 1);
-
-        const getRequiredXp = (level) => {
-            if (level <= 1) return 0;
-            let requiredXp = 0;
-            for (let i = 1; i < level; i++) {
-                requiredXp += i * 1000;
-            }
-            return requiredXp;
-        };
-
-        let requiredXp = getRequiredXp(ticker.lv + 1);
-
-        while (ticker.totalXpGained >= requiredXp) {
-            ticker.lv += 1;
-            requiredXp = getRequiredXp(ticker.lv + 1);
-            if (debug) log.log(`✨ ${ticker.symbol} leveled up to LV ${ticker.lv}!`);
-        }
-
-        if (debugXp) {
-            log.log(`⚡⚡⚡ [${ticker.symbol}] XP BREAKDOWN ⚡⚡⚡`);
-            log.log(`📜 ALERT → HP: ${hp.toFixed(2)} | DP: ${dp.toFixed(2)} | Strength: ${strength.toLocaleString()}`);
-            log.log(`💖 Base XP                     ${baseXp.toFixed(2)}`);
-            if (volumeBuff?.desc) {
-                log.log(`🏷️ Buff: ${volumeBuff.desc.padEnd(26)} x${volMult.toFixed(2)}`);
-            }
-            log.log(`⚖️ Float Factor                Float: ${floatShares.toLocaleString()} Adjusted XP: ${finalXp}`);
-            log.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            log.log(`🎯 XP GAINED                   ${finalXp}`);
-            log.log(`🎼 CURRENT LV →                ${ticker.lv}`);
-            log.log(`🎼 TOTAL XP →                  ${ticker.totalXpGained}`);
-        }
-
-        return finalXp;
-    }
-
     startXpResetScheduler() {
         const resetTimes = ["03:59", "09:29", "14:30"]; // EST times
 
@@ -625,21 +579,20 @@ class Store extends EventEmitter {
         }, 60_000); // Check every minute
     }
 
-    resetXpAndLv() {
-        log.log("🧹 Resetting XP and LV for all tickers");
-
-        for (const symbol of this.symbols.keys()) {
-            const ticker = this.symbols.get(symbol);
+    resetXpAndLv({ quiet = false } = {}) {
+        for (const [symbol, ticker] of this.symbols) {
             if (!ticker) continue;
-
             ticker.xp = 0;
             ticker.lv = 1;
             ticker.totalXpGained = 0;
+            ticker.firstXpTimestamp = undefined;
 
-            this.updateXp(symbol, 0, 1);
+            if (quiet) {
+                this.xpState.set(symbol, { xp: 0, lv: 1 });
+            } else {
+                this.updateXp(symbol, 0, 1); // emits per-symbol event
+            }
         }
-
-        this.xpState.clear();
         this.emit("xp-reset");
     }
 }

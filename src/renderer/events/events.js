@@ -28,38 +28,19 @@ const symbolDownComboLastPrice = {};
 
 const UPTICK_WINDOW_MS = 60_000;
 
-const fSharpMajorHz = [
-    92.5, // F#2
-    110.0, // G#2
-    123.47, // A#2
-    138.59, // B2
-    155.56, // D#3
-    174.61, // F3
-    196.0, // G#3
-
-    185.0, // F#3
-    220.0, // G#3
-    246.94, // A#3
-    277.18, // B3
-    311.13, // D#4
-    349.23, // F4
-    392.0, // G#4
-
-    369.99, // F#4
-    440.0, // G#4
-    493.88, // A#4
-    554.37, // B4
-    622.25, // D#5
-    698.46, // F5
-    783.99, // G#5
-
-    739.99, // F#5
-    880.0, // G#5
-    987.77, // A#5
-    1108.73, // B5
-    1244.51, // D#6
-    1396.91, // F6
-    1567.98, // G#6
+// Solfeggio 6-note divine map (20 Hz – ~17 kHz), base = 396, 417, 528, 639, 741, 852 Hz
+const solfeggioHz = [
+    // 23.156, 26.063, 29.625, 33.469, 38.063, 42.625,
+    // 46.313, 52.125, 59.25, 66.938, 76.125, 85.25,
+    // 92.625, 104.25, 118.5, 
+    133.875, 152.25, 170.5,
+    185.25, 208.5, 237.0, 267.75, 304.5, 341.0,
+    370.5, 417.0, 474.0, 535.5, 609.0, 682.0,
+    741.0, 834.0, 948.0, 1071.0, 1218.0, 1364.0,
+    1482.0, 1668.0, 1896.0, 2142.0, 2436.0, 2728.0,
+    2964.0, 3336.0, 3792.0, 4284.0, 4872.0, 5456.0,
+    5928.0, 6672.0, 7584.0, 8568.0, 9744.0, 10912.0,
+    11856.0, 13344.0, 15168.0, 17136.0
 ];
 
 // Minimum volume required to reach each combo leve
@@ -146,7 +127,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const filter = audioCtx.createBiquadFilter();
 
         filter.type = "lowpass";
-        filter.frequency.value = 1000;
+        filter.frequency.value = 13000;
         filter.Q.value = 1;
 
         oscillator.connect(filter).connect(gainNode).connect(audioCtx.destination);
@@ -159,7 +140,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         else if (volumeValue > 30_000) duration = 0.45;
         else if (volumeValue > 10_000) duration = 0.35;
 
-        gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
         oscillator.start();
@@ -385,7 +366,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             symbolComboLastPrice[symbol] = price;
 
                             if (nextLevel >= 1 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                                const note = fSharpMajorHz[Math.min(nextLevel, fSharpMajorHz.length - 1)];
+                                const note = solfeggioHz[Math.min(nextLevel, solfeggioHz.length - 1)];
                                 playNote(note, strength);
                                 lastAudioTime = now;
                                 if (debugMode && debugCombo) console.log(`🎵 ${symbol} combo advanced to LV${nextLevel}`);

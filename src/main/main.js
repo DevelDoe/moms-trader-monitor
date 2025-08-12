@@ -230,19 +230,20 @@ app.on("ready", async () => {
 
         const settings = loadSettings(); // load once, reuse
 
-        Object.values(windows).forEach((win) => {function encrypt(text) {
-            const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
-            let encrypted = cipher.update(text, "utf8", "hex");
-            encrypted += cipher.final("hex");
-            return encrypted;
-        }
-        
-        function decrypt(encryptedText) {
-            const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
-            let decrypted = decipher.update(encryptedText, "hex", "utf8");
-            decrypted += decipher.final("utf8");
-            return decrypted;
-        }
+        Object.values(windows).forEach((win) => {
+            function encrypt(text) {
+                const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+                let encrypted = cipher.update(text, "utf8", "hex");
+                encrypted += cipher.final("hex");
+                return encrypted;
+            }
+
+            function decrypt(encryptedText) {
+                const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
+                let decrypted = decipher.update(encryptedText, "hex", "utf8");
+                decrypted += decipher.final("utf8");
+                return decrypted;
+            }
 
             safeSend(win, "settings-updated", settings);
         });
@@ -250,6 +251,16 @@ app.on("ready", async () => {
         if (isDevelopment) {
             // startMockAlerts();
             // startMockNews();
+            const store = require("./store");
+            store.addEvent({
+                hero: "TEST",
+                price: 4.2,
+                one_min_volume: 5000,
+                hp: 1.25, // dp:0
+                dp: 0,
+                xp: Math.round(4.2 * 1.25 * 5000), // worker would send this
+                // lane/hue/strength optional here
+            });
         }
     });
 

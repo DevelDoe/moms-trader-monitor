@@ -1,6 +1,6 @@
 {
   "top": {
-    "minPrice": 0.3,
+    "minPrice": 0.35,
     "maxPrice": 0,
     "minFloat": 0,
     "maxFloat": 0,
@@ -71,7 +71,7 @@
       "height": 532,
       "x": 2362,
       "y": 539,
-      "isOpen": true
+      "isOpen": false
     },
     "wizardWindow": {
       "width": 2400,
@@ -95,10 +95,10 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 440,
-      "height": 551,
-      "x": 28,
-      "y": -549,
+      "width": 402,
+      "height": 559,
+      "x": 169,
+      "y": -557,
       "isOpen": true
     },
     "activeWindow": {
@@ -106,24 +106,24 @@
       "height": 489,
       "x": 1397,
       "y": 539,
-      "isOpen": true
+      "isOpen": false
     },
     "heroesWindow": {
-      "width": 445,
-      "height": 551,
-      "x": 469,
-      "y": -549,
+      "width": 420,
+      "height": 559,
+      "x": 572,
+      "y": -557,
       "isOpen": true
     },
     "scrollXpWindow": {
       "isOpen": true,
-      "width": 210,
-      "height": 445,
-      "x": 980,
-      "y": -444
+      "width": 194,
+      "height": 556,
+      "x": 993,
+      "y": -557
     },
     "scrollStatsWindow": {
-      "isOpen": true,
+      "isOpen": false,
       "width": 384,
       "height": 551,
       "x": 2496,

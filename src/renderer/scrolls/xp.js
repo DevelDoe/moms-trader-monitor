@@ -10,69 +10,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
     const all = await window.storeAPI.getSymbols();
 
-    const refreshList = () => {
+    function refreshList() {
         const now = Date.now();
         const inactiveThreshold = 30_000; // 30 seconds
-
+    
         const { min, realMax } = getPriceLimits();
-
+    
         const sorted = Object.values(heroes)
-            .filter((h) => h.xp > 0)
+            .filter(h => h.xp > 0)
             .sort((a, b) => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
             .slice(0, 15);
-
-        const xpPerMinutes = sorted.map((h) => parseFloat(getXpPerSecond(h)));
-        const maxXpm = Math.max(...xpPerMinutes, 1); // fallback 1 to avoid division by 0
-
-        container.innerHTML = sorted
-            .map((h, i) => {
-                const required = (h.lv + 1) * 1000;
-                const bg = getSymbolColor(h.hero);
-
-                const age = now - (h.lastUpdate || 0);
-                const isInactive = age > inactiveThreshold;
-                const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
-
-                const xpm = parseFloat(getXpPerSecond(h));
-                const xpmColor = getXpmColor(xpm, maxXpm);
-
-                return `
+    
+        container.innerHTML = sorted.map((h, i) => {
+            const bg = getSymbolColor(h.hero);
+            const age = now - (h.lastUpdate || 0);
+            const isInactive = age > inactiveThreshold;
+            const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
+    
+            return `
             <div class="xp-line ellipsis" style="${dullStyle}; color: gray;">
-        <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
-        <strong class="symbol" style="background: ${bg};">${h.hero} <span class="lv">${formatPrice(h.price)}</span></strong>
-        <span style="font-weight: 600; color: #04f370; opacity: 0.75;">${h.totalXpGained}</span>
-        (<span class="xpm" style="font-size: 11px; color: ${xpmColor};">${xpm}</span>)
-    </div>`;
-            })
-            .join("");
-
-        // Add click listeners to symbol elements
+                <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
+                <strong class="symbol" style="background: ${bg};">
+                    ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
+                </strong>
+                <span style="font-weight: 600; color: #04f370; opacity: 0.75; margin-left: 8px;">${abbreviateXp(h.totalXpGained)}</span>
+            </div>`;
+        }).join("");
+    
+        // Click → copy + set active
         container.querySelectorAll(".symbol").forEach((el) => {
             el.addEventListener("click", (e) => {
-                const hero = el.textContent.trim().split(" ")[0].replace("$", ""); // Remove $ if included
-
+                const hero = el.textContent.trim().split(" ")[0].replace("$", "");
                 try {
                     navigator.clipboard.writeText(hero);
-                    console.log(`📋 Copied ${hero} to clipboard`);
-
-                    if (window.activeAPI?.setActiveTicker) {
-                        window.activeAPI.setActiveTicker(hero);
-                        console.log(`🎯 Set ${hero} as active ticker`);
-                    }
-
+                    if (window.activeAPI?.setActiveTicker) window.activeAPI.setActiveTicker(hero);
                     el.classList.add("symbol-clicked");
                     setTimeout(() => el.classList.remove("symbol-clicked"), 200);
                 } catch (err) {
                     console.error(`⚠️ Failed to handle click for ${hero}:`, err);
                 }
-
                 e.stopPropagation();
             });
         });
-    };
+    }
+    
 
     // 1. Insert all heroes
     all.forEach(({ symbol, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
@@ -185,17 +169,10 @@ function formatPrice(price) {
     return typeof price === "number" ? `$${price.toFixed(2)}` : "—";
 }
 
-function getXpPerSecond(hero) {
-    const now = Date.now();
-    const start = hero.firstXpTimestamp || now;
-    const seconds = (now - start) / 1000;
-    const gained = hero.totalXpGained || 0;
-    return seconds > 0 ? `${(gained / seconds).toFixed(0)}` : "—";
-}
-
-function getXpmColor(xpm, maxXpm) {
-    const ratio = xpm / maxXpm;
-    if (ratio > 0.66) return "orange"; // Top 33%
-    if (ratio > 0.33) return "dodgerblue"; // Middle 33%
-    return "gray"; // Bottom 33%
+function abbreviateXp(num) {
+    if (num < 100) return num.toString();
+    if (num < 1_000) return (num / 1_000).toFixed(1) + "K";
+    if (num < 1_000_000) return (num / 1_000).toFixed(1) + "K";
+    if (num < 1_000_000_000) return (num / 1_000_000).toFixed(1) + "M";
+    return (num / 1_000_000_000).toFixed(1) + "B";
 }
