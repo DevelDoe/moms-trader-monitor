@@ -3,7 +3,7 @@ const allHeroes = {}; // 💾 all heroes, unfiltered
 const heroes = {}; // 🧹 filtered heroes based on settings
 const { isDev } = window.appFlags;
 const debug = isDev;
-const symbolLenght = 15;
+const symbolLength = 13;
 
 // --- add this helper (renderer only) ---
 let _lastKey = "";
@@ -18,7 +18,7 @@ function publishIfChanged(list) {
 const publishTrackedTickers = debounce(() => {
     const tracked = Object.values(heroes)
         .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
-        .slice(0, symbolLenght)
+        .slice(0, symbolLength)
         .map((h) => String(h.hero).toUpperCase());
 
     if (tracked.length) publishIfChanged(Array.from(new Set(tracked)));
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, symbolLenght);
+            .slice(0, symbolLength);
 
         container.innerHTML = sorted
             .map((h, i) => {
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <strong class="symbol" style="background: ${bg};">
                     ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
                 </strong>
-                <span style="font-weight: 600; color: ${getXpColorByRank(i, sorted.length)}; opacity: 0.85; margin-left: 8px;">
+                <span style="font-weight: 600; color: ${getXpColorByRank(i, sorted.length)}; opacity: 0.85; margin-left: 4px; font-size: 1.3rem;">
                     ${abbreviateXp(h.totalXpGained)}
                 </span>
             </div>`;

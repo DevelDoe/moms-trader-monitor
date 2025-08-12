@@ -41,21 +41,19 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "APLD",
-      "BGL",
-      "SPRO",
+      "AIRJ",
       "TEST",
-      "RILY",
-      "TDUP",
-      "PSFE",
-      "OWLT",
-      "ONDS",
-      "SRFM",
-      "LAZR",
-      "CRNC",
-      "TGEN",
-      "ABSI",
-      "SLS"
+      "EMPD",
+      "PSKY",
+      "CYCU",
+      "SAFX",
+      "KAVL",
+      "HE",
+      "MCTR",
+      "SHOT",
+      "CGTX",
+      "PMN",
+      "BTOG"
     ]
   },
   "scanner": {
@@ -133,13 +131,17 @@
     },
     "scrollXpWindow": {
       "isOpen": true,
-      "width": 236,
+      "width": 239,
       "height": 564,
-      "x": 2032,
-      "y": 499
+      "x": 2048,
+      "y": 711
     },
     "scrollStatsWindow": {
-      "isOpen": false
+      "isOpen": true,
+      "width": 850,
+      "height": 660,
+      "x": 2293,
+      "y": 707
     },
     "newsWindow": {
       "width": 630,
