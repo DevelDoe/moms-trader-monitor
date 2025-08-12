@@ -133,6 +133,8 @@ const { createInfobarWindow } = require("./windows/infobar");
 const { createProgressWindow } = require("./windows/progress");
 const { createWizardWindow } = require("./windows/wizard");
 
+const { createNewsWindow } = require("./windows/news");
+
 let windows = {};
 
 ////////////////////////////////////////////////////////////////////////////////////// START APP
@@ -1015,4 +1017,18 @@ ipcMain.on("activate-wizard", () => {
 
 ipcMain.on("deactivate-wizard", () => {
     destroyWindow("wizard");
+});
+
+// News
+ipcMain.on("activate-news", () => {
+    try {
+        const win = createWindow("news", () => createNewsWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate news window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-news", () => {
+    destroyWindow("news");
 });

@@ -62,15 +62,7 @@ contextBridge.exposeInMainWorld("settingsAPI", {
     fetchNews: () => ipcRenderer.invoke("fetch-news"),
 });
 
-contextBridge.exposeInMainWorld("newsAPI", {
-    get: () => ipcRenderer.invoke("get-all-news"),
-    toggle: () => ipcRenderer.send("toggle-news"),
-    onUpdate: (callback) => ipcRenderer.on("news-updated", callback),
-    setBounds: (bounds) => ipcRenderer.send("set-window-bounds", bounds),
-});
-
 // Modern
-
 contextBridge.exposeInMainWorld("storeAPI", {
     getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
     getSymbol: (symbol) => ipcRenderer.invoke("get-symbol", symbol),
@@ -156,6 +148,13 @@ contextBridge.exposeInMainWorld("progressAPI", {
 contextBridge.exposeInMainWorld("wizardAPI", {
     activate: () => ipcRenderer.send("activate-wizard"),
     deactivate: () => ipcRenderer.send("deactivate-wizard"),
+});
+
+contextBridge.exposeInMainWorld("newsAPI", {
+    get: () => ipcRenderer.invoke("get-all-news"),
+    activate: () => ipcRenderer.send("activate-news"),
+    deactivate: () => ipcRenderer.send("deactivate-news"),
+    onUpdate: (callback) => ipcRenderer.on("news-updated", callback),
 });
 
 // HELPER FUNCTIONS

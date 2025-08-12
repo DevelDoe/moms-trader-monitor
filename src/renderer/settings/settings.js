@@ -72,6 +72,9 @@ function initializeGeneralSection() {
     showProgressToggle.checked = window.settings.windows.progressWindow?.isOpen ?? false;
     showWizardToggle.checked = window.settings.windows.wizardWindow?.isOpen ?? false;
 
+    const showNewsToggle = document.getElementById("show-news");
+    showNewsToggle.checked = window.settings.windows.newsWindow?.isOpen ?? false;
+
     showEventsToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.eventsAPI.activate();
@@ -195,6 +198,21 @@ function initializeGeneralSection() {
         // ✅ Persist the new state
         window.settings.windows.wizardWindow = {
             ...(window.settings.windows.wizardWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
+    });
+
+    showNewsToggle.addEventListener("change", async (event) => {
+        if (event.target.checked) {
+            window.newsAPI.activate();
+        } else {
+            window.newsAPI.deactivate();
+        }
+
+        // ✅ Persist the new state
+        window.settings.windows.newsWindow = {
+            ...(window.settings.windows.newsWindow || {}),
             isOpen: event.target.checked,
         };
         await window.settingsAPI.update(window.settings);

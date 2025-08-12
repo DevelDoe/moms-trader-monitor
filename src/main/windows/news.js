@@ -2,11 +2,12 @@
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
+const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
 function createNewsWindow(isDevelopment) {
     const window = new BrowserWindow({
-        width: 60,
-        height: 100,
+        width: 500,
+        height: 500,
         frame: false,
         alwaysOnTop: true,
         resizable: true,
@@ -25,9 +26,23 @@ function createNewsWindow(isDevelopment) {
 
     window.loadFile(path.join(__dirname, "../../renderer/news/news.html"));
 
-    if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
+    if (isDevelopment) {
+        window.webContents.once("did-finish-load", () => {
+            window.webContents.openDevTools({ mode: "detach" });
+        });
+    }
 
-    return window; // ✅ Return the window instance
+    window.on("move", () => {
+        const bounds = window.getBounds();
+        setWindowBounds("newsWindow", bounds);
+    });
+
+    window.on("resize", () => {
+        const bounds = window.getBounds();
+        setWindowBounds("newsWindow", bounds);
+    });
+
+    return window;
 }
 
 module.exports = { createNewsWindow };

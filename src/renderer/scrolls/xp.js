@@ -3,6 +3,7 @@ const allHeroes = {}; // 💾 all heroes, unfiltered
 const heroes = {}; // 🧹 filtered heroes based on settings
 const { isDev } = window.appFlags;
 const debug = isDev;
+const symbolLenght = 15;
 
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
@@ -22,7 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, 15);
+            .slice(0, symbolLenght);
     
         container.innerHTML = sorted.map((h, i) => {
             const bg = getSymbolColor(h.hero);
@@ -36,7 +37,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <strong class="symbol" style="background: ${bg};">
                     ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
                 </strong>
-                <span style="font-weight: 600; color: #04f370; opacity: 0.75; margin-left: 8px;">${abbreviateXp(h.totalXpGained)}</span>
+                <span style="font-weight: 600; color: ${getXpColorByRank(i, sorted.length)}; opacity: 0.85; margin-left: 8px;">
+                    ${abbreviateXp(h.totalXpGained)}
+                </span>
             </div>`;
         }).join("");
     
@@ -170,9 +173,53 @@ function formatPrice(price) {
 }
 
 function abbreviateXp(num) {
+    let out;
     if (num < 100) return num.toString();
-    if (num < 1_000) return (num / 1_000).toFixed(1) + "K";
-    if (num < 1_000_000) return (num / 1_000).toFixed(1) + "K";
-    if (num < 1_000_000_000) return (num / 1_000_000).toFixed(1) + "M";
-    return (num / 1_000_000_000).toFixed(1) + "B";
+    if (num < 1_000) out = (num / 1_000).toFixed(1) + "K";
+    else if (num < 1_000_000) out = (num / 1_000).toFixed(1) + "K";
+    else if (num < 1_000_000_000) out = (num / 1_000_000).toFixed(1) + "M";
+    else out = (num / 1_000_000_000).toFixed(1) + "B";
+    return out.replace(/\.0(?=[KMB])/, ""); // remove .0 before K/M/B
 }
+
+function computeXpSegments(count) {
+    // target shares: para=10%, high=20%, med=30%, low=40%
+    let para = Math.max(1, Math.floor(count * 0.10));
+    let high = Math.floor(count * 0.20);
+    let med  = Math.floor(count * 0.30);
+
+    let used = para + high + med;
+    if (used > count) {
+        // reduce in order: med → high → (keep para ≥ 1)
+        let over = used - count;
+        const take = (n, min) => {
+            const d = Math.min(over, Math.max(0, n - min));
+            over -= d;
+            return n - d;
+        };
+        med  = take(med, 0);
+        high = take(high, 0);
+        para = take(para, 1);
+    }
+    const low = Math.max(0, count - (para + high + med));
+    return { para, high, med, low };
+}
+
+function getXpStageByRank(index, count) {
+    if (count <= 0) return "lowVol";
+    const { para, high, med } = computeXpSegments(count);
+    if (index < para) return "parabolicVol";
+    if (index < para + high) return "highVol";
+    if (index < para + high + med) return "mediumVol";
+    return "lowVol";
+}
+
+function getXpColorByRank(index, count) {
+    const stage = getXpStageByRank(index, count);
+    const getColorForStage =
+        window.hlpsFunctions?.getColorForStage ||
+        ((key) => ({ lowVol:"#ccc", mediumVol:"#00aeff", highVol:"#263cff", parabolicVol:"#e25822" }[key] || "#ccc"));
+    return getColorForStage(stage);
+}
+
+

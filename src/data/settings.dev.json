@@ -8,9 +8,8 @@
     "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
-    "frontlineListLength": 10,
-    "heroesListLength": 4,
-    "herosListLength": 4
+    "frontlineListLength": 15,
+    "heroesListLength": 4
   },
   "news": {
     "showTrackedTickers": false,
@@ -53,7 +52,7 @@
   },
   "windows": {
     "scannerWindow": {
-      "width": 279,
+      "width": 379,
       "height": 900,
       "x": -250,
       "y": -900,
@@ -62,15 +61,15 @@
     "settingsWindow": {
       "width": 907,
       "height": 755,
-      "x": 432,
-      "y": 1114,
-      "isOpen": false
+      "x": 707,
+      "y": 375,
+      "isOpen": true
     },
     "infobarWindow": {
-      "width": 518,
-      "height": 532,
-      "x": 2362,
-      "y": 539,
+      "width": 465,
+      "height": 39,
+      "x": 725,
+      "y": -837,
       "isOpen": false
     },
     "wizardWindow": {
@@ -81,11 +80,7 @@
       "isOpen": false
     },
     "dockerWindow": {
-      "isOpen": true,
-      "width": 400,
-      "height": 85,
-      "x": 3321,
-      "y": 1899
+      "isOpen": true
     },
     "progressWindow": {
       "width": 1442,
@@ -95,44 +90,47 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 402,
-      "height": 559,
-      "x": 169,
-      "y": -557,
+      "width": 321,
+      "height": 584,
+      "x": 1599,
+      "y": 248,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 965,
-      "height": 489,
-      "x": 1397,
-      "y": 539,
+      "width": 802,
+      "height": 404,
+      "x": 1553,
+      "y": 667,
       "isOpen": false
     },
     "heroesWindow": {
-      "width": 420,
-      "height": 559,
-      "x": 572,
-      "y": -557,
+      "width": 519,
+      "height": 556,
+      "x": 1749,
+      "y": 909,
       "isOpen": true
     },
     "scrollXpWindow": {
       "isOpen": true,
-      "width": 194,
-      "height": 556,
-      "x": 993,
-      "y": -557
+      "width": 236,
+      "height": 564,
+      "x": 2035,
+      "y": 447
     },
     "scrollStatsWindow": {
-      "isOpen": false,
-      "width": 384,
-      "height": 551,
-      "x": 2496,
-      "y": 1069
+      "isOpen": false
+    },
+    "newsWindow": {
+      "width": 500,
+      "height": 500,
+      "x": 1035,
+      "y": 659,
+      "isOpen": false
     }
   },
   "traderview": {
     "visibility": false,
     "enableHeroes": false,
-    "autoClose": false
+    "autoClose": true
   }
 }
