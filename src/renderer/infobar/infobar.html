@@ -9,7 +9,7 @@
         <style>
             /* Container styling */
             body {
-                padding: 0;
+                padding: 10px;
                 margin: 0;
                 color: #f0f0f0; /* light text for contrast */
                 font-family: sans-serif; /* use app's font if needed */
@@ -29,6 +29,7 @@
                 padding: 5px;
                 margin: 0 auto;
                 text-overflow: ellipsis;
+                padding-left: 0px;
             }
 
             h2 {
@@ -208,47 +209,46 @@
                 color: #ffffff; /* dark text on light-ish bg */
             }
 
-            /* 12 hue buckets (0..330 step 30) */
+            /* 12 hue buckets (0..330 step 30): background + border color */
             .badge-h0 {
-                background: hsl(0, 85%, 62%);
+                background: hsla(0, 80%, 45%, 0.8);
             }
             .badge-h30 {
-                background: hsl(30, 85%, 62%);
+                background: hsla(30, 80%, 45%, 0.8);
             }
             .badge-h60 {
-                background: hsl(60, 85%, 62%);
+                background: hsla(60, 80%, 45%, 0.8);
             }
             .badge-h90 {
-                background: hsl(90, 85%, 62%);
+                background: hsla(90, 80%, 45%, 0.8);
             }
             .badge-h120 {
-                background: hsl(120, 85%, 62%);
+                background: hsla(120, 80%, 45%, 0.8);
             }
             .badge-h150 {
-                background: hsl(150, 85%, 62%);
+                background: hsla(150, 80%, 45%, 0.5);
             }
             .badge-h180 {
-                background: hsl(180, 85%, 62%);
+                background: hsla(180, 80%, 45%, 0.5);
             }
             .badge-h210 {
-                background: hsl(210, 85%, 62%);
+                background: hsla(210, 80%, 45%, 0.5);
             }
             .badge-h240 {
-                background: hsl(240, 85%, 62%);
+                background: hsla(240, 80%, 45%, 0.5);
             }
             .badge-h270 {
-                background: hsl(270, 85%, 62%);
+                background: hsla(270, 80%, 45%, 0.5);
             }
             .badge-h300 {
-                background: hsl(300, 85%, 62%);
+                background: hsla(300, 80%, 45%, 0.5);
             }
             .badge-h330 {
-                background: hsl(330, 85%, 62%);
+                background: hsla(330, 80%, 45%, 0.5);
             }
         </style>
     </head>
     <body class="draggable">
-        <h2>📣 General Information Bar</h2>
 
         <ul class="bonus-list no-drag"></ul>
 
