@@ -905,6 +905,25 @@ ipcMain.on("deactivate-scrollStats", () => {
     destroyWindow("scrollStats");
 });
 
+let lastKey = ""; // optional: avoid rebroadcasting identical lists
+ipcMain.on("publish-tracked-tickers", (_evt, tracked = []) => {
+    try {
+        const list = Array.isArray(tracked) ? Array.from(new Set(tracked.map((s) => String(s || "").toUpperCase()).filter(Boolean))) : [];
+
+        const key = list.join(",");
+        if (key === lastKey) return; // optional dedupe in main too
+        lastKey = key;
+
+        const s = loadSettings();
+        s.news = { ...(s.news || {}), trackedTickers: list };
+        saveSettings(s);
+
+        BrowserWindow.getAllWindows().forEach((w) => w.webContents.send("settings-updated", s));
+    } catch (err) {
+        log.error("publish-tracked-tickers failed:", err);
+    }
+});
+
 module.exports = {
     getWindowState,
     saveWindowState,

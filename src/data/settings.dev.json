@@ -12,7 +12,7 @@
     "heroesListLength": 4
   },
   "news": {
-    "showTrackedTickers": false,
+    "showTrackedTickers": true,
     "filteredTickers": [],
     "blockList": [
       "nasdaq surges",
@@ -39,7 +39,24 @@
       "Stock Downgrade",
       "Downgrades to Sell"
     ],
-    "allowMultiSymbols": false
+    "allowMultiSymbols": false,
+    "trackedTickers": [
+      "ATNF",
+      "WBTN",
+      "GBIO",
+      "TEST",
+      "NNVC",
+      "CRE",
+      "PXLW",
+      "CMPX",
+      "SMWB",
+      "TNYA",
+      "SRFM",
+      "BSLK",
+      "GUTS",
+      "ADN",
+      "DFDV"
+    ]
   },
   "scanner": {
     "minPrice": 0,
@@ -68,8 +85,8 @@
     "infobarWindow": {
       "width": 692,
       "height": 85,
-      "x": 1523,
-      "y": 667,
+      "x": 978,
+      "y": 523,
       "isOpen": true
     },
     "wizardWindow": {
@@ -114,17 +131,17 @@
       "isOpen": true,
       "width": 236,
       "height": 564,
-      "x": 2035,
-      "y": 447
+      "x": 2032,
+      "y": 499
     },
     "scrollStatsWindow": {
       "isOpen": false
     },
     "newsWindow": {
-      "width": 626,
-      "height": 553,
-      "x": 2144,
-      "y": 709,
+      "width": 663,
+      "height": 500,
+      "x": 1484,
+      "y": 37,
       "isOpen": true
     }
   },

@@ -5,6 +5,33 @@ const { isDev } = window.appFlags;
 const debug = isDev;
 const symbolLenght = 15;
 
+// --- add this helper (renderer only) ---
+let _lastKey = "";
+function publishIfChanged(list) {
+    const key = list.join(",");
+    if (key === _lastKey) return; // no change
+    _lastKey = key;
+    window.scrollXpAPI?.publishTrackedTickers(list);
+}
+
+// (keep your debounce + call sites as-is)
+const publishTrackedTickers = debounce(() => {
+    const tracked = Object.values(heroes)
+        .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
+        .slice(0, symbolLenght)
+        .map((h) => String(h.hero).toUpperCase());
+
+    if (tracked.length) publishIfChanged(Array.from(new Set(tracked)));
+}, 400);
+
+function debounce(fn, wait = 300) {
+    let t;
+    return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), wait);
+    };
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
 
@@ -14,24 +41,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     function refreshList() {
         const now = Date.now();
         const inactiveThreshold = 30_000; // 30 seconds
-    
-        const { min, realMax } = getPriceLimits();
-    
+
         const sorted = Object.values(heroes)
-            .filter(h => h.xp > 0)
+            .filter((h) => h.xp > 0)
             .sort((a, b) => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
             .slice(0, symbolLenght);
-    
-        container.innerHTML = sorted.map((h, i) => {
-            const bg = getSymbolColor(h.hero);
-            const age = now - (h.lastUpdate || 0);
-            const isInactive = age > inactiveThreshold;
-            const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
-    
-            return `
+
+        container.innerHTML = sorted
+            .map((h, i) => {
+                const bg = getSymbolColor(h.hero);
+                const age = now - (h.lastUpdate || 0);
+                const isInactive = age > inactiveThreshold;
+                const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
+
+                return `
             <div class="xp-line ellipsis" style="${dullStyle}; color: gray;">
                 <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
                 <strong class="symbol" style="background: ${bg};">
@@ -41,8 +67,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ${abbreviateXp(h.totalXpGained)}
                 </span>
             </div>`;
-        }).join("");
-    
+            })
+            .join("");
+
         // Click → copy + set active
         container.querySelectorAll(".symbol").forEach((el) => {
             el.addEventListener("click", (e) => {
@@ -59,7 +86,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
     }
-    
 
     // 1. Insert all heroes
     all.forEach(({ symbol, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
@@ -76,6 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     filterHeroes(); // 🎯 create filtered heroes based on settings
     refreshList();
+    publishTrackedTickers();
 
     // 2. Hero updates
     window.storeAPI.onHeroUpdate((updatedHeroes) => {
@@ -102,6 +129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         filterHeroes();
         refreshList();
+        publishTrackedTickers();
     });
 
     // 3. Settings updates
@@ -110,6 +138,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.settings = updatedSettings;
         filterHeroes();
         refreshList();
+        publishTrackedTickers();
     });
 
     // 4. XP Reset
@@ -126,6 +155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         filterHeroes();
         refreshList();
+        publishTrackedTickers();
     });
 });
 
@@ -184,9 +214,9 @@ function abbreviateXp(num) {
 
 function computeXpSegments(count) {
     // target shares: para=10%, high=20%, med=30%, low=40%
-    let para = Math.max(1, Math.floor(count * 0.10));
-    let high = Math.floor(count * 0.20);
-    let med  = Math.floor(count * 0.30);
+    let para = Math.max(1, Math.floor(count * 0.1));
+    let high = Math.floor(count * 0.2);
+    let med = Math.floor(count * 0.3);
 
     let used = para + high + med;
     if (used > count) {
@@ -197,7 +227,7 @@ function computeXpSegments(count) {
             over -= d;
             return n - d;
         };
-        med  = take(med, 0);
+        med = take(med, 0);
         high = take(high, 0);
         para = take(para, 1);
     }
@@ -216,10 +246,6 @@ function getXpStageByRank(index, count) {
 
 function getXpColorByRank(index, count) {
     const stage = getXpStageByRank(index, count);
-    const getColorForStage =
-        window.hlpsFunctions?.getColorForStage ||
-        ((key) => ({ lowVol:"#ccc", mediumVol:"#00aeff", highVol:"#263cff", parabolicVol:"#e25822" }[key] || "#ccc"));
+    const getColorForStage = window.hlpsFunctions?.getColorForStage || ((key) => ({ lowVol: "#ccc", mediumVol: "#00aeff", highVol: "#263cff", parabolicVol: "#e25822" }[key] || "#ccc"));
     return getColorForStage(stage);
 }
-
-

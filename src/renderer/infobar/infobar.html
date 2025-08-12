@@ -256,30 +256,29 @@
                         return;
                     }
 
+                    const trackedTickers = (window.settings.news?.trackedTickers || []).map((s) => s.toUpperCase());
+
                     newsData.forEach((newsItem) => {
                         const sanitized = newsItem.headline.toLowerCase().trim();
-                        const isBlocked = blockList.some((word) => sanitized.includes(word.toLowerCase().trim()));
+                        const isBlocked = blockList.some((word) => sanitized.includes(word));
                         const isDuplicate = displayedNewsKeys.has(newsItem.id);
                         const isMultiSymbol = newsItem.symbols.length > 1;
 
-                        if (isBlocked || isDuplicate || isMultiSymbol) {
-                            if (isBlocked) console.log(`⛔ Blocked: ${newsItem.headline}`);
-                            return;
+                        // Skip blocked, duplicate, or multi-symbol
+                        if (isBlocked || isDuplicate || isMultiSymbol) return;
+
+                        // If showing only tracked tickers
+                        if (window.settings.news?.showTrackedTickers) {
+                            const symbol = newsItem.symbols?.[0]?.toUpperCase();
+                            if (!symbol || !trackedTickers.includes(symbol)) return;
                         }
 
-                        // Determine sentiment class
                         const type = getSentimentClass(newsItem.headline);
-
-                        // Truncate headline to 90 characters
-                        const maxLength = 240;
                         let truncated = newsItem.headline;
-                        if (truncated.length > maxLength) {
-                            truncated = truncated.slice(0, maxLength - 1).trimEnd() + "…";
-                        }
+                        if (truncated.length > 240) truncated = truncated.slice(0, 239).trimEnd() + "…";
 
-                        const symbol = newsItem.symbols?.length === 1 ? `${newsItem.symbols[0]}: ` : "";
-
-                        queueNewsItem(`${symbol}${truncated}`, newsItem.id, type);
+                        const symbolPrefix = newsItem.symbols?.length === 1 ? `${newsItem.symbols[0]}: ` : "";
+                        queueNewsItem(`${symbolPrefix}${truncated}`, newsItem.id, type);
                     });
                 } catch (error) {
                     console.error("❌ Failed to fetch news:", error);

@@ -1,7 +1,6 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const isDev = process.env.NODE_ENV === "development";
 
-
 contextBridge.exposeInMainWorld("autoLogin", {
     getCredentials: () => ipcRenderer.invoke("credentials:get"),
     saveCredentials: (data) => ipcRenderer.invoke("credentials:save", data),
@@ -117,8 +116,9 @@ contextBridge.exposeInMainWorld("activeAPI", {
 });
 
 contextBridge.exposeInMainWorld("scrollXpAPI", {
-    activate: () => ipcRenderer.send("activate-scrollXp"),
-    deactivate: () => ipcRenderer.send("deactivate-scrollXp"),
+    activate: () => ipcRenderer.send("activate-scrollStats"),
+    deactivate: () => ipcRenderer.send("deactivate-scrollStats"),
+    publishTrackedTickers: (tracked) => ipcRenderer.send("publish-tracked-tickers", tracked),
 });
 
 contextBridge.exposeInMainWorld("scrollStatsAPI", {
