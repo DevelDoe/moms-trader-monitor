@@ -105,9 +105,9 @@
     },
     "heroesWindow": {
       "width": 519,
-      "height": 556,
-      "x": 1749,
-      "y": 909,
+      "height": 553,
+      "x": 1000,
+      "y": 811,
       "isOpen": true
     },
     "scrollXpWindow": {
@@ -121,11 +121,11 @@
       "isOpen": false
     },
     "newsWindow": {
-      "width": 500,
-      "height": 500,
-      "x": 1035,
-      "y": 659,
-      "isOpen": false
+      "width": 641,
+      "height": 479,
+      "x": 1517,
+      "y": 812,
+      "isOpen": true
     }
   },
   "traderview": {
