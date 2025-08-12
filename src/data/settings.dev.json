@@ -41,21 +41,21 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "RIOX",
-      "QUIK",
+      "ACDC",
+      "CRE",
+      "TLRY",
+      "LODE",
+      "DRD",
+      "WBTN",
       "TEST",
-      "ETNB",
-      "BTAI",
-      "PSQH",
-      "MCVT",
-      "FEMY",
-      "CORZ",
-      "BTOG",
-      "OLB",
-      "CXAI",
-      "CASK",
-      "KSCP",
-      "URGN"
+      "GEVO",
+      "INVZ",
+      "DERM",
+      "PROP",
+      "NUWE",
+      "BSLK",
+      "PHGE",
+      "OPEN"
     ]
   },
   "scanner": {
@@ -138,10 +138,10 @@
       "isOpen": false
     },
     "newsWindow": {
-      "width": 663,
-      "height": 500,
-      "x": 1484,
-      "y": 37,
+      "width": 626,
+      "height": 523,
+      "x": 1609,
+      "y": 810,
       "isOpen": true
     }
   },
