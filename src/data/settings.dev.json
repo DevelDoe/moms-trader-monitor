@@ -41,21 +41,21 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "INTR",
-      "TGEN",
-      "PAYS",
+      "APLD",
+      "BGL",
+      "SPRO",
+      "TEST",
+      "RILY",
+      "TDUP",
+      "PSFE",
+      "OWLT",
+      "ONDS",
+      "SRFM",
+      "LAZR",
       "CRNC",
-      "LE",
-      "VSTM",
-      "CBLL",
-      "MLYS",
-      "CRE",
-      "MSOX",
-      "INTZ",
-      "PRO",
-      "VERB",
-      "TLS",
-      "TEST"
+      "TGEN",
+      "ABSI",
+      "SLS"
     ]
   },
   "scanner": {
@@ -83,10 +83,10 @@
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 801,
+      "width": 802,
       "height": 52,
-      "x": 1553,
-      "y": 615,
+      "x": 776,
+      "y": 320,
       "isOpen": true
     },
     "wizardWindow": {
@@ -120,8 +120,8 @@
     "activeWindow": {
       "width": 802,
       "height": 404,
-      "x": 1553,
-      "y": 667,
+      "x": 776,
+      "y": 373,
       "isOpen": true
     },
     "heroesWindow": {
@@ -142,10 +142,10 @@
       "isOpen": false
     },
     "newsWindow": {
-      "width": 626,
-      "height": 523,
-      "x": 1609,
-      "y": 810,
+      "width": 630,
+      "height": 500,
+      "x": 1418,
+      "y": 888,
       "isOpen": true
     }
   },
