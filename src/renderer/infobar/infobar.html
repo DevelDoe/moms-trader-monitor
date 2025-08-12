@@ -191,6 +191,60 @@
                 margin-left: 10px;
                 /* margin-top: 5px; */
             }
+            /* symbol badges */
+            .symbols {
+                display: inline-flex;
+                gap: 6px;
+                margin-right: 8px;
+                vertical-align: middle;
+            }
+            .badge {
+                font-size: 12px;
+                font-weight: 700;
+                line-height: 1;
+                padding: 4px 6px;
+                padding-right: 10px;
+                border-radius: 1px;
+                color: #ffffff; /* dark text on light-ish bg */
+            }
+
+            /* 12 hue buckets (0..330 step 30) */
+            .badge-h0 {
+                background: hsl(0, 85%, 62%);
+            }
+            .badge-h30 {
+                background: hsl(30, 85%, 62%);
+            }
+            .badge-h60 {
+                background: hsl(60, 85%, 62%);
+            }
+            .badge-h90 {
+                background: hsl(90, 85%, 62%);
+            }
+            .badge-h120 {
+                background: hsl(120, 85%, 62%);
+            }
+            .badge-h150 {
+                background: hsl(150, 85%, 62%);
+            }
+            .badge-h180 {
+                background: hsl(180, 85%, 62%);
+            }
+            .badge-h210 {
+                background: hsl(210, 85%, 62%);
+            }
+            .badge-h240 {
+                background: hsl(240, 85%, 62%);
+            }
+            .badge-h270 {
+                background: hsl(270, 85%, 62%);
+            }
+            .badge-h300 {
+                background: hsl(300, 85%, 62%);
+            }
+            .badge-h330 {
+                background: hsl(330, 85%, 62%);
+            }
         </style>
     </head>
     <body class="draggable">
@@ -282,8 +336,8 @@
                         let truncated = newsItem.headline;
                         if (truncated.length > 240) truncated = truncated.slice(0, 239).trimEnd() + "…";
 
-                        const symbolPrefix = newsItem.symbols?.length === 1 ? `${newsItem.symbols[0]}: ` : "";
-                        queueNewsItem(`${symbolPrefix}${truncated}`, newsItem.id, type);
+                        const syms = Array.isArray(newsItem.symbols) ? newsItem.symbols : [];
+                        queueNewsItem(truncated, newsItem.id, type, syms);
                     });
                 } catch (error) {
                     console.error("❌ Failed to fetch news:", error);
@@ -343,31 +397,50 @@
                 }, interval);
             }
 
-            function showNewsItem(containerSelector, icon, desc, onDismiss, type = "neutral") {
+            function showNewsItem(containerSelector, icon, desc, onDismiss, type = "neutral", symbols = []) {
                 isNewsDisplaying = true;
-
                 const container = document.querySelector(containerSelector);
                 if (!container) return;
 
                 container.innerHTML = "";
-
                 playFlash();
 
                 const li = document.createElement("li");
                 li.className = `news-item show slide-in no-drag ${type}-news`;
-                li.innerHTML = `
-                    <span class="icon">${icon}</span>
-                    <span class="desc"><span class="scroll-inner">${desc}</span></span>
-                `;
-                setTimeout(() => {
-                    const descSpan = li.querySelector(".desc");
-                    const inner = descSpan?.querySelector(".scroll-inner");
 
-                    if (inner && descSpan.clientHeight < inner.scrollHeight) {
-                        inner.classList.add("scroll-vertical");
+                // left icon
+                const iconSpan = document.createElement("span");
+                iconSpan.className = "icon";
+                iconSpan.textContent = icon;
+                li.appendChild(iconSpan);
+
+                // symbols badges
+                if (Array.isArray(symbols) && symbols.length) {
+                    const symWrap = document.createElement("span");
+                    symWrap.className = "symbols";
+                    for (const s of symbols) {
+                        const sym = String(s).toUpperCase();
+                        if (!sym) continue;
+                        const badge = document.createElement("span");
+                        badge.className = `badge ${hueClass(assignHue(sym))}`;
+                        badge.textContent = sym;
+                        symWrap.appendChild(badge);
                     }
-                }, 50); // wait for render
+                    li.appendChild(symWrap);
+                }
+
+                // headline text
+                const descSpan = document.createElement("span");
+                descSpan.className = "desc";
+                descSpan.innerHTML = `<span class="scroll-inner">${desc}</span>`;
+                li.appendChild(descSpan);
+
+                // mount and scrolling logic
                 container.appendChild(li);
+                setTimeout(() => {
+                    const inner = descSpan.querySelector(".scroll-inner");
+                    if (inner && descSpan.clientHeight < inner.scrollHeight) inner.classList.add("scroll-vertical");
+                }, 50);
 
                 const cleanup = () => {
                     container.innerHTML = "";
@@ -375,43 +448,35 @@
                     if (typeof onDismiss === "function") onDismiss();
                     processNextNews();
                 };
-
                 li.addEventListener("click", () => {
                     li.classList.remove("slide-in");
                     li.classList.add("slide-out");
                     li.addEventListener("animationend", cleanup, { once: true });
                 });
-
-                setTimeout(() => {
-                    li.click();
-                }, 30000);
+                setTimeout(() => li.click(), 30000);
             }
 
-            function queueNewsItem(desc, id = null, type = "neutral") {
+            function queueNewsItem(desc, id = null, type = "neutral", symbols = []) {
                 if (id && displayedNewsKeys.has(id)) return;
 
                 const icon = type === "bullish" ? "😺" : type === "bearish" ? "🙀" : "😼";
-
-                newsQueue.push({ icon, desc, type });
+                newsQueue.push({ icon, desc, type, symbols });
                 if (id) displayedNewsKeys.add(id);
-                if (!isNewsDisplaying) {
-                    processNextNews();
-                }
+                if (!isNewsDisplaying) processNextNews();
             }
 
             function processNextNews() {
                 if (newsQueue.length > 0) {
-                    const { icon, desc, type } = newsQueue.shift();
+                    const { icon, desc, type, symbols } = newsQueue.shift();
                     showNewsItem(
                         ".bonus-list",
                         icon,
                         desc,
                         () => {
-                            if (newsQueue.length === 0) {
-                                initTicker(".bonus-list", bonusItems);
-                            }
+                            if (newsQueue.length === 0) initTicker(".bonus-list", bonusItems);
                         },
-                        type
+                        type,
+                        symbols
                     );
                 }
             }
@@ -470,6 +535,19 @@
                 { icon: "📂", desc: "Registered S-3 filing" },
                 { icon: "🚨", desc: "High dilution risk: Net loss + Registered S-3" },
             ];
+
+            function assignHue(symbol) {
+                if (!symbol) return 210;
+                const key = String(symbol).trim().toUpperCase();
+                let sum = 0;
+                for (let i = 0; i < key.length; i++) sum += key.charCodeAt(i);
+                return (sum * 37) % 360;
+            }
+            function hueClass(h) {
+                const n = ((Number(h) % 360) + 360) % 360;
+                const bucket = (Math.round(n / 30) * 30) % 360; // 0,30,...330
+                return `badge-h${bucket}`;
+            }
 
             // Show regular ticker
             initTicker(".bonus-list", bonusItems);

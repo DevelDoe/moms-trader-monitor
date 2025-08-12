@@ -41,21 +41,21 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "AXGN",
-      "CRE",
+      "GBIO",
       "TGEN",
-      "CORZ",
-      "LAZR",
-      "QUIK",
-      "PXLW",
-      "LODE",
-      "ACDC",
-      "PSTV",
-      "ISSC",
-      "ADN",
-      "SDM",
+      "CMPX",
       "TEST",
-      "HOLO"
+      "INDP",
+      "CRWG",
+      "FLD",
+      "ABSI",
+      "SWAG",
+      "CURI",
+      "LIDR",
+      "PSTV",
+      "SATL",
+      "GRND",
+      "ATNF"
     ]
   },
   "scanner": {
@@ -83,7 +83,7 @@
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 532,
+      "width": 893,
       "height": 63,
       "x": 270,
       "y": 513,
