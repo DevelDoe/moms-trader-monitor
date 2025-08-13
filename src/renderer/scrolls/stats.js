@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, 15);
+            .slice(0, symbolLength);
 
         // Step 2: Sort that pool by buff score
         // Step 2: Sort that pool by buff score

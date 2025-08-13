@@ -50,6 +50,13 @@ h1
     margin-bottom: 0;
 }
 
+h2 {
+    font-size: 16px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #595959;
+}
 
 .ticker-info {
     display: flex;
