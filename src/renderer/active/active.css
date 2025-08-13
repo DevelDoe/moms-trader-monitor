@@ -11,6 +11,12 @@ body {
     box-shadow: inset 0px 0px 0px 0px rgba(0, 0, 0, 0.5);
     height: 100%;
 }
+
+#left-column {
+    width: 100%;
+    height: 100%;
+    min-width: 400px;
+}
 .tablinks {
     font-size: 8px;
     border: none;
@@ -28,10 +34,55 @@ body {
     transition: box-shadow 0.3s ease-in-out;
 }
 
+#inline-stats {
+    margin-bottom: 0px !important;
+    margin-left: 1px;
+}
+
+#business-summary {
+    margin-top: 7px;
+    /* height: 64px !important; */
+}
+
+.scroll-container {
+    max-height: 60px; /* Or whatever fits your layout */
+    overflow: hidden;
+    position: relative;
+    margin-top: 0px;
+}
+
+.scroll-content {
+    white-space: pre-wrap;
+    overflow-y: auto;
+    max-height: 60px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.scroll-content::-webkit-scrollbar {
+    display: none;
+}
+/* Hide scrollbar in WebKit browsers (Chrome, Safari) */
+.scroll-content::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+/* Optional: hide scrollbar in Firefox */
+.scroll-content {
+    scrollbar-width: none; /* Firefox */
+}
+.scroll-content::-webkit-scrollbar {
+    display: none; /* Safari/Chrome fallback */
+}
+
+#charts {
+    margin-top: 0px;
+}
+
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 19vw !important; /* you wrote 35w, fixed it to 35vw */
-    height: 19vw !important;
+    width: 150 !important; /* you wrote 35w, fixed it to 35vw */
+    height: 150px !important;
 }
 
 /* Two-column layout using Flexbox */
@@ -48,19 +99,19 @@ body {
 
 #data-warning-summary {
     position: absolute;
-    bottom: -20px;
+    bottom: -14px;
     right: 0;
-    width: 50%;
+    width: 105%;
     padding: 10px;
     background-color: rgba(0, 6, 0, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px !important;
+    font-size: 16px !important;
     font-weight: 600;
     z-index: 10;
-    border-radius: 1px;
-    margin-bottom: 68px;
+    border-radius: 0px;
+    margin-bottom: 69px;
     opacity: 1;
     filter: contrast(0.5);
 }
@@ -77,7 +128,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 5px;
+    margin-top: 3px;
     margin-left: -23px;
 }
 
@@ -104,36 +155,7 @@ body {
     -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0.1));
 }
 
-.scroll-container {
-    max-height: 60px; /* Or whatever fits your layout */
-    overflow: hidden;
-    position: relative;
-    margin-top: 10px;
-}
 
-.scroll-content {
-    white-space: pre-wrap;
-    overflow-y: auto;
-    max-height: 60px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.scroll-content::-webkit-scrollbar {
-    display: none;
-}
-/* Hide scrollbar in WebKit browsers (Chrome, Safari) */
-.scroll-content::-webkit-scrollbar {
-    width: 0px;
-    background: transparent;
-}
-
-/* Optional: hide scrollbar in Firefox */
-.scroll-content {
-    scrollbar-width: none; /* Firefox */
-}
-.scroll-content::-webkit-scrollbar {
-    display: none; /* Safari/Chrome fallback */
-}
 
 /* Hide all tab content by default */
 .tabcontent {
@@ -261,6 +283,10 @@ body {
 }
 
 /* latest news on summ  */
+
+#news {
+    margin-top: -5px;
+}
 
 #latest-news {
     position: absolute;

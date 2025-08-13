@@ -1,6 +1,6 @@
 const symbolColors = {};
 let globalBuffs = {}; // ⬅️ Buff map for score lookup
-const symbolLength = 14;
+const symbolLength = 22;
 
 const { isDev } = window.appFlags;
 

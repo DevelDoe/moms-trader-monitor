@@ -34,7 +34,7 @@
                 <div id="summary" class="tabcontent active">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                         <!-- Left Column -->
-                        <div class="space-y-4">
+                        <div id="left-column" class="space-y-4">
                             <!-- Symbol and Info -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-0">
                                 <div id="symbol" class="bg-zinc-800 p-4 rounded-xl col-span-1">
@@ -46,14 +46,21 @@
                             </div>
 
                             <!-- Inline Stats -->
-                            <div class="text-sm text-tertiary flex flex-wrap gap-4 mt-2 stats-row">
+                            <div id="inline-stats" class="text-sm text-tertiary flex flex-wrap gap-4 mt-2 stats-row">
                                 <div>LEVEL: <span data-id="stats-lv" style="color: white">1</span></div>
                                 <div>XP: <span data-id="stats-xp" style="color: white">0</span></div>
                                 <div>RATING: <span id="energy" data-id="stats-energy" style="color: white"></span></div>
                             </div>
 
+                            <!-- Business Summary -->
+                            <div id="business-summary" class="bg-zinc-800 p-4 rounded-xl">
+                                <div class="scroll-container text-tertiary no-drag">
+                                    <div class="scroll-content no-drag" data-id="profile-longBusinessSummary"></div>
+                                </div>
+                            </div>
+
                             <!-- Charts -->
-                            <div class="bg-zinc-800 p-4 rounded-xl chart" style="position: relative">
+                            <div id="charts" class="bg-zinc-800 p-4 rounded-xl chart" style="position: relative">
                                 <div class="bg-zinc-800 p-4 rounded-xl">
                                     <div class="grid grid-cols-2 gap-1">
                                         <!-- Float Data -->
@@ -97,20 +104,15 @@
                             </div>
                         </div>
 
+                        <!-- News -->
+                        <div id="news" class="bg-zinc-800 p-4 rounded-xl">
+                            <h2>news</h2>
+                            <div id="news-container" class="news-list no-drag"></div>
+                        </div>
+
                         <!-- Right Column -->
                         <div class="space-y-4">
-                            <!-- Business Summary -->
-                            <div class="bg-zinc-800 p-4 rounded-xl">
-                                <div class="scroll-container text-tertiary no-drag">
-                                    <div class="scroll-content no-drag" data-id="profile-longBusinessSummary"></div>
-                                </div>
-                            </div>
-
-                            <!-- News -->
-                            <div class="bg-zinc-800 p-4 rounded-xl">
-                                <h2>news</h2>
-                                <div id="news-container" class="news-list no-drag"></div>
-                            </div>
+                            
                         </div>
                     </div>
                 </div>

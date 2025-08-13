@@ -8,7 +8,7 @@
     "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
-    "frontlineListLength": 15,
+    "frontlineListLength": 14,
     "heroesListLength": 4
   },
   "news": {
@@ -41,7 +41,28 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "TEST"
+      "ATNF",
+      "BSLK",
+      "MNTS",
+      "RGTI",
+      "CRE",
+      "PSKY",
+      "XFOR",
+      "WBTN",
+      "UPXI",
+      "GBIO",
+      "SOUN",
+      "SRFM",
+      "TGEN",
+      "KLC",
+      "SHOT",
+      "HI",
+      "MVST",
+      "CRNC",
+      "MIMI",
+      "OPEN",
+      "EOSE",
+      "APLD"
     ]
   },
   "scanner": {
@@ -56,23 +77,23 @@
   "windows": {
     "scannerWindow": {
       "width": 379,
-      "height": 900,
-      "x": -250,
-      "y": -900,
+      "height": 1082,
+      "x": 960,
+      "y": 538,
       "isOpen": true
     },
     "settingsWindow": {
       "width": 907,
-      "height": 755,
-      "x": 707,
-      "y": 375,
+      "height": 805,
+      "x": 25,
+      "y": 9,
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 802,
-      "height": 52,
-      "x": 776,
-      "y": 320,
+      "width": 610,
+      "height": 70,
+      "x": 2275,
+      "y": 619,
       "isOpen": true
     },
     "wizardWindow": {
@@ -86,8 +107,8 @@
       "isOpen": true,
       "width": 400,
       "height": 85,
-      "x": 1472,
-      "y": 1125
+      "x": 1679,
+      "y": 1629
     },
     "progressWindow": {
       "width": 1442,
@@ -97,45 +118,45 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 321,
-      "height": 584,
-      "x": 1599,
-      "y": 248,
+      "width": 356,
+      "height": 589,
+      "x": 1339,
+      "y": 1032,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 802,
-      "height": 404,
-      "x": 776,
-      "y": 373,
+      "width": 471,
+      "height": 492,
+      "x": 1339,
+      "y": 540,
       "isOpen": true
     },
     "heroesWindow": {
-      "width": 519,
-      "height": 553,
-      "x": 456,
-      "y": 493,
+      "width": 577,
+      "height": 587,
+      "x": 1695,
+      "y": 1032,
       "isOpen": true
     },
     "scrollXpWindow": {
       "isOpen": true,
       "width": 239,
-      "height": 564,
-      "x": 2070,
-      "y": 300
+      "height": 933,
+      "x": 2272,
+      "y": 689
     },
     "scrollStatsWindow": {
       "isOpen": true,
-      "width": 850,
-      "height": 563,
-      "x": 2309,
-      "y": 301
+      "width": 370,
+      "height": 934,
+      "x": 2511,
+      "y": 688
     },
     "newsWindow": {
-      "width": 506,
-      "height": 564,
-      "x": 716,
-      "y": 842,
+      "width": 547,
+      "height": 491,
+      "x": 1773,
+      "y": 540,
       "isOpen": true
     }
   },

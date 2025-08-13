@@ -3,7 +3,7 @@ const allHeroes = {}; // 💾 all heroes, unfiltered
 const heroes = {}; // 🧹 filtered heroes based on settings
 const { isDev } = window.appFlags;
 const debug = isDev;
-const symbolLength = 14;
+const symbolLength = 22;
 
 // --- add this helper (renderer only) ---
 let _lastKey = "";
