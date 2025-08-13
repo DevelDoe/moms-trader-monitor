@@ -41,19 +41,7 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "SLS",
-      "CLNE",
-      "TEST",
-      "CWD",
-      "GCTS",
-      "DFDV",
-      "WLDS",
-      "MSOX",
-      "SHOT",
-      "BINI",
-      "CRE",
-      "BITF",
-      "GNS"
+      "TEST"
     ]
   },
   "scanner": {
@@ -125,8 +113,8 @@
     "heroesWindow": {
       "width": 519,
       "height": 553,
-      "x": 1000,
-      "y": 811,
+      "x": 1020,
+      "y": 858,
       "isOpen": true
     },
     "scrollXpWindow": {
