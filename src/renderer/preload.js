@@ -116,8 +116,8 @@ contextBridge.exposeInMainWorld("activeAPI", {
 });
 
 contextBridge.exposeInMainWorld("scrollXpAPI", {
-    activate: () => ipcRenderer.send("activate-scrollStats"),
-    deactivate: () => ipcRenderer.send("deactivate-scrollStats"),
+    activate: () => ipcRenderer.send("activate-scrollXp"),
+    deactivate: () => ipcRenderer.send("deactivate-scrollXp"),
     publishTrackedTickers: (tracked) => ipcRenderer.send("publish-tracked-tickers", tracked),
 });
 

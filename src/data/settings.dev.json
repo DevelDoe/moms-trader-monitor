@@ -113,8 +113,8 @@
     "heroesWindow": {
       "width": 519,
       "height": 553,
-      "x": 1020,
-      "y": 858,
+      "x": 456,
+      "y": 493,
       "isOpen": true
     },
     "scrollXpWindow": {
@@ -132,10 +132,10 @@
       "y": 301
     },
     "newsWindow": {
-      "width": 630,
-      "height": 500,
-      "x": 1418,
-      "y": 888,
+      "width": 506,
+      "height": 564,
+      "x": 716,
+      "y": 842,
       "isOpen": true
     }
   },

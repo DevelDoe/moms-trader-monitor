@@ -5,9 +5,11 @@ const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
 function createNewsWindow(isDevelopment) {
+    const state = getWindowState("newsWindow");
+
     const window = new BrowserWindow({
-        width: 500,
-        height: 500,
+       width: state.width || 850,
+        height: state.height || 660,
         frame: false,
         alwaysOnTop: false,
         resizable: true,

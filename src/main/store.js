@@ -240,7 +240,7 @@ class Store extends EventEmitter {
             this._needsDailyReset = false;
         }
 
-
+        if (!isDevelopment) {
             const keys = Array.from(this.symbols.keys());
             subscribeToSymbolNews(keys);
             (async () => {
@@ -249,7 +249,7 @@ class Store extends EventEmitter {
                     await sleep(200);
                 }
             })();
-        
+        }
 
         this.emit("lists-update");
     }
