@@ -5,11 +5,15 @@ const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
 function createNewsWindow(isDevelopment) {
-    const state = getWindowState("newsWindow");
+    const KEY = "newsWindow";
+    const state = getWindowState(KEY) || {};
 
     const window = new BrowserWindow({
-       width: state.width || 850,
+        // ✅ restore both size and position
+        width:  state.width  || 850,
         height: state.height || 660,
+        x:      state.x,                // <- add
+        y:      state.y,                // <- add
         frame: false,
         alwaysOnTop: false,
         resizable: true,
@@ -20,9 +24,9 @@ function createNewsWindow(isDevelopment) {
         useContentSize: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
-            contextIsolation: true, // Required for contextBridge
-            enableRemoteModule: false, // Keep this disabled unless necessary
-            nodeIntegration: false, // Should be false for security
+            contextIsolation: true,
+            enableRemoteModule: false,
+            nodeIntegration: false,
         },
     });
 
@@ -34,15 +38,10 @@ function createNewsWindow(isDevelopment) {
         });
     }
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("newsWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("newsWindow", bounds);
-    });
+    // ✅ save to the same key
+    const save = () => setWindowBounds(KEY, window.getBounds());
+    window.on("move", save);
+    window.on("resize", save);
 
     return window;
 }

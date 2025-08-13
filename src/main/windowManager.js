@@ -116,7 +116,7 @@ async function restoreWindows() {
 
         // Create the active window
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
-        windows.active.show();
+        windows.active.show(); 
 
         // Immediately set buffered ticker (if any)
         if (global.sharedState?.activeTicker) {
