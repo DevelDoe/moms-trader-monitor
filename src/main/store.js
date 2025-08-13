@@ -310,7 +310,7 @@ class Store extends EventEmitter {
 
     requiredTotalXpForLevel(level) {
         if (level <= 1) return 0;
-        return ((level - 1) * level * 1000) / 2;
+        return ((level - 1) * level * 10_000) / 2;
     }
 
     calculateXp(ticker, event) {
