@@ -41,28 +41,7 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "ATNF",
-      "BSLK",
-      "MNTS",
-      "RGTI",
-      "CRE",
-      "PSKY",
-      "XFOR",
-      "WBTN",
-      "UPXI",
-      "GBIO",
-      "SOUN",
-      "SRFM",
-      "TGEN",
-      "KLC",
-      "SHOT",
-      "HI",
-      "MVST",
-      "CRNC",
-      "MIMI",
-      "OPEN",
-      "EOSE",
-      "APLD"
+      "TEST"
     ]
   },
   "scanner": {
@@ -77,9 +56,9 @@
   "windows": {
     "scannerWindow": {
       "width": 379,
-      "height": 1082,
+      "height": 1080,
       "x": 960,
-      "y": 538,
+      "y": 540,
       "isOpen": true
     },
     "settingsWindow": {
@@ -90,10 +69,10 @@
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 610,
-      "height": 70,
-      "x": 2275,
-      "y": 619,
+      "width": 415,
+      "height": 48,
+      "x": 2466,
+      "y": 587,
       "isOpen": true
     },
     "wizardWindow": {
@@ -104,11 +83,11 @@
       "isOpen": false
     },
     "dockerWindow": {
-      "isOpen": true,
       "width": 400,
       "height": 85,
-      "x": 1679,
-      "y": 1629
+      "x": 1561,
+      "y": 1667,
+      "isOpen": true
     },
     "progressWindow": {
       "width": 1442,
@@ -118,44 +97,44 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 356,
-      "height": 589,
+      "width": 442,
+      "height": 420,
       "x": 1339,
-      "y": 1032,
+      "y": 1201,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 471,
-      "height": 492,
+      "width": 443,
+      "height": 661,
       "x": 1339,
       "y": 540,
       "isOpen": true
     },
     "heroesWindow": {
-      "width": 577,
-      "height": 587,
-      "x": 1695,
-      "y": 1032,
+      "width": 688,
+      "height": 418,
+      "x": 1781,
+      "y": 1201,
       "isOpen": true
     },
     "scrollXpWindow": {
-      "isOpen": true,
-      "width": 239,
-      "height": 933,
-      "x": 2272,
-      "y": 689
+      "width": 226,
+      "height": 987,
+      "x": 2466,
+      "y": 635,
+      "isOpen": true
     },
     "scrollStatsWindow": {
-      "isOpen": true,
-      "width": 370,
-      "height": 934,
-      "x": 2511,
-      "y": 688
+      "width": 191,
+      "height": 990,
+      "x": 2691,
+      "y": 632,
+      "isOpen": true
     },
     "newsWindow": {
-      "width": 547,
-      "height": 491,
-      "x": 1773,
+      "width": 688,
+      "height": 661,
+      "x": 1781,
       "y": 540,
       "isOpen": true
     }

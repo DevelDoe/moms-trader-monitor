@@ -1,6 +1,6 @@
 const symbolColors = {};
 let globalBuffs = {}; // ⬅️ Buff map for score lookup
-const symbolLength = 22;
+const symbolLength = 25;
 
 const { isDev } = window.appFlags;
 
@@ -51,16 +51,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                     .filter(([key]) => !key.includes("vol") && key !== "volume" && key !== "newHigh")
                     .map(([key, val]) => (typeof val === "object" && val.icon ? val.icon : globalBuffs[key]?.icon || ""))
                     .join(" ");
+                
+                    const displayScore = (h.score / 10).toFixed(1);
 
                 return `
                 <div class="xp-line ellipsis" style="${dullStyle}">
-                    <span class="text-tertiary" style="display:inline-block; min-width: 24px; text-align:right; margin-right: 4px; opacity: 0.5;">
-                        ${idx + 1}.
+                    <span class="text-tertiary" style="display:inline-block; min-width: 24px; text-align:right; margin-right: 4px; opacity: 1;">
+                        ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1) + "."}
                     </span>
                     <strong class="symbol" style="background: ${bg};">
-                        ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
+                        ${h.hero}
                     </strong>
-                    <span class="buffs" style="margin-left: 8px; color: #e74c3c; font-size: 1rem;">${buffIcons}</span>
+                    <span class="buffs" style="font-weight: 600; opacity: 0.85; margin-left: 4px; font-size: 1rem;">${displayScore}</span>
                 </div>`;
             })
 

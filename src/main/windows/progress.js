@@ -12,15 +12,14 @@ function createProgressWindow(isDevelopment) {
         height: state.height || 30,
         x: state.x,
         y: state.y,
-        frame: false,
         alwaysOnTop: false,
         resizable: true,
-        transparent: false,
-        hasShadow: false,
         roundedCorners: false,
         backgroundColor: "#00000000",
-        transparent: true,
         useContentSize: true,
+        frame: false, // no OS frame
+        transparent: true, // fully transparent background
+        hasShadow: false, // Electron hint to remove shadow
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,

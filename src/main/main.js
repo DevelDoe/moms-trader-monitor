@@ -257,7 +257,7 @@ app.on("ready", async () => {
             store.addEvent({
                 hero: "TEST",
                 price: 4.2,
-                one_min_volume: 5000,
+                one_min_volume: 100,
                 hp: 1.25, // dp:0
                 dp: 0,
                 xp: Math.round(4.2 * 1.25 * 5000), // worker would send this
