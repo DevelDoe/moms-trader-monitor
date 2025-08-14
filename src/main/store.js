@@ -146,6 +146,7 @@ class Store extends EventEmitter {
         this.symbols = new Map();
         this.newsList = [];
         this.xpState = new Map();
+        this.trackedTickers = [];
 
         this.user = {
             id: null,
@@ -174,6 +175,34 @@ class Store extends EventEmitter {
         }
 
         this.startXpResetScheduler();
+    }
+
+    getTrackedTickers() {
+        return this.trackedTickers.slice();
+    }
+
+    setTrackedTickers(list, maxLen = 25) {
+        const up = (s) => String(s || "").toUpperCase();
+
+        const clean = Array.isArray(list) ? list.map(up) : [];
+        // dedupe in-order + cap
+        const seen = new Set();
+        const next = [];
+        for (const s of clean) {
+            if (!seen.has(s)) {
+                seen.add(s);
+                next.push(s);
+                if (next.length >= (Number(maxLen) || 25)) break;
+            }
+        }
+
+        // no change? bail
+        const same = next.length === this.trackedTickers.length && next.every((v, i) => v === this.trackedTickers[i]);
+        if (same) return this.trackedTickers;
+
+        this.trackedTickers = next;
+        this.emit("tracked-update", this.trackedTickers);
+        return this.trackedTickers;
     }
 
     getBuffFromJson(key) {
@@ -241,14 +270,14 @@ class Store extends EventEmitter {
         }
 
         // if (!isDevelopment) {
-            const keys = Array.from(this.symbols.keys());
-            subscribeToSymbolNews(keys);
-            (async () => {
-                for (const symbol of keys) {
-                    await fetchHistoricalNews(symbol);
-                    await sleep(200);
-                }
-            })();
+        const keys = Array.from(this.symbols.keys());
+        subscribeToSymbolNews(keys);
+        (async () => {
+            for (const symbol of keys) {
+                await fetchHistoricalNews(symbol);
+                await sleep(200);
+            }
+        })();
         // }
 
         this.emit("lists-update");
@@ -420,7 +449,7 @@ class Store extends EventEmitter {
     }
 
     addNews(newsItems, symbol) {
-        log.log(`[addNews] called for ${symbol}`);
+        // log.log(`[addNews] called for ${symbol}`);
 
         const existingIds = new Set(this.newsList.map((n) => n.id));
         const existingHeadlines = new Set(this.newsList.map((n) => n.headline));
@@ -431,7 +460,7 @@ class Store extends EventEmitter {
 
             // ⛔ Block multi-symbol news
             if (news.symbols.length > 1) {
-                log.log(`[addNews] Skipping multi-symbol headline: "${news.headline}"`);
+                // log.log(`[addNews] Skipping multi-symbol headline: "${news.headline}"`);
                 return false;
             }
 
@@ -439,7 +468,7 @@ class Store extends EventEmitter {
             const sanitized = news.headline.toLowerCase().trim();
             const isBlocked = blockList.some((word) => sanitized.includes(word.toLowerCase().trim()));
             if (isBlocked) {
-                log.log(`[addNews] Blocked by blockList: "${news.headline}"`);
+                // log.log(`[addNews] Blocked by blockList: "${news.headline}"`);
                 return false;
             }
 
@@ -447,7 +476,7 @@ class Store extends EventEmitter {
         });
 
         if (filteredNews.length === 0) {
-            log.log("[addNews] No new news items to process.");
+            // log.log("[addNews] No new news items to process.");
             return;
         }
 
@@ -503,7 +532,7 @@ class Store extends EventEmitter {
                         lastEvent: ticker.lastEvent,
                     },
                 ]);
-                log.log(`[buffs] ${newsBuff.icon} ${newsBuff.key} added for: ${sym}`);
+                // log.log(`[buffs] ${newsBuff.icon} ${newsBuff.key} added for: ${sym}`);
             });
         });
 
@@ -512,7 +541,7 @@ class Store extends EventEmitter {
     }
 
     getAllNews() {
-        log.log("[getAllNews] called");
+        // log.log("[getAllNews] called");
         return this.newsList;
     }
 

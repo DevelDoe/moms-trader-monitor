@@ -62,7 +62,7 @@ const subscribeToSymbolNews = (symbols) => {
     };
 
     alpacaSocket.onmessage = (event) => {
-        log.log("Received message from WebSocket:", event.data);
+        // log.log("Received message from WebSocket:", event.data);
 
         try {
             const data = JSON.parse(event.data);
@@ -180,7 +180,7 @@ const fetchHistoricalNews = async (ticker) => {
     const encodedTicker = encodeURIComponent(ticker);
     const ALPACA_NEWS_URL = `https://data.alpaca.markets/v1beta1/news?start=${start}&symbols=${encodedTicker}`;
 
-    log.log(`[news.js] Fetching historical news for ${ticker}...`);
+    // log.log(`[news.js] Fetching historical news for ${ticker}...`);
 
     try {
         const response = await fetch(ALPACA_NEWS_URL, {
@@ -202,7 +202,7 @@ const fetchHistoricalNews = async (ticker) => {
 
         if (!newsData.news || newsData.news.length === 0) return;
 
-        log.log(`✅ Retrieved ${newsData.news.length} historical news articles for ${ticker}.`);
+        // log.log(`✅ Retrieved ${newsData.news.length} historical news articles for ${ticker}.`);
         tickerStore.addNews(newsData.news);
     } catch (error) {
         log.error(`Error fetching historical news for ${ticker}:`, error.message);

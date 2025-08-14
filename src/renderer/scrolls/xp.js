@@ -3,26 +3,12 @@ const allHeroes = {}; // 💾 all heroes, unfiltered
 const heroes = {}; // 🧹 filtered heroes based on settings
 const { isDev } = window.appFlags;
 const debug = isDev;
-const symbolLength = 25;
 
-// --- add this helper (renderer only) ---
+let trackedTickers = []; // 🧠 source of truth lives in the store; XP writes it
+const up = (s) => String(s || "").toUpperCase();
+
 let _lastKey = "";
-function publishIfChanged(list) {
-    const key = list.join(",");
-    if (key === _lastKey) return; // no change
-    _lastKey = key;
-    window.scrollXpAPI?.publishTrackedTickers(list);
-}
-
-// (keep your debounce + call sites as-is)
-const publishTrackedTickers = debounce(() => {
-    const tracked = Object.values(heroes)
-        .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
-        .slice(0, symbolLength)
-        .map((h) => String(h.hero).toUpperCase());
-
-    if (tracked.length) publishIfChanged(Array.from(new Set(tracked)));
-}, 400);
+let _renderKey = "";
 
 function debounce(fn, wait = 300) {
     let t;
@@ -32,25 +18,151 @@ function debounce(fn, wait = 300) {
     };
 }
 
+function getSymbolLength() {
+    return Math.max(1, Number(window.settings?.top?.symbolLength) || 25);
+}
+
+// XP publishes (writes) to the store whenever its computed top changes
+const publishTrackedTickers = debounce(async () => {
+    const tracked = Object.values(heroes)
+        .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
+        .slice(0, getSymbolLength())
+        .map((h) => up(h.hero));
+
+    if (!tracked.length) return;
+
+    const key = tracked.join(",");
+    if (key === _lastKey) return; // no change since last publish
+    _lastKey = key;
+
+    window.scrollXpAPI?.publishTrackedTickers(tracked);
+    try {
+        await window.storeAPI.setTracked(tracked, getSymbolLength()); // ← write to store
+    } catch (e) {
+        console.warn("Failed to save tracked list to store:", e);
+    }
+}, 400);
+
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
+    if (!container) return;
 
+    // 1) load settings (for filters/length), and store (for tracked list)
     window.settings = await window.settingsAPI.get();
+    try {
+        trackedTickers = (await window.storeAPI.getTracked()).map(up);
+    } catch (e) {
+        console.warn("tracked:get failed; starting empty:", e);
+        trackedTickers = [];
+    }
+
+    // 2) load all symbols -> seed allHeroes
     const all = await window.storeAPI.getSymbols();
+    all.forEach(({ symbol, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
+        allHeroes[symbol] = {
+            hero: symbol,
+            xp: Number(xp) || 0,
+            lv: Number(lv) || 1,
+            price: Number(price) || 0,
+            totalXpGained: totalXpGained !== undefined ? Number(totalXpGained) : Number(xp) || 0,
+            firstXpTimestamp: typeof firstXpTimestamp === "number" ? firstXpTimestamp : Date.now(),
+            lastUpdate: Date.now(),
+        };
+    });
 
+    filterHeroes();
+    refreshList();
+    publishTrackedTickers(); // seed/refresh store immediately from XP’s current view
+
+    // 3) live hero updates
+    window.storeAPI.onHeroUpdate((updatedHeroes) => {
+        updatedHeroes.forEach(({ hero, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
+            if (!allHeroes[hero]) {
+                allHeroes[hero] = {
+                    hero,
+                    xp: 0,
+                    lv: 1,
+                    price: 0,
+                    totalXpGained: 0,
+                    firstXpTimestamp: Date.now(),
+                };
+            }
+            const h = allHeroes[hero];
+            h.xp = Number(xp) || 0;
+            h.lv = Number(lv) || 1;
+            h.price = price !== undefined ? Number(price) : 0;
+            h.totalXpGained = totalXpGained !== undefined ? Number(totalXpGained) : h.xp;
+            h.firstXpTimestamp = typeof firstXpTimestamp === "number" ? firstXpTimestamp : Date.now();
+            h.lastUpdate = Date.now();
+        });
+
+        filterHeroes();
+        refreshList();
+        publishTrackedTickers(); // keep store in sync with XP-derived top
+    });
+
+    // 4) settings updates — DO NOT touch trackedTickers here
+    window.settingsAPI.onUpdate(async (updatedSettings) => {
+        window.settings = updatedSettings;
+        filterHeroes();
+        refreshList();
+        publishTrackedTickers();
+    });
+
+    // 5) react to store changes (if some other view/tools modifies it)
+    window.storeAPI.onTrackedUpdate((list) => {
+        trackedTickers = (list || []).map(up);
+        refreshList(); // will use exact saved order
+        // no publish here — store is already the source; avoid loops
+    });
+
+    // 6) XP reset
+    window.electronAPI.onXpReset(() => {
+        Object.values(allHeroes).forEach((h) => {
+            h.xp = 0;
+            h.lv = 1;
+            h.totalXpGained = 0;
+            h.firstXpTimestamp = Date.now();
+            h.lastUpdate = Date.now();
+        });
+
+        filterHeroes();
+        refreshList();
+        publishTrackedTickers();
+    });
+
+    // --- render using tracked list when available ---
     function refreshList() {
+        const inactiveThreshold = 30_000; // 30s
+        const order = new Map(trackedTickers.map((s, i) => [s, i]));
+
+        let viewList =
+            order.size > 0
+                ? Object.values(heroes)
+                      .filter((h) => order.has(up(h.hero)))
+                      .sort((a, b) => order.get(up(a.hero)) - order.get(up(b.hero)))
+                      .slice(0, getSymbolLength())
+                : Object.values(heroes)
+                      .filter((h) => h.xp > 0)
+                      .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
+                      .slice(0, getSymbolLength());
+
+        // fallback if tracked list exists but filters hide everything
+        if (order.size > 0 && viewList.length === 0) {
+            viewList = Object.values(heroes)
+                .filter((h) => h.xp > 0)
+                .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
+                .slice(0, getSymbolLength());
+        }
+
+        // skip DOM work if lineup unchanged
+        const key = viewList.map((h) => up(h.hero)).join(",");
+        if (key === _renderKey) return;
+        _renderKey = key;
+
         const now = Date.now();
-        const inactiveThreshold = 30_000; // 30 seconds
 
-        const sorted = Object.values(heroes)
-            .filter((h) => h.xp > 0)
-            .sort((a, b) => {
-                if (b.lv !== a.lv) return b.lv - a.lv;
-                return b.xp - a.xp;
-            })
-            .slice(0, symbolLength);
-
-        container.innerHTML = sorted
+        container.innerHTML = viewList
             .map((h, i) => {
                 const bg = getSymbolColor(h.hero);
                 const age = now - (h.lastUpdate || 0);
@@ -58,15 +170,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
 
                 return `
-            <div class="xp-line ellipsis" style="${dullStyle}; color: gray;">
-                <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
-                <strong class="symbol" style="background: ${bg};">
-                    ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
-                </strong>
-                <span style="font-weight: 600; color: ${getXpColorByRank(i, sorted.length)}; opacity: 0.85; margin-left: 4px; font-size: 1rem;">
-                    ${abbreviateXp(h.totalXpGained)}
-                </span>
-            </div>`;
+          <div class="xp-line ellipsis" style="${dullStyle}; color: gray;">
+            <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
+            <strong class="symbol" style="background: ${bg};">
+              ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
+            </strong>
+            <span style="font-weight: 600; color: ${getXpColorByRank(i, viewList.length)}; opacity: 0.85; margin-left: 4px; font-size: 1rem;">
+              ${abbreviateXp(h.totalXpGained)}
+            </span>
+          </div>`;
             })
             .join("");
 
@@ -86,83 +198,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
     }
-
-    // 1. Insert all heroes
-    all.forEach(({ symbol, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
-        allHeroes[symbol] = {
-            hero: symbol,
-            xp: Number(xp) || 0,
-            lv: Number(lv) || 1,
-            price: Number(price) || 0,
-            totalXpGained: totalXpGained !== undefined ? Number(totalXpGained) : Number(xp) || 0,
-            firstXpTimestamp: typeof firstXpTimestamp === "number" ? firstXpTimestamp : Date.now(),
-            lastUpdate: Date.now(),
-        };
-    });
-
-    filterHeroes(); // 🎯 create filtered heroes based on settings
-    refreshList();
-    publishTrackedTickers();
-
-    // 2. Hero updates
-    window.storeAPI.onHeroUpdate((updatedHeroes) => {
-        updatedHeroes.forEach(({ hero, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
-            if (!allHeroes[hero]) {
-                allHeroes[hero] = {
-                    hero,
-                    xp: 0,
-                    lv: 1,
-                    price: 0,
-                    totalXpGained: 0,
-                    firstXpTimestamp: Date.now(),
-                };
-            }
-
-            const h = allHeroes[hero];
-            h.xp = Number(xp) || 0;
-            h.lv = Number(lv) || 1;
-            h.price = price !== undefined ? Number(price) : 0;
-            h.totalXpGained = totalXpGained !== undefined ? Number(totalXpGained) : h.xp;
-            h.firstXpTimestamp = typeof firstXpTimestamp === "number" ? firstXpTimestamp : Date.now();
-            h.lastUpdate = Date.now();
-        });
-
-        filterHeroes();
-        refreshList();
-        publishTrackedTickers();
-    });
-
-    // 3. Settings updates
-    window.settingsAPI.onUpdate(async (updatedSettings) => {
-        if (debug) console.log("🎯 Settings updated:", updatedSettings);
-        window.settings = updatedSettings;
-        filterHeroes();
-        refreshList();
-        publishTrackedTickers();
-    });
-
-    // 4. XP Reset
-    window.electronAPI.onXpReset(() => {
-        console.log("🧼 XP Reset received — zeroing XP and LV");
-
-        Object.values(allHeroes).forEach((h) => {
-            h.xp = 0;
-            h.lv = 1;
-            h.totalXpGained = 0; // ✅ Reset this too
-            h.firstXpTimestamp = Date.now(); // ✅ Reset session start
-            h.lastUpdate = Date.now();
-        });
-
-        filterHeroes();
-        refreshList();
-        publishTrackedTickers();
-    });
 });
+
+// -------------------- helpers (unchanged) --------------------
 
 function filterHeroes() {
     const { minPrice, realMaxPrice } = getPriceLimits();
     Object.keys(heroes).forEach((key) => delete heroes[key]); // Clear heroes
-
     for (const symbol in allHeroes) {
         const h = allHeroes[symbol];
         if (h.price >= minPrice && h.price <= realMaxPrice) {
@@ -180,9 +222,7 @@ function getPriceLimits() {
 
 function getTotalXP(lv, xp) {
     let total = 0;
-    for (let i = 1; i < lv; i++) {
-        total += i * 1000;
-    }
+    for (let i = 1; i < lv; i++) total += i * 1000;
     return total + xp;
 }
 
@@ -203,24 +243,19 @@ function formatPrice(price) {
 }
 
 function abbreviateXp(num) {
-    let out;
-    if (num < 100) return num.toString();
-    if (num < 1_000) out = (num / 1_000).toFixed(1) + "K";
-    else if (num < 1_000_000) out = (num / 1_000).toFixed(1) + "K";
-    else if (num < 1_000_000_000) out = (num / 1_000_000).toFixed(1) + "M";
-    else out = (num / 1_000_000_000).toFixed(1) + "B";
-    return out.replace(/\.0(?=[KMB])/, ""); // remove .0 before K/M/B
+    if (num < 100) return String(num);
+    if (num < 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    if (num < 1_000_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    if (num < 1_000_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
 }
 
 function computeXpSegments(count) {
-    // target shares: para=10%, high=20%, med=30%, low=40%
     let para = Math.max(1, Math.floor(count * 0.1));
     let high = Math.floor(count * 0.2);
     let med = Math.floor(count * 0.3);
-
     let used = para + high + med;
     if (used > count) {
-        // reduce in order: med → high → (keep para ≥ 1)
         let over = used - count;
         const take = (n, min) => {
             const d = Math.min(over, Math.max(0, n - min));

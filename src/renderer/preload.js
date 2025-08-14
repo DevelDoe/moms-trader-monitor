@@ -73,6 +73,9 @@ contextBridge.exposeInMainWorld("storeAPI", {
         ipcRenderer.on("hero-updated", (event, data) => {
             callback(data.heroes || []);
         }),
+    getTracked: () => ipcRenderer.invoke("store:tracked:get"),
+    setTracked: (list, maxLen) => ipcRenderer.invoke("store:tracked:set", list, maxLen),
+    onTrackedUpdate: (fn) => ipcRenderer.on("tracked-update", (_e, list) => fn(list)),
 });
 
 contextBridge.exposeInMainWorld("eventsAPI", {

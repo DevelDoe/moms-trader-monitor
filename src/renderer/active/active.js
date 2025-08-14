@@ -85,11 +85,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             }, 2000);
         };
 
-        // Make tab bar stay visible when hovering anywhere over app or the tab itself
-        [appContainer, tabWrapper].forEach((el) => {
-            el.addEventListener("mouseenter", showTab);
-            el.addEventListener("mouseleave", scheduleHide);
-        });
+        // // Make tab bar stay visible when hovering anywhere over app or the tab itself
+        // [appContainer, tabWrapper].forEach((el) => {
+        //     el.addEventListener("mouseenter", showTab);
+        //     el.addEventListener("mouseleave", scheduleHide);
+        // });
     } catch (error) {
         console.error("❌ Initialization error:", error);
     }

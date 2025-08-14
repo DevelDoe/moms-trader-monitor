@@ -86,7 +86,7 @@ const connectMTP = () => {
 
             // Handle ping messages
             if (msg.type === "ping") {
-                log.log("[mtp.js] Received ping, sending pong");
+                // log.log("[mtp.js] Received ping, sending pong");
                 try {
                     if (ws && ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ type: "pong", client_id: clientId }));

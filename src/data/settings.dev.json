@@ -8,8 +8,8 @@
     "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
-    "frontlineListLength": 14,
-    "heroesListLength": 4
+    "frontlineListLength": 10,
+    "heroesListLength": 3
   },
   "news": {
     "showTrackedTickers": true,
@@ -41,7 +41,31 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "TEST"
+      "CLRB",
+      "TPIC",
+      "BMR",
+      "ARCT",
+      "MAGH",
+      "IPWR",
+      "TZUP",
+      "XPON",
+      "MNTS",
+      "SID",
+      "TRIB",
+      "IMAB",
+      "AWRE",
+      "ONMD",
+      "IRD",
+      "BINI",
+      "ELPW",
+      "CGTX",
+      "LIVE",
+      "SPRU",
+      "OPEN",
+      "RILY",
+      "MKZR",
+      "OLB",
+      "RSLS"
     ]
   },
   "scanner": {
@@ -66,13 +90,13 @@
       "height": 805,
       "x": 25,
       "y": 9,
-      "isOpen": false
+      "isOpen": true
     },
     "infobarWindow": {
-      "width": 415,
-      "height": 48,
-      "x": 2466,
-      "y": 587,
+      "width": 728,
+      "height": 88,
+      "x": 1739,
+      "y": 1078,
       "isOpen": true
     },
     "wizardWindow": {
@@ -97,45 +121,45 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 442,
-      "height": 420,
+      "width": 443,
+      "height": 457,
       "x": 1339,
-      "y": 1201,
+      "y": 1164,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 443,
-      "height": 661,
+      "width": 402,
+      "height": 628,
       "x": 1338,
       "y": 540,
       "isOpen": true
     },
     "heroesWindow": {
-      "width": 688,
-      "height": 418,
-      "x": 1781,
-      "y": 1201,
+      "width": 687,
+      "height": 457,
+      "x": 1782,
+      "y": 1162,
       "isOpen": true
     },
     "scrollXpWindow": {
       "isOpen": true,
       "width": 226,
-      "height": 987,
+      "height": 1082,
       "x": 2466,
-      "y": 635
+      "y": 540
     },
     "scrollStatsWindow": {
       "isOpen": true,
       "width": 191,
-      "height": 990,
+      "height": 1082,
       "x": 2691,
-      "y": 632
+      "y": 540
     },
     "newsWindow": {
-      "width": 688,
-      "height": 661,
-      "x": 1781,
-      "y": 540,
+      "width": 737,
+      "height": 540,
+      "x": 1740,
+      "y": 539,
       "isOpen": true
     }
   },

@@ -10,8 +10,6 @@ const VERSION_LOCK_FILE = path.join(app.getPath("userData"), "version.lock");
 
 let cacheCleared = false;
 
-
-
 // Use system settings file for production, separate file for development
 const isDevelopment = process.env.NODE_ENV === "development";
 log.log("Development:", isDevelopment);
@@ -209,7 +207,7 @@ function loadSettings() {
 }
 
 function saveSettings(settingsToSave = DEFAULT_SETTINGS) {
-    log.log("Saving settings...");
+    // log.log("Saving settings...");
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsToSave, null, 2));
 }
 

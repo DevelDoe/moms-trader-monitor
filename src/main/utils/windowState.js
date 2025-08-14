@@ -28,7 +28,7 @@ function loadSettings() {
 function saveSettings(settings) {
     try {
         fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-        log.log(`Settings saved successfully to ${SETTINGS_FILE}.`);
+        // log.log(`Settings saved successfully to ${SETTINGS_FILE}.`);
         BrowserWindow.getAllWindows().forEach((win) => {
             safeSend(win, "settings-updated", settings);
         });
@@ -40,7 +40,7 @@ function saveSettings(settings) {
 function getWindowState(name) {
     const settings = loadSettings();
     const state = settings.windows?.[name] || {};
-    log.log(`Retrieved window state for "${name}":`, state);
+    // log.log(`Retrieved window state for "${name}":`, state);
     return state;
 }
 
@@ -49,7 +49,7 @@ function saveWindowState(name, bounds, isOpen) {
     if (!settings.windows) {
         settings.windows = {};
     }
-    log.log(`Saving window state for "${name}" with bounds:`, bounds, `and isOpen: ${isOpen}`);
+    // log.log(`Saving window state for "${name}" with bounds:`, bounds, `and isOpen: ${isOpen}`);
     settings.windows[name] = {
         width: bounds.width,
         height: bounds.height,
@@ -77,7 +77,7 @@ function setWindowBounds(stateKey, bounds) {
 }
 
 function setWindowState(stateKey, isOpen) {
-    log.log(`setWindowState called for key "${stateKey}" with isOpen: ${isOpen}`);
+    // log.log(`setWindowState called for key "${stateKey}" with isOpen: ${isOpen}`);
     const settings = loadSettings();
     const currentBounds = settings.windows?.[stateKey] || {};
     saveWindowState(stateKey, { ...currentBounds }, isOpen);

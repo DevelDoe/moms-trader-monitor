@@ -614,7 +614,7 @@ ipcMain.on("toggle-settings", () => {
 });
 
 ipcMain.handle("get-settings", () => {
-    log.log("Returning settings"); // ✅ Only logs once per second
+    // log.log("Returning settings"); 
     return appSettings;
 });
 
@@ -686,13 +686,13 @@ tickerStore.on("newsUpdated", (update) => {
         return; // Prevents unnecessary events
     }
 
-    log.log(`Broadcasting ${newsItems.length} new articles`);
+    // log.log(`Broadcasting ${newsItems.length} new articles`);
 
     broadcast("news-updated", { newsItems });
 });
 
 tickerStore.on("lists-update", () => {
-    log.log("Broadcasting store update");
+    // log.log("Broadcasting store update");
     broadcast("lists-updated");
 });
 
@@ -714,7 +714,7 @@ ipcMain.handle("fetch-news", async () => {
 tickerStore.on("hero-updated", (payload = []) => {
     const heroes = Array.isArray(payload) ? payload : [payload];
     const ids = heroes.map((h) => h.hero).join(", ");
-    log.log(`📢 Broadcasting hero update for: ${ids}`);
+    // log.log(`📢 Broadcasting hero update for: ${ids}`);
 
     broadcast("hero-updated", { heroes }); // 👈 clean consistent naming
 });
@@ -736,6 +736,14 @@ ipcMain.on("admin-nuke", () => {
     log.log("💣 Nuke state requested by renderer");
 
     tickerStore.nuke(); // << Trigger internal state reset
+});
+
+ipcMain.handle("store:tracked:get", () => tickerStore.getTrackedTickers());
+ipcMain.handle("store:tracked:set", (_evt, list, maxLen = 25) => tickerStore.setTrackedTickers(list, maxLen));
+
+// forward store events to renderers
+tickerStore.on("tracked-update", (list) => {
+    broadcast("store:tracked:update", list);
 });
 
 // Events

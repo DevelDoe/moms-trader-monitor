@@ -23,7 +23,7 @@ function connectBridge() {
         if (!reconnectTimeout) {
             reconnectTimeout = setTimeout(() => {
                 reconnectTimeout = null;
-                log.log("[bridge] 🔄 Attempting to reconnect to MTT...");
+                // log.log("[bridge] 🔄 Attempting to reconnect to MTT...");
                 connectBridge();
             }, RETRY_INTERVAL);
         }
@@ -34,9 +34,9 @@ function sendActiveSymbol(symbol) {
     if (socket && socket.writable && !socket.destroyed) {
         const msg = `set-active-symbol:${symbol.trim().toUpperCase()}`;
         socket.write(msg);
-        log.log("[bridge] 📡 Sent:", msg);
+        // log.log("[bridge] 📡 Sent:", msg);
     } else {
-        log.warn("[bridge] ⚠️ Socket not ready. Symbol not sent.");
+        // log.warn("[bridge] ⚠️ Socket not ready. Symbol not sent.");
     }
 }
 

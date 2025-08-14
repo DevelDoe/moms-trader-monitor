@@ -66,7 +66,7 @@ const createWebSocket = () => {
         if (!msg) return;
 
         if (msg.type === "ping") {
-            log.log("[chronos] ↪️ Received ping, sending pong");
+            // log.log("[chronos] ↪️ Received ping, sending pong");
             try {
                 ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
             } catch (err) {
@@ -76,7 +76,7 @@ const createWebSocket = () => {
         }
 
         if (msg.type === "alert") {
-            log.log(`[chronos] 🚨 ALERT received: ${JSON.stringify(msg.payload)}`);
+            // log.log(`[chronos] 🚨 ALERT received: ${JSON.stringify(msg.payload)}`);
 
             // Store
             if (tickerStore?.addEvent) tickerStore.addEvent(msg.payload);
@@ -108,7 +108,7 @@ const createWebSocket = () => {
 
         // TODO: Handle real-time data messages here later
 
-        log.log("[chronos] 📥 Message from CDSH:", JSON.stringify(msg));
+        // log.log("[chronos] 📥 Message from CDSH:", JSON.stringify(msg));
     });
 
     ws.on("close", (code, reason) => {

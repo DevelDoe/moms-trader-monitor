@@ -1,101 +1,128 @@
 const symbolColors = {};
 let globalBuffs = {}; // ⬅️ Buff map for score lookup
-const symbolLength = 25;
+const up = (s) => String(s || "").toUpperCase();
 
-const { isDev } = window.appFlags;
+let trackedTickers = []; // ← persisted order from settings
+let _renderKey = ""; // micro-perf: skip unchanged renders
+
+function getSymbolLength() {
+    return Math.max(1, Number(window.settings?.top?.symbolLength) || 25);
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
+    if (!container) return;
+
     const heroes = {};
 
-    const refreshList = () => {
-        const now = Date.now();
-        const inactiveThreshold = 30_000;
+    // --- helpers -------------------------------------------------------------
 
-        // Step 1: Pick top XP-based pool (level and xp)
-        const topByXP = Object.values(heroes)
-            .filter((h) => h.xp > 0)
+    const refreshList = () => {
+        const inactiveThreshold = 30_000;
+        const now = Date.now();
+
+        // trackedTickers defines WHO can show; not the order
+        const order = new Map(trackedTickers.map((s, i) => [up(s), i]));
+
+        // 1) pick candidates
+        const candidates = order.size
+            ? Object.values(heroes).filter((h) => order.has(up(h.hero)))
+            : Object.values(heroes)
+                  .filter((h) => h.xp > 0)
+                  .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
+                  .slice(0, getSymbolLength());
+
+        // if filters wipe them out, fallback to LV/XP
+        const baseList =
+            order.size && candidates.length === 0
+                ? Object.values(heroes)
+                      /* This code snippet is filtering out the heroes whose experience points (`xp`) are
+                    greater than 0 and then sorting them based on their level (`lv`) in descending
+                    order. If two heroes have the same level, they are further sorted based on their
+                    experience points in descending order. */
+                      .filter((h) => h.xp > 0)
+                      .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
+                : candidates;
+
+        // 2) score
+        const scored = baseList.map((h) => ({
+            ...h,
+            score: calculateScore(h.buffs, h.score || 0),
+        }));
+
+        // 3) sort by score desc; tiebreakers: tracked order, then LV/XP
+        const display = scored
             .sort((a, b) => {
+                const diff = (b.score || 0) - (a.score || 0);
+                if (diff) return diff;
+                if (order.size) {
+                    return (order.get(up(a.hero)) ?? Infinity) - (order.get(up(b.hero)) ?? Infinity);
+                }
                 if (b.lv !== a.lv) return b.lv - a.lv;
                 return b.xp - a.xp;
             })
-            .slice(0, symbolLength);
+            .slice(0, getSymbolLength());
 
-        // Step 2: Sort that pool by buff score
-        // Step 2: Sort that pool by buff score
-        const sorted = topByXP
-            .map((h) => {
-                const finalScore = calculateScore(h.buffs, h.score || 0);
+        // micro-perf: re-render if order OR the shown score changed
+        const key = display.map((h) => `${up(h.hero)}:${(h.score / 10).toFixed(1)}`).join(",");
+        if (key === _renderKey) return;
+        _renderKey = key;
 
-                Object.entries(h.buffs || {}).forEach(([key, val]) => {
-                    const ref = typeof val === "object" ? val : globalBuffs[key];
-                    if (!ref || ref.score === 0) return;
-
-                    console.log(`   🔸 ${key}: ${ref.score} (${ref.desc || "no desc"})`);
-                });
-
-                return {
-                    ...h,
-                    score: finalScore,
-                };
-            })
-            .sort((a, b) => b.score - a.score);
-
-        container.innerHTML = sorted
+        container.innerHTML = display
             .map((h, idx) => {
                 const bg = getSymbolColor(h.hero);
                 const age = now - (h.lastUpdate || 0);
                 const dullStyle = age > inactiveThreshold ? "opacity: 0.4; filter: grayscale(0.8);" : "";
-
-                const buffIcons = Object.entries(h.buffs || {})
-                    .filter(([key]) => !key.includes("vol") && key !== "volume" && key !== "newHigh")
-                    .map(([key, val]) => (typeof val === "object" && val.icon ? val.icon : globalBuffs[key]?.icon || ""))
-                    .join(" ");
-                
-                    const displayScore = (h.score / 10).toFixed(1);
+                const displayScore = (h.score / 10).toFixed(1);
 
                 return `
-                <div class="xp-line ellipsis" style="${dullStyle}">
-                    <span class="text-tertiary" style="display:inline-block; min-width: 24px; text-align:right; margin-right: 4px; opacity: 1;">
-                        ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1) + "."}
-                    </span>
-                    <strong class="symbol" style="background: ${bg};">
-                        ${h.hero}
-                    </strong>
-                    <span class="buffs" style="font-weight: 600; opacity: 0.85; margin-left: 4px; font-size: 1rem;">${displayScore}</span>
-                </div>`;
+              <div class="xp-line ellipsis" style="${dullStyle}">
+                <span class="text-tertiary" style="display:inline-block; min-width: 24px; text-align:right; margin-right: 4px; opacity: 1;">
+                  ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1 + "."}
+                </span>
+                <strong class="symbol" style="background: ${bg};">
+                  ${h.hero}
+                </strong>
+                <span class="buffs" style="font-weight: 600; opacity: 0.85; margin-left: 4px; font-size: 1rem;">${displayScore}</span>
+              </div>`;
             })
-
             .join("");
 
-        // <span class="score" title="${generateScoreTooltip(h)}">${h.score}</span>
-
-        // Add click listeners to symbol elements
+        // click handler
         container.querySelectorAll(".symbol").forEach((el) => {
             el.addEventListener("click", (e) => {
-                const hero = el.textContent.trim().split(" ")[0].replace("$", ""); // Remove $ if included
-
+                const hero = el.textContent.trim().split(" ")[0].replace("$", "");
                 try {
                     navigator.clipboard.writeText(hero);
-                    console.log(`📋 Copied ${hero} to clipboard`);
-
-                    if (window.activeAPI?.setActiveTicker) {
-                        window.activeAPI.setActiveTicker(hero);
-                        console.log(`🎯 Set ${hero} as active ticker`);
-                    }
-
+                    if (window.activeAPI?.setActiveTicker) window.activeAPI.setActiveTicker(hero);
                     el.classList.add("symbol-clicked");
                     setTimeout(() => el.classList.remove("symbol-clicked"), 200);
                 } catch (err) {
                     console.error(`⚠️ Failed to handle click for ${hero}:`, err);
                 }
-
                 e.stopPropagation();
             });
         });
     };
 
+    // --- boot ---------------------------------------------------------------
+
     try {
+        // Load settings (for symbolLength etc.), and the tracked list from the STORE
+        window.settings = await window.settingsAPI.get();
+        try {
+            trackedTickers = (await window.storeAPI.getTracked()).map(up);
+        } catch (e) {
+            console.warn("tracked:get failed; starting empty:", e);
+            trackedTickers = [];
+        }
+
+        // Stay in sync if XP updates the store
+        window.storeAPI.onTrackedUpdate((list) => {
+            trackedTickers = (list || []).map(up);
+            refreshList(); // re-render using the latest canonical order
+        });
+
         const [symbols, fetchedBuffs] = await Promise.all([window.storeAPI.getSymbols(), window.electronAPI.getBuffs()]);
 
         // 🧠 Convert buffs list into { key: buffObj }
@@ -112,13 +139,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 xp: s.xp || 0,
                 lv: s.lv || 0,
                 buffs: s.buffs || {},
-                price: s.Price || s.price || 0, // ✅ Grab price from incoming symbol
+                price: s.Price || s.price || 0,
                 lastUpdate: Date.now(),
             };
         });
 
         refreshList();
 
+        // live hero updates
         window.storeAPI.onHeroUpdate((updatedHeroes) => {
             updatedHeroes.forEach(({ hero, buffs, xp, lv, price }) => {
                 if (!heroes[hero]) {
@@ -131,39 +159,38 @@ document.addEventListener("DOMContentLoaded", async () => {
                         lastUpdate: Date.now(),
                     };
                 }
-
                 if (typeof xp === "number") heroes[hero].xp = xp;
                 if (typeof lv === "number") heroes[hero].lv = lv;
                 if (buffs) heroes[hero].buffs = buffs;
                 if (typeof price === "number") heroes[hero].price = price;
-
                 heroes[hero].lastUpdate = Date.now();
             });
 
             refreshList();
         });
+
+        window.settingsAPI.onUpdate((updated) => {
+            window.settings = updated;
+            refreshList(); // use the new symbolLength/filters, but don't touch trackedTickers
+        });
     } catch (err) {
         console.error("Failed to load stats scroll:", err);
     }
 
+    // session resets
     window.electronAPI.onXpReset(() => {
-        console.log("🧼 XP Reset received in Foundations — zeroing XP and LV");
-
         Object.values(heroes).forEach((hero) => {
             hero.xp = 0;
             hero.lv = 1;
             hero.lastUpdate = Date.now();
         });
-
         refreshList();
     });
 
+    // state nuke
     window.electronAPI.onNukeState(async () => {
-        console.warn("🧨 Nuke signal received in XP scroll — clearing and reloading heroes");
-
-        Object.keys(heroes).forEach((key) => delete heroes[key]);
+        Object.keys(heroes).forEach((k) => delete heroes[k]);
         container.innerHTML = "";
-
         try {
             const symbols = await window.storeAPI.getSymbols();
             symbols.forEach((s) => {
@@ -175,13 +202,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                     lastUpdate: Date.now(),
                 };
             });
-
             refreshList();
         } catch (err) {
             console.error("⚠️ Failed to reload heroes after nuke:", err);
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
 
 function generateScoreTooltip(hero) {
     const base = hero.score - calculateScore(hero.buffs, 0);
@@ -201,12 +231,10 @@ function generateScoreTooltip(hero) {
             hasBullish = true;
             return;
         }
-
         if (key === "hasBearishNews") {
             hasBearish = true;
             return;
         }
-
         if (key === "hasNews") {
             hasNeutral = true;
             return;
@@ -215,7 +243,6 @@ function generateScoreTooltip(hero) {
         lines.push(`${ref.score >= 0 ? "+" : ""}${ref.score} — ${ref.desc || key}`);
     });
 
-    // Only show one line for news
     if (hasBullish && !hasBearish) {
         lines.push(`+${globalBuffs.hasBullishNews?.score || 0} — ${globalBuffs.hasBullishNews?.desc || "Bullish News"}`);
     } else if (hasBearish && !hasBullish) {
@@ -232,9 +259,9 @@ function getSymbolColor(symbol) {
     if (!symbolColors[symbol]) {
         const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const hue = (hash * 37) % 360;
-        const saturation = 80;
-        const lightness = 50;
-        const alpha = 0.5;
+        const saturation = 80,
+            lightness = 50,
+            alpha = 0.5;
         symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
     }
     return symbolColors[symbol];
@@ -258,28 +285,20 @@ function calculateScore(heroBuffs = {}, baseScore = 0) {
             newsScore = score;
             continue;
         }
-
         if (key === "hasBearishNews") {
             hasBearish = true;
             newsScore = score;
             continue;
         }
-
         if (key === "hasNews") {
-            // Only assign if no stronger sentiment already found
-            if (!hasBullish && !hasBearish) {
-                newsScore = score;
-            }
+            if (!hasBullish && !hasBearish) newsScore = score;
             continue;
         }
 
         totalScore += score;
     }
 
-    if (!(hasBullish && hasBearish)) {
-        totalScore += newsScore;
-    }
-
+    if (!(hasBullish && hasBearish)) totalScore += newsScore;
     return totalScore;
 }
 
