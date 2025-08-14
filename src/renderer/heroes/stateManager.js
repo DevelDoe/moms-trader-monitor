@@ -89,22 +89,39 @@
     // }
     
 
-    function updateHeroData(updatedHeroes) {
-        updatedHeroes.forEach((u) => {
-            const hero = heroesState[u.hero];
-            if (!hero) return;
+    function updateHeroData(payload) {
+        const items = Array.isArray(payload) ? payload : [payload];
     
-            hero.buffs = u.buffs || hero.buffs;
-            hero.highestPrice = Math.max(hero.highestPrice || 0, u.highestPrice || 0);
-            hero.lastEvent = u.lastEvent || hero.lastEvent;
+        for (const u of items) {
+            if (!u || !u.hero) continue;
+    
+            const hero = heroesState[u.hero];
+            if (!hero) continue;
+    
+            // Use nullish coalescing so 0/""/false don’t get clobbered
+            hero.buffs = u.buffs ?? hero.buffs;
+            hero.highestPrice = Math.max(
+                (hero.highestPrice ?? 0),
+                (u.highestPrice ?? 0)
+            );
+            hero.lastEvent = u.lastEvent ?? hero.lastEvent;
             hero.xp = u.xp ?? hero.xp;
             hero.lv = u.lv ?? hero.lv;
             hero.totalXpGained = u.totalXpGained ?? hero.totalXpGained;
+            hero.price = u.price ?? hero.price; // optional if you show price
     
-            if (window.isDev) console.log(`🎮 ${u.hero} XP → LV ${hero.lv}, XP ${hero.xp}, TOTAL ${hero.totalXpGained}`);
-            updateCardDOM(hero.hero);
-        });
+            if (window.isDev) {
+                console.log(
+                    `🎮 ${u.hero} XP → LV ${hero.lv}, XP ${hero.xp}, TOTAL ${hero.totalXpGained}`
+                );
+            }
+    
+            updateCardDOM(u.hero);
+        }
     }
+    
+
+    
 
     function nukeState() {
         console.warn("🧨 Nuke signal received — clearing state.");

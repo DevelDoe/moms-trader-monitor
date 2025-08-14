@@ -614,7 +614,7 @@ ipcMain.on("toggle-settings", () => {
 });
 
 ipcMain.handle("get-settings", () => {
-    // log.log("Returning settings"); 
+    // log.log("Returning settings");
     return appSettings;
 });
 
@@ -712,11 +712,7 @@ ipcMain.handle("fetch-news", async () => {
 });
 
 tickerStore.on("hero-updated", (payload = []) => {
-    const heroes = Array.isArray(payload) ? payload : [payload];
-    const ids = heroes.map((h) => h.hero).join(", ");
-    // log.log(`📢 Broadcasting hero update for: ${ids}`);
-
-    broadcast("hero-updated", { heroes }); // 👈 clean consistent naming
+    broadcast("hero-updated", payload);
 });
 
 tickerStore.on("store-nuke", () => {

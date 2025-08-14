@@ -147,8 +147,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         refreshList();
 
         // live hero updates
-        window.storeAPI.onHeroUpdate((updatedHeroes) => {
-            updatedHeroes.forEach(({ hero, buffs, xp, lv, price }) => {
+        window.storeAPI.onHeroUpdate((payload) => {
+            const items = Array.isArray(payload) ? payload : [payload];
+
+            items.forEach(({ hero, buffs, xp, lv, price, totalXpGained, firstXpTimestamp, lastEvent }) => {
+                if (!hero) return;
+
                 if (!heroes[hero]) {
                     heroes[hero] = {
                         hero,
@@ -156,14 +160,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                         lv: 1,
                         buffs: {},
                         price: 0,
+                        totalXpGained: 0,
+                        firstXpTimestamp: Date.now(),
                         lastUpdate: Date.now(),
                     };
                 }
-                if (typeof xp === "number") heroes[hero].xp = xp;
-                if (typeof lv === "number") heroes[hero].lv = lv;
-                if (buffs) heroes[hero].buffs = buffs;
-                if (typeof price === "number") heroes[hero].price = price;
-                heroes[hero].lastUpdate = Date.now();
+
+                const h = heroes[hero];
+                if (buffs) h.buffs = buffs; // or: h.buffs = { ...h.buffs, ...buffs }
+                if (typeof xp === "number") h.xp = xp;
+                if (typeof lv === "number") h.lv = lv;
+                if (typeof price === "number") h.price = price;
+                if (typeof totalXpGained === "number") h.totalXpGained = totalXpGained;
+                if (typeof firstXpTimestamp === "number") h.firstXpTimestamp = firstXpTimestamp;
+                if (lastEvent) h.lastEvent = lastEvent;
+
+                h.lastUpdate = Date.now();
             });
 
             refreshList();
@@ -176,16 +188,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
         console.error("Failed to load stats scroll:", err);
     }
-
-    // session resets
-    window.electronAPI.onXpReset(() => {
-        Object.values(heroes).forEach((hero) => {
-            hero.xp = 0;
-            hero.lv = 1;
-            hero.lastUpdate = Date.now();
-        });
-        refreshList();
-    });
 
     // state nuke
     window.electronAPI.onNukeState(async () => {

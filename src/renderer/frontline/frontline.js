@@ -27,7 +27,6 @@ function queueCardUpdate(symbol) {
     }
 }
 
-
 let container;
 
 let maxHP = BASE_MAX_HP;
@@ -189,7 +188,7 @@ function updateFrontlineStateFromEvent(event) {
     }
 
     let hero = frontlineState[event.hero];
-    
+
     if (!hero) {
         console.warn("❌ Frontline state missing for hero:", event.hero, "Full event:", event);
         return; // Prevents crash on `hero.price = ...`
@@ -286,7 +285,6 @@ function updateFrontlineStateFromEvent(event) {
         debouncedRenderAll();
     } else {
         queueCardUpdate(event.hero);
-
     }
 
     hero.lastUpdate = Date.now();
@@ -404,16 +402,14 @@ function updateCardDOM(hero) {
         setTimeout(() => changeEl.classList.remove("change-flash"), 400);
     }
 
-    const sortOrder = [
-        "float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort",
-        "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"
-    ];
+    const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
 
-    const sortBuffs = (arr) => arr.sort((a, b) => {
-        const aIndex = sortOrder.indexOf(a._sortKey);
-        const bIndex = sortOrder.indexOf(b._sortKey);
-        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-    });
+    const sortBuffs = (arr) =>
+        arr.sort((a, b) => {
+            const aIndex = sortOrder.indexOf(a._sortKey);
+            const bIndex = sortOrder.indexOf(b._sortKey);
+            return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+        });
 
     // Add buffs update
     const buffsContainer = card.querySelector(".buffs-container");

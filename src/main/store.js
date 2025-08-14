@@ -318,10 +318,10 @@ class Store extends EventEmitter {
                 Symbol: symbol,
                 Price: price,
                 Direction: direction || "UNKNOWN",
-                alertChangePercent: Math.abs(change_percent).toFixed(2),
-                cumulativeUpChange: (baseData.cumulativeUpChange || 0) + (direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0),
-                cumulativeDownChange: (baseData.cumulativeDownChange || 0) + (direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0),
-                fiveMinVolume: volume,
+                // alertChangePercent: Math.abs(change_percent).toFixed(2),
+                // cumulativeUpChange: (baseData.cumulativeUpChange || 0) + (direction === "UP" ? parseFloat(change_percent.toFixed(2)) : 0),
+                // cumulativeDownChange: (baseData.cumulativeDownChange || 0) + (direction === "DOWN" ? parseFloat(change_percent.toFixed(2)) : 0),
+                // fiveMinVolume: volume,
             };
 
             this.symbols.set(symbol, mergedData);
@@ -366,16 +366,9 @@ class Store extends EventEmitter {
         }
     }
 
-    applyRpgEventMeta(symbol, alert, isNewHigh = false) {
+    applyRpgEventMeta(symbol, alert) {
         const ticker = this.symbols.get(symbol);
         if (!ticker) return;
-
-        // Use alert directly (no transform)
-        ticker.lastEvent = {
-            hp: alert.hp || 0,
-            dp: alert.dp || 0,
-            xp: Math.max(0, Math.round(alert.xp || 0)),
-        };
 
         this.calculateXp(ticker, alert); // this mutates ticker.xp/totalXpGained/lv
         ticker.firstXpTimestamp = ticker.firstXpTimestamp || Date.now();
@@ -384,15 +377,25 @@ class Store extends EventEmitter {
         ticker.buffs = ticker.buffs || {};
         ticker.buffs.volume = calculateVolumeImpact(alert.one_min_volume, alert.price, buffs);
 
-        // This branch is effectively unreachable if alerts are single-sided, but harmless:
-        if (alert.dp > 0 && alert.hp > 0) {
-            const bounceBuff = this.getBuffFromJson("bounceBack");
-            if (bounceBuff) ticker.buffs.bounceBack = bounceBuff;
+        if (ticker.lastEvent) {
+            if (ticker.lastEvent.dp > 0 && alert.hp > 0) {
+                const bounceBuff = this.getBuffFromJson("bounceBack");
+                if (bounceBuff) ticker.buffs.bounceBack = bounceBuff;
+            } else {
+                delete ticker.buffs.bounceBack;
+            }
         } else {
             delete ticker.buffs.bounceBack;
         }
 
-        if (isNewHigh) {
+        // Use alert directly (no transform)
+        ticker.lastEvent = {
+            hp: alert.hp || 0,
+            dp: alert.dp || 0,
+            xp: Math.max(0, Math.round(alert.xp || 0)),
+        };
+
+        if (alert.isHighOfDay) {
             const highBuff = this.getBuffFromJson("newHigh");
             if (highBuff) ticker.buffs.newHigh = highBuff;
         } else {
@@ -407,19 +410,17 @@ class Store extends EventEmitter {
             });
         }
 
-        this.emit("hero-updated", [
-            {
-                hero: symbol,
-                buffs: ticker.buffs,
-                highestPrice: ticker.highestPrice,
-                lastEvent: ticker.lastEvent,
-                xp: ticker.xp,
-                lv: ticker.lv,
-                price: ticker.Price || ticker.price || 0,
-                totalXpGained: ticker.totalXpGained || 0,
-                firstXpTimestamp: ticker.firstXpTimestamp || Date.now(),
-            },
-        ]);
+        this.emit("hero-updated", {
+            hero: symbol,
+            buffs: ticker.buffs,
+            highestPrice: ticker.highestPrice,
+            lastEvent: ticker.lastEvent,
+            xp: ticker.xp,
+            lv: ticker.lv,
+            price: ticker.Price || ticker.price || 0,
+            totalXpGained: ticker.totalXpGained || 0,
+            firstXpTimestamp: ticker.firstXpTimestamp || Date.now(),
+        });
 
         this.xpState.set(symbol, {
             xp: ticker.totalXpGained || 0,

@@ -75,8 +75,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     publishTrackedTickers(); // seed/refresh store immediately from XP’s current view
 
     // 3) live hero updates
-    window.storeAPI.onHeroUpdate((updatedHeroes) => {
-        updatedHeroes.forEach(({ hero, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
+    window.storeAPI.onHeroUpdate((payload) => {
+        const updates = Array.isArray(payload) ? payload : [payload]; // ← normalize
+
+        updates.forEach(({ hero, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
+            if (!hero) return;
+
             if (!allHeroes[hero]) {
                 allHeroes[hero] = {
                     hero,
@@ -87,18 +91,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                     firstXpTimestamp: Date.now(),
                 };
             }
+
             const h = allHeroes[hero];
-            h.xp = Number(xp) || 0;
-            h.lv = Number(lv) || 1;
-            h.price = price !== undefined ? Number(price) : 0;
-            h.totalXpGained = totalXpGained !== undefined ? Number(totalXpGained) : h.xp;
-            h.firstXpTimestamp = typeof firstXpTimestamp === "number" ? firstXpTimestamp : Date.now();
+            h.xp = Number.isFinite(xp) ? Number(xp) : 0;
+            h.lv = Number.isFinite(lv) ? Number(lv) : 1;
+            h.price = Number.isFinite(price) ? Number(price) : 0;
+            h.totalXpGained = Number.isFinite(totalXpGained) ? Number(totalXpGained) : h.xp;
+            h.firstXpTimestamp = typeof firstXpTimestamp === "number" ? firstXpTimestamp : h.firstXpTimestamp ?? Date.now();
             h.lastUpdate = Date.now();
         });
 
         filterHeroes();
         refreshList();
-        publishTrackedTickers(); // keep store in sync with XP-derived top
+        publishTrackedTickers(); // (debounced) keep store in sync with XP-derived top
     });
 
     // 4) settings updates — DO NOT touch trackedTickers here

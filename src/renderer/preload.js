@@ -69,10 +69,11 @@ contextBridge.exposeInMainWorld("storeAPI", {
     getTickerNews: (ticker) => ipcRenderer.invoke("get-news", ticker),
     onUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
-    onHeroUpdate: (callback) =>
-        ipcRenderer.on("hero-updated", (event, data) => {
-            callback(data.heroes || []);
-        }),
+    onHeroUpdate: (callback) => {
+        const handler = (_event, data) => callback(data);
+        ipcRenderer.on("hero-updated", handler);
+        return () => ipcRenderer.off("hero-updated", handler);
+    },
     getTracked: () => ipcRenderer.invoke("store:tracked:get"),
     setTracked: (list, maxLen) => ipcRenderer.invoke("store:tracked:set", list, maxLen),
     onTrackedUpdate: (fn) => ipcRenderer.on("tracked-update", (_e, list) => fn(list)),
