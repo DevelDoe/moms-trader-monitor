@@ -83,11 +83,11 @@
       "isOpen": false
     },
     "dockerWindow": {
+      "isOpen": true,
       "width": 400,
       "height": 85,
       "x": 1561,
-      "y": 1667,
-      "isOpen": true
+      "y": 1667
     },
     "progressWindow": {
       "width": 1442,
@@ -106,7 +106,7 @@
     "activeWindow": {
       "width": 443,
       "height": 661,
-      "x": 1339,
+      "x": 1338,
       "y": 540,
       "isOpen": true
     },
@@ -118,18 +118,18 @@
       "isOpen": true
     },
     "scrollXpWindow": {
+      "isOpen": true,
       "width": 226,
       "height": 987,
       "x": 2466,
-      "y": 635,
-      "isOpen": true
+      "y": 635
     },
     "scrollStatsWindow": {
+      "isOpen": true,
       "width": 191,
       "height": 990,
       "x": 2691,
-      "y": 632,
-      "isOpen": true
+      "y": 632
     },
     "newsWindow": {
       "width": 688,
