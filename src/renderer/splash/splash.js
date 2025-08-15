@@ -5,6 +5,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const spinner = document.getElementById("loading-spinner");
     const loginForm = document.getElementById("login-container");
     const statusText = document.getElementById("symbols-status");
+    
+
+    window.electronAPI.onSymbolsFetched(async (_event, symbolCount) => {
+        // ...your existing spinner/login logic...
+
+        // set the image once loading is done
+        setBackgroundWhenReady("../../../assets/images/splash.jpg");
+    });
 
     // 🔒 Start with spinner visible, login form hidden
     spinner.style.display = "block";
@@ -14,40 +22,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.electronAPI.onSymbolsFetched(async (_event, symbolCount) => {
         spinner.style.display = "none";
         loginForm.classList.remove("hidden");
-    
+
         if (symbolCount > 0) {
             statusText.textContent = `✅ Fetched ${symbolCount} symbols.`;
-    
+
             // 🔑 Auto-login if password.json is present
             const credentials = await window.autoLogin.getCredentials();
             if (credentials) {
                 const { email, password } = credentials;
                 console.log("🔑 Auto-login with", email);
-    
+
                 const result = await window.electronAPI.login(email, password);
-    
+
                 if (result.success) {
                     const data = result.user;
-    
+
                     window.electronAPI.sendAuthInfo({
                         token: data.token,
                         role: data.role,
                         permissions: data.permissions || [],
                         userId: data.userId,
                     });
-    
+
                     window.electronAPI.closeSplash();
                     window.location.href = "main.html";
                 } else {
                     document.getElementById("error").textContent = result.error;
                 }
             }
-    
         } else {
             statusText.textContent = "⚠️ Failed to fetch symbols.";
         }
     });
-    
 
     // 🧾 Handle login
     document.getElementById("loginForm").addEventListener("submit", async function (event) {
@@ -71,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (rememberMe) {
                     window.autoLogin.saveCredentials({ email, password }); // ✅ Save encrypted
                 }
-                
+
                 const data = result.user;
 
                 window.electronAPI.sendAuthInfo({
@@ -94,6 +100,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             spinner.classList.add("hidden");
         }
     });
-
-
 });
+
+const splash = document.getElementById("splash-container");
+
+// optional: preload then swap to avoid a flash
+function setBackgroundWhenReady(url) {
+    const img = new Image();
+    img.onload = () => {
+        // fade-in (optional)
+        splash.style.transition = "opacity 10000ms ease";
+        splash.style.backgroundImage = `url("${url}")`;
+
+    };
+    img.src = url;
+}

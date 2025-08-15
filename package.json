@@ -1,14 +1,14 @@
 {
-    "name": "Moms-Trader-Monitor",
+    "name": "Arcane-Monitor",
     "version": "4.0.102",
-    "description": "Moms Traders Monitor is a tool designed to track high-potential stocks in real-time, using automated web scraping and scoring to identify actionable trade opportunities.",
+    "description": "Arcane Monitor is a tool designed to track high-potential stocks in real-time.",
     "main": "src/main/main.js",
     "scripts": {
         "start": "cross-env NODE_ENV=development DEBUG=true DATA=false BOUNCE=true forceUpdate=false electron .",
-        "package": "cross-env NODE_ENV=production DEBUG=false DATA=false BOUNCE=true forceUpdate=false electron-packager . Moms_Trader_Tools --platform=win32 --arch=x64 --out=dist --overwrite",
-        "package-all": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --all --out=dist --overwrite",
-        "package-mac": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --platform=darwin --arch=x64 --out=dist --overwrite",
-        "package-linux": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Moms_Trader_Tools --platform=linux --arch=x64 --out=dist --overwrite",
+        "package": "cross-env NODE_ENV=production DEBUG=false DATA=false BOUNCE=true forceUpdate=false electron-packager . Arcane-Monitor --platform=win32 --arch=x64 --out=dist --overwrite",
+        "package-all": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Arcane-Monitor --all --out=dist --overwrite",
+        "package-mac": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Arcane-Monitor --platform=darwin --arch=x64 --out=dist --overwrite",
+        "package-linux": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-packager . Arcane-Monitor --platform=linux --arch=x64 --out=dist --overwrite",
         "publish": "cross-env NODE_ENV=production DEBUG=false BOUNCE=true DATA=false forceUpdate=false electron-builder -p always"
     },
     "author": "Morgan A Ray & Fouro (chatGPT)",
@@ -35,8 +35,8 @@
         "nodemon": "^3.0.0"
     },
     "build": {
-        "appId": "com.moms.traders.monitor",
-        "productName": "Moms Traders Monitor",
+        "appId": "com.arcane.monitor",
+        "productName": "Arcane Monitor",
         "directories": {
             "output": "dist"
         },
@@ -61,7 +61,7 @@
         "nsis": {
             "oneClick": false,
             "allowToChangeInstallationDirectory": true,
-            "shortcutName": "Moms Traders Monitor"
+            "shortcutName": "am"
         },
         "publish": [
             {

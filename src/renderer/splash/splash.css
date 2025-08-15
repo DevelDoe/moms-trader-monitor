@@ -1,113 +1,144 @@
-/* Minimal Light Theme */
+/* ====== Layout / Background ====== */
+html,
 body {
-    color: #333;
-    font-family: Arial, sans-serif;
-    text-align: center;
+    height: 100%;
+}
+body {
     margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    height: 100vh;
-    background: url(../../../assets/images/splashBg.jpg);
-    background-position: right 0 bottom -12px;
-    background-size: contain;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color: #eef1f5;
+}
+
+#splash-container {
+    min-height: 100vh;
+    min-height: 100svh; /* mobile safe */
+    display: grid;
+    place-items: center; /* center login/spinner */
+/* <- your path */
+    background-position: center center;
     background-repeat: no-repeat;
-    background-color: #181a27;
-    margin-left: -425px;
+    background-size: cover; /* fill window, keep aspect */
 }
 
-#splash {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+/* Optional subtle dark overlay for readability */
+#splash-container::before {
+    content: "";
+    /* position: fixed; */
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    pointer-events: none;
 }
 
-#title {
-    display: flex;
-    align-items: center; /* Align icon & text vertically */
-    justify-content: center; /* Center the entire header */
-    gap: 10px; /* Adjust space between icon and text */
-    text-align: center; /* Ensures text remains centered */
-    margin: 15px;
+/* ====== Login Card ====== */
+#login-container {
+    width: min(560px, 92vw);
+    padding: 20px 22px;
+    border-radius: 14px;
+    background: rgba(8, 10, 15, 0.55);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    display: grid;
+    gap: 14px;
 }
 
-header img {
-    width: 32px;
-    height: 32px;
-}
-
-h1 {
+#login-container h1 {
     margin: 0;
-    font-size: 24px;
+    font-size: 28px;
+    line-height: 1.1;
+    letter-spacing: 0.3px;
+    color: #f9fafb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-#moms {
-    color: #089981;
-}
-#trader {
-    color: #f23645;
-}
-#tools {
-    color: orangered;
+/* Form layout: desktop = row; mobile = stacked */
+#login-container form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto; /* email | password | button */
+    gap: 10px;
+    align-items: center;
 }
 
-.message {
-    background: rgba(255, 255, 255, 0.9);
-    padding: 30px;
-    border-radius: 22px;
-    max-width: 492px;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    margin: 7px;
-    margin-top: 20px;
+@media (max-width: 640px) {
+    #login-container form {
+        grid-template-columns: 1fr;
+    }
+    #login-button {
+        width: 100%;
+    }
 }
 
-.btn {
-    display: inline-block;
-    background: #333;
+/* Inputs */
+#login-container input[type="email"],
+#login-container input[type="password"] {
+    height: 42px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 3px;
-    margin-top: 10px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-.btn:hover {
-    background: #444;
-    color: white;
-}
-* {
-    user-select: none; /* Standard */
-    -webkit-user-select: none; /* Safari */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* Internet Explorer/Edge */
-}
-a {
-    color: #089981;
-    text-decoration: none;
-}
-a:hover {
-    color: orangered;
+#login-container input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
 }
 
-.error {
-    color: red;
+#login-container input:focus {
+    border-color: #ffd166;
+    box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.25);
+    background: rgba(255, 255, 255, 0.12);
 }
 
-/* splash.css */
+/* Remember me */
+#login-container label {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 14px;
+    color: #e5e7eb;
+    user-select: none;
+}
+#rememberMe {
+    accent-color: #ff9d2f;
+}
+
+/* Button */
+#login-button {
+    height: 42px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: #1a1206;
+    cursor: pointer;
+    background: linear-gradient(180deg, #ffb02e, #ff7a18);
+    box-shadow: 0 6px 16px rgba(255, 122, 24, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.15);
+    transition: transform 0.06s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+#login-button:hover {
+    filter: brightness(1.05);
+}
+#login-button:active {
+    transform: translateY(1px);
+}
+#login-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    filter: grayscale(0.3);
+}
+
+/* Spinner / status */
 .spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    width: 36px;
-    height: 36px;
+    width: 26px;
+    height: 26px;
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #ffb02e;
     border-radius: 50%;
-    border-left-color: #09f;
-    animation: spin 1s ease infinite;
-    display: none; /* Initially hidden */
-    margin: 0 auto;
+    animation: spin 0.9s linear infinite;
+    margin-inline: auto;
 }
-
 @keyframes spin {
     to {
         transform: rotate(360deg);
@@ -115,26 +146,22 @@ a:hover {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
-/* login spinner */
-.login-spinner {
-    display: none;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #333;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    animation: spin 0.8s linear infinite;
-    display: inline-block;
-    margin-left: 10px;
-    vertical-align: middle;
+#error,
+.error {
+    color: #ff6b6b;
+    font-size: 14px;
+    min-height: 18px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-.hidden {
-    display: none;
+
+/* Loading text beneath spinner */
+#symbols-status {
+    margin: 8px 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    text-align: center;
 }
