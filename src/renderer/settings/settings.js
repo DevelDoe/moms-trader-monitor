@@ -63,6 +63,8 @@ function initializeGeneralSection() {
     showScrollXpToggle.checked = window.settings.windows.scrollXpWindow?.isOpen ?? false;
     const showScrollStatsToggle = document.getElementById("show-scrollStats");
     showScrollStatsToggle.checked = window.settings.windows.scrollStatsWindow?.isOpen ?? false;
+    const showScrollHodToggle = document.getElementById("show-scrollHod");
+    showScrollHodToggle.checked = window.settings.windows.scrollHodWindow?.isOpen ?? false;
 
     const showInfobarToggle = document.getElementById("show-infobar");
     showInfobarToggle.checked = window.settings.windows.infobarWindow?.isOpen ?? false;
@@ -154,6 +156,20 @@ function initializeGeneralSection() {
 
         window.settings.windows.scrollStatsWindow = {
             ...(window.settings.windows.scrollStatsWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
+    });
+
+    showScrollHodToggle.addEventListener("change", async (event) => {
+
+        if (event.target.checked) {
+            window.scrollHodAPI.activate();
+        } else {
+            window.scrollHodAPI.deactivate();
+        }
+        window.settings.windows.scrollHodWindow = {
+            ...(window.settings.windows.scrollHodWindow || {}),
             isOpen: event.target.checked,
         };
         await window.settingsAPI.update(window.settings);

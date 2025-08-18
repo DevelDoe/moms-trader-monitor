@@ -19,6 +19,7 @@ const { createWizardWindow } = require("./windows/wizard");
 const { createProgressWindow } = require("./windows/progress");
 const { createScrollXpWindow } = require("./windows/scrollXp");
 const { createScrollStatsWindow } = require("./windows/scrollStats");
+const { createScrollHodWindow } = require("./windows/scrollHOD");
 const { createNewsWindow } = require("./windows/news");
 
 const isDevelopment = process.env.NODE_ENV === "development";
@@ -89,6 +90,7 @@ async function restoreWindows() {
         progress: "progressWindow",
         scrollXp: "scrollXpWindow",
         scrollStats: "scrollStatsWindow",
+        scrollHod: "scrollHodWindow",
         news: "newsWindow",
     };
 
@@ -162,6 +164,8 @@ function createWindowByName(name) {
             return createScrollXpWindow(isDevelopment);
         case "scrollStats":
             return createScrollStatsWindow(isDevelopment);
+        case "scrollHod":
+            return createScrollHodWindow(isDevelopment);
         case "news":
             return createNewsWindow(isDevelopment);
         default:

@@ -155,18 +155,10 @@ body {
     border-top: 1px solid gold;
     border-bottom: 1px solid gold;
     background-color: #333d2a;
-    animation: pulseNewHigh 1.2s infinite;
     width: 100vw;
 }
 
-@keyframes pulseNewHigh {
-    0% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0.7;
-    }
-}
+
 
 .alert.new-entry {
     box-sizing: border-box;

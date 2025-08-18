@@ -136,6 +136,47 @@ function getMarketDateString() {
     return est.toISOString().split("T")[0];
 }
 
+function asTime(v) {
+    const t = Date.parse(v);
+    return Number.isFinite(t) ? t : 0;
+}
+
+function collapseMSVArray(arr) {
+    if (!Array.isArray(arr)) return arr;
+    if (arr.length === 0) return undefined;
+    if (!arr.every((x) => x && typeof x === "object" && "value" in x)) return arr;
+
+    // choose the item with latest updatedAt (or last item if no timestamps)
+    let best = null;
+    for (const it of arr) {
+        const t = asTime(it.updatedAt);
+        if (!best || t >= best.t) best = { t, v: it.value };
+    }
+    return best ? best.v : arr;
+}
+
+function deepLatest(value) {
+    if (Array.isArray(value)) {
+        // Try to collapse MSV; if not MSV, map children
+        const collapsed = collapseMSVArray(value);
+        if (collapsed !== value) return collapsed;
+        return value.map(deepLatest);
+    }
+    if (value && typeof value === "object") {
+        const out = {};
+        for (const [k, v] of Object.entries(value)) out[k] = deepLatest(v);
+        return out;
+    }
+    return value;
+}
+
+function normalizeSymbol(raw) {
+    if (!raw || typeof raw !== "object") return raw;
+    const flat = deepLatest(raw);
+    if (flat.symbol) flat.symbol = String(flat.symbol).toUpperCase();
+    return flat;
+}
+
 class Store extends EventEmitter {
     constructor() {
         super();
@@ -218,69 +259,86 @@ class Store extends EventEmitter {
         this.emit("store-nuke");
     }
 
-    updateSymbols(symbolList) {
-        const prev = this.symbols; // keep old map
+    applyFull(items, version = 0) {
+        const list = Array.isArray(items) ? items : [];
+        if (!list.length) return;
 
-        this.symbols = new Map(
-            symbolList.map((s) => {
-                const sharesShort = s.statistics?.sharesShort ?? 0;
-                const floatShares = s.statistics?.floatShares ?? 0;
+        const prev = this.symbols;
+        const next = new Map();
 
-                const instHeld = s.ownership?.institutionsFloatPercentHeld ?? 0;
-                const instHeld01 = instHeld > 1 ? instHeld / 100 : instHeld;
+        for (const raw of list) {
+            const s = normalizeSymbol(raw);
+            if (!s?.symbol) continue;
 
-                const shortPercentOfFloat = floatShares > 0 ? Number(((sharesShort / floatShares) * 100).toFixed(2)) : 0;
-
-                const floatHeldByInstitutions = Number((floatShares * instHeld01).toFixed(2));
-
-                const computedBuffs = computeBuffsForSymbol(s, buffs, blockList);
-
-                // bring forward session fields if we had this symbol already
-                const old = prev.get(s.symbol) || {};
-                const sessionCarry = {
-                    xp: old.xp ?? 0,
-                    lv: old.lv ?? 1,
-                    totalXpGained: old.totalXpGained ?? 0,
-                    firstXpTimestamp: old.firstXpTimestamp,
-                    lastEvent: old.lastEvent,
-                    // keep existing buffs if you want them to persist; or prefer computedBuffs
-                    buffs: old.buffs ?? computedBuffs,
-                };
-
-                return [
-                    s.symbol,
-                    {
-                        ...s,
-                        statistics: {
-                            ...s.statistics,
-                            shortPercentOfFloat,
-                            floatHeldByInstitutions,
-                        },
-                        ...sessionCarry,
-                    },
-                ];
-            })
-        );
-
-        log.log(`[updateSymbols] Symbols list updated. Total symbols:`, this.symbols.size);
-
-        if (this._needsDailyReset) {
-            this.resetXpAndLv({ quiet: true });
-            this._needsDailyReset = false;
+            const old = prev.get(s.symbol) || {};
+            const sessionCarry = {
+                xp: old.xp ?? 0,
+                lv: old.lv ?? 1,
+                totalXpGained: old.totalXpGained ?? 0,
+                firstXpTimestamp: old.firstXpTimestamp,
+                lastEvent: old.lastEvent,
+                buffs: old.buffs ?? computeBuffsForSymbol(s, buffs, blockList),
+            };
+            next.set(s.symbol, { ...s, ...sessionCarry });
         }
 
-        // if (!isDevelopment) {
-        const keys = Array.from(this.symbols.keys());
-        subscribeToSymbolNews(keys);
-        (async () => {
-            for (const symbol of keys) {
-                await fetchHistoricalNews(symbol);
-                await sleep(200);
-            }
-        })();
-        // }
+        this.symbols = next;
+
+        // ⬇️ Match old behavior
+        if (!isDevelopment) {
+            const keys = Array.from(this.symbols.keys());
+            subscribeToSymbolNews(keys);
+            (async () => {
+                for (const symbol of keys) {
+                    await fetchHistoricalNews(symbol);
+                    await sleep(200);
+                }
+            })();
+        }
 
         this.emit("lists-update");
+    }
+
+    addSymbols(items = []) {
+        const list = Array.isArray(items) ? items : [];
+        if (!list.length) return;
+
+        const prev = this.symbols;
+        let changed = false;
+        const newlyAdded = [];
+
+        for (const raw of list) {
+            const s = normalizeSymbol(raw);
+            if (!s?.symbol) continue;
+
+            const old = prev.get(s.symbol) || {};
+            const sessionCarry = {
+                xp: old.xp ?? 0,
+                lv: old.lv ?? 1,
+                totalXpGained: old.totalXpGained ?? 0,
+                firstXpTimestamp: old.firstXpTimestamp,
+                lastEvent: old.lastEvent,
+                buffs: old.buffs ?? computeBuffsForSymbol(s, buffs, blockList),
+            };
+
+            const nextVal = { ...s, ...sessionCarry };
+            if (!prev.has(s.symbol)) newlyAdded.push(s.symbol);
+
+            prev.set(s.symbol, nextVal);
+            changed = true;
+        }
+
+        if (newlyAdded.length) {
+            subscribeToSymbolNews(newlyAdded);
+            (async () => {
+                for (const sym of newlyAdded) {
+                    await fetchHistoricalNews(sym);
+                    await sleep(200);
+                }
+            })();
+        }
+
+        if (changed) this.emit("lists-update");
     }
 
     addEvent(alert) {
@@ -377,16 +435,16 @@ class Store extends EventEmitter {
         ticker.buffs = ticker.buffs || {};
         ticker.buffs.volume = calculateVolumeImpact(alert.one_min_volume, alert.price, buffs);
 
-        if (ticker.lastEvent) {
-            if (ticker.lastEvent.dp > 0 && alert.hp > 0) {
-                const bounceBuff = this.getBuffFromJson("bounceBack");
-                if (bounceBuff) ticker.buffs.bounceBack = bounceBuff;
-            } else {
-                delete ticker.buffs.bounceBack;
-            }
-        } else {
-            delete ticker.buffs.bounceBack;
-        }
+        // if (ticker.lastEvent) {
+        //     if (ticker.lastEvent.dp > 0 && alert.hp > 0) {
+        //         const bounceBuff = this.getBuffFromJson("bounceBack");
+        //         if (bounceBuff) ticker.buffs.bounceBack = bounceBuff;
+        //     } else {
+        //         delete ticker.buffs.bounceBack;
+        //     }
+        // } else {
+        //     delete ticker.buffs.bounceBack;
+        // }
 
         // Use alert directly (no transform)
         ticker.lastEvent = {
@@ -576,7 +634,7 @@ class Store extends EventEmitter {
     updateXp(symbol, xp, lv) {
         this.xpState.set(symbol, { xp, lv });
 
-        log.log(`[XP] Updated ${symbol}: XP ${xp}, LV ${lv}`);
+        // log.log(`[XP] Updated ${symbol}: XP ${xp}, LV ${lv}`);
         this.emit("xp-updated", { symbol, xp, lv });
     }
 

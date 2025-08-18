@@ -99,7 +99,6 @@ contextBridge.exposeInMainWorld("heroesAPI", {
     onTickerUpdate: (callback) => ipcRenderer.on("lists-updated", callback),
     applyFilters: (min, max) => ipcRenderer.send("apply-filters", { min, max }),
     onNewsUpdate: (callback) => ipcRenderer.on("news-updated", (event, data) => callback(data)),
-    // onFocusEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
     getSymbols: () => ipcRenderer.invoke("get-all-symbols"),
     calculateVolumeImpact: (volume, price) => ipcRenderer.invoke("calculate-volume-impact", { volume, price }),
     getCurrentHeroes: () => ipcRenderer.invoke("get-tickers", "focus"),
@@ -128,6 +127,11 @@ contextBridge.exposeInMainWorld("scrollXpAPI", {
 contextBridge.exposeInMainWorld("scrollStatsAPI", {
     activate: () => ipcRenderer.send("activate-scrollStats"),
     deactivate: () => ipcRenderer.send("deactivate-scrollStats"),
+});
+
+contextBridge.exposeInMainWorld("scrollHodAPI", {
+    activate: () => ipcRenderer.send("activate-scrollHod"),
+    deactivate: () => ipcRenderer.send("deactivate-scrollHod"),
 });
 
 contextBridge.exposeInMainWorld("infobarAPI", {
@@ -159,6 +163,36 @@ contextBridge.exposeInMainWorld("newsAPI", {
     activate: () => ipcRenderer.send("activate-news"),
     deactivate: () => ipcRenderer.send("deactivate-news"),
     onUpdate: (callback) => ipcRenderer.on("news-updated", callback),
+});
+
+// electron-stores
+
+contextBridge.exposeInMainWorld("oracleStore", {
+    getLastAckCursor: () => ipcRenderer.invoke("get-last-ack-cursor"),
+    setLastAckCursor: (c) => ipcRenderer.invoke("set-last-ack-cursor", c),
+});
+
+// preload.js
+// preload.js
+contextBridge.exposeInMainWorld("top3API", {
+    set: (list) => {
+        // console.debug("[top3] preload -> set", list);
+        return ipcRenderer.invoke("top3:set", list); // ✅ invoke to hit ipcMain.handle
+    },
+    get: () => {
+        // console.debug("[top3] preload -> get()");
+        return ipcRenderer.invoke("top3:get");
+    },
+    subscribe: (cb) => {
+        // console.debug("[top3] preload -> subscribe()");
+        const handler = (_e, data) => {
+            console.debug("[top3] preload <- change", data);
+            cb?.(data);
+        };
+        ipcRenderer.on("top3:change", handler);
+        ipcRenderer.send("top3:subscribe");
+        return () => ipcRenderer.removeListener("top3:change", handler);
+    },
 });
 
 // HELPER FUNCTIONS

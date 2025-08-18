@@ -97,8 +97,11 @@ const { DateTime } = require("luxon");
 // SERVICES
 
 const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
+const { hydrateAndApplySymbols } = require("./collectors/arcane_api");
 const { startMockNews } = require("./collectors/news");
+const { getLastAckCursor, setLastAckCursor, setTop3, getTop3 } = require("./electronStores");
 const { chronos } = require("./collectors/chronos");
+const { oracle } = require("./collectors/oracle");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -127,6 +130,7 @@ const { createActiveWindow } = require("./windows/active");
 
 const { createScrollXpWindow } = require("./windows/scrollXp");
 const { createScrollStatsWindow } = require("./windows/scrollStats");
+const { createScrollHodWindow } = require("./windows/scrollHOD");
 
 const { createInfobarWindow } = require("./windows/infobar");
 
@@ -156,9 +160,20 @@ function launchMtpCollector() {
 
 let authInfo = null;
 
+// async function fetchSymbolsOnce() {
+//     try {
+//         const count = await fetchSymbolsFromServer();
+//         log.log(`✅ Fetched ${count} symbols.`);
+//         return count;
+//     } catch (err) {
+//         log.error("❌ Failed to fetch symbols:", err);
+//         throw err;
+//     }
+// }
+
 async function fetchSymbolsOnce() {
     try {
-        const count = await fetchSymbolsFromServer();
+        const count = await hydrateAndApplySymbols();
         log.log(`✅ Fetched ${count} symbols.`);
         return count;
     } catch (err) {
@@ -219,6 +234,8 @@ app.on("ready", async () => {
         restoreWindows();
 
         chronos(authInfo);
+        oracle(authInfo);
+
         // connectMTP();
         // require("./collectors/pipeMTP");
         // launchMtpCollector();
@@ -742,6 +759,10 @@ tickerStore.on("tracked-update", (list) => {
     broadcast("store:tracked:update", list);
 });
 
+// electron stores
+ipcMain.handle("get-last-ack-cursor", () => getLastAckCursor());
+ipcMain.handle("set-last-ack-cursor", (_evt, cursor) => setLastAckCursor(cursor));
+
 // Events
 ipcMain.on("activate-events", () => {
     try {
@@ -907,6 +928,20 @@ ipcMain.on("activate-scrollStats", () => {
 
 ipcMain.on("deactivate-scrollStats", () => {
     destroyWindow("scrollStats");
+});
+
+// Scroll HOD
+ipcMain.on("activate-scrollHod", () => {
+    try {
+        const win = createWindow("scrollHod", () => createScrollHodWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate scrollHod window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-scrollHod", () => {
+    destroyWindow("scrollHod");
 });
 
 let lastKey = ""; // optional: avoid rebroadcasting identical lists

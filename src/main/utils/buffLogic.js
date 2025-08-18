@@ -1,6 +1,7 @@
 // ./src/main/utils/buffLogic.js
 
 function sanitize(str) {
+    if (typeof str !== "string") return "";
     return str.toLowerCase().replace(/[^a-z0-9]/gi, "");
 }
 
@@ -13,7 +14,7 @@ function computeBuffsForSymbol(symbolData, buffList = [], blockList = []) {
     const floatBuff = getFloatBuff(symbolData, buffList);
     if (floatBuff) buffs.float = floatBuff;
 
-    const newsBuff = getNewsBuff(symbolData, blockList); // 👈 Now explicit
+    const newsBuff = getNewsBuff(symbolData, buffList, blockList);
     if (newsBuff) buffs.news = newsBuff;
 
     const ownershipBuff = getOwnershipBuff(symbolData, buffList);
@@ -86,8 +87,7 @@ function getFloatBuff(symbolData, buffList = []) {
           };
 }
 
-// 🧱 Minimal example using blockList
-function getNewsBuff(symbolData) {
+function getNewsBuff(symbolData, buffList = [], blockList = []) {
     const news = symbolData.News || [];
 
     if (!Array.isArray(news) || news.length === 0) return null;
@@ -144,13 +144,13 @@ function getOwnershipBuff(symbolData, buffList = []) {
 
 function getIndustryBuff(symbolData, buffList = []) {
     const profile = symbolData.profile || {};
-    const summary = profile.longBusinessSummary?.toLowerCase() || "";
-    const companyName = profile.companyName?.toLowerCase() || "";
-    const industry = profile.industry || "";
+    const summary = typeof profile.longBusinessSummary === "string" ? profile.longBusinessSummary.toLowerCase() : "";
+    const companyName = typeof profile.companyName === "string" ? profile.companyName.toLowerCase() : "";
+    const industryL = typeof profile.industry === "string" ? profile.industry.toLowerCase() : "";
 
     const findFromBuffList = (key) => buffList.find((b) => b.key === key) || {};
 
-    if (industry === "Biotechnology" || summary.includes("biotech") || summary.includes("biotechnology") || companyName.includes("biopharma")) {
+    if (industryL === "biotechnology" || summary.includes("biotech") || summary.includes("biotechnology") || companyName.includes("biopharma")) {
         const def = findFromBuffList("bio");
         return {
             key: "bio",

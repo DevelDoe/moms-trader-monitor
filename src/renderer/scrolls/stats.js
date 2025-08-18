@@ -5,6 +5,16 @@ const up = (s) => String(s || "").toUpperCase();
 let trackedTickers = []; // ← persisted order from settings
 let _renderKey = ""; // micro-perf: skip unchanged renders
 
+let _top3Debounce = null;
+function pushTop3Debounced(entries) {
+    clearTimeout(_top3Debounce);
+    _top3Debounce = setTimeout(() => {
+        try {
+            window.top3API?.set?.(entries);
+        } catch {}
+    }, 150);
+}
+
 function getSymbolLength() {
     return Math.max(1, Number(window.settings?.top?.symbolLength) || 25);
 }
@@ -87,6 +97,13 @@ document.addEventListener("DOMContentLoaded", async () => {
               </div>`;
             })
             .join("");
+
+        const ranked = display.slice(0, 3).map((h, i) => ({
+            symbol: up(h.hero),
+            rank: i + 1,
+            score: Number(h.score ?? 0),
+        }));
+        pushTop3Debounced(ranked);
 
         // click handler
         container.querySelectorAll(".symbol").forEach((el) => {

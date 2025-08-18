@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="xp-line ellipsis" style="${dullStyle}; color: gray;">
             <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
             <strong class="symbol" style="background: ${bg};">
-              ${h.hero} <span class="lv">${formatPrice(h.price)}</span>
+              ${h.hero} 
             </strong>
             <span style="font-weight: 600; color: ${getXpColorByRank(i, viewList.length)}; opacity: 0.85; margin-left: 4px; font-size: 1rem;">
               ${abbreviateXp(h.totalXpGained)}

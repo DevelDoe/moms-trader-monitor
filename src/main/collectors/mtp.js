@@ -161,41 +161,6 @@ const connectMTP = () => {
     createWebSocket();
 };
 
-setInterval(() => {
-    if (messageQueue.length === 0) return;
-
-    const scannerWindow = windows.scanner;
-    const batch = messageQueue.splice(0, ALERT_DISPATCH_BATCH);
-
-    for (const alert of batch) {
-        const event = transformEvent(alert);
-
-        // Store
-        const tickerStore = require("../store");
-        if (tickerStore?.addEvent) tickerStore.addEvent(alert);
-
-        // Scanner
-        if (scannerWindow?.webContents && !scannerWindow.webContents.isDestroyed()) {
-            scannerWindow.webContents.send("ws-alert", alert);
-        }
-
-        // Heroes
-        if (windows.heroes?.webContents && !windows.heroes.isDestroyed()) {
-            windows.heroes.webContents.send("ws-events", [event]);
-        }
-
-        // Frontline
-        if (windows.frontline?.webContents && !windows.frontline.isDestroyed()) {
-            windows.frontline.webContents.send("ws-events", [event]);
-        }
-
-        // Progress
-        if (windows.progress?.webContents && !windows.progress.isDestroyed()) {
-            windows.progress.webContents.send("ws-events", [event]);
-        }
-    }
-}, ALERT_DISPATCH_INTERVAL);
-
 // ✅ Debounced function (Ensures only one fetch per second)
 const debouncedFetchSymbols = debounce(async () => {
     if (isFetchingSymbols) {

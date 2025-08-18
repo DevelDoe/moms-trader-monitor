@@ -1,4 +1,6 @@
 // Global object to store chart instances
+
+// todo: price 
 window.ownershipCharts = {};
 const symbolColors = {};
 
@@ -353,9 +355,9 @@ function mapScoreToEnergy(score) {
     if (score >= 100) return "🌟 EXCELLENT";
     if (score >= 50) return "👍 GOOD";
     if (score >= 0) return "🙂 OK";
-    if (score >= -25) return "😣 FAIR";
-    if (score >= -50) return "👎 WEAK"; // Notice: -1 to -100
-    return "💀 DEAD"; // -101 or worse
+    if (score >= -25) return "😬 POOR";
+    if (score >= -50) return "😣 WEAK"; // Notice: -1 to -100
+    return "💀 BAD"; // -101 or worse
 }
 
 function calculateScore(heroBuffs = {}, baseScore = 0) {

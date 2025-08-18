@@ -103,6 +103,10 @@ body {
     accent-color: #ff9d2f;
 }
 
+#login-container label {
+    user-select: none;
+}
+
 /* Button */
 #login-button {
     height: 42px;

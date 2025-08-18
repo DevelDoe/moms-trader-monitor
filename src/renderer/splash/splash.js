@@ -8,9 +8,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     
 
     window.electronAPI.onSymbolsFetched(async (_event, symbolCount) => {
-        // ...your existing spinner/login logic...
-
-        // set the image once loading is done
         setBackgroundWhenReady("../../../assets/images/splash.jpg");
     });
 

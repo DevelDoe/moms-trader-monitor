@@ -81,17 +81,9 @@ const createWebSocket = () => {
             // Store
             if (tickerStore?.addEvent) tickerStore.addEvent(msg.payload);
 
-            // Events
-            if (windows.scanner?.webContents && !windows.scanner.webContents.isDestroyed()) {
-                windows.scanner.webContents.send("ws-alert", msg.payload);
-            }
-            // Frontline
-            if (windows.frontline?.webContents && !windows.frontline.webContents.isDestroyed()) {
-                windows.frontline.webContents.send("ws-alert", msg.payload);
-            }
-            // Heroes
-            if (windows.heroes?.webContents && !windows.heroes.isDestroyed()) {
-                windows.heroes.webContents.send("ws-alert", msg.payload);
+            if (msg.type === "alert") {
+                tickerStore?.addEvent?.(msg.payload);
+                broadcastAlert(msg.payload);
             }
         }
 
@@ -131,6 +123,14 @@ const createWebSocket = () => {
         log.error("[chronos] ❌ Unexpected response:", res.statusCode);
     });
 };
+
+function broadcastAlert(payload) {
+    for (const w of [windows.scanner, windows.frontline, windows.heroes, windows.scrollHod]) {
+        if (w?.webContents && !w.webContents.isDestroyed()) {
+            w.webContents.send("ws-alert", payload);
+        }
+    }
+}
 
 const reconnectAfterDelay = () => {
     if (ws && ws.readyState !== WebSocket.CLOSED) {

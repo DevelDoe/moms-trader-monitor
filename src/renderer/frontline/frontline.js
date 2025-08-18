@@ -51,6 +51,40 @@ let debugSamples = 10;
 console.log("🎯 Fresh start mode:", window.isDev);
 console.log("🐛 isDev mode:", window.isDev);
 
+// --- Top3 rank cache (module-wide) ---
+let rankMap = new Map();
+const rebuildRankMap = (entries = []) => (rankMap = new Map(entries.map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0])));
+
+let __top3InitDone = false; // ✅ guard against double subscribe
+let __top3Unsub = null;
+
+async function initTop3() {
+    if (__top3InitDone) return; // ✅ don’t register twice
+    __top3InitDone = true;
+
+    try {
+        const { entries } = await window.top3API.get(); // prime cache
+        rebuildRankMap(entries || []);
+    } catch {}
+
+    __top3Unsub = window.top3API.subscribe?.(({ entries }) => {
+        rebuildRankMap(entries || []);
+        // repaint medals for visible cards (cheap + surgical)
+        document.querySelectorAll(".ticker-card").forEach((card) => {
+            const sym = card.dataset.symbol?.trim().toUpperCase();
+            if (!sym) return;
+            const medal = medalForRank(rankMap.get(sym));
+            const medalEl = card.querySelector(".lv-medal");
+            if (medalEl) medalEl.textContent = medal;
+        });
+    });
+}
+
+// optional: cleanup when page unloads/hot-reloads
+window.addEventListener("beforeunload", () => {
+    if (__top3Unsub) __top3Unsub();
+});
+
 // ============================
 // Document Ready
 // ============================
@@ -58,12 +92,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (window.isDev) console.log("⚡ Frontline DOM loaded");
 
     try {
+        await initTop3();
         await initializeBuffs();
         await initializeFrontline();
         setupListeners();
     } catch (err) {
         console.error("❌ Frontline initialization failed:", err);
     }
+    
 });
 
 async function initializeBuffs() {
@@ -299,6 +335,17 @@ function debounce(fn, delay) {
     };
 }
 
+function medalForRank(rank) {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return "";
+}
+
+function getSymbolMedal(symbol) {
+    return medalForRank(rankMap.get(symbol.toUpperCase()));
+}
+
 const debouncedRenderAll = debounce(renderAll, 80);
 const debouncedUpdateCardDOM = debounce(updateCardDOM, 30);
 
@@ -365,9 +412,6 @@ function updateCardDOM(hero) {
         volumeEl.style.color = volumeImpact.style.color;
     }
 
-    const priceEl = card.querySelector(".lv");
-    if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
-
     const now = Date.now();
     const lastUpdate = state.lastUpdate || now;
     const timeSinceUpdate = now - lastUpdate;
@@ -418,6 +462,12 @@ function updateCardDOM(hero) {
         const buffsInline = sortedBuffs.map((buff) => `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`).join("");
         buffsContainer.innerHTML = buffsInline;
     }
+
+    const medalEl = card.querySelector(".lv-medal");
+    if (medalEl) medalEl.textContent = getSymbolMedal(hero);
+
+    const priceEl = card.querySelector(".lv-price");
+    if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
 }
 
 function renderCard(state) {
@@ -477,7 +527,11 @@ function renderCard(state) {
     card.innerHTML = `
     <div class="ticker-header">
         <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}">
-            ${hero} <span class="lv">$${price.toFixed(2)}</span>
+        ${state.hero}
+        <span class="lv">
+            <span class="lv-medal">${getSymbolMedal(state.hero)}</span>
+            <span class="lv-price">$${state.price.toFixed(2)}</span>
+        </span>
         </div>
         <div class="ticker-info">
             <div class="ticker-data">

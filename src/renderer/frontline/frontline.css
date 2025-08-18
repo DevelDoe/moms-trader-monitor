@@ -1,4 +1,3 @@
-
 body {
     color: #fff;
     /* font-family: "Press Start 2P", monospace;  */
@@ -57,8 +56,9 @@ body::-webkit-scrollbar {
 
 .ticker-card:nth-child(-n + 3) .ticker-symbol {
     font-size: 30px;
-    width: 120px;
-    line-height: 18px;
+    width: 130px;
+    height: 40px;
+    line-height: 30px;
     padding: 6px 2px;
 }
 .ticker-symbol {
@@ -75,30 +75,14 @@ body::-webkit-scrollbar {
     cursor: pointer;
     margin-right: 4px;
     position: relative;
-    line-height: 22px; /* tune this if needed */
+    line-height: 24px; /* tune this if needed */
 }
 
 .ticker-symbol:hover {
     color: #a6fcca !important;
 }
 
-.ticker-card:nth-child(-n + 3) .lv {
-    bottom: 2px;
-    font-size: 14px;
-}
-.lv {
-    color: white;
-    font-weight: 300;
-    position: absolute;
-    right: 2px;
-    bottom: 6px;
-    font-size: 11px;
-    right: 1px;
-    bottom: 2px;
-    background-color: #1b1f24;
-    padding: 0px 1px;
-    border-radius: 1px;
-}
+
 
 .ticker-price {
     color: #ddd;
@@ -261,14 +245,17 @@ body::-webkit-scrollbar {
     transition: opacity 0.5s ease, filter 0.5s ease; /* ✅ Smooth fade out only */
 }
 
-
 .change-flash {
     animation: flashScale 0.3s ease;
 }
 
 @keyframes flashScale {
-    0% {  opacity: 1; }
-    100% {  opacity: 1; }
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 
 .change-placeholder {
@@ -283,4 +270,29 @@ body::-webkit-scrollbar {
 
 .change-placeholder.dp-damage {
     color: #ff0040;
+}
+.lv {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+}
+
+.lv-medal {
+    position: absolute;
+    right: 0px;
+    top: -13px;
+    background-color: transparent;
+    font-size: 16px;
+    z-index: 100;
+}
+
+.lv-price {
+    font-size: 14px;
+    right: 2px;
+    bottom: 0px;
+    background-color: #1b1f24;
+}
+.ticker-card:nth-child(-n + 3) .lv-price {
+    bottom: 2px;
+    font-size: 18px;
 }
