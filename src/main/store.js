@@ -285,7 +285,7 @@ class Store extends EventEmitter {
         this.symbols = next;
 
         // ⬇️ Match old behavior
-        if (isDevelopment) {
+        if (!isDevelopment) {
             const keys = Array.from(this.symbols.keys());
             subscribeToSymbolNews(keys);
             (async () => {
