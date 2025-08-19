@@ -41,31 +41,7 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "VELO",
-      "STAI",
-      "EZGO",
-      "GLE",
-      "TSSI",
-      "TEST",
-      "CRMD",
-      "BINI",
-      "FLNT",
-      "MPU",
-      "VCIG",
-      "FTFT",
-      "NUVB",
-      "TOI",
-      "RIME",
-      "YMT",
-      "LASE",
-      "CGTX",
-      "PPSI",
-      "GMHS",
-      "NLSP",
-      "UMAC",
-      "IVF",
-      "WHLR",
-      "MBI"
+      "PPCB"
     ]
   },
   "scanner": {
@@ -94,9 +70,9 @@
     },
     "infobarWindow": {
       "width": 756,
-      "height": 80,
+      "height": 79,
       "x": 1751,
-      "y": 1069,
+      "y": 1070,
       "isOpen": true
     },
     "wizardWindow": {

@@ -243,7 +243,7 @@ app.on("ready", async () => {
         // connectMTP();
         // require("./collectors/pipeMTP");
         // launchMtpCollector();
-        flushMessageQueue();
+        // flushMessageQueue();
 
         if (!isDevelopment) connectBridge();
 
