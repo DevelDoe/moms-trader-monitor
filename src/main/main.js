@@ -151,16 +151,16 @@ const isScheduledRestart = process.argv.includes("--scheduled-restart");
 const { spawn } = require("child_process");
 
 let mtpProcess;
-function launchMtpCollector() {
-    const binaryPath = path.join(__dirname, "collectors", "mtp_collector.exe");
+// function launchMtpCollector() {
+//     const binaryPath = path.join(__dirname, "collectors", "mtp_collector.exe");
 
-    mtpProcess = spawn(binaryPath, [], {
-        detached: false, // make it controllable
-        stdio: isDevelopment ? "inherit" : "ignore",
-    });
+//     mtpProcess = spawn(binaryPath, [], {
+//         detached: false, // make it controllable
+//         stdio: isDevelopment ? "inherit" : "ignore",
+//     });
 
-    if (isDevelopment) log.log("🚀 MTP collector launched");
-}
+//     if (isDevelopment) log.log("🚀 MTP collector launched");
+// }
 
 let authInfo = null;
 
@@ -312,10 +312,10 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-    if (mtpProcess && !mtpProcess.killed) {
-        mtpProcess.kill();
-        console.log("🛑 MTP collector terminated on app quit");
-    }
+    // if (mtpProcess && !mtpProcess.killed) {
+    //     mtpProcess.kill();
+    //     console.log("🛑 MTP collector terminated on app quit");
+    // }
 });
 
 process.on("exit", () => {

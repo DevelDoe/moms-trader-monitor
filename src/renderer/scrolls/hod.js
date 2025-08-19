@@ -40,6 +40,10 @@ let HOD_ZONE_SCALE = 1.0;
 window.MIN_AUDIO_INTERVAL_MS ??= 80;
 window.lastAudioTime ??= 0;
 
+// Debounce settings
+const GLOBAL_CHIME_DEBOUNCE_MS = 1200; // coalesce bursts across symbols
+let lastGlobalChimeAt = 0;
+
 const HOD_EVICT_MS = 60_000; // evict a row N ms after it hit HOD
 const HOD_SYMBOL_LENGTH = 10; // rows to show
 const HOD_INACTIVE_MS = 1000; // dull UI if older than this (ms)
@@ -64,6 +68,22 @@ const TICK_VOL_DEFAULT = 0.06;
 let audioReady = false;
 let magicBase, ticksBase;
 const lastHodChimeAt = new Map();
+
+// Track last chime per symbol (you already have this map declared above)
+function shouldPlayHodChime(sym) {
+    const now = Date.now();
+
+    // Global debounce: block if we chimed too recently for any symbol
+    if (now - lastGlobalChimeAt < GLOBAL_CHIME_DEBOUNCE_MS) return false;
+
+    // Per-symbol cooldown
+    const last = lastHodChimeAt.get(sym) || 0;
+    if (now - last < HOD_CHIME_COOLDOWN_MS) return false;
+
+    lastHodChimeAt.set(sym, now);
+    lastGlobalChimeAt = now;
+    return true;
+}
 
 function setupAudio() {
     if (magicBase && ticksBase) return;
@@ -348,7 +368,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const isUptick = Number.isFinite(p.hp) && p.hp > 0;
 
             if (isHOD) {
-                play(magicBase, getChimeVol(state.settings));
+                if (shouldPlayHodChime(sym)) {
+                    play(magicBase, getChimeVol(state.settings));
+                }
                 t.hodAt = Date.now();
             } else if (inWindow && isUptick) {
                 play(ticksBase, getTickVol(state.settings));
