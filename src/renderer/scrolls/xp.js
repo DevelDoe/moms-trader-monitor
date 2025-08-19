@@ -172,12 +172,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const bg = getSymbolColor(h.hero);
                 const age = now - (h.lastUpdate || 0);
                 const isInactive = age > inactiveThreshold;
-                const dullStyle = isInactive ? "opacity: 0.4; filter: grayscale(0.8);" : "";
+                const dullStyle = isInactive ? "opacity: 0.8; filter: grayscale(0.8);" : "";
 
                 return `
-          <div class="xp-line ellipsis" style="${dullStyle}; color: gray;">
+          <div class="xp-line ellipsis" style=" color: gray;">
             <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
-            <strong class="symbol" style="background: ${bg};">
+            <strong class="symbol" style="background: ${bg}; ${dullStyle};">
               ${h.hero} 
             </strong>
             <span style="font-weight: 600; color: ${getXpColorByRank(i, viewList.length)}; opacity: 0.85; margin-left: 4px; font-size: 1rem;">

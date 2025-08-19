@@ -46,7 +46,7 @@ let lastGlobalChimeAt = 0;
 
 const HOD_EVICT_MS = 60_000; // evict a row N ms after it hit HOD
 const HOD_SYMBOL_LENGTH = 10; // rows to show
-const HOD_INACTIVE_MS = 1000; // dull UI if older than this (ms)
+const HOD_INACTIVE_MS = 100; // dull UI if older than this (ms)
 const PRICE_MOVE_EPS = 0; // any price change counts as movement
 
 /* 2) HOD math */
@@ -213,15 +213,17 @@ function render() {
             const rowGlow = atHigh ? "box-shadow:0 0 10px rgba(255,210,74,0.3);" : "";
 
             const age = now - (t.lastUpdate || 0);
-            const dullStyle = age > HOD_INACTIVE_MS ? "opacity:0.75; filter:grayscale(0.8);" : "";
+            const dullStyle = age > HOD_INACTIVE_MS ? "opacity:0.8; filter:grayscale(0.8);" : "";
+
+            // ${rowGlow}
 
             return `
       <div class="xp-line ellipsis" data-ath="${atHigh ? 1 : 0}">
         <span class="text-tertiary" style="display:inline-block; min-width:24px; text-align:right; margin-right:4px;">${idx + 1}.</span>
         <strong class="symbol" style="background:${getSymbolColor(t.hero)}; ${dullStyle}">${t.hero}</strong>
-        <span style="${rowGlow} position:absolute; left:120px; font-weight:600; display:inline-block; font-size:15px; line-height:1; text-align:left;">
+        <span style="position:absolute; left:120px; font-weight:600; display:inline-block; font-size:15px; line-height:1; text-align:left;">
           <div style="background:transparent; color:${GOLD_HEX}">${formatPrice(t.sessionHigh)}</div>
-          <div class="${blinkClass}" style="${blinkStyle} background:transparent; color:${silverTone(t.pctBelowHigh)};">${formatPrice(t.price)}</div>
+          <div class="${blinkClass}" style=" ${blinkStyle} background:transparent; color:${silverTone(t.pctBelowHigh)};">${formatPrice(t.price)}</div>
         </span>
       </div>`;
         })

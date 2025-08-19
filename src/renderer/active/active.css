@@ -81,8 +81,8 @@ body {
 
 #ownershipChart-summary,
 #ownershipChart-stats {
-    width: 150 !important; /* you wrote 35w, fixed it to 35vw */
-    height: 150px !important;
+    width: 145px !important; /* you wrote 35w, fixed it to 35vw */
+    height: 145px !important;
 }
 
 /* Two-column layout using Flexbox */
@@ -133,8 +133,8 @@ body {
 }
 
 .chart {
-    padding-top: 19px !important;
-    margin-top: 19px;
+    padding-top: 18px !important;
+    margin-top: 18px;
 }
 
 .about {
@@ -154,8 +154,6 @@ body {
 .about {
     -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0.1));
 }
-
-
 
 /* Hide all tab content by default */
 .tabcontent {
@@ -496,3 +494,53 @@ body {
     font-weight: normal;
     color: #888888; /* Or any lighter gray */
 }
+
+/* ===================== NEWS STYLING ===================== */
+.news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.news-item {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+.news-item:last-child {
+    border-bottom: none;
+}
+.news-item:nth-child(even) {
+    opacity: 0.85;
+}
+
+.news-item h5 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #ddd;
+    white-space: normal; /* allow wrapping */
+    overflow: visible; /* don’t hide overflow */
+    text-overflow: unset; /* disable ellipsis */
+    word-break: break-word; /* prevent layout break on long words/tickers */
+}
+.news-time {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #999;
+    opacity: 0.9;
+}
+
+/* Sentiment colors */
+.news-item.bullish h5 {
+    color: #22c55e;
+} /* bright green */
+.news-item.bearish h5 {
+    color: #ef4444;
+} /* red */
+.news-item.neutral h5 {
+    color: #aaa;
+} /* gray */

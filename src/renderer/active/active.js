@@ -1,6 +1,6 @@
 // Global object to store chart instances
 
-// todo: price 
+// todo: price
 window.ownershipCharts = {};
 const symbolColors = {};
 
@@ -280,59 +280,62 @@ function updateUI(symbolData) {
 
     const filteredNews = (Array.isArray(symbolData.News) ? symbolData.News : []).filter((newsItem) => {
         const headline = sanitize(newsItem.headline || "");
-
-        // ❌ Blocked by blockList
         const isBlocked = blockList.some((blocked) => headline.includes(sanitize(blocked)));
-
-        // ❌ Blocked if multiple symbols
         const isMultiSymbol = Array.isArray(newsItem.symbols) && newsItem.symbols.length > 1;
-
         return !isBlocked && !isMultiSymbol;
     });
 
     if (filteredNews.length === 0) {
         newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no recent news available</p>';
     } else {
-        filteredNews.forEach((newsItem) => {
+        const sortedNews = [...filteredNews].sort((a, b) => {
+            const ta = parseTs(a.updated_at ?? a.created_at);
+            const tb = parseTs(b.updated_at ?? b.created_at);
+            return tb - ta; // newest first
+        });
+
+        sortedNews.forEach((newsItem) => {
             const sentimentClass = getNewsSentimentClass(newsItem);
+            const ts = newsItem.updated_at ?? newsItem.created_at;
+            const when = ts ? formatNewsTime(ts) : "";
 
             const itemDiv = document.createElement("div");
             itemDiv.className = `news-item ${sentimentClass}`;
-
-            itemDiv.innerHTML = `<h5>${newsItem.headline || "Untitled"}</h5>`;
-
-            //     itemDiv.innerHTML = `
-            //     <h5>${newsItem.headline || "Untitled"}</h5>
-            //     <p>${newsItem.summary || ""}</p>
-            // `;
-
+            itemDiv.innerHTML = `
+            <h5>${newsItem.headline || "Untitled"}</h5>
+            ${when ? `<div class="news-time">${when}</div>` : ""}
+          `;
             newsContainer.appendChild(itemDiv);
         });
     }
 
-    // news banner
-    //     const latestNewsDiv = document.getElementById("latest-news");
-    //     latestNewsDiv.innerHTML = ""; // Clear existing
+    /* --- helpers --- */
+    function parseTs(t) {
+        if (t == null) return NaN;
+        if (typeof t === "number") return t < 1e12 ? t * 1000 : t; // secs → ms
+        const n = Number(t);
+        if (!Number.isNaN(n)) return parseTs(n);
+        const d = new Date(t).getTime();
+        return Number.isNaN(d) ? NaN : d;
+    }
 
-    //     if (filteredNews.length > 0) {
-    //         latestNewsDiv.style.display = "block"; // ✅ Show it
+    function formatNewsTime(ts) {
+        const ms = parseTs(ts);
+        if (Number.isNaN(ms)) return "";
+        const d = new Date(ms);
+        const now = new Date();
 
-    //         const sortedNews = filteredNews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    //         const latest = sortedNews[0];
+        const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
 
-    //         const latestDiv = document.createElement("div");
-    //         latestDiv.className = "latest-news-item";
-    //         latestDiv.innerHTML = `
-    //         <div class="scroll-mask">
-    //   <div class="scrolling-text"><strong>📰 ${latest.headline}</strong></div>
-    // </div>
-    //         <p>${latest.summary || ""}</p>
-    //     `;
-
-    //         latestNewsDiv.appendChild(latestDiv);
-    //     } else {
-    //         latestNewsDiv.style.display = "none"; // ✅ Hide completely if no news
-    //     }
+        return sameDay
+            ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : d.toLocaleString([], {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+              });
+    }
 
     renderOwnershipChart(symbolData, "ownershipChart-summary");
     renderOwnershipChart(symbolData, "ownershipChart-stats");

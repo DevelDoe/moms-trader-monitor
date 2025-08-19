@@ -26,7 +26,8 @@
       "shares are trading",
       "trading halt",
       "crude oil moves lower",
-      "Market-moving news"
+      "Market-moving news",
+      "is gaining today"
     ],
     "bullishList": [
       "FDA Approves",
@@ -41,31 +42,31 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "FTK",
-      "SEPN",
       "STAI",
-      "PRFX",
-      "TSSI",
+      "PSQH",
+      "SES",
       "NBY",
-      "GLE",
-      "LASE",
-      "TOI",
-      "TERN",
-      "VELO",
+      "VCIG",
+      "TZUP",
+      "FLNT",
       "BINI",
-      "TRIB",
-      "ICU",
-      "XCH",
-      "VFF",
-      "OPINL",
-      "PGEN",
-      "LMFA",
-      "GXAI",
-      "UGP",
+      "VELO",
+      "SRPT",
+      "GPUS",
       "DVLT",
+      "SNGX",
       "TEST",
-      "WHLR",
-      "RCAT"
+      "ASBP",
+      "DPRO",
+      "YMT",
+      "TRIB",
+      "FLYE",
+      "SHOT",
+      "LUCD",
+      "FTFT",
+      "CLVT",
+      "XPON",
+      "EZPW"
     ]
   },
   "scanner": {
@@ -90,7 +91,7 @@
       "height": 805,
       "x": 25,
       "y": 9,
-      "isOpen": false
+      "isOpen": true
     },
     "infobarWindow": {
       "width": 756,
@@ -150,16 +151,16 @@
     },
     "scrollStatsWindow": {
       "isOpen": true,
-      "width": 175,
-      "height": 1085,
-      "x": 2507,
-      "y": 537
+      "width": 182,
+      "height": 1084,
+      "x": 2495,
+      "y": 538
     },
     "newsWindow": {
       "width": 757,
       "height": 534,
-      "x": 1750,
-      "y": 537,
+      "x": 1751,
+      "y": 538,
       "isOpen": true
     },
     "scrollHodWindow": {

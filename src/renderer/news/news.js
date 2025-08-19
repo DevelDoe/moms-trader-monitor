@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.newsAPI.onUpdate(async () => {
         await refreshNewsFromStore();
     });
+
+    
 });
 
 // --- deterministic hue (match Python: sum(ord)*37 % 360) ---
