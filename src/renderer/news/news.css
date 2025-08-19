@@ -1,0 +1,210 @@
+/* news.css — minimal, readable list */
+:root {
+    --bg: #1b1f24;
+    --panel: #1b1f24;
+    --fg: #e6e8ee;
+    --fg-dim: #9aa0ac;
+    --accent: #3a7afe;
+    --row: 24px;
+    --pad-x: 10px;
+    --radius: 10px;
+    --sep: #1f2430;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    color: var(--fg);
+    background: #1b1f24;
+    font: 16px/1.4 ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    padding: 0;
+}
+
+/* window drag rules */
+body.draggable {
+    -webkit-app-region: drag;
+}
+
+footer {
+    height: 20px;
+    background: var(--panel);
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+/* panel */
+#news-wrapper {
+    height: 100%;
+    padding: 0;
+    background: var(--panel);
+    overflow: hidden;
+    margin: 0 auto;
+    margin-left: -5px;
+}
+
+/* list */
+#news-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 100%;
+    overflow: auto;
+    scrollbar-width: thin;
+    margin-right: 7px;
+}
+#news-list::-webkit-scrollbar {
+    width: 10px;
+}
+#news-list::-webkit-scrollbar-thumb {
+    background: #2b3140;
+    border-radius: 8px;
+}
+#news-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.meta-row .time {
+    font-size: 0.8em;
+    opacity: 0.7;
+
+}
+/* rows: time | symbols | headline */
+#news-list li {
+    display: grid;
+    grid-template-columns: 72px auto 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 0px var(--pad-x);
+    min-height: var(--row);
+    white-space: nowrap;
+    margin-bottom: 4px;
+}
+#news-list li:last-child {
+    border-bottom: 0;
+}
+#news-list li:hover {
+    background: rgba(58, 122, 254, 0.08);
+}
+
+/* time */
+#news-list .time {
+    font-size: 14px;
+    color: #ff5b63;
+    opacity: 1;
+    font-weight: 600;
+}
+
+/* symbols container (holds multiple badges inline) */
+#news-list .symbols {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0px;
+    overflow: hidden;
+    line-height: 17px;
+}
+
+/* individual badge */
+#news-list .badge {
+    display: inline-block;
+    border: 2px solid transparent;
+    border-radius: 1px;
+    font-weight: 400;
+    font-size: 22px;
+    color: #ffffff;
+    white-space: nowrap;
+    width: 72px !important;
+    padding-left: 0px;
+    padding-bottom: 2px;
+    padding-top: 3px;
+    height: 100%;
+    
+}
+
+/* headline (ellipsis) */
+#news-list .headline {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    opacity: 0.85;
+    font-weight: 400;
+}
+
+/* empty state */
+#news-list li.empty {
+    grid-template-columns: 1fr;
+    color: var(--fg-dim);
+    font-style: italic;
+    text-align: center;
+}
+
+/* responsive: hide symbols on small widths */
+@media (max-width: 500px) {
+    #news-list li {
+        grid-template-columns: 64px 1fr;
+    }
+    #news-list .symbols {
+        display: none;
+    }
+}
+
+/* 12 hue buckets (0..330 step 30): background + border color */
+.badge-h0 {
+    background: hsla(0, 80%, 45%, 0.5);
+}
+.badge-h30 {
+    background: hsla(30, 80%, 45%, 0.5);
+}
+.badge-h60 {
+    background: hsla(60, 80%, 45%, 0.5);
+}
+.badge-h90 {
+    background: hsla(90, 80%, 45%, 0.5);
+}
+.badge-h120 {
+    background: hsla(120, 80%, 45%, 0.5);
+}
+.badge-h150 {
+    background: hsla(150, 80%, 45%, 0.5);
+}
+.badge-h180 {
+    background: hsla(180, 80%, 45%, 0.5);
+}
+.badge-h210 {
+    background: hsla(210, 80%, 45%, 0.5);
+}
+.badge-h240 {
+    background: hsla(240, 80%, 45%, 0.5);
+}
+.badge-h270 {
+    background: hsla(270, 80%, 45%, 0.5);
+}
+.badge-h300 {
+    background: hsla(300, 80%, 45%, 0.5);
+}
+.badge-h330 {
+    background: hsla(330, 80%, 45%, 0.5);
+}
+
+
+.drag-area {
+    height: 30px;
+    -webkit-app-region: drag; /* Enable dragging */
+    position: absolute;
+    top: 0;
+    width: 90%;
+    z-index: 1000;
+}

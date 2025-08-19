@@ -1,0 +1,22 @@
+{
+	"top": {
+		"entries": [
+			{
+				"symbol": "A",
+				"rank": 1,
+				"score": null
+			},
+			{
+				"symbol": "B",
+				"rank": 2,
+				"score": null
+			},
+			{
+				"symbol": "C",
+				"rank": 3,
+				"score": null
+			}
+		],
+		"updatedAt": 1755607931816
+	}
+}
