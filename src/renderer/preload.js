@@ -173,7 +173,6 @@ contextBridge.exposeInMainWorld("oracleStore", {
 });
 
 // preload.js
-// preload.js
 contextBridge.exposeInMainWorld("top3API", {
     set: (list) => {
         // console.debug("[top3] preload -> set", list);

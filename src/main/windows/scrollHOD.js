@@ -32,15 +32,15 @@ function createScrollHodWindow(isDevelopment) {
 
     window.loadFile(path.join(__dirname, "../../renderer/scrolls/hod.html"));
 
-    window.webContents.once("did-finish-load", () => {
-        if (!window.__hodReloadedOnce) {
-            window.__hodReloadedOnce = true; // guard against loops
-            setTimeout(() => {
-                // small delay so first paint commits
-                window.webContents.reloadIgnoringCache(); // or: window.reload()
-            }, 50);
-        }
-    });
+// window.webContents.once("did-finish-load", () => {
+//     if (!window.__hodReloadedOnce) {
+//         window.__hodReloadedOnce = true; // guard against loops
+//         setTimeout(() => {
+//             // small delay so first paint commits
+//             window.webContents.reloadIgnoringCache(); // or: window.reload()
+//         }, 200);
+//     }
+// });
 
     if (isDevelopment) {
         window.webContents.once("did-finish-load", () => {

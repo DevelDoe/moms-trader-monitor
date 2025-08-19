@@ -760,8 +760,8 @@ ipcMain.handle("store:tracked:set", (_evt, list, maxLen = 25) => tickerStore.set
 
 // forward store events to renderers
 tickerStore.on("tracked-update", (list) => {
-    broadcast("store:tracked:update", list);
-});
+    broadcast("tracked-update", list); // ← was "store:tracked:update"
+  });
 
 // electron stores
 ipcMain.handle("get-last-ack-cursor", () => getLastAckCursor());

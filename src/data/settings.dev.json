@@ -41,31 +41,31 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "EVH",
-      "LPL",
+      "BSLK",
       "PRFX",
-      "RKT",
-      "GXAI",
-      "IINN",
-      "TZUP",
-      "OPEN",
+      "NB",
+      "EOLS",
+      "MCVT",
+      "MERC",
+      "LASE",
+      "OMER",
+      "DOGZ",
+      "ZETA",
+      "WYFI",
+      "BTCM",
+      "VELO",
+      "IPW",
+      "APUS",
+      "PPCB",
+      "LIXT",
+      "IOTR",
       "TNXP",
       "SNGX",
-      "IOVA",
-      "VCIG",
-      "BINI",
-      "NVOX",
-      "LIDR",
-      "UA",
-      "ROLR",
-      "APLD",
-      "LASE",
-      "QUAD",
-      "WHLR",
-      "JZXN",
-      "AGRI",
-      "MAGH",
-      "ENGS"
+      "TNGX",
+      "TZUP",
+      "RCEL",
+      "ELPW",
+      "CODA"
     ]
   },
   "scanner": {
@@ -93,10 +93,10 @@
       "isOpen": true
     },
     "infobarWindow": {
-      "width": 666,
-      "height": 72,
+      "width": 866,
+      "height": 80,
       "x": 1775,
-      "y": 1054,
+      "y": 1069,
       "isOpen": true
     },
     "wizardWindow": {
@@ -110,8 +110,8 @@
       "isOpen": true,
       "width": 400,
       "height": 85,
-      "x": 2413,
-      "y": 1899
+      "x": 2421,
+      "y": 1553
     },
     "progressWindow": {
       "width": 1442,
@@ -135,38 +135,38 @@
       "isOpen": true
     },
     "heroesWindow": {
-      "width": 666,
-      "height": 497,
+      "width": 547,
+      "height": 480,
       "x": 1775,
-      "y": 1123,
+      "y": 1140,
       "isOpen": true
     },
     "scrollXpWindow": {
       "isOpen": true,
-      "width": 240,
+      "width": 203,
       "height": 1081,
-      "x": 2640,
+      "x": 2677,
       "y": 539
     },
     "scrollStatsWindow": {
       "isOpen": true,
-      "width": 200,
-      "height": 603,
-      "x": 2441,
-      "y": 540
+      "width": 175,
+      "height": 1085,
+      "x": 2505,
+      "y": 537
     },
     "newsWindow": {
-      "width": 667,
-      "height": 517,
-      "x": 1775,
-      "y": 539,
+      "width": 807,
+      "height": 534,
+      "x": 1700,
+      "y": 537,
       "isOpen": true
     },
     "scrollHodWindow": {
-      "width": 200,
-      "height": 481,
-      "x": 2440,
-      "y": 1139,
+      "width": 183,
+      "height": 480,
+      "x": 2322,
+      "y": 1140,
       "isOpen": true
     }
   },
@@ -177,7 +177,8 @@
   },
   "hod": {
     "chimeVolume": 0.95,
-    "tickVolume": 0.6
+    "tickVolume": 0.6,
+    "symbolLength": 10
   },
   "events": {
     "comboVolume": 0.5,

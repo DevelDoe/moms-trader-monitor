@@ -1,76 +1,51 @@
-// File: hod-scroll.js (HOD toplist: price + sessionHigh)
 // ──────────────────────────────────────────────────────────────────────────────
-// Simple audio: magic on HOD, ticks on approach; capped list; blink + dull;
-// retry-attach for late bridges. Keep it understandable.
+// HOD Toplist — tracked-only, simple, reliable (subscribe-first)
 // ──────────────────────────────────────────────────────────────────────────────
 
-/* ============================================================================
- * 0) Small helpers
- * ========================================================================== */
-const up = (s) => String(s || "").toUpperCase();
-const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-
-/* ============================================================================
- * 1) Config
- * ========================================================================== */
-const AT_HIGH_EPS = 0.01;
-const GOLD_HEX = "#ffd24a";
-
-// HOD window curve (for gating + UI)
-const HOD_BASE_AT3 = 0.25;
-let HOD_ZONE_SCALE = 1.0;
-const HOD_EXP = 0.5;
-const HOD_MIN = 0.05;
-const HOD_MAX = 3.0;
-
-// Audio throttles
-window.MIN_AUDIO_INTERVAL_MS ??= 80; // global safety gap
-window.lastAudioTime ??= 0;
-
-// Housekeeping
-const HOD_EVICT_MS = 60_000;
-const MAX_ROWS = 10;
-const DEFAULT_INACTIVE_MS = 1_000;
-
-const SOUND_TRACKED_ONLY = true;
-
-/* ============================================================================
- * 2) State
- * ========================================================================== */
-const symbolColors = {};
-let trackedTickers = [];
-let _renderKey = null;
-let _rafPending = false;
-const tickers = Object.create(null); // SYM -> { hero, price, sessionHigh, pctBelowHigh, lastUpdate, hodAt }
-const isTracked = (sym) => trackedTickers.includes(sym);
-
-/* ============================================================================
- * 3) Style utils
- * ========================================================================== */
-function getSymbolColor(symbol) {
-    if (!symbolColors[symbol]) {
-        const hash = [...symbol].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-        const hue = (hash * 37) % 360;
-        symbolColors[symbol] = `hsla(${hue}, 80%, 50%, 0.5)`;
-    }
-    return symbolColors[symbol];
-}
-function formatPrice(n) {
-    return typeof n === "number" && isFinite(n) ? `$${n.toFixed(2)}` : "—";
-}
+/* 0) Helpers */
+const up = (s) =>
+    String(s || "")
+        .replace(/^\$+/, "")
+        .trim()
+        .toUpperCase();
+const clamp = (n, mi, ma) => Math.max(mi, Math.min(ma, n));
+const formatPrice = (n) => (Number.isFinite(n) ? `$${n.toFixed(2)}` : "—");
 function silverTone(pctBelowHigh) {
-    const pct = typeof pctBelowHigh === "number" ? pctBelowHigh : 1;
+    const pct = Number.isFinite(pctBelowHigh) ? pctBelowHigh : 1;
     const closeness = clamp(1 - pct, 0, 1);
     const sat = Math.round(35 + 55 * closeness);
     const light = Math.round(40 + 20 * closeness);
     const alpha = 0.45 + 0.45 * closeness;
-    const SILVER_HUE = 210;
-    return `hsla(${SILVER_HUE}, ${sat}%, ${light}%, ${alpha.toFixed(2)})`;
+    return `hsla(210, ${sat}%, ${light}%, ${alpha.toFixed(2)})`;
+}
+const symbolColors = {};
+function getSymbolColor(sym) {
+    if (!symbolColors[sym]) {
+        const hash = [...sym].reduce((a, c) => a + c.charCodeAt(0), 0);
+        symbolColors[sym] = `hsla(${(hash * 37) % 360},80%,50%,0.5)`;
+    }
+    return symbolColors[sym];
 }
 
-/* ============================================================================
- * 4) HOD threshold math
- * ========================================================================== */
+/* 1) Config (hardcoded; volumes from settingsAPI.hod) */
+const GOLD_HEX = "#ffd24a";
+const AT_HIGH_EPS = 0.01;
+
+const HOD_BASE_AT3 = 0.25;
+const HOD_EXP = 0.5;
+const HOD_MIN = 0.05;
+const HOD_MAX = 3.0;
+let HOD_ZONE_SCALE = 1.0;
+
+window.MIN_AUDIO_INTERVAL_MS ??= 80;
+window.lastAudioTime ??= 0;
+
+const HOD_EVICT_MS = 60_000; // evict a row N ms after it hit HOD
+const HOD_SYMBOL_LENGTH = 10; // rows to show
+const HOD_INACTIVE_MS = 1000; // dull UI if older than this (ms)
+const PRICE_MOVE_EPS = 0; // any price change counts as movement
+
+/* 2) HOD math */
 function hodThresholdUSDFromPrice(price) {
     if (!isFinite(price) || price <= 0) return HOD_BASE_AT3;
     const k = HOD_BASE_AT3 / Math.pow(3, HOD_EXP);
@@ -81,23 +56,10 @@ function hodThresholdUSDFromPrice(price) {
     return clamp(th, HOD_MIN, HOD_MAX);
 }
 
-/* ============================================================================
- * 5) Audio — minimal and clear
- *    - HOD: magic.mp3 once (per-symbol cooldown)
- *    - Approach: ticks.mp3 on every price update (soft), gated by threshold
- * ========================================================================== */
+/* 3) Audio (volumes from settings) */
+const HOD_CHIME_COOLDOWN_MS = 5000;
 const HOD_CHIME_VOL_DEFAULT = 0.12;
 const TICK_VOL_DEFAULT = 0.06;
-const HOD_CHIME_COOLDOWN_MS = 5000;
-
-function getChimeVol() {
-    const v = Number(window.settings?.hod?.chimeVolume);
-    return Number.isFinite(v) ? v : HOD_CHIME_VOL_DEFAULT;
-}
-function getTickVol() {
-    const v = Number(window.settings?.hod?.tickVolume);
-    return Number.isFinite(v) ? v : TICK_VOL_DEFAULT;
-}
 
 let audioReady = false;
 let magicBase, ticksBase;
@@ -111,26 +73,23 @@ function setupAudio() {
         a.preload = "auto";
         a.addEventListener("error", () => console.warn("[HOD] audio failed:", a.src));
     });
-
-    // Autoplay allowed by main → we can mark ready now
     audioReady = true;
 
-    // 🔇 muted warm-up: primes the pipeline on cold boot
+    // warm-up muted; if blocked, unlock on first gesture
     try {
         const warm = ticksBase.cloneNode();
         warm.muted = true;
         warm.currentTime = 0;
         warm.play()
-            .then(() => {
+            .then(() =>
                 setTimeout(() => {
                     try {
                         warm.pause();
                         warm.remove();
                     } catch {}
-                }, 50);
-            })
+                }, 50)
+            )
             .catch(() => {
-                // if policy ever blocks, we fall back to real gesture
                 audioReady = false;
                 const unlock = () => {
                     audioReady = true;
@@ -141,98 +100,86 @@ function setupAudio() {
     } catch {}
 }
 
+function getChimeVol(settings) {
+    const v = Number(settings?.hod?.chimeVolume);
+    return Number.isFinite(v) ? v : HOD_CHIME_VOL_DEFAULT;
+}
+function getTickVol(settings) {
+    const v = Number(settings?.hod?.tickVolume);
+    return Number.isFinite(v) ? v : TICK_VOL_DEFAULT;
+}
 function play(base, vol) {
     if (!audioReady) return;
     const now = Date.now();
-    const minGap = window.MIN_AUDIO_INTERVAL_MS;
-    if (now - (window.lastAudioTime || 0) < minGap) return;
-
+    if (now - (window.lastAudioTime || 0) < window.MIN_AUDIO_INTERVAL_MS) return;
     const a = base.cloneNode();
     if (!a.src) a.src = base.src;
-    a.volume = Math.max(0, Math.min(1, vol)); // no floor
+    a.volume = clamp(vol, 0, 1);
     a.currentTime = 0;
     a.play().catch(() => {});
     window.lastAudioTime = now;
 }
-
-function playHodChime(sym) {
-    const now = Date.now();
-    const last = lastHodChimeAt.get(sym) || 0;
-    if (now - last < HOD_CHIME_COOLDOWN_MS) return;
-    lastHodChimeAt.set(sym, now);
-    play(magicBase, getChimeVol()); // <-- was HOD_CHIME_VOL
+function simulateFirstGesture(delayMs = 800) {
+    setupAudio();
+    setTimeout(() => {
+        try {
+            window.focus();
+            document.body?.focus?.();
+        } catch {}
+        const pd = new PointerEvent("pointerdown", { bubbles: true, cancelable: true, isPrimary: true });
+        window.dispatchEvent(pd);
+        document.dispatchEvent(pd);
+        document.body?.dispatchEvent(pd);
+        const kd = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: " " });
+        window.dispatchEvent(kd);
+        document.dispatchEvent(kd);
+        document.body?.dispatchEvent(kd);
+    }, delayMs);
 }
 
-function playApproachTick() {
-    play(ticksBase, getTickVol()); // <-- was TICK_VOL
-}
+/* 4) View state (small, KISS) */
+const state = {
+    tickers: new Map(), // sym -> row
+    tracked: [], // array of SYM (UPPERCASED)
+    settings: {}, // volumes only
+    renderKey: "",
+    rafPending: false,
+};
+const isTracked = (sym) => state.tracked.includes(up(sym));
 
-setupAudio();
-/* ============================================================================
- * 6) DOM helpers
- * ========================================================================== */
-async function waitForElement(selector, { timeout = 10000 } = {}) {
-    const existing = document.querySelector(selector);
-    if (existing) return existing;
-    return new Promise((resolve, reject) => {
-        const obs = new MutationObserver(() => {
-            const el = document.querySelector(selector);
-            if (el) {
-                obs.disconnect();
-                resolve(el);
-            }
-        });
-        obs.observe(document.documentElement, { childList: true, subtree: true });
-        setTimeout(() => {
-            obs.disconnect();
-            reject(new Error(`Timeout: ${selector}`));
-        }, timeout);
-    });
-}
-
-/* ============================================================================
- * 7) Render
- * ========================================================================== */
-function scheduleRender() {
-    if (_rafPending) return;
-    _rafPending = true;
+function markDirty() {
+    if (state.rafPending) return;
+    state.rafPending = true;
     requestAnimationFrame(() => {
-        _rafPending = false;
+        state.rafPending = false;
         render();
     });
 }
 
-function getInactiveThreshold() {
-    const ms = Number(window.settings?.top?.inactiveMs);
-    return Number.isFinite(ms) && ms > 0 ? ms : DEFAULT_INACTIVE_MS;
-}
-function getSymbolLength() {
-    const want = Math.max(1, Number(window.settings?.top?.symbolLength) || 25);
-    return Math.min(want, MAX_ROWS);
-}
-
+/* 5) Render */
 function render() {
     const container = document.getElementById("hod-scroll");
     if (!container) return;
 
-    const order = new Map(trackedTickers.map((s, i) => [up(s), i]));
-    const candidates = order.size ? Object.values(tickers).filter((t) => order.has(up(t.hero))) : Object.values(tickers);
+    // tracked-only rows
+    const items = [];
+    for (const [, t] of state.tickers) {
+        if (!isTracked(t.hero)) continue;
+        if (!Number.isFinite(t.price) || !Number.isFinite(t.sessionHigh) || t.price <= 0 || t.sessionHigh <= 0) continue;
+        items.push(t);
+    }
 
-    const display = candidates
-        .filter((t) => (t.price ?? 0) > 0 && (t.sessionHigh ?? 0) > 0)
-        .sort((a, b) => (a.pctBelowHigh ?? 1) - (b.pctBelowHigh ?? 1))
-        .slice(0, getSymbolLength());
+    items.sort((a, b) => (a.pctBelowHigh ?? 1) - (b.pctBelowHigh ?? 1) || (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0));
+    const display = items.slice(0, HOD_SYMBOL_LENGTH);
 
-    const key = display.length ? display.map((t) => `${t.hero}:${t.price}:${t.sessionHigh}`).join(",") : "∅";
-    if (_renderKey !== null && key === _renderKey) return;
-    _renderKey = key;
+    const key = display.map((t) => `${t.hero}:${t.price}:${t.sessionHigh}:${t.pctBelowHigh}`).join("|") || "∅";
+    if (state.renderKey && key === state.renderKey) return;
+    state.renderKey = key;
 
     const now = Date.now();
-    const inactiveThreshold = getInactiveThreshold();
 
     container.innerHTML = display
         .map((t, idx) => {
-            const bg = getSymbolColor(t.hero);
             const diffUSD = Math.max(0, (t.sessionHigh ?? 0) - (t.price ?? 0));
             const thr = hodThresholdUSDFromPrice((t.price ?? t.sessionHigh) || 0);
 
@@ -241,32 +188,31 @@ function render() {
             const closeness = within ? clamp(1 - diffUSD / thr, 0, 1) : 0;
 
             const blinkClass = within ? "blinking" : "";
-            const blinkSpeed = (1.0 - 0.75 * closeness).toFixed(2); // 1s → 0.25s
+            const blinkSpeed = (1.0 - 0.75 * closeness).toFixed(2);
             const blinkStyle = within ? `animation-duration:${blinkSpeed}s;` : "";
-
             const rowGlow = atHigh ? "box-shadow:0 0 10px rgba(255,210,74,0.3);" : "";
 
             const age = now - (t.lastUpdate || 0);
-            const dullStyle = age > inactiveThreshold ? "opacity:0.75; filter:grayscale(0.8);" : "";
+            const dullStyle = age > HOD_INACTIVE_MS ? "opacity:0.75; filter:grayscale(0.8);" : "";
 
             return `
-                <div class="xp-line ellipsis" data-ath="${atHigh ? 1 : 0}">
-                    <span class="text-tertiary" style="display:inline-block; min-width:24px; text-align:right; margin-right:4px;">
-                    ${idx + 1}.
-                    </span>
-                    <strong class="symbol" style="background:${bg}; ${dullStyle}">${t.hero}</strong>
-                    <span style="${rowGlow} position:absolute; left:120px; font-weight:600; display:inline-block; font-size:15px; line-height:1; text-align:left;">
-                    <div style="background-color:transparent; color:${GOLD_HEX}">${formatPrice(t.sessionHigh)}</div>
-                    <div class="${blinkClass}" style="${blinkStyle} background:transparent; color:${silverTone(t.pctBelowHigh)};">
-                        ${formatPrice(t.price)}
-                    </div>
-                    </span>
-                </div>`;
+      <div class="xp-line ellipsis" data-ath="${atHigh ? 1 : 0}">
+        <span class="text-tertiary" style="display:inline-block; min-width:24px; text-align:right; margin-right:4px;">${idx + 1}.</span>
+        <strong class="symbol" style="background:${getSymbolColor(t.hero)}; ${dullStyle}">${t.hero}</strong>
+        <span style="${rowGlow} position:absolute; left:120px; font-weight:600; display:inline-block; font-size:15px; line-height:1; text-align:left;">
+          <div style="background:transparent; color:${GOLD_HEX}">${formatPrice(t.sessionHigh)}</div>
+          <div class="${blinkClass}" style="${blinkStyle} background:transparent; color:${silverTone(t.pctBelowHigh)};">${formatPrice(t.price)}</div>
+        </span>
+      </div>`;
         })
         .join("");
 
-    container.querySelectorAll(".symbol").forEach((el) => {
-        el.addEventListener("click", async (e) => {
+    // one delegated click handler
+    if (!container.__boundClick) {
+        container.__boundClick = true;
+        container.addEventListener("click", async (e) => {
+            const el = e.target.closest(".symbol");
+            if (!el) return;
             const hero = el.textContent.trim().replace("$", "");
             try {
                 await navigator.clipboard.writeText(hero);
@@ -274,239 +220,152 @@ function render() {
             } catch {}
             e.stopPropagation();
         });
-    });
+    }
 }
-/* ============================================================================
- * 8) Init — super simple boot
- * ========================================================================== */
-async function initHOD() {
-    setupAudio(); // make audio available (unlocks on first user gesture)
 
-    const container = document.getElementById("hod-scroll");
-    if (!container) {
-        console.warn("❌ HOD: #hod-scroll missing");
-        return;
+/* 6) Housekeeping */
+function pruneReachedHod() {
+    const now = Date.now();
+    let removed = false;
+    for (const [sym, t] of state.tickers) {
+        if (t?.hodAt && now - t.hodAt >= HOD_EVICT_MS) {
+            state.tickers.delete(sym);
+            removed = true;
+        }
+    }
+    if (removed) markDirty();
+}
+setInterval(pruneReachedHod, 5_000);
+
+/* 7) Boot */
+document.addEventListener("DOMContentLoaded", async () => {
+    // Wait for bridges
+    while (!(window.settingsAPI && window.storeAPI && window.eventsAPI && window.electronAPI)) {
+        await new Promise((r) => setTimeout(r, 200));
     }
 
-    // ensure content is clickable in frameless windows (if relevant)
+    // volumes only
+    try {
+        state.settings = await window.settingsAPI.get();
+    } catch {
+        state.settings = {};
+    }
+    window.settingsAPI.onUpdate((updated) => {
+        state.settings = updated || {};
+    });
+
+    // Make content clickable in frameless windows
     try {
         document.body.style["-webkit-app-region"] = "no-drag";
     } catch {}
 
-    try {
-        // settings + tracked
-        window.settings = await window.settingsAPI.get();
-        try {
-            trackedTickers = (await window.storeAPI.getTracked()).map(up);
-        } catch {
-            trackedTickers = [];
-        }
-
-        window.storeAPI.onTrackedUpdate((list) => {
-            trackedTickers = (list || []).map(up);
-            pruneUntracked();
-            scheduleRender();
-        });
-
-        // warm state
-        try {
-            const symbols = await window.storeAPI.getSymbols();
-            symbols.forEach((s) => {
-                tickers[s.symbol] = {
-                    hero: s.symbol,
-                    price: s.price || 0,
-                    sessionHigh: s.sessionHigh || 0,
-                    pctBelowHigh: s.pctBelowHigh ?? 1,
-                    lastUpdate: Date.now(),
-                };
-            });
-        } catch {}
-        scheduleRender();
-
-        // live alerts
-        if (window.eventsAPI?.onAlert) {
-            window.eventsAPI.onAlert((p) => {
-                const { hero, price, sessionHigh, pctBelowHigh } = p || {};
-                if (!hero) return;
-
-                const sym = up(hero);
-                const tracked = isTracked(sym);
-
-                if (!tickers[sym]) tickers[sym] = { hero: sym };
-                const t = tickers[sym];
-                if (typeof price === "number") t.price = price;
-                if (typeof sessionHigh === "number") t.sessionHigh = sessionHigh;
-                if (typeof pctBelowHigh === "number") t.pctBelowHigh = pctBelowHigh;
-                t.lastUpdate = Date.now();
-
-                const diffUSD =
-                    typeof p.centsBelowHigh === "number" ? Math.max(0, p.centsBelowHigh / 100) : isFinite(t.sessionHigh) && isFinite(t.price) ? Math.max(0, t.sessionHigh - t.price) : Infinity;
-
-                const priceRef = isFinite(t.price) && t.price > 0 ? t.price : t.sessionHigh || 0;
-                const thrUSD = hodThresholdUSDFromPrice(priceRef);
-
-                t.diffUSD = diffUSD;
-                t.thresholdUSD = thrUSD;
-
-                // Same conditions your UI uses for glow/blink
-                const isHOD = p.isHighOfDay === true || (isFinite(diffUSD) && diffUSD <= AT_HIGH_EPS);
-                const inWindow = isFinite(diffUSD) && isFinite(thrUSD) && diffUSD > AT_HIGH_EPS && diffUSD <= thrUSD;
-
-                // gate all audio to tracked only (per your spec)
-                const allowSound = !SOUND_TRACKED_ONLY ? true : tracked;
-
-                if (isHOD) {
-                    if (allowSound) playHodChime(sym); // HOD chime only for tracked
-                    t.hodAt = Date.now(); // still mark for UI/prune either way
-                } else if (inWindow) {
-                    if (allowSound) playApproachTick(); // ticks only when blinking AND tracked
-                }
-
-                scheduleRender();
-            });
-        } else {
-            console.warn("[HOD] eventsAPI.onAlert not available");
-        }
-
-        // settings changes
-        window.settingsAPI.onUpdate((updated) => {
-            window.settings = updated;
-            scheduleRender();
-        });
-
-        // state nuke
-        window.electronAPI.onNukeState(async () => {
-            for (const k of Object.keys(tickers)) delete tickers[k];
-            trackedTickers = [];
-            _renderKey = "";
-            document.getElementById("hod-scroll").innerHTML = "";
-            try {
-                trackedTickers = (await window.storeAPI.getTracked()).map(up);
-                const symbols = await window.storeAPI.getSymbols();
-                symbols.forEach((s) => {
-                    tickers[s.symbol] = {
-                        hero: s.symbol,
-                        price: s.price || 0,
-                        sessionHigh: s.sessionHigh || 0,
-                        pctBelowHigh: s.pctBelowHigh ?? 1,
-                        lastUpdate: Date.now(),
-                    };
-                });
-            } catch {}
-            scheduleRender();
-        });
-    } catch (err) {
-        console.error("❌ HOD init failed:", err);
-    }
-}
-
-function simulateFirstGesture() {
-    // make sure audio bases exist
+    // Audio boot + best-effort unlock
     setupAudio();
+    if (!sessionStorage.getItem("hod:simulatedOnce")) {
+        sessionStorage.setItem("hod:simulatedOnce", "1");
+        simulateFirstGesture(1000);
+    }
 
-    const fire = (target, ev) => {
-        try {
-            target.dispatchEvent(ev);
-        } catch {}
-    };
+    // Subscribe FIRST so we never miss the initial tracked push
+    const unsubscribeTracked = window.storeAPI.onTrackedUpdate((list = []) => {
+        state.tracked = (list || []).map(up);
+        // Hard prune anything no longer tracked
+        if (state.tracked.length) {
+            const allow = new Set(state.tracked);
+            let removed = false;
+            for (const sym of Array.from(state.tickers.keys())) {
+                if (!allow.has(sym)) {
+                    state.tickers.delete(sym);
+                    removed = true;
+                }
+            }
+            if (removed) markDirty();
+        }
+        markDirty();
+    });
 
-    // small delay so listeners from setup/init are attached
-    setTimeout(() => {
-        // focus helps some platforms kick timers
-        try {
-            window.focus();
-            document.body?.focus?.();
-        } catch {}
+    // Optional: one-time snapshot (safe even if event fires first)
+    try {
+        const snap = await window.storeAPI.getTracked();
+        if (Array.isArray(snap) && snap.length) {
+            state.tracked = snap.map(up);
+            markDirty();
+        }
+    } catch {}
 
-        // pointerdown
-        const pd = new PointerEvent("pointerdown", { bubbles: true, cancelable: true, isPrimary: true });
-        fire(window, pd);
-        fire(document, pd);
-        document.body && fire(document.body, pd);
+    // Strict tracked-only alert handling
+    if (window.eventsAPI?.onAlert) {
+        window.eventsAPI.onAlert((p = {}) => {
+            const sym = up(p.hero);
+            if (!sym || !isTracked(sym)) return;
 
-        // keydown
-        const kd = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: " " });
-        fire(window, kd);
-        fire(document, kd);
-        document.body && fire(document.body, kd);
-    }, 30);
-}
+            const t = state.tickers.get(sym) || { hero: sym };
+            const prevPrice = t.price;
+            const prevHigh = t.sessionHigh;
 
-// Plain document-ready boot — no retries, no loops
-document.addEventListener("DOMContentLoaded", () => {
-    initHOD();
-    pruneHodReached();
-    // One-time "first click" per window
-    // if (!sessionStorage.getItem("hod:simulatedOnce")) {
-    //     sessionStorage.setItem("hod:simulatedOnce", "1");
-    //     simulateFirstGesture();
-    // }
+            if (Number.isFinite(p.price)) t.price = p.price;
+            if (Number.isFinite(p.sessionHigh)) t.sessionHigh = p.sessionHigh;
+            if (Number.isFinite(p.pctBelowHigh)) t.pctBelowHigh = p.pctBelowHigh;
+
+            t.lastUpdate = Date.now();
+
+            // movement (price OR new highs)
+            let moved = false;
+            if (Number.isFinite(p.price)) moved ||= Number.isFinite(prevPrice) ? Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS : true;
+            if (Number.isFinite(p.sessionHigh)) moved ||= Number.isFinite(prevHigh) ? p.sessionHigh > prevHigh : true;
+            if (moved) t.lastMoveAt = t.lastUpdate;
+
+            // window + audio
+            const diffUSD = Number.isFinite(p.centsBelowHigh)
+                ? Math.max(0, p.centsBelowHigh / 100)
+                : Number.isFinite(t.sessionHigh) && Number.isFinite(t.price)
+                ? Math.max(0, t.sessionHigh - t.price)
+                : Infinity;
+
+            const priceRef = Number.isFinite(t.price) && t.price > 0 ? t.price : t.sessionHigh || 0;
+            const thrUSD = hodThresholdUSDFromPrice(priceRef);
+            t.diffUSD = diffUSD;
+            t.thrUSD = thrUSD;
+
+            const isHOD = p.isHighOfDay === true || (isFinite(diffUSD) && diffUSD <= AT_HIGH_EPS);
+            const inWindow = isFinite(diffUSD) && isFinite(thrUSD) && diffUSD > AT_HIGH_EPS && diffUSD <= thrUSD;
+
+            if (isHOD) {
+                play(magicBase, getChimeVol(state.settings));
+                t.hodAt = Date.now();
+            } else if (inWindow) {
+                play(ticksBase, getTickVol(state.settings));
+            }
+
+            state.tickers.set(sym, t);
+            markDirty();
+        });
+    } else {
+        console.warn("[HOD] eventsAPI.onAlert not available");
+    }
+
+    // Nuke resets rows only; tracked comes from subscription
+    window.electronAPI.onNukeState?.(() => {
+        state.tickers.clear();
+        state.renderKey = "";
+        const container = document.getElementById("hod-scroll");
+        if (container) container.innerHTML = "";
+        markDirty();
+    });
+
+    // First paint
+    markDirty();
 });
 
-async function attachWhenBridgesReady() {
-    while (!(window.settingsAPI && window.storeAPI && window.eventsAPI && window.electronAPI)) {
-        await new Promise((r) => setTimeout(r, 250));
-    }
-    initHOD();
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    attachWhenBridgesReady();
-});
-
-/* ============================================================================
- * 9) Housekeeping
- * ========================================================================== */
-function pruneHodReached() {
-    const now = Date.now();
-    let removed = false;
-
-    for (const [sym, t] of Object.entries(tickers)) {
-        if (t?.hodAt && now - t.hodAt >= HOD_EVICT_MS) {
-            delete tickers[sym];
-            removed = true;
-        }
-    }
-
-    if (removed) {
-        console.debug("[HOD] pruned at", new Date(now).toLocaleTimeString());
-        scheduleRender();
-    }
-}
-
-// Add this near other housekeeping helpers
-function pruneUntracked() {
-    if (!Array.isArray(trackedTickers) || trackedTickers.length === 0) return;
-    const allow = new Set(trackedTickers.map(up));
-    let removed = false;
-    for (const sym of Object.keys(tickers)) {
-        if (!allow.has(sym)) {
-            delete tickers[sym];
-            removed = true;
-        }
-    }
-    if (removed) scheduleRender();
-}
-
-setInterval(pruneHodReached, 5000);
-
-/* ============================================================================
- * 10) Debug helpers
- * ========================================================================== */
-
-// Existing:
+/* 8) Debug helpers */
 window.hodPeek = () => {
-    const sampleKey = Object.keys(tickers)[0];
-    console.log({ tracked: trackedTickers, sample: sampleKey ? tickers[sampleKey] : null });
+    const first = state.tickers.values().next().value || null;
+    console.log({ tracked: state.tracked.slice(), count: state.tickers.size, sample: first });
 };
-
-// --- Audio debug (new) ---
-
-// Quick status snapshot
 window.hodAudioStatus = () => {
-    setupAudio?.(); // ensure bases exist
-    const ch = typeof getChimeVol === "function" ? getChimeVol() : typeof HOD_CHIME_VOL === "number" ? HOD_CHIME_VOL : 0.12;
-    const tv = typeof getTickVol === "function" ? getTickVol() : typeof TICK_VOL === "number" ? TICK_VOL : 0.06;
+    setupAudio?.();
+    const ch = getChimeVol(state.settings);
+    const tv = getTickVol(state.settings);
     console.log({
         audioReady,
         chimeVolume: ch,
@@ -517,30 +376,3 @@ window.hodAudioStatus = () => {
         lastAudioTime: window.lastAudioTime,
     });
 };
-
-// Play a single tick (ticks.mp3). Optional volume override: hodAudioTestTick(0.1)
-window.hodAudioTestTick = async (vol) => {
-    try {
-        setupAudio?.();
-        // try to unlock best-effort; may still require a user click in some environments
-        audioReady = true;
-        // bypass global throttle for test
-        window.lastAudioTime = 0;
-        if (typeof vol === "number") {
-            const v = Math.max(0, Math.min(1, vol));
-            const a = ticksBase.cloneNode();
-            if (!a.src) a.src = ticksBase.src;
-            a.volume = v;
-            a.currentTime = 0;
-            await a.play();
-            console.log("[HOD] test tick played at vol", v);
-        } else {
-            playApproachTick();
-            console.log("[HOD] test tick played via playApproachTick()");
-        }
-    } catch (err) {
-        console.warn("[HOD] test tick failed:", err?.name || err, "— click the view once to unlock audio or check ticks.mp3 path.");
-    }
-};
-
-// Play a single chime
