@@ -1,6 +1,6 @@
 {
     "name": "Arcane-Monitor",
-    "version": "4.1.9",
+    "version": "4.1.10",
     "description": "Arcane Monitor is a tool designed to track high-potential stocks in real-time.",
     "main": "src/main/main.js",
     "scripts": {
