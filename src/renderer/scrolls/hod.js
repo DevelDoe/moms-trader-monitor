@@ -345,10 +345,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             const isHOD = p.isHighOfDay === true || (isFinite(diffUSD) && diffUSD <= AT_HIGH_EPS);
             const inWindow = isFinite(diffUSD) && isFinite(thrUSD) && diffUSD > AT_HIGH_EPS && diffUSD <= thrUSD;
 
+            const isUptick = Number.isFinite(p.hp) && p.hp > 0;
+
             if (isHOD) {
                 play(magicBase, getChimeVol(state.settings));
                 t.hodAt = Date.now();
-            } else if (inWindow) {
+            } else if (inWindow && isUptick) {
                 play(ticksBase, getTickVol(state.settings));
             }
 
