@@ -1,569 +1,506 @@
-// frontlineState.js
-// ======================= CONFIGURATION =======================
-const DECAY_INTERVAL_MS = 1000;
-const XP_DECAY_PER_TICK = 0.1; // Decay per tick
-const SCORE_NORMALIZATION = 2; // Higher = slower decay influence
-const BASE_MAX_SCORE = 3000;
-const BASE_MAX_HP = 10;
-const SCALE_DOWN_THRESHOLD = 1; // 20%
-const SCALE_DOWN_FACTOR = 0.9; // Reduce by 10%
-const debugLimitSamples = 1500;
+// frontline.refactor.js
+(() => {
+    /**************************************************************************
+     * 0) Config
+     **************************************************************************/
+    const DECAY_INTERVAL_MS = 1000;
+    const XP_DECAY_PER_TICK = 0.1;
+    const SCORE_NORMALIZATION = 2;
+    const BASE_MAX_SCORE = 3000;
+    const BASE_MAX_HP = 10;
+    const SCALE_DOWN_THRESHOLD = 1; // 100% of current scale
+    const SCALE_DOWN_FACTOR = 0.9; // shrink by 10%
 
-// ======================= STATE =======================
-const frontlineState = {};
+    // dev flag (keeps your behavior)
+    window.isDev = window.appFlags?.isDev === true;
 
-const renderQueue = new Set();
-let renderQueueTimer = null;
+    /**************************************************************************
+     * 1) Module state (single source of truth)
+     **************************************************************************/
+    const state = {
+        // symbol -> hero object
+        heroes: Object.create(null),
 
-function queueCardUpdate(symbol) {
-    renderQueue.add(symbol);
+        // visual scale bounds
+        maxHP: BASE_MAX_HP,
+        maxScore: BASE_MAX_SCORE,
 
-    if (!renderQueueTimer) {
-        renderQueueTimer = setTimeout(() => {
-            renderQueue.forEach((sym) => updateCardDOM(sym));
-            renderQueue.clear();
-            renderQueueTimer = null;
-        }, 40); // Slight delay to batch updates
+        // rendering
+        container: null,
+        rafPending: false,
+        renderKey: "", // 🔑 skip redundant renders
+        topKey: "", // compare top lineup to avoid reshuffle work
+
+        // settings + buffs
+        settings: {},
+        buffs: [],
+
+        // medals/top3
+        rankMap: new Map(),
+    };
+
+    /**************************************************************************
+     * 2) Helpers exposed (unchanged behavior)
+     **************************************************************************/
+    const logScoring = false;
+    let debugSamples = 10,
+        debugLimitSamples = 1500;
+
+    function abbreviatedValues(num) {
+        if (num < 1_000) return String(num);
+        if (num < 1_000_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+        return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
     }
-}
+    function getSymbolColor(hue) {
+        return `hsla(${hue}, 80%, 50%, 0.5)`;
+    }
 
-let container;
+    function computeVolumeScore(hero, event) {
+        const price = hero.price || 1;
+        const strength = event.one_min_volume || 0;
+        if (strength < 100) return 0;
+        const dollarVolume = price * strength;
+        let score = Math.log10(dollarVolume + 1) * 100;
+        if (price < 2) score *= 0.8;
+        if (price > 12) score *= 0.9;
+        if (price > 20) score *= 0.8;
+        return score;
+    }
 
-let maxHP = BASE_MAX_HP;
-let maxScore = BASE_MAX_SCORE;
-let lastTopHeroes = [];
-let eventsPaused = false;
-let buffs = [];
+    function calculateScore(hero, event) {
+        debugSamples++;
+        const currentScore = Number(hero.score) || 0;
 
-// ======================= FLAGS =======================
-window.isDev = window.appFlags?.isDev === true;
+        let baseScore = 0;
+        const logStep = (emoji, msg, value) => {
+            if (logScoring) console.log(`${emoji} ${msg.padEnd(28)} ${(Number(value) || 0).toFixed(2)}`);
+        };
 
-if (!window.isDev) {
-    console.log = () => {};
-    console.debug = () => {};
-    console.info = () => {};
-    console.warn = () => {};
-}
+        try {
+            if (event.hp > 0) {
+                baseScore += event.hp * 10;
+                logStep("💖", "Base HP Added", baseScore);
+                const volScore = computeVolumeScore(hero, event);
+                baseScore += volScore;
+                logStep("📢", "Crowd Participation", volScore);
+            } else if (event.dp > 0) {
+                const reverseScore = event.dp * 5;
+                baseScore -= reverseScore;
+                logStep("💔", "Down Pressure", -reverseScore);
+                const volPenalty = computeVolumeScore(hero, event) * 0.5;
+                baseScore -= volPenalty;
+                logStep("🔻", "Volume Selloff", -volPenalty);
+            }
+        } catch (err) {
+            console.error(`⚠️ Scoring error for ${hero.hero}:`, err);
+            baseScore = 0;
+        }
 
-// ======================= DEBUG =======================
-let debugSamples = 10;
+        if (logScoring) {
+            console.log("━".repeat(44));
+            logStep("🎯", "TOTAL SCORE Δ", baseScore);
+            console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n`);
+        }
+        return baseScore;
+    }
 
-console.log("🎯 Fresh start mode:", window.isDev);
-console.log("🐛 isDev mode:", window.isDev);
+    // expose — keeps your other code working
+    function exposeHelpers() {
+        window.helpers = {
+            calculateScore,
+            computeVolumeScore,
+            startScoreDecay, // redefined below -> uses markDirty
+            abbreviatedValues,
+            getSymbolColor,
+        };
+        if (window.isDev) console.log("⚡ helpers attached");
+    }
 
-// --- Top3 rank cache (module-wide) ---
-let rankMap = new Map();
-const rebuildRankMap = (entries = []) => (rankMap = new Map(entries.map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0])));
+    // --- One-line buffs (frontline style) ---
+    const BUFF_SORT_ORDER = ["volume", "float", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
 
-let __top3InitDone = false; // ✅ guard against double subscribe
-let __top3Unsub = null;
+    function categorizeBuffKey(key) {
+        const k = String(key || "").toLowerCase();
+        if (k.includes("vol")) return "volume";
+        if (k.startsWith("float")) return "float";
+        return k;
+    }
 
-async function initTop3() {
-    if (__top3InitDone) return; // ✅ don’t register twice
-    __top3InitDone = true;
-
-    try {
-        const { entries } = await window.top3API.get(); // prime cache
-        rebuildRankMap(entries || []);
-    } catch {}
-
-    __top3Unsub = window.top3API.subscribe?.(({ entries }) => {
-        rebuildRankMap(entries || []);
-        // repaint medals for visible cards (cheap + surgical)
-        document.querySelectorAll(".ticker-card").forEach((card) => {
-            const sym = card.dataset.symbol?.trim().toUpperCase();
-            if (!sym) return;
-            const medal = medalForRank(rankMap.get(sym));
-            const medalEl = card.querySelector(".lv-medal");
-            if (medalEl) medalEl.textContent = medal;
+    function sortBuffsInline(arr) {
+        return arr.sort((a, b) => {
+            const ai = BUFF_SORT_ORDER.indexOf(a._sortKey);
+            const bi = BUFF_SORT_ORDER.indexOf(b._sortKey);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
         });
-    });
-}
-
-// optional: cleanup when page unloads/hot-reloads
-window.addEventListener("beforeunload", () => {
-    if (__top3Unsub) __top3Unsub();
-});
-
-// ============================
-// Document Ready
-// ============================
-document.addEventListener("DOMContentLoaded", async () => {
-    if (window.isDev) console.log("⚡ Frontline DOM loaded");
-
-    try {
-        await initTop3();
-        await initializeBuffs();
-        await initializeFrontline();
-        setupListeners();
-    } catch (err) {
-        console.error("❌ Frontline initialization failed:", err);
     }
-    
-});
 
-async function initializeBuffs() {
-    try {
-        const fetchedBuffs = await window.electronAPI.getBuffs();
-        window.buffs = fetchedBuffs;
+    function buildBuffInlineHTML(hero) {
+        const entries = Object.entries(hero?.buffs || {}).map(([key, v]) => ({
+            ...(v || {}),
+            key,
+            _sortKey: categorizeBuffKey(key),
+        }));
 
-        window.electronAPI.onBuffsUpdate((updatedBuffs) => {
-            if (window.isDev) console.log("🔄 Buffs updated via IPC:", updatedBuffs);
-            window.buffs = updatedBuffs;
+        const sorted = sortBuffsInline(entries);
+        if (!sorted.length) return ""; // keep container empty ≈ previous behavior
+
+        return sorted.map((b) => `<span class="buff-icon ${b.isBuff ? "buff-positive" : b.isBuff === false ? "buff-negative" : ""}" title="${b.desc || ""}">${b.icon || "•"}</span>`).join("");
+    }
+
+    function volumeColorFromImpact(hero) {
+        try {
+            const impact = window.hlpsFunctions?.calculateImpact?.(
+                hero.strength || 0,
+                hero.price || 0,
+                window.buffs // keep using your global buffs source
+            );
+            return impact?.style?.color || "";
+        } catch {
+            return "";
+        }
+    }
+
+    /**************************************************************************
+     * 3) Render scheduling pattern
+     **************************************************************************/
+    function markDirty() {
+        if (state.rafPending) return;
+        state.rafPending = true;
+        requestAnimationFrame(() => {
+            state.rafPending = false;
+            render();
         });
-    } catch (err) {
-        console.error("❌ Failed to load buffs:", err);
-    }
-}
-
-async function initializeFrontline() {
-    container = document.getElementById("frontline");
-
-    const [settings, storeSymbols, restoredState] = await Promise.all([window.settingsAPI.get(), window.frontlineAPI.getSymbols()]);
-
-    console.log(
-        "🧾 Store symbols received:",
-        storeSymbols.map((s) => s.symbol)
-    );
-
-    window.settings = settings;
-
-    if (restoredState) {
-        Object.assign(frontlineState, restoredState);
     }
 
-    storeSymbols.forEach((symbolData) => {
-        if (!frontlineState[symbolData.symbol]) {
-            frontlineState[symbolData.symbol] = {
-                hero: symbolData.symbol,
-                price: symbolData.price || 1,
+    function medalForRank(rank) {
+        if (rank === 1) return "🥇";
+        if (rank === 2) return "🥈";
+        if (rank === 3) return "🥉";
+        return "";
+    }
+
+    // cheap per-card patch (kept minimal here — keep your existing visuals if needed)
+    function patchCardDOM(sym, hero) {
+        const card = state.container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
+        if (!card) return;
+        const scoreFill = card.querySelector(".bar-fill.score");
+        if (scoreFill) {
+            const exponent = 0.75;
+            const normalized = Math.min(hero.score / state.maxScore, 1);
+            scoreFill.style.width = `${Math.pow(normalized, exponent) * 100}%`;
+        }
+        const volEl = card.querySelector(".bar-text");
+        if (volEl) {
+            volEl.textContent = abbreviatedValues(hero.strength || 0);
+        }
+        const priceEl = card.querySelector(".lv-price");
+        if (priceEl) priceEl.textContent = `$${(hero.price ?? 0).toFixed(2)}`;
+
+        const medalEl = card.querySelector(".lv-medal");
+        if (medalEl) medalEl.textContent = medalForRank(state.rankMap.get(sym) || 0);
+
+        // flash on update
+        card.classList.add("card-update-highlight");
+        setTimeout(() => card.classList.remove("card-update-highlight"), 220);
+
+        const buffsEl = card.querySelector(".buffs-container");
+        if (buffsEl) buffsEl.innerHTML = buildBuffInlineHTML(hero);
+    }
+
+    function createCard(hero) {
+        const sym = hero.hero;
+        const card = document.createElement("div");
+        card.className = "ticker-card";
+        card.dataset.symbol = sym;
+
+        // const changeText = hero.lastEvent?.hp ? `+${hero.lastEvent.hp.toFixed(2)}%` : hero.lastEvent?.dp ? `-${hero.lastEvent.dp.toFixed(2)}%` : "";
+
+        card.innerHTML = `
+  <div class="ticker-header">
+    <div class="ticker-symbol" style="background-color:${getSymbolColor(hero.hue || 0)}">
+      ${sym}
+      <span class="lv">
+        <span class="lv-medal">${medalForRank(state.rankMap.get(sym) || 0)}</span>
+        <span class="lv-price">$${(hero.price ?? 0).toFixed(2)}</span>
+      </span>
+    </div>
+    <div class="ticker-info">
+      <div class="ticker-data">
+        <span class="bar-text" style="color:${volumeColorFromImpact(hero)}">
+          ${abbreviatedValues(hero.strength || 0)}
+        </span>
+        <div class="buffs-container">${buildBuffInlineHTML(hero)}</div>
+      </div>
+      <div class="bars">
+        <div class="bar"><div class="bar-fill score" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>`;
+
+
+        const symEl = card.querySelector(".ticker-symbol");
+        symEl.onclick = (e) => {
+            e.stopPropagation();
+            try {
+                navigator.clipboard.writeText(sym);
+                window.activeAPI?.setActiveTicker?.(sym);
+                symEl.classList.add("symbol-clicked");
+                setTimeout(() => symEl.classList.remove("symbol-clicked"), 200);
+            } catch {}
+        };
+
+        return card;
+    }
+
+    function render() {
+        if (!state.container) return;
+
+        const topN = state.settings?.top?.frontlineListLength ?? 8;
+
+        // compute the top, deterministically
+        const heroesArr = Object.values(state.heroes);
+        const top = heroesArr
+            .filter((h) => (h.score || 0) > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, topN);
+
+        // 🔑 key that represents what's on screen; rounded score keeps stability
+        const key = top.map((h) => `${h.hero}:${Math.round(h.score)}`).join(",");
+
+        if (key === state.renderKey) {
+            // nothing meaningfully changed → cheap per-card patches only
+            top.forEach((h) => patchCardDOM(h.hero, h));
+            return;
+        }
+        state.renderKey = key;
+
+        // reconcile cards
+        const need = new Set(top.map((h) => h.hero));
+        // remove stale
+        state.container.querySelectorAll(".ticker-card").forEach((node) => {
+            const sym = node.dataset.symbol?.toUpperCase() || "";
+            if (!need.has(sym)) node.remove();
+        });
+
+        // insert/update in correct order
+        top.forEach((h, i) => {
+            const sym = h.hero;
+            let card = state.container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
+            if (!card) {
+                card = createCard(h);
+                state.container.insertBefore(card, state.container.children[i] || null);
+            } else if (state.container.children[i] !== card) {
+                state.container.insertBefore(card, state.container.children[i] || null);
+            }
+            patchCardDOM(sym, h);
+        });
+    }
+
+    /**************************************************************************
+     * 4) Score decay — now uses markDirty instead of direct render calls
+     **************************************************************************/
+    function startScoreDecay() {
+        setInterval(() => {
+            let changed = false;
+            Object.values(state.heroes).forEach((hero) => {
+                const prev = hero.score || 0;
+                if (prev <= 0) return;
+                const scale = 1 + prev / SCORE_NORMALIZATION;
+                const dec = XP_DECAY_PER_TICK * scale;
+                const next = Math.max(0, prev - dec);
+                if (next !== prev) {
+                    hero.score = next;
+                    hero.lastEvent = hero.lastEvent || {};
+                    hero.lastEvent.hp = 0;
+                    hero.lastEvent.dp = 0;
+                    changed = true;
+                }
+            });
+            if (changed) markDirty();
+        }, DECAY_INTERVAL_MS);
+    }
+
+    /**************************************************************************
+     * 5) Event handling → state updates → markDirty()
+     **************************************************************************/
+    function handleAlert(event) {
+        const minPrice = state.settings?.top?.minPrice ?? 0;
+        const maxPrice = state.settings?.top?.maxPrice > 0 ? state.settings.top.maxPrice : Infinity;
+
+        if (!event?.hero) return;
+        if (event.one_min_volume < 5000) return;
+        if (event.price < minPrice || event.price > maxPrice) return;
+
+        const sym = String(event.hero).toUpperCase();
+        const h =
+            state.heroes[sym] ||
+            (state.heroes[sym] = {
+                hero: sym,
+                price: event.price || 1,
+                hue: event.hue ?? 0,
                 hp: 0,
                 dp: 0,
-                strength: symbolData.one_min_volume || 0,
+                strength: event.one_min_volume || 0,
                 xp: 0,
                 lv: 0,
                 score: 0,
-                lastEvent: { hp: 0, dp: 0, xp: 0 },
-                floatValue: symbolData.statistics?.floatShares || 0,
-                buffs: symbolData.buffs || {},
-                highestPrice: symbolData.highestPrice ?? symbolData.price ?? 1,
-            };
+                lastEvent: { hp: 0, dp: 0, score: 0 },
+                buffs: event.buffs || {},
+                highestPrice: event.price || 1,
+                lastUpdate: 0,
+            });
+
+        // update baseline fields
+        h.price = event.price ?? h.price;
+        h.hue = event.hue ?? h.hue;
+        h.strength = event.one_min_volume ?? h.strength;
+        if (event.buffs && Object.keys(event.buffs).length) h.buffs = event.buffs;
+
+        // HP/DP
+        if (event.hp > 0) h.hp += event.hp;
+        else if (event.dp > 0) h.hp = Math.max(h.hp - event.dp, 0);
+
+        // score delta
+        const delta = calculateScore(h, event);
+        h.score = Math.max(0, (h.score || 0) + delta);
+        h.lastEvent = { hp: event.hp || 0, dp: event.dp || 0, score: delta };
+        h.lastUpdate = Date.now();
+
+        // adapt scales
+        let scaleChanged = false;
+        if (h.hp > state.maxHP) {
+            state.maxHP = h.hp * 1.05;
+            scaleChanged = true;
         }
-    });
-
-    debouncedRenderAll();
-    window.helpers.startScoreDecay();
-}
-
-function setupListeners() {
-    window.settingsAPI.onUpdate((updatedSettings) => {
-        if (window.isDev) console.log("🎯 Settings updated:", updatedSettings);
-        window.settings = updatedSettings;
-        debouncedRenderAll();
-    });
-
-    window.eventsAPI.onAlert(handleAlertEvent);
-    window.storeAPI.onHeroUpdate(window.frontlineStateManager.updateHeroData);
-    window.electronAPI.onNukeState(window.frontlineStateManager.handleNuke);
-    window.electronAPI.onXpReset(window.frontlineStateManager.resetXpLevels);
-}
-
-function handleAlertEvent(event) {
-    const minPrice = window.settings?.top?.minPrice ?? 0;
-    const maxPrice = window.settings?.top?.maxPrice > 0 ? window.settings.top.maxPrice : Infinity;
-
-    if (event.one_min_volume < 5000) {
-        if (window.isDev) console.log(`⚠️ Skipping ${event.hero} due to low 1-min volume: ${event.one_min_volume}`);
-        return;
-    }
-
-    if (event.price < minPrice || event.price > maxPrice) {
-        if (window.isDev) {
-            const isTooLow = event.price < minPrice;
-            const isTooHigh = event.price > maxPrice;
-
-            console.log(`🚫 ${event.hero} skipped — price $${event.price} outside range`);
-            console.log(`   ⤷ minPrice: $${minPrice}, maxPrice: $${maxPrice}`);
-            console.log(`   ⤷ Reason: ${isTooLow ? "below min" : ""}${isTooLow && isTooHigh ? " and " : ""}${isTooHigh ? "above max" : ""}`);
-            console.log("   ⤷ Full event:", event);
-        }
-        return;
-    }
-
-    if (!frontlineState[event.hero]) {
-        frontlineState[event.hero] = {
-            hero: event.hero,
-            hue: event.hue ?? 0,
-            price: event.price || 1,
-            hp: 0,
-            dp: 0,
-            strength: event.one_min_volume,
-            xp: 0,
-            lv: 0,
-            score: 0,
-            lastEvent: { hp: 0, dp: 0, xp: 0 },
-            floatValue: 0,
-            buffs: event.buffs || {},
-            highestPrice: event.price || 1,
-        };
-
-        if (window.isDev) {
-            console.log(`🆕 Initialized new hero from alert: ${event.hero}`);
-        }
-    }
-
-    updateFrontlineStateFromEvent(event);
-}
-
-function updateFrontlineStateFromEvent(event) {
-    if (eventsPaused) return;
-
-    if (!event || !event.hero) {
-        console.warn("Invalid event received:", event);
-        return;
-    }
-
-    let hero = frontlineState[event.hero];
-
-    if (!hero) {
-        console.warn("❌ Frontline state missing for hero:", event.hero, "Full event:", event);
-        return; // Prevents crash on `hero.price = ...`
-    }
-
-    hero.price = event.price;
-    hero.hue = event.hue ?? hero.hue ?? 0;
-    hero.strength = event.one_min_volume ?? hero.strength ?? 0;
-    hero.lastChangeText = hero.lastChangeText || "";
-
-    if (event.buffs && Object.keys(event.buffs).length > 0) {
-        hero.buffs = event.buffs;
-    }
-
-    if (event.hp > 0) {
-        hero.hp += event.hp;
-        hero.lastChangeText = `+${event.hp.toFixed(2)}%`;
-    } else if (event.dp > 0) {
-        hero.hp = Math.max(hero.hp - event.dp, 0);
-        hero.lastChangeText = `-${event.dp.toFixed(2)}%`;
-    }
-
-    // Handle HP changes
-    const wasDead = hero.hp === 0 && event.hp > 0;
-    if (wasDead) {
-        if (window.isDev) console.log(`💀 ${hero.hero} RISES FROM DEAD!`);
-    }
-
-    const isReversal = hero.lastEvent.dp > 0 && event.hp > 0;
-    if (isReversal) {
-        if (window.isDev) console.log(`🔄 ${hero.hero} REVERSAL!`);
-    }
-    // Update score
-    let scoreDelta = 0;
-
-    scoreDelta = window.helpers.calculateScore(hero, event);
-    hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
-
-    hero.lastEvent = {
-        hp: event.hp || 0,
-        dp: event.dp || 0,
-        score: scoreDelta,
-    };
-
-    // calculateXp(hero, event);
-
-    // Check if we need to scale up
-    let needsFullRender = false;
-    if (hero.hp > maxHP) {
-        maxHP = hero.hp * 1.05; // 5% buffer
-        needsFullRender = true;
-    }
-
-    if (hero.score > maxScore) {
-        maxScore = hero.score * 1.05; // 5% buffer
-        needsFullRender = true;
-    }
-
-    // Check if we should scale down
-    const topN = window.settings?.top?.frontlineListLength ?? 8;
-    const currentTopHeroes = Object.values(frontlineState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, topN)
-        .map((s) => s.hero);
-
-    // Scale down HP if all below threshold
-    if (
-        currentTopHeroes.every((heroName) => {
-            const h = frontlineState[heroName];
-            return h.hp < maxHP * SCALE_DOWN_THRESHOLD;
-        }) &&
-        maxHP > BASE_MAX_HP
-    ) {
-        maxHP = Math.max(BASE_MAX_HP, maxHP * SCALE_DOWN_FACTOR);
-        needsFullRender = true;
-    }
-
-    // Scale down Score if all below threshold
-    if (
-        currentTopHeroes.every((heroName) => {
-            const h = frontlineState[heroName];
-            return h.score < maxScore * SCALE_DOWN_THRESHOLD;
-        }) &&
-        maxScore > BASE_MAX_SCORE
-    ) {
-        maxScore = Math.max(BASE_MAX_SCORE, maxScore * SCALE_DOWN_FACTOR);
-        needsFullRender = true;
-    }
-
-    // Render updates
-    if (needsFullRender || currentTopHeroes.join(",") !== lastTopHeroes.join(",")) {
-        lastTopHeroes = currentTopHeroes;
-        debouncedRenderAll();
-    } else {
-        queueCardUpdate(event.hero);
-    }
-
-    hero.lastUpdate = Date.now();
-}
-
-// Debounce helper
-function debounce(fn, delay) {
-    let timer = null;
-    return function (...args) {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn.apply(this, args), delay);
-    };
-}
-
-function medalForRank(rank) {
-    if (rank === 1) return "🥇";
-    if (rank === 2) return "🥈";
-    if (rank === 3) return "🥉";
-    return "";
-}
-
-function getSymbolMedal(symbol) {
-    return medalForRank(rankMap.get(symbol.toUpperCase()));
-}
-
-const debouncedRenderAll = debounce(renderAll, 80);
-const debouncedUpdateCardDOM = debounce(updateCardDOM, 30);
-
-function renderAll() {
-    const topN = window.settings?.top?.frontlineListLength ?? 3;
-    const top = Object.values(frontlineState)
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, topN);
-
-    const topSymbols = top.map((h) => h.hero.trim().toUpperCase());
-    const rendered = new Set();
-
-    // Track and remove duplicates first
-    document.querySelectorAll(".ticker-card").forEach((card) => {
-        const sym = card.dataset.symbol?.trim().toUpperCase();
-        if (rendered.has(sym) || !topSymbols.includes(sym)) {
-            card.remove();
-        } else {
-            rendered.add(sym);
-        }
-    });
-
-    top.forEach((heroData, i) => {
-        const sym = heroData.hero.trim().toUpperCase();
-        const existing = container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
-
-        if (!existing) {
-            const newCard = renderCard(frontlineState[sym]);
-            container.insertBefore(newCard, container.children[i] || null);
-
-            // ⚡ Immediately check fade out / not
-            updateCardDOM(sym);
-        } else {
-            if (container.children[i] !== existing) {
-                container.insertBefore(existing, container.children[i] || null);
-            }
-            updateCardDOM(sym);
-        }
-    });
-}
-
-function updateCardDOM(hero) {
-    hero = hero?.trim().toUpperCase();
-    if (!hero || !frontlineState[hero]) return;
-
-    const state = frontlineState[hero];
-    const card = document.querySelector(`.ticker-card[data-symbol="${hero}"]`);
-    if (!card) return;
-
-    // Existing updates (score bar, volume, price, fade logic, HP/DP)
-    const bar = card.querySelector(`.bar-fill.score`);
-    if (bar) {
-        const exponent = 0.75;
-        const normalized = Math.min(state.score / maxScore, 1);
-        const fill = Math.pow(normalized, exponent);
-        bar.style.width = `${fill * 100}%`;
-    }
-
-    const volumeEl = card.querySelector(".bar-text");
-    if (volumeEl) {
-        const volumeImpact = window.hlpsFunctions.calculateImpact(state.strength, state.price, window.buffs);
-        volumeEl.textContent = window.helpers.abbreviatedValues(state.strength);
-        volumeEl.style.color = volumeImpact.style.color;
-    }
-
-    const now = Date.now();
-    const lastUpdate = state.lastUpdate || now;
-    const timeSinceUpdate = now - lastUpdate;
-    const inactiveThreshold = 7000;
-
-    if (timeSinceUpdate > inactiveThreshold) {
-        card.classList.add("fade-out");
-        card.classList.remove("card-update-highlight");
-    } else {
-        card.classList.remove("fade-out");
-        card.classList.add("card-update-highlight");
-        setTimeout(() => card.classList.remove("card-update-highlight"), 300);
-    }
-
-    const changeEl = card.querySelector(".change-placeholder");
-    if (changeEl) {
-        const hadHp = state.lastEvent.hp > 0;
-        const hadDp = state.lastEvent.dp > 0;
-
-        if (hadHp) {
-            changeEl.classList.remove("dp-damage");
-            changeEl.classList.add("hp-boost");
-            state.lastChangeText = `+${state.lastEvent.hp.toFixed(2)}%`;
-        } else if (hadDp) {
-            changeEl.classList.remove("hp-boost");
-            changeEl.classList.add("dp-damage");
-            state.lastChangeText = `-${state.lastEvent.dp.toFixed(2)}%`;
+        if (h.score > state.maxScore) {
+            state.maxScore = h.score * 1.05;
+            scaleChanged = true;
         }
 
-        changeEl.textContent = state.lastChangeText || "";
-        changeEl.classList.add("change-flash");
-        setTimeout(() => changeEl.classList.remove("change-flash"), 400);
+        // shrink scales if everything is below threshold
+        const topN = state.settings?.top?.frontlineListLength ?? 8;
+        const top = Object.values(state.heroes)
+            .filter((x) => x.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, topN);
+        const allBelowHP = top.length && top.every((x) => x.hp < state.maxHP * SCALE_DOWN_THRESHOLD);
+        const allBelowScore = top.length && top.every((x) => x.score < state.maxScore * SCALE_DOWN_THRESHOLD);
+
+        if (allBelowHP && state.maxHP > BASE_MAX_HP) {
+            state.maxHP = Math.max(BASE_MAX_HP, state.maxHP * SCALE_DOWN_FACTOR);
+            scaleChanged = true;
+        }
+        if (allBelowScore && state.maxScore > BASE_MAX_SCORE) {
+            state.maxScore = Math.max(BASE_MAX_SCORE, state.maxScore * SCALE_DOWN_FACTOR);
+            scaleChanged = true;
+        }
+
+        // request a redraw (renderKey will skip if nothing visible changed)
+        markDirty();
     }
 
-    const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
-
-    const sortBuffs = (arr) =>
-        arr.sort((a, b) => {
-            const aIndex = sortOrder.indexOf(a._sortKey);
-            const bIndex = sortOrder.indexOf(b._sortKey);
-            return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-        });
-
-    // Add buffs update
-    const buffsContainer = card.querySelector(".buffs-container");
-    if (buffsContainer) {
-        const sortedBuffs = sortBuffs(Object.values(state.buffs || {}));
-        const buffsInline = sortedBuffs.map((buff) => `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`).join("");
-        buffsContainer.innerHTML = buffsInline;
-    }
-
-    const medalEl = card.querySelector(".lv-medal");
-    if (medalEl) medalEl.textContent = getSymbolMedal(hero);
-
-    const priceEl = card.querySelector(".lv-price");
-    if (priceEl) priceEl.textContent = `$${state.price.toFixed(2)}`;
-}
-
-function renderCard(state) {
-    const { hero, price, strength, lastEvent } = state;
-
-    const card = document.createElement("div");
-    card.className = "ticker-card";
-    card.dataset.symbol = hero;
-
-    const change = lastEvent.hp ? `+${lastEvent.hp.toFixed(2)}%` : lastEvent.dp ? `-${lastEvent.dp.toFixed(2)}%` : "";
-    const changeClass = lastEvent.hp ? "hp-boost" : lastEvent.dp ? "dp-damage" : "";
-
-    const volumeImpact = window.hlpsFunctions.calculateImpact(strength, price, window.buffs);
-
-    const sortOrder = ["volume", "float", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
-    const buffCategoryMap = {
-        minVol: "volume",
-        lowVol: "volume",
-        mediumVol: "volume",
-        highVol: "volume",
-        parabolicVol: "volume",
-        float1m: "float",
-        float5m: "float",
-        float10m: "float",
-        float50m: "float",
-        float100m: "float",
-        float200m: "float",
-        float500m: "float",
-        float600m: "float",
-        float600mPlus: "float",
-        floatCorrupt: "float",
-        floatUnranked: "float",
-        news: "news",
-        bounceBack: "bounceBack",
-        highShort: "highShort",
-        newHigh: "newHigh",
-        netLoss: "netLoss",
-        hasS3: "hasS3",
-        dilutionRisk: "dilutionRisk",
-        china: "china",
-        bio: "bio",
-        weed: "weed",
-        space: "space",
-        lockedShares: "lockedShares",
-    };
-
-    const sortBuffs = (arr) =>
-        arr.sort((a, b) => {
-            const aKey = buffCategoryMap[a.key] || a.key;
-            const bKey = buffCategoryMap[b.key] || b.key;
-            return (sortOrder.indexOf(aKey) || 999) - (sortOrder.indexOf(bKey) || 999);
-        });
-
-    const sortedBuffs = sortBuffs(Object.values(state.buffs || {}));
-    const buffsInline = sortedBuffs.map((buff) => `<span class="buff-icon ${buff.isBuff ? "buff-positive" : "buff-negative"}" title="${buff.desc}">${buff.icon}</span>`).join("");
-
-    card.innerHTML = `
-    <div class="ticker-header">
-        <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}">
-        ${state.hero}
-        <span class="lv">
-            <span class="lv-medal">${getSymbolMedal(state.hero)}</span>
-            <span class="lv-price">$${state.price.toFixed(2)}</span>
-        </span>
-        </div>
-        <div class="ticker-info">
-            <div class="ticker-data">
-                <span class="bar-text" style="color:${volumeImpact.style.color}">
-                    ${window.helpers.abbreviatedValues(strength)}
-                </span>
-                <span class="change-placeholder ${changeClass}">${change}</span>
-                <div class="buffs-container">
-                    ${buffsInline}
-                </div>
-            </div>
-            <div class="bars">
-                <div class="bar">
-                    <div class="bar-fill score" style="width: ${Math.min((state.score / maxScore) * 100, 100)}%"></div>
-                </div>
-            </div>
-        </div>
-    </div>`;
-
-    const symbolElement = card.querySelector(".ticker-symbol");
-    symbolElement.onclick = (e) => {
-        e.stopPropagation();
+    /**************************************************************************
+     * 6) Top3 subscription (kept same contract, but lighter)
+     **************************************************************************/
+    let __top3Unsub = null;
+    async function initTop3() {
         try {
-            navigator.clipboard.writeText(hero);
-            if (window.activeAPI?.setActiveTicker) window.activeAPI.setActiveTicker(hero);
-            lastClickedSymbol = hero;
-            symbolElement.classList.add("symbol-clicked");
-            setTimeout(() => symbolElement.classList.remove("symbol-clicked"), 200);
-        } catch (err) {
-            console.error(`⚠️ Failed to handle click for ${hero}:`, err);
-        }
-    };
+            const { entries } = await window.top3API.get();
+            state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+        } catch {}
 
-    return card;
-}
+        __top3Unsub = window.top3API.subscribe?.(({ entries }) => {
+            state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+            // medals updated next render; optionally patch visible cards:
+            state.container?.querySelectorAll(".ticker-card").forEach((card) => {
+                const sym = card.dataset.symbol?.toUpperCase();
+                const medalEl = card.querySelector(".lv-medal");
+                if (sym && medalEl) medalEl.textContent = medalForRank(state.rankMap.get(sym));
+            });
+        });
+    }
+    window.addEventListener("beforeunload", () => {
+        if (__top3Unsub) __top3Unsub();
+    });
+
+    /**************************************************************************
+     * 7) Boot
+     **************************************************************************/
+    async function boot() {
+        // DOM
+        state.container = document.getElementById("frontline");
+        if (!state.container) return;
+
+        // settings & buffs
+        try {
+            state.settings = await window.settingsAPI.get();
+        } catch {}
+        try {
+            state.buffs = await window.electronAPI.getBuffs();
+            window.buffs = state.buffs; // keep legacy path alive for calculateImpact()
+        } catch {}
+        
+        window.electronAPI.onBuffsUpdate?.((b) => {
+            state.buffs = b || [];
+            window.buffs = state.buffs; // keep OG compatibility
+            markDirty();
+        });
+
+        // listeners
+        window.settingsAPI.onUpdate((s) => {
+            state.settings = s || {};
+            markDirty();
+        });
+        window.electronAPI.onBuffsUpdate?.((b) => {
+            state.buffs = b || [];
+            markDirty();
+        });
+
+        // alerts + hero updates + nukes
+        window.eventsAPI.onAlert(handleAlert);
+        window.storeAPI.onHeroUpdate((payload) => {
+            const items = Array.isArray(payload) ? payload : [payload];
+            items.forEach(({ hero, price, one_min_volume, buffs }) => {
+                if (!hero) return;
+                const sym = String(hero).toUpperCase();
+                const h = state.heroes[sym] || (state.heroes[sym] = { hero: sym, price: 1, hp: 0, dp: 0, strength: 0, xp: 0, lv: 0, score: 0, lastEvent: {}, buffs: {}, lastUpdate: 0 });
+                if (Number.isFinite(price)) h.price = price;
+                if (Number.isFinite(one_min_volume)) h.strength = one_min_volume;
+                if (buffs) h.buffs = buffs;
+                h.lastUpdate = Date.now();
+            });
+            markDirty();
+        });
+        window.electronAPI.onNukeState?.(() => {
+            Object.keys(state.heroes).forEach((k) => delete state.heroes[k]);
+            state.renderKey = "";
+            state.container.innerHTML = "";
+            markDirty();
+        });
+
+        // top3 medals
+        await initTop3();
+
+        // decay
+        startScoreDecay();
+
+        // first paint
+        markDirty();
+    }
+
+    /**************************************************************************
+     * 8) Wire helpers & DOM ready
+     **************************************************************************/
+    function safeExpose() {
+        exposeHelpers();
+    }
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+            safeExpose();
+            boot().catch((e) => console.error("frontline boot failed:", e));
+        });
+    } else {
+        safeExpose();
+        boot().catch((e) => console.error("frontline boot failed:", e));
+    }
+})();

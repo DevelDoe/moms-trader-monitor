@@ -235,7 +235,22 @@ function pruneReachedHod() {
     }
     if (removed) markDirty();
 }
+
+function pruneInactive() {
+    const now = Date.now();
+    let removed = false;
+    for (const [sym, t] of state.tickers) {
+        const last = t.lastMoveAt ?? t.lastUpdate ?? 0;
+        if (now - last >= INACTIVE_EVICT_MS) {
+            state.tickers.delete(sym);
+            removed = true;
+        }
+    }
+    if (removed) markDirty();
+}
+
 setInterval(pruneReachedHod, 5_000);
+setInterval(pruneInactive, 90_000);
 
 /* 7) Boot */
 document.addEventListener("DOMContentLoaded", async () => {
