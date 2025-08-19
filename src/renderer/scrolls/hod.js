@@ -30,7 +30,7 @@ window.lastAudioTime ??= 0;
 // Housekeeping
 const HOD_EVICT_MS = 60_000;
 const MAX_ROWS = 10;
-const DEFAULT_INACTIVE_MS = 12_000;
+const DEFAULT_INACTIVE_MS = 1_000;
 
 const SOUND_TRACKED_ONLY = true;
 
