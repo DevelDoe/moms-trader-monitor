@@ -49,6 +49,51 @@ function markDirty() {
     });
 }
 
+/* ======================= 2a) Buff helpers ======================= */
+const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
+const placeholderDot = `<span class="buff-icon" style="opacity:.0">•</span>`;
+
+// stable signature so renderKey can detect changes (add/remove/flip)
+function buffSignature(h) {
+    const b = h.buffs || {};
+    return Object.keys(b)
+        .sort()
+        .map((k) => {
+            const v = b[k] || {};
+            const flag = v.isBuff === true ? "+" : v.isBuff === false ? "-" : "0";
+            return `${k}:${flag}:${v.icon || ""}`;
+        })
+        .join("|");
+}
+
+function buildBuffRows(h) {
+    const arr = Object.entries(h.buffs || {}).map(([key, v]) => ({
+        ...(v || {}),
+        key,
+        _sortKey: key.toLowerCase().includes("vol") ? "volume" : key,
+    }));
+    const sort = (xs) =>
+        xs.sort((a, b) => {
+            const ai = sortOrder.indexOf(a._sortKey);
+            const bi = sortOrder.indexOf(b._sortKey);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        });
+    const pos = sort(arr.filter((x) => x.isBuff === true));
+    const neu = sort(arr.filter((x) => x.isBuff === undefined));
+    const neg = sort(arr.filter((x) => x.isBuff === false));
+
+    const row = (xs) =>
+        xs.length
+            ? xs.map((b) => `<span class="buff-icon ${b.isBuff ? "buff-positive" : b.isBuff === false ? "buff-negative" : ""}" title="${b.desc || ""}">${b.icon || "•"}</span>`).join("")
+            : placeholderDot;
+
+    return {
+        posHTML: row(pos),
+        neuHTML: row(neu),
+        negHTML: row(neg),
+    };
+}
+
 function createCard(h) {
     const card = document.createElement("div");
     card.className = "ticker-card";
@@ -62,8 +107,8 @@ function createCard(h) {
     // - window.helpers.getXpProgress(stateObj) -> { totalXp, xpForNextLevel, xpPercent }
     const volImpact = window.hlpsFunctions.calculateImpact(h.strength || 0, h.price || 0, state.buffs);
     const { totalXp, xpForNextLevel, xpPercent } = window.helpers.getXpProgress(h);
-
     const fadeStyle = Date.now() - (h.lastUpdate || 0) <= 10_000 ? "" : "opacity:.8; filter:grayscale(.8);";
+    const { posHTML, neuHTML, negHTML } = buildBuffRows(h);
 
     // buffs (grouped + inline)
     const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
@@ -101,9 +146,9 @@ function createCard(h) {
       </div>
 
       <div class="buff-container">
-        <div class="buff-row positive">${pos.length ? toBuffRow(pos) : `<span class="buff-icon" style="opacity:.0">•</span>`}</div>
-        <div class="buff-row neutral">${neu.length ? toBuffRow(neu) : `<span class="buff-icon" style="opacity:.0">•</span>`}</div>
-        <div class="buff-row negative">${neg.length ? toBuffRow(neg) : `<span class="buff-icon" style="opacity:.0">•</span>`}</div>
+        <div class="buff-row positive">${posHTML}</div>
+        <div class="buff-row neutral">${neuHTML}</div>
+        <div class="buff-row negative">${negHTML}</div>
       </div>
     </div>
 
@@ -165,6 +210,14 @@ function patchCardDOM(sym, h) {
     const strBar = card.querySelector(".bar-fill.strength");
     if (strBar) strBar.style.backgroundColor = volImpact.style.color;
 
+    // 🔁 refresh buff rows
+    const { posHTML, neuHTML, negHTML } = buildBuffRows(h);
+    const posRow = card.querySelector(".buff-row.positive");
+    const neuRow = card.querySelector(".buff-row.neutral");
+    const negRow = card.querySelector(".buff-row.negative");
+    if (posRow) posRow.innerHTML = posHTML;
+    if (neuRow) neuRow.innerHTML = neuHTML;
+    if (negRow) negRow.innerHTML = negHTML;
 }
 
 /* ======================= 5) Render ======================= */

@@ -100,7 +100,7 @@ const { DateTime } = require("luxon");
 ////////////////////////////////////////////////////////////////////////////////////
 // SERVICES
 
-const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
+// const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
 const { hydrateAndApplySymbols } = require("./collectors/arcane_api");
 const { startMockNews } = require("./collectors/news");
 const { getLastAckCursor, setLastAckCursor, setTop3, getTop3 } = require("./electronStores");
