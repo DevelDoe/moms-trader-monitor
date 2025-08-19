@@ -1,59 +1,39 @@
-// heroes.refactor.js — aligns with frontline pattern (state → markDirty → render)
+// heroes.clean.js — consume store buffs (Frontline style), minimal & maintainable
 
-/* ======================= 0) Config ======================= */
+/* ===== 0) Config ===== */
 const DECAY_INTERVAL_MS = 6000;
 const XP_DECAY_PER_TICK = 0.2;
 const SCORE_NORMALIZATION = 5;
 const BASE_MAX_HP = 30;
-const SCALE_DOWN_THRESHOLD = 0.2; // when all below this fraction of maxHP, shrink maxHP
-const SCALE_DOWN_FACTOR = 0.9;
-const ACTIVE_TICKER_UPDATE_INTERVAL = 3 * 60 * 1000; // 3 min
-const MIN_UPDATE_INTERVAL = 5000; // for TradingView setTopTickers
+const ACTIVE_TICKER_UPDATE_INTERVAL = 3 * 60 * 1000;
+const MIN_UPDATE_INTERVAL = 5000;
 const MAX_STRENGTH = 1_000_000;
 
-window.isDev = window.appFlags?.isDev === true;
-
-/* ======================= 1) State ======================= */
+/* ===== 1) State ===== */
 const state = {
-    heroes: Object.create(null), // symbol -> hero record
+    heroes: Object.create(null),
     container: null,
     settings: {},
-    buffs: [],
+    buffsMaster: [], // only for volume color; buffs themselves come from store
     rafPending: false,
-    renderKey: "", // 🔑 visible lineup hash
+    renderKey: "",
     maxHP: BASE_MAX_HP,
 
-    // top/rotation mirrors
+    // rotation & TradingView sync
     lastTopSymbolsKey: "",
-    currentTopHero: null,
     currentActiveTicker: null,
     lastActiveTickerUpdate: 0,
     lastTickerSetAt: 0,
 
-    // medals/top3
+    // medals
     rankMap: new Map(),
     top3Unsub: null,
 };
 
-/* ======================= 2) Utilities ======================= */
+/* ===== 2) Utils ===== */
 const medalForRank = (r) => (r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : "");
 const getSymbolMedal = (s) => medalForRank(state.rankMap.get(String(s || "").toUpperCase()) || 0);
 
-/* ======================= 3) Render scheduling ======================= */
-function markDirty() {
-    if (state.rafPending) return;
-    state.rafPending = true;
-    requestAnimationFrame(() => {
-        state.rafPending = false;
-        render();
-    });
-}
-
-/* ======================= 2a) Buff helpers ======================= */
-const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
-const placeholderDot = `<span class="buff-icon" style="opacity:.0">•</span>`;
-
-// stable signature so renderKey can detect changes (add/remove/flip)
 function buffSignature(h) {
     const b = h.buffs || {};
     return Object.keys(b)
@@ -66,18 +46,23 @@ function buffSignature(h) {
         .join("|");
 }
 
+const BUFF_SORT_ORDER = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
+const placeholderDot = `<span class="buff-icon" style="opacity:.0">•</span>`;
+
 function buildBuffRows(h) {
     const arr = Object.entries(h.buffs || {}).map(([key, v]) => ({
         ...(v || {}),
         key,
-        _sortKey: key.toLowerCase().includes("vol") ? "volume" : key,
+        _sortKey: key.toLowerCase().startsWith("float") ? "float" : key.toLowerCase().includes("vol") ? "volume" : key,
     }));
+
     const sort = (xs) =>
         xs.sort((a, b) => {
-            const ai = sortOrder.indexOf(a._sortKey);
-            const bi = sortOrder.indexOf(b._sortKey);
+            const ai = BUFF_SORT_ORDER.indexOf(a._sortKey);
+            const bi = BUFF_SORT_ORDER.indexOf(b._sortKey);
             return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
         });
+
     const pos = sort(arr.filter((x) => x.isBuff === true));
     const neu = sort(arr.filter((x) => x.isBuff === undefined));
     const neg = sort(arr.filter((x) => x.isBuff === false));
@@ -87,62 +72,44 @@ function buildBuffRows(h) {
             ? xs.map((b) => `<span class="buff-icon ${b.isBuff ? "buff-positive" : b.isBuff === false ? "buff-negative" : ""}" title="${b.desc || ""}">${b.icon || "•"}</span>`).join("")
             : placeholderDot;
 
-    return {
-        posHTML: row(pos),
-        neuHTML: row(neu),
-        negHTML: row(neg),
-    };
+    return { posHTML: row(pos), neuHTML: row(neu), negHTML: row(neg) };
 }
 
+/* ===== 3) Render scheduling ===== */
+function markDirty() {
+    if (state.rafPending) return;
+    state.rafPending = true;
+    requestAnimationFrame(() => {
+        state.rafPending = false;
+        render();
+    });
+}
+
+/* ===== 4) Card creation / patch ===== */
 function createCard(h) {
     const card = document.createElement("div");
     card.className = "ticker-card";
     card.dataset.symbol = h.hero;
 
-    const changeText = h.lastEvent?.hp ? `+${h.lastEvent.hp.toFixed(2)}%` : h.lastEvent?.dp ? `-${h.lastEvent.dp.toFixed(2)}%` : "";
-
-    // external helpers expected to exist:
-    // - window.helpers.getSymbolColor(h.hue)
-    // - window.hlpsFunctions.calculateImpact(strength, price, buffs)
-    // - window.helpers.getXpProgress(stateObj) -> { totalXp, xpForNextLevel, xpPercent }
-    const volImpact = window.hlpsFunctions.calculateImpact(h.strength || 0, h.price || 0, state.buffs);
+    const impact = window.hlpsFunctions?.calculateImpact?.(h.strength || 0, h.price || 0, state.buffsMaster) || { style: { color: "" } };
     const { totalXp, xpForNextLevel, xpPercent } = window.helpers.getXpProgress(h);
-    const fadeStyle = Date.now() - (h.lastUpdate || 0) <= 10_000 ? "" : "opacity:.8; filter:grayscale(.8);";
+    const faded = Date.now() - (h.lastUpdate || 0) > 10_000 ? "opacity:.8; filter:grayscale(.8);" : "";
     const { posHTML, neuHTML, negHTML } = buildBuffRows(h);
-
-    // buffs (grouped + inline)
-    const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
-    const toBuffRow = (arr) =>
-        arr
-            .sort((a, b) => (sortOrder.indexOf(a._sortKey) ?? 999) - (sortOrder.indexOf(b._sortKey) ?? 999))
-            .map((b) => `<span class="buff-icon ${b.isBuff ? "buff-positive" : b.isBuff === false ? "buff-negative" : ""}" title="${b.desc || ""}">${b.icon || "•"}</span>`)
-            .join("");
-
-    const buffsArray = Object.entries(h.buffs || {}).map(([key, b]) => ({
-        ...(b || {}),
-        key,
-        _sortKey: key.toLowerCase().includes("vol") ? "volume" : key,
-    }));
-    const pos = buffsArray.filter((b) => b.isBuff === true);
-    const neg = buffsArray.filter((b) => b.isBuff === false);
-    const neu = buffsArray.filter((b) => b.isBuff === undefined);
 
     card.innerHTML = `
     <div class="ticker-header-grid">
       <div class="ticker-info">
-        <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(h.hue || 0)}; ${fadeStyle}">
+        <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(h.hue || 0)}; ${faded}">
           $${h.hero}
           <span class="lv">
             <span class="lv-medal">${getSymbolMedal(h.hero)}</span>
             <span class="lv-price">$${(h.price ?? 0).toFixed(2)}</span>
           </span>
         </div>
-        <div id="lv"><span class="bar-text stats lv" style="font-size:6px;margin-top:4px">L <span style="color:white;"> ${h.lv ?? 1}</span></span></div>
-        <div id="x"><span class="bar-text stats x" style="font-size:6px;margin-top:4px">X <span style="color:#04f370;"> ${Math.floor(totalXp)}</span></span></div>
-        <div id="ch"><span class="bar-text stats ch" style="font-size:6px;margin-top:4px">C <span style="color:#fd5151;"> ${(h.hp || 0).toFixed(0)}%</span></span></div>
-        <div id="vo"><span class="bar-text stats" style="font-size:6px;margin-top:4px">V <span style="color:${volImpact.style.color};"> ${window.helpers.abbreviatedValues(
-        h.strength || 0
-    )}</span></span></div>
+        <div class="bar-text stats lv" style="font-size:6px;margin-top:4px">L <span style="color:white;">${h.lv ?? 1}</span></div>
+        <div class="bar-text stats x"  style="font-size:6px;margin-top:4px">X <span style="color:#04f370;">${Math.floor(totalXp)}</span></div>
+        <div class="bar-text stats ch" style="font-size:6px;margin-top:4px">C <span style="color:#fd5151;">${(h.hp || 0).toFixed(0)}%</span></div>
+        <div class="bar-text stats"    style="font-size:6px;margin-top:4px">V <span style="color:${impact.style.color};">${window.helpers.abbreviatedValues(h.strength || 0)}</span></div>
       </div>
 
       <div class="buff-container">
@@ -153,32 +120,22 @@ function createCard(h) {
     </div>
 
     <div class="bars">
-      <div class="bar">
-        <div class="bar-fill xp" style="width:${xpPercent}%">
-          <span class="bar-text">XP: ${Math.floor(totalXp)} / ${xpForNextLevel}</span>
-        </div>
-      </div>
-      <div class="bar">
-        <div class="bar-fill hp" style="width:${Math.min((h.hp / state.maxHP) * 100, 100)}%">
-          <span class="bar-text">HP: ${(h.hp || 0).toFixed(0)}</span>
-        </div>
-      </div>
-      <div class="bar">
-        <div class="bar-fill strength" style="background-color:${volImpact.style.color}; width:${Math.min((h.strength / MAX_STRENGTH) * 100, 100)}%">
-          <span class="bar-text">STRENGTH: ${Math.floor((h.strength || 0) / 100_000)}k</span>
-        </div>
-      </div>
+      <div class="bar"><div class="bar-fill xp"       style="width:${xpPercent}%"><span class="bar-text">XP: ${Math.floor(totalXp)} / ${xpForNextLevel}</span></div></div>
+      <div class="bar"><div class="bar-fill hp"       style="width:${Math.min((h.hp / state.maxHP) * 100, 100)}%"><span class="bar-text">HP: ${(h.hp || 0).toFixed(0)}</span></div></div>
+      <div class="bar"><div class="bar-fill strength" style="background-color:${impact.style.color}; width:${Math.min((h.strength / MAX_STRENGTH) * 100, 100)}%">
+        <span class="bar-text">STRENGTH: ${Math.floor((h.strength || 0) / 100_000)}k</span>
+      </div></div>
     </div>
   `;
 
-    const symbolEl = card.querySelector(".ticker-symbol");
-    symbolEl.onclick = (e) => {
+    const symEl = card.querySelector(".ticker-symbol");
+    symEl.onclick = (e) => {
         e.stopPropagation();
         try {
             navigator.clipboard.writeText(h.hero);
             window.activeAPI?.setActiveTicker?.(h.hero);
-            symbolEl.classList.add("symbol-clicked");
-            setTimeout(() => symbolEl.classList.remove("symbol-clicked"), 200);
+            symEl.classList.add("symbol-clicked");
+            setTimeout(() => symEl.classList.remove("symbol-clicked"), 200);
         } catch {}
     };
 
@@ -195,12 +152,11 @@ function patchCardDOM(sym, h) {
     const medalEl = card.querySelector(".lv-medal");
     if (medalEl) medalEl.textContent = getSymbolMedal(sym);
 
-    // animate bars towards new widths
-    const volImpact = window.hlpsFunctions.calculateImpact(h.strength || 0, h.price || 0, state.buffs);
+    const impact = window.hlpsFunctions?.calculateImpact?.(h.strength || 0, h.price || 0, state.buffsMaster) || { style: { color: "" } };
     const { xpPercent } = window.helpers.getXpProgress(h);
 
-    const setWidth = (selector, pct) => {
-        const el = card.querySelector(selector);
+    const setWidth = (sel, pct) => {
+        const el = card.querySelector(sel);
         if (el) el.style.width = `${Math.max(0, Math.min(100, pct))}%`;
     };
     setWidth(".bar-fill.xp", xpPercent);
@@ -208,9 +164,8 @@ function patchCardDOM(sym, h) {
     setWidth(".bar-fill.strength", Math.min((h.strength / MAX_STRENGTH) * 100, 100));
 
     const strBar = card.querySelector(".bar-fill.strength");
-    if (strBar) strBar.style.backgroundColor = volImpact.style.color;
+    if (strBar) strBar.style.backgroundColor = impact.style.color;
 
-    // 🔁 refresh buff rows
     const { posHTML, neuHTML, negHTML } = buildBuffRows(h);
     const posRow = card.querySelector(".buff-row.positive");
     const neuRow = card.querySelector(".buff-row.neutral");
@@ -220,7 +175,7 @@ function patchCardDOM(sym, h) {
     if (negRow) negRow.innerHTML = negHTML;
 }
 
-/* ======================= 5) Render ======================= */
+/* ===== 5) Render ===== */
 function render() {
     if (!state.container) return;
 
@@ -230,16 +185,13 @@ function render() {
         .sort((a, b) => b.score - a.score)
         .slice(0, topN);
 
-    // 🔑 build a key to detect meaningful UI changes
-    const key = list.map((h) => `${h.hero}:${Math.round(h.score)}:${Math.round(h.hp)}`).join(",");
+    const key = list.map((h) => `${h.hero}:${Math.round(h.score)}:${Math.round(h.hp)}:${buffSignature(h)}`).join(",");
     if (key === state.renderKey) {
-        // only patch values (cheaper than rebuilding)
         list.forEach((h) => patchCardDOM(h.hero, h));
         return;
     }
     state.renderKey = key;
 
-    // Reconcile DOM order and content
     const need = new Set(list.map((h) => h.hero));
     state.container.querySelectorAll(".ticker-card").forEach((el) => {
         const sym = el.dataset.symbol;
@@ -257,23 +209,15 @@ function render() {
         patchCardDOM(h.hero, h);
     });
 
-    // ——— active ticker rotation + TradingView sync ———
+    // rotation + TV sync (optional, but kept)
     const now = Date.now();
     const topSymbols = list.map((h) => h.hero);
     const topKey = topSymbols.join(",");
-    const newTopHero = topSymbols[0];
 
-    if (newTopHero && newTopHero !== state.currentTopHero) {
-        state.currentTopHero = newTopHero;
-        if (window.activeAPI?.setActiveTicker) {
-            window.activeAPI.setActiveTicker(newTopHero);
-            state.currentActiveTicker = newTopHero;
-            state.lastActiveTickerUpdate = now;
-        }
-    } else if (window.activeAPI?.setActiveTicker && topSymbols.length > 0 && now - state.lastActiveTickerUpdate >= ACTIVE_TICKER_UPDATE_INTERVAL) {
+    if (topSymbols.length && (now - state.lastActiveTickerUpdate >= ACTIVE_TICKER_UPDATE_INTERVAL || !state.currentActiveTicker)) {
         const candidates = topSymbols.filter((s) => s !== state.currentActiveTicker);
-        const pick = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : topSymbols[Math.floor(Math.random() * topSymbols.length)];
-        window.activeAPI.setActiveTicker(pick);
+        const pick = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : topSymbols[0];
+        window.activeAPI?.setActiveTicker?.(pick);
         state.currentActiveTicker = pick;
         state.lastActiveTickerUpdate = now;
     }
@@ -288,7 +232,7 @@ function render() {
     }
 }
 
-/* ======================= 6) Score decay ======================= */
+/* ===== 6) Score decay ===== */
 function startScoreDecay() {
     setInterval(() => {
         let changed = false;
@@ -296,9 +240,7 @@ function startScoreDecay() {
         for (const h of vals) {
             const prev = h.score || 0;
             if (prev <= 0) continue;
-            const scale = 1 + prev / SCORE_NORMALIZATION;
-            const dec = XP_DECAY_PER_TICK * scale;
-            const next = Math.max(0, prev - dec);
+            const next = Math.max(0, prev - XP_DECAY_PER_TICK * (1 + prev / SCORE_NORMALIZATION));
             if (next !== prev) {
                 h.score = next;
                 h.lastEvent = h.lastEvent || {};
@@ -309,29 +251,25 @@ function startScoreDecay() {
         }
         if (!changed) return;
 
-        // scale down maxHP if everything fell
         const topN = state.settings?.top?.heroesListLength ?? 10;
         const top = vals
             .filter((x) => x.score > 0)
             .sort((a, b) => b.score - a.score)
             .slice(0, topN);
         if (top.length) {
-            const allBelow = top.every((x) => (x.hp || 0) < state.maxHP * SCALE_DOWN_THRESHOLD);
-            if (allBelow && state.maxHP > BASE_MAX_HP) {
-                state.maxHP = Math.max(BASE_MAX_HP, state.maxHP * SCALE_DOWN_FACTOR);
-            }
+            const allBelow = top.every((x) => (x.hp || 0) < state.maxHP * 0.2);
+            if (allBelow && state.maxHP > BASE_MAX_HP) state.maxHP = Math.max(BASE_MAX_HP, state.maxHP * 0.9);
         }
         markDirty();
     }, DECAY_INTERVAL_MS);
 }
 
-/* ======================= 7) Events → State ======================= */
+/* ===== 7) Alerts → State (minimal) ===== */
 function handleAlertEvent(evt) {
     const minPrice = state.settings?.top?.minPrice ?? 0;
     const maxPrice = state.settings?.top?.maxPrice > 0 ? state.settings.top.maxPrice : Infinity;
-
     if (!evt?.hero) return;
-    if ((evt.one_min_volume ?? 0) <= 30_000) return;
+    if ((evt.one_min_volume ?? 0) <= 30000) return;
     if (evt.price < minPrice || evt.price > maxPrice) return;
 
     const sym = String(evt.hero).toUpperCase();
@@ -349,8 +287,7 @@ function handleAlertEvent(evt) {
             totalXpGained: 0,
             strength: evt.one_min_volume || 0,
             lastEvent: { hp: 0, dp: 0 },
-            floatValue: 0,
-            buffs: evt.buffs || {},
+            buffs: {}, // will be overwritten by store if present
             highestPrice: evt.price || 1,
             lastUpdate: 0,
         });
@@ -358,12 +295,10 @@ function handleAlertEvent(evt) {
     h.price = evt.price ?? h.price;
     h.hue = evt.hue ?? h.hue;
     h.strength = evt.one_min_volume ?? h.strength;
-    if (evt.buffs && Object.keys(evt.buffs).length) h.buffs = evt.buffs;
 
     if (evt.hp > 0) h.hp += evt.hp;
     if (evt.dp > 0) h.hp = Math.max(h.hp - evt.dp, 0);
 
-    // history (bounded)
     h.history = h.history || [];
     h.history.push({ hp: evt.hp || 0, dp: evt.dp || 0, ts: Date.now() });
     if (h.history.length > 10) h.history.shift();
@@ -373,22 +308,22 @@ function handleAlertEvent(evt) {
     h.lastEvent = { hp: evt.hp || 0, dp: evt.dp || 0, score: delta };
     h.lastUpdate = Date.now();
 
-    // grow maxHP if needed
     if (h.hp > state.maxHP) state.maxHP = h.hp * 1.05;
+
+    // If your alerts carry hydrated buffs, keep this:
+    if (evt.buffs && Object.keys(evt.buffs).length) h.buffs = evt.buffs;
 
     markDirty();
 }
 
-/* ======================= 8) Top3 medals ======================= */
+/* ===== 8) Top3 medals ===== */
 async function initTop3() {
     try {
         const { entries } = await window.top3API.get();
         state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
     } catch {}
-
     state.top3Unsub = window.top3API.subscribe?.(({ entries }) => {
         state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
-        // patch medals for visible cards
         state.container?.querySelectorAll(".ticker-card").forEach((card) => {
             const sym = card.dataset.symbol?.toUpperCase();
             const el = card.querySelector(".lv-medal");
@@ -396,24 +331,20 @@ async function initTop3() {
         });
     });
 }
+window.addEventListener("beforeunload", () => state.top3Unsub && state.top3Unsub());
 
-window.addEventListener("beforeunload", () => {
-    if (state.top3Unsub) state.top3Unsub();
-});
-
-/* ======================= 9) Boot ======================= */
+/* ===== 9) Boot ===== */
 async function boot() {
     state.container = document.getElementById("heroes");
     if (!state.container) return;
 
-    // settings + buffs
     try {
         state.settings = await window.settingsAPI.get();
     } catch {}
     try {
-        state.buffs = await window.electronAPI.getBuffs();
+        state.buffsMaster = (await window.electronAPI.getBuffs()) || [];
         window.electronAPI.onBuffsUpdate?.((b) => {
-            state.buffs = b || [];
+            state.buffsMaster = b || [];
             markDirty();
         });
     } catch {}
@@ -436,40 +367,65 @@ async function boot() {
                     totalXpGained: s.totalXpGained || 0,
                     strength: s.one_min_volume || 0,
                     lastEvent: { hp: 0, dp: 0 },
-                    floatValue: s.statistics?.floatShares || 0,
-                    buffs: s.buffs || {},
+                    buffs: s.buffs || {}, // already hydrated by store
                     highestPrice: s.highestPrice ?? s.price ?? 1,
                     lastUpdate: Date.now(),
                 };
             }
         });
-    } catch (e) {
-        log("heroes seed failed:", e);
-    }
+    } catch {}
 
-    // listeners
+    // settings + alerts + store updates
     window.settingsAPI.onUpdate((s) => {
         state.settings = s || {};
         markDirty();
     });
     window.eventsAPI.onAlert(handleAlertEvent);
 
-    // keep: external managers (if you still use them)
-    window.storeAPI.onHeroUpdate?.(window.heroesStateManager?.updateHeroData);
-    window.electronAPI.onXpReset?.(window.heroesStateManager?.resetXpLevels);
-    window.electronAPI.onNukeState?.(window.heroesStateManager?.nukeState);
+    window.storeAPI.onHeroUpdate?.((payload) => {
+        const items = Array.isArray(payload) ? payload : [payload];
+        items.forEach(({ hero, buffs, price, one_min_volume, highestPrice, lastEvent, xp, lv, totalXpGained }) => {
+            if (!hero) return;
+            const sym = String(hero).toUpperCase();
+            const h =
+                state.heroes[sym] ||
+                (state.heroes[sym] = {
+                    hero: sym,
+                    price: price || 1,
+                    hue: 0,
+                    hp: 0,
+                    dp: 0,
+                    score: 0,
+                    xp: 0,
+                    lv: 1,
+                    totalXpGained: 0,
+                    strength: one_min_volume || 0,
+                    lastEvent: { hp: 0, dp: 0 },
+                    buffs: {},
+                    highestPrice: highestPrice ?? price ?? 1,
+                    lastUpdate: 0,
+                });
 
-    // medals
+            if (Number.isFinite(price)) h.price = price;
+            if (Number.isFinite(one_min_volume)) h.strength = one_min_volume;
+            if (highestPrice !== undefined) h.highestPrice = highestPrice;
+            if (lastEvent) h.lastEvent = lastEvent;
+            if (Number.isFinite(xp)) h.xp = xp;
+            if (Number.isFinite(lv)) h.lv = lv;
+            if (Number.isFinite(totalXpGained)) h.totalXpGained = totalXpGained;
+            if (buffs && Object.keys(buffs).length) h.buffs = buffs;
+
+            h.lastUpdate = Date.now();
+        });
+        markDirty();
+    });
+
     await initTop3();
-
-    // decay loop
     startScoreDecay();
-
-    // first paint
     markDirty();
 }
 
-/* ======================= 10) DOM ready ======================= */
+/* ===== 10) DOM ready ===== */
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => boot().catch((e) => console.error("heroes boot failed:", e)));
 } else {

@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Stay in sync if XP updates the store
         window.storeAPI.onTrackedUpdate((list) => {
-            console.log("tracked", list);
+            // console.log("tracked", list);
             trackedTickers = (list || []).map(up);
             refreshList(); // re-render using the latest canonical order
         });

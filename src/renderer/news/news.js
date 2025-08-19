@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ✅ NEW: stay in sync with store
     window.storeAPI.onTrackedUpdate((list) => {
         trackedTickers = (Array.isArray(list) ? list : []).map((s) => String(s).toUpperCase());
-        console.log("onTrackedUpdate trackedTickers", trackedTickers);
+        // console.log("onTrackedUpdate trackedTickers", trackedTickers);
         render();
     });
 
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         blockList = window.settings?.news?.blockList || [];
         showTrackedOnly = !!window.settings?.news?.showTrackedTickers;
         trackedTickers = (window.settings?.news?.trackedTickers || []).map((s) => String(s).toUpperCase());
-        console.log("onUpdate trackedTickers", trackedTickers);
+        // console.log("onUpdate trackedTickers", trackedTickers);
         render();
     });
 

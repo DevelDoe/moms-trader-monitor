@@ -256,6 +256,8 @@ function pruneReachedHod() {
     if (removed) markDirty();
 }
 
+const INACTIVE_EVICT_MS = 15 * 60 * 1000; // auto-evict after 15min inactivity
+
 function pruneInactive() {
     const now = Date.now();
     let removed = false;
@@ -270,7 +272,7 @@ function pruneInactive() {
 }
 
 setInterval(pruneReachedHod, 5_000);
-setInterval(pruneInactive, 90_000);
+setInterval(pruneInactive, 6000);
 
 /* 7) Boot */
 document.addEventListener("DOMContentLoaded", async () => {

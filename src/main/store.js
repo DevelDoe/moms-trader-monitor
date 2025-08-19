@@ -285,7 +285,7 @@ class Store extends EventEmitter {
         this.symbols = next;
 
         // ⬇️ Match old behavior
-        if (!isDevelopment) {
+        // if (!isDevelopment) {
             const keys = Array.from(this.symbols.keys());
             subscribeToSymbolNews(keys);
             (async () => {
@@ -294,12 +294,14 @@ class Store extends EventEmitter {
                     await sleep(200);
                 }
             })();
-        }
+        // }
 
         this.emit("lists-update");
     }
 
     addSymbols(items = []) {
+        log.log(`[addSymbols] Hydrated ${items.length} new symbol(s):`, items);
+
         const list = Array.isArray(items) ? items : [];
         if (!list.length) return;
 

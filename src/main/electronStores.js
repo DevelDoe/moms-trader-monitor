@@ -138,7 +138,7 @@ let _entries = top3Store.get("entries", []); // [{symbol, rank, score}]
 let _updatedAt = top3Store.get("updatedAt", 0);
 
 // Boot visibility
-log.log("[top3] boot", { entries: _entries, updatedAt: _updatedAt });
+// log.log("[top3] boot", { entries: _entries, updatedAt: _updatedAt });
 
 const up = (s) => String(s || "").toUpperCase();
 
@@ -160,7 +160,7 @@ function normalize(input) {
 }
 
 function getTop3() {
-    log.log("[top3] getTop3()", { entries: _entries, updatedAt: _updatedAt });
+    // log.log("[top3] getTop3()", { entries: _entries, updatedAt: _updatedAt });
     return { entries: _entries.slice(), updatedAt: _updatedAt };
 }
 

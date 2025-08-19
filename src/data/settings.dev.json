@@ -41,7 +41,31 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "PPCB"
+      "FTK",
+      "SEPN",
+      "STAI",
+      "PRFX",
+      "TSSI",
+      "NBY",
+      "GLE",
+      "LASE",
+      "TOI",
+      "TERN",
+      "VELO",
+      "BINI",
+      "TRIB",
+      "ICU",
+      "XCH",
+      "VFF",
+      "OPINL",
+      "PGEN",
+      "LMFA",
+      "GXAI",
+      "UGP",
+      "DVLT",
+      "TEST",
+      "WHLR",
+      "RCAT"
     ]
   },
   "scanner": {
@@ -158,6 +182,6 @@
   },
   "events": {
     "comboVolume": 0.5,
-    "newsAlertVolume": 0.45
+    "newsAlertVolume": 0.35
   }
 }

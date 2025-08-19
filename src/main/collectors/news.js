@@ -37,7 +37,7 @@ const subscribeToSymbolNews = (symbols) => {
     }
 
     // If WebSocket is not open, create a new connection
-    log.log("WebSocket not open. Opening a new connection...");
+    // log.log("WebSocket not open. Opening a new connection...");
 
     const ALPACA_NEWS_URL = `${process.env.APCA_API_STREAM_URL}/v1beta1/news`;
 
@@ -49,7 +49,7 @@ const subscribeToSymbolNews = (symbols) => {
     });
 
     alpacaSocket.onopen = () => {
-        log.log("Connected to Alpaca News WebSocket.");
+        // log.log("Connected to Alpaca News WebSocket.");
 
         const authMsg = {
             action: "auth",
@@ -58,7 +58,7 @@ const subscribeToSymbolNews = (symbols) => {
         };
 
         alpacaSocket.send(JSON.stringify(authMsg));
-        log.log("Sent authentication message.");
+        // log.log("Sent authentication message.");
     };
 
     alpacaSocket.onmessage = (event) => {
@@ -73,20 +73,20 @@ const subscribeToSymbolNews = (symbols) => {
             for (const msg of messages) {
                 // Handle authentication success
                 if (msg.T === "success" && msg.msg === "authenticated") {
-                    log.log("Successfully authenticated.");
+                    // log.log("Successfully authenticated.");
 
                     const payload = {
                         action: "subscribe",
                         news: symbols,
                     };
-                    log.log(`Subscribing to Alpaca news for: ${symbols.join(", ")}`);
+                    // log.log(`Subscribing to Alpaca news for: ${symbols.join(", ")}`);
                     alpacaSocket.send(JSON.stringify(payload));
                     return;
                 }
 
                 // Handle news message
                 if (msg.T === "n") {
-                    log.log("📢 News item received:", msg.headline);
+                    // log.log("📢 News item received:", msg.headline);
                     handleNewsData(msg); // optionally wrap this in setImmediate
                 }
             }
@@ -96,7 +96,7 @@ const subscribeToSymbolNews = (symbols) => {
     };
 
     alpacaSocket.onclose = () => {
-        log.warn("WebSocket closed. Reconnecting in 5s...");
+        // log.warn("WebSocket closed. Reconnecting in 5s...");
         setTimeout(() => subscribeToSymbolNews(symbols), 5000); // Reconnect and resubscribe
     };
 
@@ -105,7 +105,7 @@ const subscribeToSymbolNews = (symbols) => {
     });
 
     alpacaSocket.on("upgrade", (res) => {
-        log.log("Alpaca WS connection upgraded:", res.headers);
+        // log.log("Alpaca WS connection upgraded:", res.headers);
     });
 
     alpacaSocket.onerror = (error) => {
