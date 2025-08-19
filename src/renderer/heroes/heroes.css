@@ -76,7 +76,7 @@ h2 {
     width: 210px;
     position: relative;
     box-sizing: border-box;
-    line-height: 0.9; /* tune this if needed */
+    line-height: 1.1; /* tune this if needed */
     margin-bottom: 2px;
 }
 .ticker-symbol:hover {
@@ -390,4 +390,13 @@ h2 {
 
 .ticker-card.dp-shake {
     animation: shakePink 0.4s ease;
+}
+
+.lv-medal {
+    position: absolute;
+    right: 0px;
+    top: -21px;
+    background-color: transparent;
+    font-size: 16px;
+    z-index: 100;
 }

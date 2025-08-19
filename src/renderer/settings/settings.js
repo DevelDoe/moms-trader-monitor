@@ -42,6 +42,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
+function clamp(n, lo, hi) {
+    return Math.max(lo, Math.min(hi, n));
+}
+
 function initializeGeneralSection() {
     console.log("Initializing General Section");
 
@@ -162,7 +166,6 @@ function initializeGeneralSection() {
     });
 
     showScrollHodToggle.addEventListener("change", async (event) => {
-
         if (event.target.checked) {
             window.scrollHodAPI.activate();
         } else {
@@ -265,6 +268,76 @@ function initializeGeneralSection() {
 
     autoCloseTraderviewToggle.addEventListener("change", async (e) => {
         window.settings.traderview = { ...window.settings.traderview, autoClose: e.target.checked };
+        await window.settingsAPI.update(window.settings);
+    });
+
+    // elements
+    const hodChimeVolumeSlider = document.getElementById("hod-chime-volume");
+    const hodTickVolumeSlider = document.getElementById("hod-tick-volume");
+    const hodChimeValue = document.getElementById("hod-chime-volume-value");
+    const hodTickValue = document.getElementById("hod-tick-volume-value");
+    const eventsComboVolumeSlider = document.getElementById("events-combo-volume");
+    const eventsComboValue = document.getElementById("events-combo-volume-value");
+    const newsAlertVolumeSlider = document.getElementById("news-alert-volume");
+    const newsAlertValue = document.getElementById("news-alert-volume-value");
+
+    // ensure settings structure + defaults
+    window.settings ||= {};
+    const before = JSON.stringify(window.settings);
+
+    window.settings.hod ||= {};
+    window.settings.events ||= {}; // ✅ this was missing
+
+    if (typeof window.settings.hod.chimeVolume !== "number") window.settings.hod.chimeVolume = 0.5;
+
+    if (typeof window.settings.hod.tickVolume !== "number") window.settings.hod.tickVolume = 0.5;
+
+    if (typeof window.settings.events.comboVolume !== "number") window.settings.events.comboVolume = 0.5;
+
+    if (typeof window.settings.events.newsAlertVolume !== "number") window.settings.events.newsAlertVolume = 0.5;
+
+    const after = JSON.stringify(window.settings);
+    if (before !== after) {
+        // only write if we actually added defaults
+        window.settingsAPI.update(window.settings).catch(() => {});
+    }
+
+    // set UI from settings
+    hodChimeVolumeSlider.value = window.settings.hod.chimeVolume;
+    hodTickVolumeSlider.value = window.settings.hod.tickVolume;
+    eventsComboVolumeSlider.value = window.settings.events.comboVolume;
+    hodChimeValue.textContent = Math.round(window.settings.hod.chimeVolume * 100) + "%";
+    hodTickValue.textContent = Math.round(window.settings.hod.tickVolume * 100) + "%";
+    eventsComboValue.textContent = Math.round(window.settings.events.comboVolume * 100) + "%";
+    newsAlertVolumeSlider.value = window.settings.events.newsAlertVolume;
+    newsAlertValue.textContent = Math.round(window.settings.events.newsAlertVolume * 100) + "%";
+
+    // wire inputs → settings (parse to number, clamp 0..1)
+    hodChimeVolumeSlider.addEventListener("input", async (e) => {
+        const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
+        window.settings.hod.chimeVolume = v;
+        hodChimeValue.textContent = Math.round(v * 100) + "%";
+        await window.settingsAPI.update(window.settings);
+    });
+
+    hodTickVolumeSlider.addEventListener("input", async (e) => {
+        const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
+        window.settings.hod.tickVolume = v;
+        hodTickValue.textContent = Math.round(v * 100) + "%";
+        await window.settingsAPI.update(window.settings);
+    });
+
+    eventsComboVolumeSlider.addEventListener("input", async (e) => {
+        const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
+        window.settings.events.comboVolume = v;
+        eventsComboValue.textContent = Math.round(v * 100) + "%";
+        await window.settingsAPI.update(window.settings);
+    });
+
+    newsAlertVolumeSlider.addEventListener("input", async (e) => {
+        const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
+        window.settings.events.newsAlertVolume = v;
+        newsAlertValue.textContent = Math.round(v * 100) + "%";
         await window.settingsAPI.update(window.settings);
     });
 }

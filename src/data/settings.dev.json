@@ -41,31 +41,31 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "ABL",
-      "JBS",
-      "XP",
-      "BTAI",
-      "WALD",
-      "VRDN",
+      "EVH",
+      "LPL",
+      "PRFX",
+      "RKT",
+      "GXAI",
+      "IINN",
+      "TZUP",
+      "OPEN",
+      "TNXP",
       "SNGX",
-      "LASE",
-      "TBCH",
-      "ALTS",
+      "IOVA",
+      "VCIG",
+      "BINI",
+      "NVOX",
       "LIDR",
-      "RCAT",
-      "PPCB",
-      "GDRX",
-      "GO",
-      "BORR",
-      "IBIO",
-      "TIVC",
-      "UP",
-      "PD",
-      "ASBP",
-      "ATLX",
-      "WGRX",
-      "MB",
-      "XYF"
+      "UA",
+      "ROLR",
+      "APLD",
+      "LASE",
+      "QUAD",
+      "WHLR",
+      "JZXN",
+      "AGRI",
+      "MAGH",
+      "ENGS"
     ]
   },
   "scanner": {
@@ -94,9 +94,9 @@
     },
     "infobarWindow": {
       "width": 666,
-      "height": 88,
+      "height": 72,
       "x": 1775,
-      "y": 1078,
+      "y": 1054,
       "isOpen": true
     },
     "wizardWindow": {
@@ -121,24 +121,24 @@
       "isOpen": false
     },
     "frontlineWindow": {
-      "width": 541,
-      "height": 457,
+      "width": 436,
+      "height": 495,
       "x": 1339,
-      "y": 1164,
+      "y": 1126,
       "isOpen": true
     },
     "activeWindow": {
-      "width": 439,
-      "height": 626,
+      "width": 437,
+      "height": 589,
       "x": 1338,
       "y": 539,
       "isOpen": true
     },
     "heroesWindow": {
-      "width": 561,
-      "height": 458,
-      "x": 1879,
-      "y": 1162,
+      "width": 666,
+      "height": 497,
+      "x": 1775,
+      "y": 1123,
       "isOpen": true
     },
     "scrollXpWindow": {
@@ -157,7 +157,7 @@
     },
     "newsWindow": {
       "width": 667,
-      "height": 540,
+      "height": 517,
       "x": 1775,
       "y": 539,
       "isOpen": true
@@ -174,5 +174,13 @@
     "visibility": false,
     "enableHeroes": false,
     "autoClose": true
+  },
+  "hod": {
+    "chimeVolume": 0.95,
+    "tickVolume": 0.6
+  },
+  "events": {
+    "comboVolume": 0.5,
+    "newsAlertVolume": 0.45
   }
 }

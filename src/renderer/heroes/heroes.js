@@ -30,7 +30,6 @@ function queueCardUpdate(symbol) {
     }
 }
 
-
 let container;
 
 let maxHP = BASE_MAX_HP;
@@ -52,6 +51,49 @@ if (!window.isDev) {
     console.warn = () => {};
 }
 
+// --- Top3 rank cache (module-wide) ---
+let rankMap = new Map();
+const rebuildRankMap = (entries = []) => (rankMap = new Map(entries.map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0])));
+
+let __top3InitDone = false; // ✅ guard against double subscribe
+let __top3Unsub = null;
+
+function medalForRank(rank) {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return "";
+}
+function getSymbolMedal(symbol) {
+    return medalForRank(rankMap.get(String(symbol || "").toUpperCase()));
+}
+
+async function initTop3() {
+    if (__top3InitDone) return;
+    __top3InitDone = true;
+
+    try {
+        const { entries } = await window.top3API.get(); // prime cache
+        rebuildRankMap(entries || []);
+    } catch {}
+
+    __top3Unsub = window.top3API.subscribe?.(({ entries }) => {
+        rebuildRankMap(entries || []);
+        // repaint medals for visible cards (cheap + surgical)
+        document.querySelectorAll(".ticker-card").forEach((card) => {
+            const sym = card.dataset.symbol?.trim().toUpperCase();
+            if (!sym) return;
+            const medal = medalForRank(rankMap.get(sym));
+            const medalEl = card.querySelector(".lv-medal");
+            if (medalEl) medalEl.textContent = medal;
+        });
+    });
+}
+
+window.addEventListener("beforeunload", () => {
+    if (__top3Unsub) __top3Unsub();
+});
+
 // ============================
 // Document Ready
 // ============================
@@ -60,6 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     container = document.getElementById("heroes");
 
     try {
+        await initTop3();
         await initializeBuffs();
         await initializeHeroes();
         setupListeners();
@@ -213,7 +256,6 @@ function updateHeroFromEvent(event) {
     const scoreDelta = window.helpers.calculateScore(hero, event);
     hero.score = Math.max(0, (hero.score || 0) + scoreDelta);
 
-
     let needsFullRender = false;
     if (hero.hp > maxHP) {
         maxHP = hero.hp * 1.05;
@@ -249,7 +291,7 @@ function updateHeroFromEvent(event) {
     if (currentTopHeroes.length > 0) {
         const allBelowThreshold = currentTopHeroes.every((heroName) => {
             const hero = heroesState[heroName];
-            return hero.hp < maxHP *SCALE_DOWN_THRESHOLD;
+            return hero.hp < maxHP * SCALE_DOWN_THRESHOLD;
         });
         if (allBelowThreshold && maxHP > BASE_MAX_HP) {
             maxHP = Math.max(BASE_MAX_HP, maxHP * SCALE_DOWN_FACTOR);
@@ -312,7 +354,6 @@ function renderAll() {
     });
 }
 
-
 function updateCardDOM(hero) {
     if (!hero || !heroesState[hero]) {
         console.warn(`Hero "${hero}" not found in heroesState`);
@@ -347,6 +388,13 @@ function updateCardDOM(hero) {
     // 🔄 Replace DOM card instantly
     existing.replaceWith(newCard);
 
+    // Medal + price refresh (surgical)
+    const medalEl = newCard.querySelector(".lv-medal");
+    if (medalEl) medalEl.textContent = getSymbolMedal(hero);
+
+    const priceEl = newCard.querySelector(".lv-price");
+    if (priceEl) priceEl.textContent = `$${(heroesState[hero].price ?? 0).toFixed(2)}`;
+
     // 🧠 Animate to new bar values
     requestAnimationFrame(() => {
         if (heroesState[hero].lastEvent.dp > 0) {
@@ -365,9 +413,13 @@ function updateCardDOM(hero) {
 
             if (Math.abs(oldWidth - newWidthValue) > 1) {
                 bar.classList.add("bar-animate");
-                bar.addEventListener("animationend", () => {
-                    bar.classList.remove("bar-animate");
-                }, { once: true });
+                bar.addEventListener(
+                    "animationend",
+                    () => {
+                        bar.classList.remove("bar-animate");
+                    },
+                    { once: true }
+                );
             }
 
             bar.style.width = `${newWidth}`;
@@ -400,10 +452,7 @@ function renderCard({ hero, price, hp, dp, strength, lastEvent }) {
     const { totalXp, xpForNextLevel, xpPercent } = window.helpers.getXpProgress(state);
     const fadeStyle = Date.now() - (state.lastUpdate || 0) <= 10_0000 ? "" : "opacity: 0.8; filter: grayscale(0.8);";
 
-    const sortOrder = [
-        "float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort",
-        "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"
-    ];
+    const sortOrder = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
 
     const buffsArray = Object.entries(state.buffs || {}).map(([originalKey, b]) => ({
         ...b,
@@ -411,11 +460,12 @@ function renderCard({ hero, price, hp, dp, strength, lastEvent }) {
         _sortKey: originalKey.toLowerCase().includes("vol") ? "volume" : originalKey,
     }));
 
-    const sortBuffs = (arr) => arr.sort((a, b) => {
-        const aIndex = sortOrder.indexOf(a._sortKey);
-        const bIndex = sortOrder.indexOf(b._sortKey);
-        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-    });
+    const sortBuffs = (arr) =>
+        arr.sort((a, b) => {
+            const aIndex = sortOrder.indexOf(a._sortKey);
+            const bIndex = sortOrder.indexOf(b._sortKey);
+            return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+        });
 
     const positiveBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === true));
     const negativeBuffs = sortBuffs(buffsArray.filter((b) => b.isBuff === false));
@@ -440,13 +490,19 @@ function renderCard({ hero, price, hp, dp, strength, lastEvent }) {
         <div class="ticker-header-grid">
             <div class="ticker-info">
                 <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(state.hue || 0)}; ${fadeStyle}">
-                    $${hero}<span class="lv">$${state.price.toFixed(2)}</span>
+                $${hero}
+                <span class="lv">
+                    <span class="lv-medal">${getSymbolMedal(hero)}</span>
+                    <span class="lv-price">$${state.price.toFixed(2)}</span>
+                </span>
                 </div>
                 <div id="change">${change ? `<div class="${changeClass}">${change}</div>` : ""}</div>
                <div id="lv"><span class="bar-text stats lv" style="font-size: 6px; margin-top:4px">L <span style="color:white;"> ${state.lv}</span></span></div>
                 <div id="x"><span class="bar-text stats x" style="font-size: 6px; margin-top:4px">X <span style="color:#04f370;">  ${totalXp}</span></span></div>
                 <div id="ch"><span class="bar-text stats ch" style="font-size: 6px; margin-top:4px">C <span style="color:#fd5151;"> ${hp.toFixed(0)}%</span></span></div>
-                <div id="vo"><span class="bar-text stats" style=" font-size: 6px; margin-top:4px">V <span style="color:${volumeImpact.style.color};">  ${window.helpers.abbreviatedValues(strength)}</span></span></div>
+                <div id="vo"><span class="bar-text stats" style=" font-size: 6px; margin-top:4px">V <span style="color:${volumeImpact.style.color};">  ${window.helpers.abbreviatedValues(
+        strength
+    )}</span></span></div>
             </div>
             ${buffHtml}
         </div>

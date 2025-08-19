@@ -82,11 +82,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             .map((h, idx) => {
                 const bg = getSymbolColor(h.hero);
                 const age = now - (h.lastUpdate || 0);
-                const dullStyle = age > inactiveThreshold ? "opacity: 0.4; filter: grayscale(0.8);" : "";
+                // const dullStyle = age > inactiveThreshold ? "opacity: 0.4; filter: grayscale(0.8);" : "";
                 const displayScore = (h.score / 10).toFixed(1);
 
                 return `
-              <div class="xp-line ellipsis" style="${dullStyle}">
+              <div class="xp-line ellipsis" >
                 <span class="text-tertiary" style="display:inline-block; min-width: 24px; text-align:right; margin-right: 4px; opacity: 1;">
                   ${idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1 + "."}
                 </span>

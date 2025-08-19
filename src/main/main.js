@@ -43,6 +43,10 @@ const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
 
+// Disable autoplay policy (allowing audio to play without user gesture)
+app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
+
+
 // 🔒 Encrypted password storage
 const PASSWORD_FILE = path.join(app.getPath("userData"), "password.json");
 

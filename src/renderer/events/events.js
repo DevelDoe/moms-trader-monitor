@@ -32,15 +32,9 @@ const UPTICK_WINDOW_MS = 60_000;
 const solfeggioHz = [
     // 23.156, 26.063, 29.625, 33.469, 38.063, 42.625,
     // 46.313, 52.125, 59.25, 66.938, 76.125, 85.25,
-    // 92.625, 104.25, 118.5, 
-    133.875, 152.25, 170.5,
-    185.25, 208.5, 237.0, 267.75, 304.5, 341.0,
-    370.5, 417.0, 474.0, 535.5, 609.0, 682.0,
-    741.0, 834.0, 948.0, 1071.0, 1218.0, 1364.0,
-    1482.0, 1668.0, 1896.0, 2142.0, 2436.0, 2728.0,
-    2964.0, 3336.0, 3792.0, 4284.0, 4872.0, 5456.0,
-    5928.0, 6672.0, 7584.0, 8568.0, 9744.0, 10912.0,
-    11856.0, 13344.0, 
+    // 92.625, 104.25, 118.5,
+    133.875, 152.25, 170.5, 185.25, 208.5, 237.0, 267.75, 304.5, 341.0, 370.5, 417.0, 474.0, 535.5, 609.0, 682.0, 741.0, 834.0, 948.0, 1071.0, 1218.0, 1364.0, 1482.0, 1668.0, 1896.0, 2142.0, 2436.0,
+    2728.0, 2964.0, 3336.0, 3792.0, 4284.0, 4872.0, 5456.0, 5928.0, 6672.0, 7584.0, 8568.0, 9744.0, 10912.0, 11856.0, 13344.0,
     // 15168.0, 17136.0
 ];
 
@@ -75,16 +69,21 @@ function isQuietTimeEST() {
     const s = estNow.getSeconds();
 
     return (
-        (h === 8 && m === 0 && s <= 10) ||      // 08:00:00 to 08:00:10
-        (h === 9 && m === 30 && s <= 10)        // 09:30:00 to 09:30:10
+        (h === 8 && m === 0 && s <= 10) || // 08:00:00 to 08:00:10
+        (h === 9 && m === 30 && s <= 10) // 09:30:00 to 09:30:10
     );
 }
-
 
 function abbreviatedValues(num) {
     if (num < 1000) return num.toString(); // No abbreviation under 1K
     if (num < 1_000_000) return (num / 1_000).toFixed(1) + "K";
     return (num / 1_000_000).toFixed(1) + "M";
+}
+
+function getComboVolume() {
+    const v = Number(window?.settings?.events?.comboVolume);
+    if (!Number.isFinite(v)) return 0.5;
+    return Math.min(1, Math.max(0, v)); // clamp 0..1
 }
 
 // ============================
@@ -132,20 +131,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         filter.Q.value = 1;
 
         oscillator.connect(filter).connect(gainNode).connect(audioCtx.destination);
-
         oscillator.frequency.value = frequency;
 
-        // ⏱️ Duration based on volume
+        // ⏱️ Duration based on trade volume "strength"
         let duration = 0.15;
         if (volumeValue > 60_000) duration = 0.6;
         else if (volumeValue > 30_000) duration = 0.45;
         else if (volumeValue > 10_000) duration = 0.35;
 
-        gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        // 🎚️ Apply Events Combo Volume (0..1)
+        const comboVol = getComboVolume();
+
+        // Start at comboVol, then decay. Use tiny non-zero floor for exp ramp.
+        const now = audioCtx.currentTime;
+        gainNode.gain.setValueAtTime(Math.max(0.001, comboVol), now);
+        gainNode.gain.exponentialRampToValueAtTime(Math.max(0.001, 0.01 * comboVol), now + duration);
 
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + duration);
+        oscillator.stop(now + duration);
     }
 
     function createAlertElement(alertData) {
@@ -212,7 +215,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // }
             }
         }
-        
 
         if (isNewEntry) {
             alertDiv.classList.add("new-entry");
