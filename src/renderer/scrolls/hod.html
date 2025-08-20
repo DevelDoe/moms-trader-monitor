@@ -9,6 +9,9 @@
             body {
                 padding: 10px;
             }
+            #hod-scroll {
+                margin-left: 20px;
+            }
             .xp-line {
                 padding: 4px 8px;
                 border-radius: 4px;
@@ -27,11 +30,12 @@
                 display: inline-block;
                 font-size: 22px;
                 padding: 0px 2px;
-                border-radius: 1px;
+                border-radius: 0px;
                 /* cursor: pointer; */
                 margin-right: 4px;
                 position: relative;
                 cursor: pointer;
+                margin-left: 10px;
             }
             .xp-line {
                 transition: opacity 0.5s ease, filter 0.5s ease;
@@ -59,8 +63,35 @@
             }
 
             /* (optional) when truly at high, add a soft glow */
-            .xp-line[data-ath="1"] .symbol {
-                box-shadow: 0 0 10px rgba(255, 210, 74, 0.35);
+            .xp-line[data-ath="1"]::before {
+                content: "";
+                position: absolute;
+                left: 13px;
+                top: 4px;
+                bottom: 0;
+                width: 5px; /* thickness of the bar */
+                background: #fff; /* white bar */
+                pointer-events: none;
+                animation-name: moveBorder;
+                animation-duration: var(--move-dur, 600ms);
+                animation-delay: var(--move-delay, 0ms); /* can be negative */
+                animation-timing-function: ease-out;
+                animation-fill-mode: both;
+                height: 30px;
+            }
+            /* HOD override — constant yellow bar (no fade) */
+            .xp-line[data-ath="1"]::before {
+                content: "";
+                position: absolute;
+                left: 13px;
+                top: 4px;
+                bottom: 0;
+                width: 5px;
+                height: 30px;
+                background: #ffd24a; /* same as GOLD_HEX */
+                opacity: 1;
+                pointer-events: none;
+                animation: none !important; /* stop the pulse if it was moving */
             }
             @keyframes hod-blink {
                 0%,
@@ -73,9 +104,57 @@
             }
             .blinking {
                 animation-name: hod-blink;
-                animation-duration: 1s; /* default, overridden inline */
+                animation-duration: 1s;
                 animation-timing-function: steps(1, end);
                 animation-iteration-count: infinite;
+            }
+
+            /* left-edge pulse when the row is moving */
+            @keyframes moveBorder {
+                0% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                }
+            }
+
+            /* base pulse (shown whenever .moving is present) */
+            .xp-line.moving::before {
+                content: "";
+                position: absolute;
+                left: -5px;
+                top: 4px;
+                width: 15px;
+                height: 30px; /* adjust if your row height changes */
+                border-radius: 0px;
+                background: #fff; /* default color */
+                pointer-events: none;
+                z-index: 2;
+
+                animation-name: moveBorder;
+                animation-duration: var(--move-dur, 600ms);
+                animation-delay: var(--move-delay, 0ms); /* can be negative */
+                animation-timing-function: ease-out;
+                animation-fill-mode: both;
+            }
+
+            /* directional overrides (one ::before only!) */
+            .xp-line.moving-up::before {
+                background: #22c55e;
+            } /* green */
+            .xp-line.moving-down::before {
+                background: #ef4444;
+            } /* red   */
+
+            /* fade the bar out */
+            @keyframes moveBorder {
+                0% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                }
             }
         </style>
     </head>

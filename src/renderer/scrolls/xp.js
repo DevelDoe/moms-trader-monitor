@@ -4,6 +4,10 @@ const heroes = {}; // 🧹 filtered heroes based on settings
 const { isDev } = window.appFlags;
 const debug = isDev;
 
+// inactivity thresholds
+const INACTIVE_UI_MS = 30_000; // 30s = just dull styling (already used)
+const INACTIVE_EVICT_MS = 30 * 60 * 1000; // 30 minutes = prune from source
+
 let trackedTickers = []; // 🧠 source of truth lives in the store; XP writes it
 const up = (s) => String(s || "").toUpperCase();
 
@@ -43,6 +47,116 @@ const publishTrackedTickers = debounce(async () => {
     }
 }, 400);
 
+function pruneInactiveHeroes() {
+    const now = Date.now();
+    const removedSet = new Set();
+
+    const beforeCount = Object.keys(allHeroes).length;
+
+    for (const [sym, h] of Object.entries(allHeroes)) {
+        const last = h.lastUpdate ?? 0;
+        if (now - last >= INACTIVE_EVICT_MS) {
+            delete allHeroes[sym];
+            delete heroes[sym];
+            removedSet.add(up(sym));
+        }
+    }
+
+    if (!removedSet.size) return;
+
+    console.log("🪓 Pruning inactive heroes:", [...removedSet]);
+    console.log(`Before prune: ${beforeCount} heroes, After prune: ${Object.keys(allHeroes).length}`);
+
+    const beforeKey = trackedTickers.join(",");
+    trackedTickers = trackedTickers.filter((s) => !removedSet.has(s));
+    const afterKey = trackedTickers.join(",");
+
+    _lastKey = ""; // force republish
+
+    filterHeroes();
+    refreshList();
+    publishTrackedTickers();
+
+    if (afterKey !== beforeKey) {
+        try {
+            window.storeAPI.setTracked(trackedTickers, getSymbolLength());
+        } catch (e) {
+            console.warn("Failed to persist pruned tracked list:", e);
+        }
+    }
+}
+
+
+// make refreshList global (move here, before DOMContentLoaded)
+function refreshList() {
+    const inactiveThreshold = INACTIVE_UI_MS; // 30s
+    const order = new Map(trackedTickers.map((s, i) => [s, i]));
+
+    let viewList =
+        order.size > 0
+            ? Object.values(heroes)
+                  .filter((h) => order.has(up(h.hero)))
+                  .sort((a, b) => order.get(up(a.hero)) - order.get(up(b.hero)))
+                  .slice(0, getSymbolLength())
+            : Object.values(heroes)
+                  .filter((h) => h.xp > 0)
+                  .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
+                  .slice(0, getSymbolLength());
+
+    // fallback if filters hide everything
+    if (order.size > 0 && viewList.length === 0) {
+        viewList = Object.values(heroes)
+            .filter((h) => h.xp > 0)
+            .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
+            .slice(0, getSymbolLength());
+    }
+
+    const key = viewList.map((h) => up(h.hero)).join(",");
+    if (key === _renderKey) return;
+    _renderKey = key;
+
+    const now = Date.now();
+
+    const container = document.getElementById("xp-scroll");
+    if (!container) return;
+
+    container.innerHTML = viewList
+        .map((h, i) => {
+            const bg = getSymbolColor(h.hero);
+            const age = now - (h.lastUpdate || 0);
+            const isInactive = age > inactiveThreshold;
+            const dullStyle = isInactive ? "opacity: 0.8; filter: grayscale(0.8);" : "";
+
+            return `
+              <div class="xp-line ellipsis" style=" color: gray;">
+                <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
+                <strong class="symbol" style="background: ${bg}; ${dullStyle};">
+                  ${h.hero} 
+                </strong>
+                <span style="font-weight: 600; color: ${getXpColorByRank(i, viewList.length)}; opacity: 0.85; margin-left: 4px; font-size: 1rem;">
+                  ${abbreviateXp(h.totalXpGained)}
+                </span>
+              </div>`;
+        })
+        .join("");
+
+    // Click → copy + set active
+    container.querySelectorAll(".symbol").forEach((el) => {
+        el.addEventListener("click", (e) => {
+            const hero = el.textContent.trim().split(" ")[0].replace("$", "");
+            try {
+                navigator.clipboard.writeText(hero);
+                if (window.activeAPI?.setActiveTicker) window.activeAPI.setActiveTicker(hero);
+                el.classList.add("symbol-clicked");
+                setTimeout(() => el.classList.remove("symbol-clicked"), 200);
+            } catch (err) {
+                console.error(`⚠️ Failed to handle click for ${hero}:`, err);
+            }
+            e.stopPropagation();
+        });
+    });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
     if (!container) return;
@@ -73,6 +187,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     filterHeroes();
     refreshList();
     publishTrackedTickers(); // seed/refresh store immediately from XP’s current view
+    // initial sweep + periodic pruning every minute
+    pruneInactiveHeroes();
+    setInterval(pruneInactiveHeroes, 60_000);
 
     // 3) live hero updates
     window.storeAPI.onHeroUpdate((payload) => {
@@ -136,73 +253,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         publishTrackedTickers();
     });
 
-    // --- render using tracked list when available ---
-    function refreshList() {
-        const inactiveThreshold = 30_000; // 30s
-        const order = new Map(trackedTickers.map((s, i) => [s, i]));
-
-        let viewList =
-            order.size > 0
-                ? Object.values(heroes)
-                      .filter((h) => order.has(up(h.hero)))
-                      .sort((a, b) => order.get(up(a.hero)) - order.get(up(b.hero)))
-                      .slice(0, getSymbolLength())
-                : Object.values(heroes)
-                      .filter((h) => h.xp > 0)
-                      .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
-                      .slice(0, getSymbolLength());
-
-        // fallback if tracked list exists but filters hide everything
-        if (order.size > 0 && viewList.length === 0) {
-            viewList = Object.values(heroes)
-                .filter((h) => h.xp > 0)
-                .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
-                .slice(0, getSymbolLength());
-        }
-
-        // skip DOM work if lineup unchanged
-        const key = viewList.map((h) => up(h.hero)).join(",");
-        if (key === _renderKey) return;
-        _renderKey = key;
-
-        const now = Date.now();
-
-        container.innerHTML = viewList
-            .map((h, i) => {
-                const bg = getSymbolColor(h.hero);
-                const age = now - (h.lastUpdate || 0);
-                const isInactive = age > inactiveThreshold;
-                const dullStyle = isInactive ? "opacity: 0.8; filter: grayscale(0.8);" : "";
-
-                return `
-          <div class="xp-line ellipsis" style=" color: gray;">
-            <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
-            <strong class="symbol" style="background: ${bg}; ${dullStyle};">
-              ${h.hero} 
-            </strong>
-            <span style="font-weight: 600; color: ${getXpColorByRank(i, viewList.length)}; opacity: 0.85; margin-left: 4px; font-size: 1rem;">
-              ${abbreviateXp(h.totalXpGained)}
-            </span>
-          </div>`;
-            })
-            .join("");
-
-        // Click → copy + set active
-        container.querySelectorAll(".symbol").forEach((el) => {
-            el.addEventListener("click", (e) => {
-                const hero = el.textContent.trim().split(" ")[0].replace("$", "");
-                try {
-                    navigator.clipboard.writeText(hero);
-                    if (window.activeAPI?.setActiveTicker) window.activeAPI.setActiveTicker(hero);
-                    el.classList.add("symbol-clicked");
-                    setTimeout(() => el.classList.remove("symbol-clicked"), 200);
-                } catch (err) {
-                    console.error(`⚠️ Failed to handle click for ${hero}:`, err);
-                }
-                e.stopPropagation();
-            });
-        });
-    }
 });
 
 // -------------------- helpers (unchanged) --------------------

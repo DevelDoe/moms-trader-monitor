@@ -31,23 +31,29 @@ function getSymbolColor(sym) {
 const GOLD_HEX = "#ffd24a";
 const AT_HIGH_EPS = 0.01;
 
-const HOD_BASE_AT3 = 0.25;
+// was 0.25
+const HOD_BASE_AT3 = 0.3; // wider proximity window everywhere (drives both blink + audio)
 const HOD_EXP = 0.5;
 const HOD_MIN = 0.05;
 const HOD_MAX = 3.0;
 let HOD_ZONE_SCALE = 1.0;
 
+const MOVE_FLASH_MS = 1000;
+
 window.MIN_AUDIO_INTERVAL_MS ??= 80;
 window.lastAudioTime ??= 0;
 
-// Debounce settings
-const GLOBAL_CHIME_DEBOUNCE_MS = 1200; // coalesce bursts across symbols
-let lastGlobalChimeAt = 0;
-
 const HOD_EVICT_MS = 60_000; // evict a row N ms after it hit HOD
 const HOD_SYMBOL_LENGTH = 10; // rows to show
-const HOD_INACTIVE_MS = 100; // dull UI if older than this (ms)
 const PRICE_MOVE_EPS = 0; // any price change counts as movement
+
+// --- Stability knobs ---
+const EMA_ALPHA = 0.35; // 0..1, higher = snappier
+const RANK_HYSTERESIS = 0.01; // need 1pp advantage to swap
+const RENDER_THROTTLE_MS = 200; // min ms between paints
+
+// Let brand-new HODs bypass hysteresis briefly
+const HOT_HOD_MS = 1500; // ms after HOD to allow instant bubble-up
 
 /* 2) HOD math */
 function hodThresholdUSDFromPrice(price) {
@@ -61,27 +67,74 @@ function hodThresholdUSDFromPrice(price) {
 }
 
 /* 3) Audio (volumes from settings) */
-const HOD_CHIME_COOLDOWN_MS = 5000;
+let audioReady = false;
+let magicBase, ticksBase;
+
+// Tick loudness shaping
+const TICK_VOL_FLOOR = 0.15; // 0..1 fraction of user volume at the window edge
+const TICK_VOL_EASE = 0.6; // <1 = earlier loudness (perceptual boost)
+
 const HOD_CHIME_VOL_DEFAULT = 0.12;
 const TICK_VOL_DEFAULT = 0.06;
 
-let audioReady = false;
-let magicBase, ticksBase;
+// --- Chime limiter ---
+const HOD_CHIME_COOLDOWN_MS = 2000; // per-symbol: same symbol max 1 per 2s
+const BURST_WINDOW_MS = 600; // global window to measure bursts
+const BURST_MAX_IN_WINDOW = 3; // allow up to 3 chimes per 600ms (any symbols)
+
+// per-symbol last chime
 const lastHodChimeAt = new Map();
 
-// Track last chime per symbol (you already have this map declared above)
+// global sliding window timestamps (most recent first)
+const burstTimes = []; // array of ms timestamps
+
+function canEmitBurst(now) {
+    // drop entries older than BURST_WINDOW_MS
+    while (burstTimes.length && now - burstTimes[burstTimes.length - 1] > BURST_WINDOW_MS) {
+        burstTimes.pop();
+    }
+    if (burstTimes.length >= BURST_MAX_IN_WINDOW) return false;
+    burstTimes.unshift(now);
+    return true;
+}
+
 function shouldPlayHodChime(sym) {
     const now = Date.now();
 
-    // Global debounce: block if we chimed too recently for any symbol
-    if (now - lastGlobalChimeAt < GLOBAL_CHIME_DEBOUNCE_MS) return false;
+    // global burst limiter (across all symbols)
+    if (!canEmitBurst(now)) return false;
 
-    // Per-symbol cooldown
+    // per-symbol cooldown
     const last = lastHodChimeAt.get(sym) || 0;
     if (now - last < HOD_CHIME_COOLDOWN_MS) return false;
 
     lastHodChimeAt.set(sym, now);
-    lastGlobalChimeAt = now;
+    return true;
+}
+
+// ---- Tick limiter (bursty but bounded) ----
+const TICK_COOLDOWN_MS = 120; // per-symbol min gap
+const TICK_BURST_WINDOW_MS = 500; // global burst window
+const TICK_BURST_MAX = 6; // max ticks allowed in window
+
+const lastTickAt = new Map(); // per-symbol last tick time
+const tickBurstTimes = []; // global sliding window (most-recent-first)
+
+function canEmitTickBurst(now) {
+    while (tickBurstTimes.length && now - tickBurstTimes[tickBurstTimes.length - 1] > TICK_BURST_WINDOW_MS) {
+        tickBurstTimes.pop();
+    }
+    if (tickBurstTimes.length >= TICK_BURST_MAX) return false;
+    tickBurstTimes.unshift(now);
+    return true;
+}
+
+function shouldPlayTick(sym) {
+    const now = Date.now();
+    if (!canEmitTickBurst(now)) return false; // global burst control
+    const last = lastTickAt.get(sym) || 0; // per-symbol cooldown
+    if (now - last < TICK_COOLDOWN_MS) return false;
+    lastTickAt.set(sym, now);
     return true;
 }
 
@@ -164,16 +217,32 @@ const state = {
     settings: {}, // volumes only
     renderKey: "",
     rafPending: false,
+    prevOrder: [], // last displayed order of symbols
+    lastRenderAt: 0,
+    renderTimer: null,
 };
 const isTracked = (sym) => state.tracked.includes(up(sym));
 
 function markDirty() {
-    if (state.rafPending) return;
-    state.rafPending = true;
-    requestAnimationFrame(() => {
-        state.rafPending = false;
-        render();
-    });
+    const now = Date.now();
+    const since = now - (state.lastRenderAt || 0);
+
+    // already scheduled
+    if (state.renderTimer) return;
+
+    if (since >= RENDER_THROTTLE_MS) {
+        state.renderTimer = setTimeout(() => {
+            state.renderTimer = null;
+            state.lastRenderAt = Date.now();
+            render();
+        }, 0);
+    } else {
+        state.renderTimer = setTimeout(() => {
+            state.renderTimer = null;
+            state.lastRenderAt = Date.now();
+            render();
+        }, RENDER_THROTTLE_MS - since);
+    }
 }
 
 /* 5) Render */
@@ -189,14 +258,59 @@ function render() {
         items.push(t);
     }
 
-    items.sort((a, b) => (a.pctBelowHigh ?? 1) - (b.pctBelowHigh ?? 1) || (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0));
-    const display = items.slice(0, HOD_SYMBOL_LENGTH);
+    // 1) Ideal order by smoothed metric (fallback to raw), then recency
+    const metric = (t) => {
+        if (Number.isFinite(t.pctSmooth)) return t.pctSmooth;
+        if (Number.isFinite(t.pctBelowHigh)) return t.pctBelowHigh;
+        return 1; // worst
+    };
+    items.sort((a, b) => metric(a) - metric(b) || (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0));
+    const ideal = items.slice(0, HOD_SYMBOL_LENGTH);
 
-    const key = display.map((t) => `${t.hero}:${t.price}:${t.sessionHigh}:${t.pctBelowHigh}`).join("|") || "∅";
-    if (state.renderKey && key === state.renderKey) return;
-    state.renderKey = key;
+    // 2) Stabilize: start from previous order, insert newcomers, then only allow a one-pass bubble-up
+    //    if improvement exceeds RANK_HYSTERESIS
+    const bySym = new Map(ideal.map((t) => [t.hero, t]));
+    let stable = (state.prevOrder || []).filter((s) => bySym.has(s));
+    if (!stable.length) stable = ideal.map((t) => t.hero);
 
+    const isHot = (sym) => {
+        const t = bySym.get(sym);
+        return t?.hodAt && Date.now() - t.hodAt < HOT_HOD_MS;
+    };
+
+    // append newcomers (preserve ideal relative order)
+    for (const t of ideal) {
+        if (!stable.includes(t.hero)) stable.push(t.hero);
+    }
+
+    // one pass of guarded swaps (cheap and effective)
+    for (let i = 1; i < stable.length; i++) {
+        const aSym = stable[i - 1],
+            bSym = stable[i];
+        const a = bySym.get(aSym),
+            b = bySym.get(bSym);
+        if (!a || !b) continue;
+        const aM = metric(a),
+            bM = metric(b);
+
+        // lower metric is better (closer to HOD). Only swap if b beats a by meaningful margin.
+        if (isHot(bSym) || aM - bM > RANK_HYSTERESIS) {
+            stable[i - 1] = bSym;
+            stable[i] = aSym;
+        }
+    }
+
+    // build display array in the stabilized order
+    const display = stable.map((s) => bySym.get(s)).filter(Boolean);
+
+    // need timestamp before checking windows
     const now = Date.now();
+    const needMovePaint = display.some((t) => now - (t.lastMoveAt || 0) < MOVE_FLASH_MS);
+
+    // keep order-only key, but don't bail if we must show the pulse
+    const key = display.map((t) => t.hero).join("|") || "∅";
+    if (state.renderKey && key === state.renderKey && !needMovePaint) return;
+    state.renderKey = key;
 
     container.innerHTML = display
         .map((t, idx) => {
@@ -210,24 +324,31 @@ function render() {
             const blinkClass = within ? "blinking" : "";
             const blinkSpeed = (1.0 - 0.75 * closeness).toFixed(2);
             const blinkStyle = within ? `animation-duration:${blinkSpeed}s;` : "";
-            const rowGlow = atHigh ? "box-shadow:0 0 10px rgba(255,210,74,0.3);" : "";
 
-            const age = now - (t.lastUpdate || 0);
-            const dullStyle = age > HOD_INACTIVE_MS ? "opacity:0.8; filter:grayscale(0.8);" : "";
+            const isMoving = now - (t.lastMoveAt || 0) < MOVE_FLASH_MS;
+            const elapsedMove = isMoving ? now - t.lastMoveAt : 0;
+            const rowFlashVars = isMoving ? `--move-dur:${MOVE_FLASH_MS}ms; --move-delay:${-elapsedMove}ms;` : "";
 
-            // ${rowGlow}
+            // pick direction class if we know it; otherwise no extra class
+            const dirClass = isMoving ? (t.lastPriceDir > 0 ? "moving-up" : t.lastPriceDir < 0 ? "moving-down" : "") : "";
 
             return `
-      <div class="xp-line ellipsis" data-ath="${atHigh ? 1 : 0}">
-        <span class="text-tertiary" style="display:inline-block; min-width:24px; text-align:right; margin-right:4px;">${idx + 1}.</span>
-        <strong class="symbol" style="background:${getSymbolColor(t.hero)}; ${dullStyle}">${t.hero}</strong>
-        <span style="position:absolute; left:120px; font-weight:600; display:inline-block; font-size:15px; line-height:1; text-align:left;">
-          <div style="background:transparent; color:${GOLD_HEX}">${formatPrice(t.sessionHigh)}</div>
-          <div class="${blinkClass}" style=" ${blinkStyle} background:transparent; color:${silverTone(t.pctBelowHigh)};">${formatPrice(t.price)}</div>
-        </span>
-      </div>`;
+            <div class="xp-line ellipsis ${isMoving ? "moving" : ""} ${dirClass}" style="${rowFlashVars}" data-ath="${atHigh ? 1 : 0}">
+              
+          
+              <strong class="symbol" style="background:${getSymbolColor(t.hero)};">${t.hero}</strong>
+          
+              <span style="position:absolute; left:100px; font-weight:600; display:inline-block; font-size:15px; line-height:1; text-align:left;">
+                <div style="background:transparent; color:${GOLD_HEX}">${formatPrice(t.sessionHigh)}</div>
+                <div class="price ${blinkClass}" style="${blinkStyle} background:transparent; color:${silverTone(t.pctBelowHigh)};">
+                  ${formatPrice(t.price)}
+                </div>
+              </span>
+            </div>`;
         })
         .join("");
+
+    state.prevOrder = display.slice(0, HOD_SYMBOL_LENGTH).map((t) => t.hero);
 
     // one delegated click handler
     if (!container.__boundClick) {
@@ -260,21 +381,21 @@ function pruneReachedHod() {
 
 const INACTIVE_EVICT_MS = 15 * 60 * 1000; // auto-evict after 15min inactivity
 
-function pruneInactive() {
-    const now = Date.now();
-    let removed = false;
-    for (const [sym, t] of state.tickers) {
-        const last = t.lastMoveAt ?? t.lastUpdate ?? 0;
-        if (now - last >= INACTIVE_EVICT_MS) {
-            state.tickers.delete(sym);
-            removed = true;
-        }
-    }
-    if (removed) markDirty();
-}
+// function pruneInactive() {
+//     const now = Date.now();
+//     let removed = false;
+//     for (const [sym, t] of state.tickers) {
+//         const last = t.lastMoveAt ?? t.lastUpdate ?? 0;
+//         if (now - last >= INACTIVE_EVICT_MS) {
+//             state.tickers.delete(sym);
+//             removed = true;
+//         }
+//     }
+//     if (removed) markDirty();
+// }
 
 setInterval(pruneReachedHod, 5_000);
-setInterval(pruneInactive, 6000);
+// setInterval(pruneInactive, 6000);
 
 /* 7) Boot */
 document.addEventListener("DOMContentLoaded", async () => {
@@ -319,6 +440,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
             if (removed) markDirty();
+            state.prevOrder = (state.prevOrder || []).filter((s) => allow.has(s)).slice(0, HOD_SYMBOL_LENGTH);
         }
         markDirty();
     });
@@ -346,6 +468,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (Number.isFinite(p.sessionHigh)) t.sessionHigh = p.sessionHigh;
             if (Number.isFinite(p.pctBelowHigh)) t.pctBelowHigh = p.pctBelowHigh;
 
+            const rawPct = Number.isFinite(p.pctBelowHigh) ? p.pctBelowHigh : t.pctBelowHigh;
+            if (Number.isFinite(rawPct)) {
+                t.pctSmooth = Number.isFinite(t.pctSmooth) ? t.pctSmooth * (1 - EMA_ALPHA) + rawPct * EMA_ALPHA : rawPct;
+            }
+
             t.lastUpdate = Date.now();
 
             // movement (price OR new highs)
@@ -353,6 +480,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (Number.isFinite(p.price)) moved ||= Number.isFinite(prevPrice) ? Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS : true;
             if (Number.isFinite(p.sessionHigh)) moved ||= Number.isFinite(prevHigh) ? p.sessionHigh > prevHigh : true;
             if (moved) t.lastMoveAt = t.lastUpdate;
+
+            if (Number.isFinite(p.price) && Number.isFinite(prevPrice) && Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS) {
+                t.lastPriceDir = p.price > prevPrice ? 1 : -1; // up = 1, down = -1
+                t.lastPriceChangeAt = Date.now();
+            }
 
             // window + audio
             const diffUSD = Number.isFinite(p.centsBelowHigh)
@@ -376,8 +508,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                     play(magicBase, getChimeVol(state.settings));
                 }
                 t.hodAt = Date.now();
-            } else if (inWindow && isUptick) {
-                play(ticksBase, getTickVol(state.settings));
+            } else {
+                // Volume ramps from 0 at the edge (diff == thr) to full at HOD (diff -> 0).
+                const dist = Number.isFinite(t.diffUSD) ? t.diffUSD : Infinity;
+                const thr = Number.isFinite(t.thrUSD) ? t.thrUSD : 0;
+                const prox = thr > 0 ? clamp(1 - dist / thr, 0, 1) : 0; // 0..1
+
+                if (isUptick && prox > 0 && shouldPlayTick(sym)) {
+                    const user = clamp(getTickVol(state.settings), 0, 1);
+                    // psychoacoustic easing + audible floor at the window edge
+                    const eased = Math.pow(prox, TICK_VOL_EASE); // 0..1
+                    const shaped = TICK_VOL_FLOOR + (1 - TICK_VOL_FLOOR) * eased; // floor..1
+                    const vol = clamp(user * shaped, 0, 1);
+                    play(ticksBase, vol);
+                }
             }
 
             state.tickers.set(sym, t);
@@ -418,4 +562,13 @@ window.hodAudioStatus = () => {
         minAudioIntervalMs: window.MIN_AUDIO_INTERVAL_MS,
         lastAudioTime: window.lastAudioTime,
     });
+};
+
+window.hodTickTest = (p = 0.0) => {
+    const user = clamp(getTickVol(state.settings), 0, 1);
+    const eased = Math.pow(clamp(p, 0, 1), TICK_VOL_EASE);
+    const shaped = TICK_VOL_FLOOR + (1 - TICK_VOL_FLOOR) * eased;
+    const vol = clamp(user * shaped, 0, 1);
+    console.log({ p, vol, user, shaped });
+    play(ticksBase, vol);
 };
