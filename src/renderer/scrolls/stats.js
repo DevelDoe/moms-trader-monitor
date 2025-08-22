@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <strong class="symbol" style="background: ${bg};">
                   ${h.hero}
                 </strong>
-                <span class="buffs" style="font-weight: 600; opacity: 0.85; margin-left: 4px; font-size: 1rem;">${displayScore}</span>
+                <span class="buffs" style="font-weight: 600; ">${displayScore}</span>
               </div>`;
             })
             .join("");

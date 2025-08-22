@@ -133,7 +133,7 @@ function refreshList() {
                 <strong class="symbol" style="background: ${bg}; ${dullStyle};">
                   ${h.hero} 
                 </strong>
-                <span style="font-weight: 600; color: ${getXpColorByRank(i, viewList.length)}; opacity: 0.85; margin-left: 4px; font-size: 1rem;">
+                <span style="font-weight: 600; color: ${getXpColorByRank(i, viewList.length)}; margin-left: 0px; ">
                   ${abbreviateXp(h.totalXpGained)}
                 </span>
               </div>`;

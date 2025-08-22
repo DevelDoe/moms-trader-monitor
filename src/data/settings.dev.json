@@ -42,31 +42,31 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "SBEV",
-      "THAR",
-      "OPEN",
-      "ZYBT",
-      "MSW",
-      "RCKT",
-      "CGTX",
-      "RADX",
-      "HTZ",
-      "WULF",
-      "UFG",
-      "NBY",
-      "SISI",
-      "SDM",
-      "UP",
+      "CMPO",
+      "IXHL",
+      "ELAB",
       "FMFC",
-      "LFMD",
-      "KYIV",
-      "JEM",
-      "RZLV",
-      "EZGO",
-      "DFDV",
-      "TRIB",
-      "BTCM",
-      "MPU"
+      "EEIQ",
+      "NCT",
+      "UUUU",
+      "ETHZ",
+      "MYO",
+      "CIIT",
+      "AEMD",
+      "AZTR",
+      "RADX",
+      "CGTX",
+      "CADL",
+      "GXAI",
+      "PGEN",
+      "ISPC",
+      "TEST",
+      "ANTE",
+      "CTXR",
+      "HSON",
+      "CYCU",
+      "UEC",
+      "VELO"
     ]
   },
   "scanner": {
@@ -94,7 +94,7 @@
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 739,
+      "width": 744,
       "height": 75,
       "x": 1768,
       "y": 1064,
@@ -136,7 +136,7 @@
       "isOpen": true
     },
     "heroesWindow": {
-      "width": 548,
+      "width": 518,
       "height": 488,
       "x": 1771,
       "y": 1132,
@@ -144,29 +144,29 @@
     },
     "scrollXpWindow": {
       "isOpen": true,
-      "width": 203,
+      "width": 204,
       "height": 1081,
       "x": 2677,
       "y": 539
     },
     "scrollStatsWindow": {
       "isOpen": true,
-      "width": 182,
+      "width": 173,
       "height": 1084,
-      "x": 2495,
+      "x": 2512,
       "y": 538
     },
     "newsWindow": {
-      "width": 741,
+      "width": 746,
       "height": 528,
       "x": 1767,
       "y": 538,
       "isOpen": true
     },
     "scrollHodWindow": {
-      "width": 196,
+      "width": 241,
       "height": 482,
-      "x": 2313,
+      "x": 2288,
       "y": 1138,
       "isOpen": true
     }

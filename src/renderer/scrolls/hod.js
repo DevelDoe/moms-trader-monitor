@@ -9,7 +9,7 @@ const up = (s) =>
         .trim()
         .toUpperCase();
 const clamp = (n, mi, ma) => Math.max(mi, Math.min(ma, n));
-const formatPrice = (n) => (Number.isFinite(n) ? `$${n.toFixed(2)}` : "—");
+const formatPrice = (n) => (Number.isFinite(n) ? `$${n.toFixed(2) }` : "—");
 function silverTone(pctBelowHigh) {
     const pct = Number.isFinite(pctBelowHigh) ? pctBelowHigh : 1;
     const closeness = clamp(1 - pct, 0, 1);
@@ -333,18 +333,20 @@ function render() {
             const dirClass = isMoving ? (t.lastPriceDir > 0 ? "moving-up" : t.lastPriceDir < 0 ? "moving-down" : "") : "";
 
             return `
-            <div class="xp-line ellipsis ${isMoving ? "moving" : ""} ${dirClass}" style="${rowFlashVars}" data-ath="${atHigh ? 1 : 0}">
-              
-          
-              <strong class="symbol" style="background:${getSymbolColor(t.hero)};">${t.hero}</strong>
-          
-              <span style="position:absolute; left:100px; font-weight:600; display:inline-block; font-size:15px; line-height:1; text-align:left;">
-                <div style="background:transparent; color:${GOLD_HEX}">${formatPrice(t.sessionHigh)}</div>
-                <div class="price ${blinkClass}" style="${blinkStyle} background:transparent; color:${silverTone(t.pctBelowHigh)};">
-                  ${formatPrice(t.price)}
-                </div>
-              </span>
-            </div>`;
+  <div class="xp-line ellipsis ${isMoving ? "moving" : ""} ${dirClass}" style="${rowFlashVars}" data-ath="${atHigh ? 1 : 0}">
+    <strong class="symbol" style="background:${getSymbolColor(t.hero)};">${t.hero}</strong>
+
+    <span class="prices">
+      
+      <span class="price now ${blinkClass}" style="${blinkStyle} color:${silverTone(t.pctBelowHigh)};">
+        ${formatPrice(t.price)}
+      </span>
+      <span class="dot"> </span>
+      <span class="price high" style="color:${GOLD_HEX};">
+        ${formatPrice(t.sessionHigh)}
+      </span>
+    </span>
+  </div>`;
         })
         .join("");
 
