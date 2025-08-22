@@ -148,7 +148,6 @@ body {
     filter: grayscale(15%) brightness(0.4);
 }
 
-
 .alert.new-high {
     filter: grayscale(0%) brightness(1);
     box-sizing: border-box;
@@ -157,8 +156,6 @@ body {
     background-color: #333d2a;
     width: 100vw;
 }
-
-
 
 .alert.new-entry {
     box-sizing: border-box;
@@ -185,15 +182,7 @@ body {
     mix-blend-mode: screen;
 }
 
-.alert.combo-active {
-    border-top: 2px solid #00ff6a;
-    border-bottom: 2px solid #00ff6a;
-    border-top: none;
-    border-bottom: none;
-    /* filter: grayscale(0%) brightness(1); */
-}
-
-.alert.combo-active .alert-symbol  {
+.alert.combo-active .alert-symbol {
     font-weight: bolder;
     font-size: 1.1rem;
 }
@@ -205,9 +194,15 @@ body {
 }
 
 @keyframes comboPulse {
-    0%   { opacity: 0.3; }
-    50%  { opacity: 0.8; }
-    100% { opacity: 0.3; }
+    0% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0.3;
+    }
 }
 
 .combo-pulse-1 {
@@ -225,8 +220,8 @@ body {
 
 .combo-fill.down {
     background: rgba(255, 78, 78, 0.3);
-    left: unset;        /* ✅ Cancel the default left fill */
-    right: 0;           /* ✅ Start from right side */
+    left: unset; /* ✅ Cancel the default left fill */
+    right: 0; /* ✅ Start from right side */
     transform-origin: right center;
     transition: width 0.6s ease-out, background 0.2s linear;
     mix-blend-mode: screen;
@@ -241,18 +236,33 @@ body {
 }
 
 @keyframes blink-soft {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
 }
 
 @keyframes blink-medium {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
 }
 
 @keyframes blink-intense {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
 }
 
 .blink-soft {
@@ -265,4 +275,93 @@ body {
 
 .blink-intense {
     animation: blink-intense 0.3s infinite;
+}
+
+/* 1) Make content stack above fills */
+.alert {
+    position: relative;
+    z-index: 0;
+} /* the card */
+.alert-content {
+    position: relative;
+    z-index: 1;
+} /* text sits above fills */
+.alert-symbol {
+    position: relative;
+    z-index: 1;
+}
+
+/* 2) Base fill (common) — sits under content */
+.combo-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    pointer-events: none;
+    transition: width 0.6s ease-out, background 0.2s linear;
+    will-change: width;
+    z-index: 0;
+    opacity: 0.25;
+    mix-blend-mode: screen;
+}
+
+/* 3) Separate directions */
+.combo-fill.up {
+    left: 0;
+    right: auto;
+    background: rgba(78, 255, 122, 0.5);
+}
+.combo-fill.down {
+    left: auto;
+    right: 0;
+    background: rgba(255, 78, 78, 0.3);
+    transform-origin: right center;
+}
+
+/* 4) Directional combo borders (no global green border) */
+.alert.combo-active {
+    /* keep as state flag; no visual here */
+}
+.alert.up-combo {
+    /* outline: 1px solid rgba(0, 255, 106, 0.55); */
+    outline-offset: -1px;
+}
+.alert.down-combo {
+    /* outline: 1px solid rgba(255, 78, 78, 0.45); */
+    outline-offset: -1px;
+}
+
+/* (optional) pulse keeps working */
+.combo-pulse-1 {
+    animation: comboPulse 6s ease-in-out infinite;
+}
+.combo-pulse-2 {
+    animation: comboPulse 5s ease-in-out infinite;
+}
+.combo-pulse-3 {
+    animation: comboPulse 4s ease-in-out infinite;
+}
+.combo-pulse-4 {
+    animation: comboPulse 0.3s ease-in-out infinite;
+}
+
+/* 5) High of Day must always win, even while comboing */
+.alert.new-high {
+    background-color: #333d2a;
+    filter: grayscale(0%) brightness(1);
+}
+.alert.new-high::after {
+    content: "";
+    position: absolute;
+    inset: -1px; /* sits just at the edge of the card */
+    border: 2px solid #ffd400; /* constant yellow ring */
+    border-radius: 0; /* match your flat style */
+    pointer-events: none;
+    z-index: 3; /* above fills, content, and outlines */
+}
+
+/* Keep your new-entry styling; ensure it doesn't hide the ring */
+.alert.new-entry {
+    position: relative;
+    z-index: 0;
 }

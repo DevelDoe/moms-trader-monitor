@@ -86,6 +86,14 @@ function getComboVolume() {
     return Math.min(1, Math.max(0, v)); // clamp 0..1
 }
 
+function comboPercentFromLevel(level) {
+    const maxCombo = 16;
+    const lv = Math.max(0, level ?? -1);
+    if (lv <= 1) return 30; // early visual feedback
+    const ratio = lv / maxCombo;
+    return Math.min(1, Math.pow(ratio, 0.65)) * 100;
+}
+
 // ============================
 // App Initialization
 // ============================
@@ -153,30 +161,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function createAlertElement(alertData) {
         const { hero, price, strength = 0, hp = 0, dp = 0 } = alertData;
+
         const upLevel = symbolNoteIndices[hero] ?? -1;
         const downLevel = symbolDownNoteIndices[hero] ?? -1;
-        const comboLevel = Math.max(upLevel, downLevel, 0);
-        const maxCombo = 16;
-        let ratio = comboLevel / maxCombo;
-        let comboPercent;
 
-        if (comboLevel <= 1) {
-            comboPercent = 30; // Force early fill to 35%
-        } else {
-            comboPercent = Math.min(1, Math.pow(ratio, 0.65)) * 100;
-        }
-        const percent = hp || -dp;
+        const upPercent = comboPercentFromLevel(upLevel);
+        const downPercent = comboPercentFromLevel(downLevel);
+
         const isUp = hp > 0;
-        const volume = strength;
         const isNewHigh = alertData.isHighOfDay === true;
         const isNewEntry = alertData.isNewEntry === true;
 
         const alertDiv = document.createElement("li");
         alertDiv.dataset.symbol = hero;
+        alertDiv.className = `alert ${isUp ? "up" : "down"}`;
 
-        const fillDiv = document.createElement("div");
-        fillDiv.className = "combo-fill";
-        alertDiv.appendChild(fillDiv);
+        // two independent layers
+        const fillUp = document.createElement("div");
+        fillUp.className = "combo-fill up";
+        const fillDown = document.createElement("div");
+        fillDown.className = "combo-fill down";
+        alertDiv.appendChild(fillUp);
+        alertDiv.appendChild(fillDown);
 
         const contentDiv = document.createElement("div");
         contentDiv.className = "alert-content";
@@ -184,83 +190,57 @@ document.addEventListener("DOMContentLoaded", async () => {
         const valuesDiv = document.createElement("div");
         valuesDiv.className = "alert-values";
         valuesDiv.innerHTML = `
-            <span class="alert-symbol no-drag" style="background-color: ${getSymbolColor(alertData.hue || 0)}" title="Click to copy and set active ticker">${hero}</span>
-            <span class="price">$${price.toFixed(2)}</span>
-            <span class="${isUp ? "change-up" : "change-down"}">${percent.toFixed(2)}%</span>
-            <span class="size">${abbreviatedValues(volume)}</span>
+          <span class="alert-symbol no-drag" style="background-color: ${getSymbolColor(alertData.hue || 0)}" title="Click to copy and set active ticker">${hero}</span>
+          <span class="price">$${Number(price).toFixed(2)}</span>
+          <span class="${isUp ? "change-up" : "change-down"}">${(hp || -dp).toFixed(2)}%</span>
+          <span class="size">${abbreviatedValues(strength)}</span>
         `;
         contentDiv.appendChild(valuesDiv);
+        alertDiv.appendChild(contentDiv);
 
         valuesDiv.querySelector(".alert-symbol").onclick = () => {
             navigator.clipboard.writeText(hero);
             window.activeAPI.setActiveTicker(hero);
         };
 
-        const symbolEl = valuesDiv.querySelector(".alert-symbol");
+        // persistent badges
+        if (isNewHigh) alertDiv.classList.add("new-high"); // don't remove this in resets
+        if (isNewEntry) alertDiv.classList.add("new-entry");
 
-        alertDiv.className = `alert ${isUp ? "up" : "down"}`;
-
-        // In createAlertElement, for high-of-day sound:
-        if (isNewHigh) {
-            const now = Date.now();
-            if (now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                alertDiv.classList.add("new-high");
-                // if (!isQuietTimeEST()) {
-                //     magicDustAudio.volume = Math.min(1.0, Math.max(0.1, volume / 10000));
-                //     magicDustAudio.currentTime = 0;
-                //     magicDustAudio.play();
-                //     lastAudioTime = now;
-                // } else if (debugMode) {
-                //     console.log(`🔕 Magic dust audio suppressed during quiet time (8:00-8:12 EST)`);
-                // }
-            }
-        }
-
-        if (isNewEntry) {
-            alertDiv.classList.add("new-entry");
-            // contentDiv.innerHTML += `<div class="progress-bar"><span style="color: lightblue; font-weight: bold;">🆕 New Entry</span></div>`;
-        }
-
-        // Remove any existing blink classes
-        alertDiv.classList.remove("blink-soft", "blink-medium", "blink-intense");
-
-        // Apply new blink intensity based on volume
+        // blink / brightness (same as before)
+        alertDiv.classList.remove("blink-soft", "blink-medium", "blink-intense", "low-1", "low-2", "low-3", "low-4");
         if (isUp) {
-            if (volume >= 100_000) alertDiv.classList.add("blink-intense");
-            else if (volume >= 50_000) alertDiv.classList.add("blink-medium");
-            else if (volume >= 10_000) alertDiv.classList.add("blink-soft");
+            if (strength >= 100_000) alertDiv.classList.add("blink-intense");
+            else if (strength >= 50_000) alertDiv.classList.add("blink-medium");
+            else if (strength >= 10_000) alertDiv.classList.add("blink-soft");
         }
-
-        alertDiv.classList.remove("low-1", "low-2", "low-3", "low-4");
-
         let brightnessClass = "";
-        if (volume >= 5_000) brightnessClass = "low-1";
-        else if (volume >= 2500) brightnessClass = "low-2";
-        else if (volume >= 500) brightnessClass = "low-3";
+        if (strength >= 5_000) brightnessClass = "low-1";
+        else if (strength >= 2_500) brightnessClass = "low-2";
+        else if (strength >= 500) brightnessClass = "low-3";
         else brightnessClass = "low-4";
+        if (hp > 0 || dp > 0) alertDiv.classList.add(brightnessClass);
 
-        if (hp > 0 || dp > 0) {
-            alertDiv.classList.add(brightnessClass);
+        // apply UP combo fill
+        if (upLevel >= 1) {
+            alertDiv.classList.add("combo-active", "up-combo");
+            fillUp.style.width = `${upPercent}%`;
+            fillUp.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+            const p = Math.min(4, Math.floor(upLevel / 2));
+            if (p >= 1) fillUp.classList.add(`combo-pulse-${p}`);
+        } else {
+            fillUp.style.width = "0%";
         }
 
-        alertDiv.appendChild(contentDiv);
-        if (hp > 0 && comboLevel >= 1) {
-            fillDiv.style.width = `${comboPercent}%`;
-
-            // 🔴 Add combo border to alert card itself
-            alertDiv.classList.add("combo-active");
-
-            // 🎵 Add pulse class based on combo level
-
-            fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
-            const pulseStep = Math.min(4, Math.floor(comboLevel / 2)); // 0–4
-            if (pulseStep >= 1) fillDiv.classList.add(`combo-pulse-${pulseStep}`);
-        }
-
-        if (dp > 0 && comboLevel >= 1) {
-            fillDiv.style.width = `${comboPercent}%`;
-            fillDiv.classList.add("down"); // 🔴 mark as red fill
-            alertDiv.classList.add("combo-active", "down-combo"); // 🔴 red borders
+        // apply DOWN combo fill
+        if (downLevel >= 1) {
+            alertDiv.classList.add("combo-active", "down-combo");
+            fillDown.style.width = `${downPercent}%`;
+            fillDown.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+            const q = Math.min(4, Math.floor(downLevel / 2));
+            if (q >= 1) fillDown.classList.add(`combo-pulse-${q}`);
+        } else {
+            fillDown.style.width = "0%";
         }
 
         return alertDiv;
@@ -284,7 +264,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         alertQueue.length = 0;
     }
-
     function resetCombo(symbol, isDown = false) {
         if (isDown) {
             clearTimeout(symbolDowntickTimers[symbol]);
@@ -298,17 +277,31 @@ document.addEventListener("DOMContentLoaded", async () => {
             delete symbolComboLastPrice[symbol];
         }
 
-        document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((alertDiv) => {
-            alertDiv.classList.remove("combo-active", "down-combo");
-            const fillDiv = alertDiv.querySelector(".combo-fill");
-            if (fillDiv) {
-                fillDiv.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4", "down");
-                fillDiv.style.width = "0%";
-                fillDiv.style.background = "";
+        document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((card) => {
+            if (isDown) {
+                card.classList.remove("down-combo");
+                const d = card.querySelector(".combo-fill.down");
+                if (d) {
+                    d.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+                    d.style.width = "0%";
+                }
+            } else {
+                card.classList.remove("up-combo");
+                const u = card.querySelector(".combo-fill.up");
+                if (u) {
+                    u.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
+                    u.style.width = "0%";
+                }
             }
+
+            // keep combo-active if the *other* side is still going
+            const stillUp = card.classList.contains("up-combo");
+            const stillDown = card.classList.contains("down-combo");
+            if (!stillUp && !stillDown) card.classList.remove("combo-active");
+            // DO NOT touch .new-high
         });
 
-        if (debugMode) console.log(`🔄 ${symbol} ${isDown ? "down-combo" : "combo"} fully reset`);
+        if (debugMode) console.log(`🔄 ${symbol} ${isDown ? "down-combo" : "up-combo"} reset`);
     }
 
     // ============================
