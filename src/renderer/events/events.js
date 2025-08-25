@@ -161,21 +161,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function createAlertElement(alertData) {
         const { hero, price, strength = 0, hp = 0, dp = 0 } = alertData;
-
+    
         const upLevel = symbolNoteIndices[hero] ?? -1;
         const downLevel = symbolDownNoteIndices[hero] ?? -1;
-
+    
         const upPercent = comboPercentFromLevel(upLevel);
         const downPercent = comboPercentFromLevel(downLevel);
-
+    
         const isUp = hp > 0;
         const isNewHigh = alertData.isHighOfDay === true;
         const isNewEntry = alertData.isNewEntry === true;
-
+    
         const alertDiv = document.createElement("li");
         alertDiv.dataset.symbol = hero;
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
-
+    
         // two independent layers
         const fillUp = document.createElement("div");
         fillUp.className = "combo-fill up";
@@ -183,31 +183,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         fillDown.className = "combo-fill down";
         alertDiv.appendChild(fillUp);
         alertDiv.appendChild(fillDown);
-
+    
         const contentDiv = document.createElement("div");
         contentDiv.className = "alert-content";
-
+    
         const valuesDiv = document.createElement("div");
         valuesDiv.className = "alert-values";
         valuesDiv.innerHTML = `
           <span class="alert-symbol no-drag" style="background-color: ${getSymbolColor(alertData.hue || 0)}" title="Click to copy and set active ticker">${hero}</span>
           <span class="price">$${Number(price).toFixed(2)}</span>
-          <span class="${isUp ? "change-up" : "change-down"}">${(hp || -dp).toFixed(2)}%</span>
+          <span class="${isUp ? "change-up" : "change-down"}">${(isUp ? hp : -dp).toFixed(2)}%</span>
           <span class="size">${abbreviatedValues(strength)}</span>
         `;
         contentDiv.appendChild(valuesDiv);
         alertDiv.appendChild(contentDiv);
-
+    
         valuesDiv.querySelector(".alert-symbol").onclick = () => {
             navigator.clipboard.writeText(hero);
             window.activeAPI.setActiveTicker(hero);
         };
-
-        // persistent badges
-        if (isNewHigh) alertDiv.classList.add("new-high"); // don't remove this in resets
+    
+        if (isNewHigh) alertDiv.classList.add("new-high");
         if (isNewEntry) alertDiv.classList.add("new-entry");
-
-        // blink / brightness (same as before)
+    
+        // blink / brightness
         alertDiv.classList.remove("blink-soft", "blink-medium", "blink-intense", "low-1", "low-2", "low-3", "low-4");
         if (isUp) {
             if (strength >= 100_000) alertDiv.classList.add("blink-intense");
@@ -220,9 +219,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         else if (strength >= 500) brightnessClass = "low-3";
         else brightnessClass = "low-4";
         if (hp > 0 || dp > 0) alertDiv.classList.add(brightnessClass);
-
-        // apply UP combo fill
-        if (upLevel >= 1) {
+    
+        // 🔐 Direction-locked combo rendering:
+        // Only show UP combo visuals on UP alerts
+        if (isUp && upLevel >= 1) {
             alertDiv.classList.add("combo-active", "up-combo");
             fillUp.style.width = `${upPercent}%`;
             fillUp.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
@@ -230,10 +230,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (p >= 1) fillUp.classList.add(`combo-pulse-${p}`);
         } else {
             fillUp.style.width = "0%";
+            alertDiv.classList.remove("up-combo");
         }
-
-        // apply DOWN combo fill
-        if (downLevel >= 1) {
+    
+        // Only show DOWN combo visuals on DOWN alerts
+        if (!isUp && downLevel >= 1) {
             alertDiv.classList.add("combo-active", "down-combo");
             fillDown.style.width = `${downPercent}%`;
             fillDown.classList.remove("combo-pulse-1", "combo-pulse-2", "combo-pulse-3", "combo-pulse-4");
@@ -241,10 +242,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (q >= 1) fillDown.classList.add(`combo-pulse-${q}`);
         } else {
             fillDown.style.width = "0%";
+            alertDiv.classList.remove("down-combo");
         }
-
+    
+        // If neither side is active after the direction lock, drop combo-active
+        if (!alertDiv.classList.contains("up-combo") && !alertDiv.classList.contains("down-combo")) {
+            alertDiv.classList.remove("combo-active");
+        }
+    
         return alertDiv;
     }
+    
 
     function flushAlerts() {
         flushScheduled = false;
@@ -396,44 +404,56 @@ document.addEventListener("DOMContentLoaded", async () => {
                     console.log(`   🧭 Previous Down Level: ${symbolDownNoteIndices[symbol] ?? "N/A (defaulting to 0)"}`);
                     console.log(`   💪 Volume: ${strength} | 🔻 DP: ${dp.toFixed(2)}`);
                 }
-
+            
                 const currentLevel = symbolDownNoteIndices[symbol] ?? -1;
                 const nextLevel = currentLevel + 1;
-
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
-
+            
                 if (symbolDowntickTimers[symbol]) {
                     clearTimeout(symbolDowntickTimers[symbol]);
-
+            
                     if (strength >= requiredVolume) {
                         const lastDownPrice = symbolDownComboLastPrice[symbol] ?? Infinity;
-
+            
                         if (price < lastDownPrice) {
                             symbolDownNoteIndices[symbol] = nextLevel;
                             symbolDownComboLastPrice[symbol] = price;
-
+            
                             if (debugMode && debugCombo) console.log(`🔥 ${symbol} down-combo advanced to LV${nextLevel}`);
-
+            
                             symbolDowntickTimers[symbol] = setTimeout(() => {
                                 if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                                 resetCombo(symbol, true);
                             }, UPTICK_WINDOW_MS);
                         } else {
                             if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not lower than last down-combo price (${price} ≥ ${lastDownPrice})`);
-                            return; // stop combo progression
+                            // no advance, but keep timer alive
+                            symbolDowntickTimers[symbol] = setTimeout(() => {
+                                if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
+                                resetCombo(symbol, true);
+                            }, UPTICK_WINDOW_MS);
                         }
                     } else {
-                        // First downtick — start tracking
-                        symbolDownNoteIndices[symbol] = 0;
-                        if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
-
+                        // not enough volume to advance — just refresh timer
                         symbolDowntickTimers[symbol] = setTimeout(() => {
                             if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                             resetCombo(symbol, true);
                         }, UPTICK_WINDOW_MS);
                     }
+                } else {
+                    // ✅ First downtick — start tracking (LV0)
+                    symbolDownNoteIndices[symbol] = 0;
+                    symbolDownComboLastPrice[symbol] = price;
+            
+                    if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
+            
+                    symbolDowntickTimers[symbol] = setTimeout(() => {
+                        if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
+                        resetCombo(symbol, true);
+                    }, UPTICK_WINDOW_MS);
                 }
             }
+            
 
             alertQueue.push(alertData);
             if (!flushScheduled) {

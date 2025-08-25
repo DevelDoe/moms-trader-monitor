@@ -205,19 +205,6 @@ body {
     }
 }
 
-.combo-pulse-1 {
-    animation: comboPulse 6s ease-in-out infinite;
-}
-.combo-pulse-2 {
-    animation: comboPulse 5s ease-in-out infinite;
-}
-.combo-pulse-3 {
-    animation: comboPulse 04s ease-in-out infinite;
-}
-.combo-pulse-4 {
-    animation: comboPulse 0.3s ease-in-out infinite;
-}
-
 .combo-fill.down {
     background: rgba(255, 78, 78, 0.3);
     left: unset; /* ✅ Cancel the default left fill */
@@ -318,19 +305,6 @@ body {
     transform-origin: right center;
 }
 
-/* 4) Directional combo borders (no global green border) */
-.alert.combo-active {
-    /* keep as state flag; no visual here */
-}
-.alert.up-combo {
-    /* outline: 1px solid rgba(0, 255, 106, 0.55); */
-    outline-offset: -1px;
-}
-.alert.down-combo {
-    /* outline: 1px solid rgba(255, 78, 78, 0.45); */
-    outline-offset: -1px;
-}
-
 /* (optional) pulse keeps working */
 .combo-pulse-1 {
     animation: comboPulse 6s ease-in-out infinite;
@@ -354,7 +328,10 @@ body {
     content: "";
     position: absolute;
     inset: -1px; /* sits just at the edge of the card */
-    border: 2px solid #ffd400; /* constant yellow ring */
+    border-left: 2px solid #ffd400; /* constant yellow ring */
+    border-right: 2px solid #ffd400; /* constant yellow ring */
+    border-top: none;
+    border-bottom: none;
     border-radius: 0; /* match your flat style */
     pointer-events: none;
     z-index: 3; /* above fills, content, and outlines */
