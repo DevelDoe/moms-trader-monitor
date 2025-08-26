@@ -43,22 +43,30 @@
     "allowMultiSymbols": false,
     "trackedTickers": [
       "ALLR",
+      "HKPD",
+      "OPEN",
+      "AIFF",
+      "OPAD",
+      "LWLG",
+      "THAR",
+      "EMPG",
+      "MASK",
       "PTHL",
-      "TEST",
-      "GERN",
-      "FMFC",
-      "MDAI",
-      "FBGL",
-      "BNC",
-      "MRM",
-      "TTEC",
-      "MRKR",
-      "COCH",
-      "DWSN",
-      "STAI",
-      "CTXR",
-      "HTCR",
-      "MNTS"
+      "SER",
+      "RAY",
+      "IVVD",
+      "GHRS",
+      "ONDS",
+      "INHD",
+      "UUUU",
+      "MBOT",
+      "ECX",
+      "UP",
+      "LASE",
+      "TLRY",
+      "KYIV",
+      "WULF",
+      "FMFC"
     ]
   },
   "scanner": {
@@ -103,8 +111,8 @@
       "isOpen": true,
       "width": 400,
       "height": 85,
-      "x": 2261,
-      "y": 153
+      "x": 3378,
+      "y": 83
     },
     "progressWindow": {
       "width": 1442,
@@ -165,7 +173,7 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": false,
+    "enableHeroes": true,
     "autoClose": true
   },
   "hod": {

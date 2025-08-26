@@ -264,22 +264,36 @@ function startScoreDecay() {
     }, DECAY_INTERVAL_MS);
 }
 
-/* ===== 7) Alerts → State (minimal) ===== */
+/* ===== 7) Alerts → State (minimal, dp-safe) ===== */
 function handleAlertEvent(evt) {
+    if (!evt?.hero) return;
+
     const minPrice = state.settings?.top?.minPrice ?? 0;
     const maxPrice = state.settings?.top?.maxPrice > 0 ? state.settings.top.maxPrice : Infinity;
-    const hp = Number(evt.hp) || 0;
-    const dp = Number(evt.dp) || 0;
-    if (!evt?.hero) return;
-    if ((evt.one_min_volume ?? 0) <= 30000) return;
-    if (evt.price < minPrice || evt.price > maxPrice) return;
+
+    // Normalize inputs
+    const price = Number(evt.price);
+    const vol = Number(evt.one_min_volume ?? 0);
+    let hp = Math.max(0, Number(evt.hp) || 0);
+    let dp = Math.max(0, Number(evt.dp) || 0);
+
+    // Price & volume guards
+    if (vol <= 30000) return;
+    if (!Number.isFinite(price) || price < minPrice || price > maxPrice) return;
+
+    // Hard rule: hp/dp are mutually exclusive; keep the larger, zero the other
+    if (hp > 0 && dp > 0) {
+        if (hp >= dp) dp = 0;
+        else hp = 0;
+        if (window.appFlags?.isDev) console.warn("[Heroes] hp/dp collision resolved:", { hp, dp, evt });
+    }
 
     const sym = String(evt.hero).toUpperCase();
     const h =
         state.heroes[sym] ||
         (state.heroes[sym] = {
             hero: sym,
-            price: evt.price || 1,
+            price: price || 1,
             hue: evt.hue ?? 0,
             hp: 0,
             dp: 0,
@@ -287,17 +301,19 @@ function handleAlertEvent(evt) {
             xp: 0,
             lv: 1,
             totalXpGained: 0,
-            strength: evt.one_min_volume || 0,
+            strength: vol || 0,
             lastEvent: { hp: 0, dp: 0 },
-            buffs: {}, // will be overwritten by store if present
-            highestPrice: evt.price || 1,
+            buffs: {},
+            highestPrice: price || 1,
             lastUpdate: 0,
         });
 
-    h.price = evt.price ?? h.price;
+    // update basics
+    h.price = Number.isFinite(price) ? price : h.price;
     h.hue = evt.hue ?? h.hue;
-    h.strength = evt.one_min_volume ?? h.strength;
+    h.strength = Number.isFinite(vol) ? vol : h.strength;
 
+    // change bar (hp is a net value: add hp, subtract dp)
     if (hp > 0) h.hp += hp;
     if (dp > 0) h.hp = Math.max(h.hp - dp, 0);
 
@@ -306,18 +322,25 @@ function handleAlertEvent(evt) {
     h.history.push({ hp, dp, ts: Date.now() });
     if (h.history.length > 10) h.history.shift();
 
-    // score: add only on hp; ignore dp
-    // (use your helper if you want weighting—otherwise just use `hp`)
-    const inc = Math.abs(Number(window.helpers.calculateScore?.(h, evt)) || hp);
-    if (hp > 0) h.score = Math.max(0, (h.score || 0) + inc);
+    // ---------- SCORE (up-only) ----------
+    // strictly compute & add score ONLY if this is a pure up-tick (hp>0 && dp===0)
+    let inc = 0;
+    if (hp > 0 && dp === 0) {
+        // If helpers exist, use them; otherwise fallback to plain hp as minimal signal
+        const raw = Number(window.helpers?.calculateScore?.(h, { ...evt, hp, dp: 0, one_min_volume: vol })) || 0;
+        inc = Math.max(0, raw || hp); // never let dp or negative math leak into positives
+        if (inc > 0) h.score = Math.max(0, (h.score || 0) + inc);
+    }
+    // -------------------------------------
 
     // bookkeeping
-    h.lastEvent = { hp, dp, score: hp > 0 ? inc : 0 };
+    h.lastEvent = { hp, dp, score: inc };
     h.lastUpdate = Date.now();
 
+    // dynamic HP bar ceiling
     if (h.hp > state.maxHP) state.maxHP = h.hp * 1.05;
 
-    // If your alerts carry hydrated buffs, keep this:
+    // hydrate buffs if present on the event
     if (evt.buffs && Object.keys(evt.buffs).length) h.buffs = evt.buffs;
 
     markDirty();
