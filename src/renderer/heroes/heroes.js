@@ -123,7 +123,7 @@ function createCard(h) {
       <div class="bar"><div class="bar-fill xp"       style="width:${xpPercent}%"><span class="bar-text">XP: ${Math.floor(totalXp)} / ${xpForNextLevel}</span></div></div>
       <div class="bar"><div class="bar-fill hp"       style="width:${Math.min((h.hp / state.maxHP) * 100, 100)}%"><span class="bar-text">HP: ${(h.hp || 0).toFixed(0)}</span></div></div>
       <div class="bar"><div class="bar-fill strength" style="background-color:${impact.style.color}; width:${Math.min((h.strength / MAX_STRENGTH) * 100, 100)}%">
-        <span class="bar-text">STRENGTH: ${Math.floor((h.strength || 0) / 100_000)}k</span>
+        <span class="bar-text">VOLUME: ${window.helpers.abbreviatedValues(h.strength || 0)}</span>
       </div></div>
     </div>
   `;
@@ -301,7 +301,7 @@ function handleAlertEvent(evt) {
             xp: 0,
             lv: 1,
             totalXpGained: 0,
-            strength: vol || 0,
+            strength: Number(evt.one_min_volume) || 0,
             lastEvent: { hp: 0, dp: 0 },
             buffs: {},
             highestPrice: price || 1,
@@ -311,7 +311,7 @@ function handleAlertEvent(evt) {
     // update basics
     h.price = Number.isFinite(price) ? price : h.price;
     h.hue = evt.hue ?? h.hue;
-    h.strength = Number.isFinite(vol) ? vol : h.strength;
+    h.strength = Number(evt.one_min_volume) || 0;
 
     // change bar (hp is a net value: add hp, subtract dp)
     if (hp > 0) h.hp += hp;

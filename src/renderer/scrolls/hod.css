@@ -1,0 +1,148 @@
+#hod-scroll {
+    margin-left: 5px;
+}
+
+/* Row layout */
+.xp-line {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    align-items: center;
+    column-gap: 0px;
+    width: 250px; /* a bit wider for two prices */
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    position: relative; /* needed for ::before pulse/HOD bar */
+    overflow: hidden;
+    float: left;
+}
+
+/* Symbol */
+.symbol {
+    white-space: nowrap;
+    color: antiquewhite !important;
+    font-weight: 400;
+    width: 75px;
+    display: inline-block;
+    font-size: 22px;
+    padding: 0 2px;
+    border-radius: 0;
+    margin-right: 0;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+/* Price cluster (right side) */
+.prices {
+    display: flex;
+    align-items: baseline; /* or center */
+    justify-content: flex-start; /* ← left-align the prices */
+    gap: 1px;
+    font-size: 20px;
+    font-weight: 200;
+    line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Clean up grid item (floats not needed in Grid) */
+.xp-line{ float:none; }
+.prices{ float:none; }
+
+/* tiny separator dot */
+.prices .dot {
+    opacity: 0.6;
+    user-select: none;
+}
+
+.price.high {
+    font-weight: 600;
+}
+
+/* optional: tighten on very narrow rows */
+/* @media (max-width: 300px) {
+    .prices {
+        font-size: 16px;
+        gap: 6px;
+    }
+} */
+
+.lv {
+    font-size: 10px;
+    color: white;
+    font-weight: 300;
+    position: absolute;
+    right: 1px;
+    bottom: 2px;
+    background-color: #1b1f24;
+    padding: 0px 1px;
+    border-radius: 1px;
+}
+
+.score-tooltip {
+    cursor: help;
+    border-bottom: 1px dashed #aaa;
+}
+
+/* ===== Animations / motion cues ===== */
+
+/* blink util */
+@keyframes hod-blink {
+    0%,
+    100% {
+        opacity: 1;
+        font-weight: 600;
+    }
+    50% {
+        opacity: 0.9;
+    }
+}
+.blinking {
+    animation: hod-blink 1s steps(1, end) infinite;
+}
+
+/* left-edge pulse when the row is moving */
+@keyframes xp-moveBorder {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.xp-line.moving::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 4px;
+    width: 15px;
+    height: 30px; /* adjust if your row height changes */
+    border-radius: 0;
+    background: #fff; /* default color */
+    pointer-events: none;
+    z-index: 2;
+    animation: xp-moveBorder var(--move-dur, 600ms) var(--move-delay, 0ms) ease-out both;
+}
+
+/* directional overrides */
+.xp-line.moving-up::before {
+    background: #22c55e;
+} /* green */
+.xp-line.moving-down::before {
+    background: #ef4444;
+} /* red   */
+
+/* HOD override — constant yellow bar (no fade) */
+.xp-line[data-ath="1"]::before {
+    content: "";
+    position: absolute;
+    left: 6px; /* nudge from symbol edge */
+    top: 4px;
+    width: 5px;
+    height: 30px;
+    background: #ffd24a; /* GOLD_HEX */
+    opacity: 1;
+    pointer-events: none;
+    animation: none !important; /* stop any pulse */
+}
