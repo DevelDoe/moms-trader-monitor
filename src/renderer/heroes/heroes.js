@@ -123,7 +123,7 @@ function createCard(h) {
       <div class="bar"><div class="bar-fill xp"       style="width:${xpPercent}%"><span class="bar-text">XP: ${Math.floor(totalXp)} / ${xpForNextLevel}</span></div></div>
       <div class="bar"><div class="bar-fill hp"       style="width:${Math.min((h.hp / state.maxHP) * 100, 100)}%"><span class="bar-text">HP: ${(h.hp || 0).toFixed(0)}</span></div></div>
       <div class="bar"><div class="bar-fill strength" style="background-color:${impact.style.color}; width:${Math.min((h.strength / MAX_STRENGTH) * 100, 100)}%">
-        <span class="bar-text">VOLUME: ${window.helpers.abbreviatedValues(h.strength || 0)}</span>
+        <span class="bar-text">STRENGTH: ${window.helpers.abbreviatedValues(h.strength || 0)}</span>
       </div></div>
     </div>
   `;
@@ -164,7 +164,16 @@ function patchCardDOM(sym, h) {
     setWidth(".bar-fill.strength", Math.min((h.strength / MAX_STRENGTH) * 100, 100));
 
     const strBar = card.querySelector(".bar-fill.strength");
-    if (strBar) strBar.style.backgroundColor = impact.style.color;
+    if (strBar) {
+        strBar.style.backgroundColor = impact.style.color;
+
+        // ✅ update the STRENGTH label text
+        const strengthText = strBar.querySelector(".bar-text");
+        if (strengthText) {
+            const fmt = window.helpers?.abbreviatedValues ? window.helpers.abbreviatedValues(h.strength || 0) : String(h.strength || 0);
+            strengthText.textContent = `STRENGTH: ${fmt}`;
+        }
+    }
 
     const { posHTML, neuHTML, negHTML } = buildBuffRows(h);
     const posRow = card.querySelector(".buff-row.positive");
@@ -273,7 +282,7 @@ function handleAlertEvent(evt) {
 
     // Normalize inputs
     const price = Number(evt.price);
-    const vol = Number(evt.one_min_volume ?? 0);
+    const vol = Number(evt.one_min_volume) || 0;
     let hp = Math.max(0, Number(evt.hp) || 0);
     let dp = Math.max(0, Number(evt.dp) || 0);
 
@@ -322,16 +331,21 @@ function handleAlertEvent(evt) {
     h.history.push({ hp, dp, ts: Date.now() });
     if (h.history.length > 10) h.history.shift();
 
-    // ---------- SCORE (up-only) ----------
-    // strictly compute & add score ONLY if this is a pure up-tick (hp>0 && dp===0)
-    let inc = 0;
-    if (hp > 0 && dp === 0) {
-        // If helpers exist, use them; otherwise fallback to plain hp as minimal signal
-        const raw = Number(window.helpers?.calculateScore?.(h, { ...evt, hp, dp: 0, one_min_volume: vol })) || 0;
-        inc = Math.max(0, raw || hp); // never let dp or negative math leak into positives
-        if (inc > 0) h.score = Math.max(0, (h.score || 0) + inc);
+    // ---------- SCORE (use calculateScore directly) ----------
+    let delta = 0;
+    if (window.helpers?.calculateScore) {
+        try {
+            delta = Number(window.helpers.calculateScore(h, evt)) || 0;
+        } catch (e) {
+            console.error("[Heroes] calculateScore failed", e);
+            delta = 0;
+        }
     }
-    // -------------------------------------
+    if (delta !== 0) {
+        h.score = Math.max(0, (h.score || 0) + delta);
+    }
+    h.lastEvent = { hp, dp, score: delta };
+    // ---------------------------------------------------------
 
     // bookkeeping
     h.lastEvent = { hp, dp, score: inc };
