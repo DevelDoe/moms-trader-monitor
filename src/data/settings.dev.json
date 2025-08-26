@@ -42,31 +42,31 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "VCIG",
       "RAY",
-      "HIT",
-      "FEBO",
-      "PZG",
-      "STIM",
-      "GXAI",
-      "VSME",
-      "SMX",
-      "NUKK",
-      "INHD",
-      "AXGN",
-      "XFOR",
-      "NAII",
-      "IRWD",
-      "RMTI",
-      "DYN",
-      "TEST",
-      "TZUP",
-      "ANPA",
-      "QMMM",
+      "NIO",
       "KSS",
-      "BIYA",
-      "KPTI",
-      "FSI"
+      "EYPT",
+      "CURX",
+      "PSKY",
+      "NEGG",
+      "VCIG",
+      "STKH",
+      "OPEN",
+      "SCLX",
+      "RMTI",
+      "RIOT",
+      "UP",
+      "AIRO",
+      "MSOX",
+      "ALLR",
+      "UE",
+      "MIMI",
+      "IVVD",
+      "SVRA",
+      "FBRX",
+      "BRLT",
+      "SLDB",
+      "REAL"
     ]
   },
   "scanner": {
@@ -169,6 +169,33 @@
       "x": 2254,
       "y": 1138,
       "isOpen": true
+    },
+    "traderviewWindow_VCIG": {
+      "isOpen": false
+    },
+    "traderviewWindow_RAY": {
+      "isOpen": false
+    },
+    "traderviewWindow_RR": {
+      "isOpen": false
+    },
+    "traderviewWindow_STKH": {
+      "isOpen": false
+    },
+    "traderviewWindow_WORX": {
+      "isOpen": false
+    },
+    "traderviewWindow_ALLR": {
+      "isOpen": false
+    },
+    "traderviewWindow_RMTI": {
+      "isOpen": false
+    },
+    "traderviewWindow_PSKY": {
+      "isOpen": false
+    },
+    "traderviewWindow_KSS": {
+      "isOpen": false
     }
   },
   "traderview": {

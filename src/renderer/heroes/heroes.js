@@ -146,6 +146,13 @@ function patchCardDOM(sym, h) {
     const card = state.container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
     if (!card) return;
 
+    const symEl = card.querySelector(".ticker-symbol");
+    if (symEl) {
+        const faded = Date.now() - (h.lastUpdate || 0) > 10_000;
+        symEl.style.opacity = faded ? ".8" : "";
+        symEl.style.filter = faded ? "grayscale(.8)" : "";
+    }
+
     const priceEl = card.querySelector(".lv-price");
     if (priceEl) priceEl.textContent = `$${(h.price ?? 0).toFixed(2)}`;
 
@@ -277,32 +284,26 @@ function startScoreDecay() {
 function handleAlertEvent(evt) {
     if (!evt?.hero) return;
 
+    // Guards
     const minPrice = state.settings?.top?.minPrice ?? 0;
     const maxPrice = state.settings?.top?.maxPrice > 0 ? state.settings.top.maxPrice : Infinity;
 
-    // Normalize inputs
     const price = Number(evt.price);
     const vol = Number(evt.one_min_volume) || 0;
-    let hp = Math.max(0, Number(evt.hp) || 0);
-    let dp = Math.max(0, Number(evt.dp) || 0);
+    const hp = Math.max(0, Number(evt.hp) || 0);
+    const dp = Math.max(0, Number(evt.dp) || 0);
 
-    // Price & volume guards
     if (vol <= 30000) return;
     if (!Number.isFinite(price) || price < minPrice || price > maxPrice) return;
 
-    // Hard rule: hp/dp are mutually exclusive; keep the larger, zero the other
-    if (hp > 0 && dp > 0) {
-        if (hp >= dp) dp = 0;
-        else hp = 0;
-        if (window.appFlags?.isDev) console.warn("[Heroes] hp/dp collision resolved:", { hp, dp, evt });
-    }
-
     const sym = String(evt.hero).toUpperCase();
-    const h =
-        state.heroes[sym] ||
-        (state.heroes[sym] = {
+
+    // Upsert hero once (no redundant follow-up set)
+    let h = state.heroes[sym];
+    if (!h) {
+        h = state.heroes[sym] = {
             hero: sym,
-            price: price || 1,
+            price: Number.isFinite(price) ? price : 1,
             hue: evt.hue ?? 0,
             hp: 0,
             dp: 0,
@@ -310,51 +311,48 @@ function handleAlertEvent(evt) {
             xp: 0,
             lv: 1,
             totalXpGained: 0,
-            strength: Number(evt.one_min_volume) || 0,
-            lastEvent: { hp: 0, dp: 0 },
+            strength: vol,
+            lastEvent: { hp: 0, dp: 0, score: 0 },
             buffs: {},
-            highestPrice: price || 1,
+            highestPrice: Number.isFinite(price) ? price : 1,
             lastUpdate: 0,
-        });
+        };
+    }
 
-    // update basics
-    h.price = Number.isFinite(price) ? price : h.price;
-    h.hue = evt.hue ?? h.hue;
-    h.strength = Number(evt.one_min_volume) || 0;
+    // Basic updates
+    if (Number.isFinite(price)) h.price = price;
+    if (evt.hue !== undefined) h.hue = evt.hue;
+    h.strength = vol;
 
-    // change bar (hp is a net value: add hp, subtract dp)
+    // HP bar: apply both sides (no mutual-exclusivity)
     if (hp > 0) h.hp += hp;
     if (dp > 0) h.hp = Math.max(h.hp - dp, 0);
 
-    // history
+    // History
     h.history = h.history || [];
     h.history.push({ hp, dp, ts: Date.now() });
     if (h.history.length > 10) h.history.shift();
 
-    // ---------- SCORE (use calculateScore directly) ----------
+    // Score: delegate to your scorer using the raw event
     let delta = 0;
-    if (window.helpers?.calculateScore) {
-        try {
+    try {
+        if (window.helpers?.calculateScore) {
             delta = Number(window.helpers.calculateScore(h, evt)) || 0;
-        } catch (e) {
-            console.error("[Heroes] calculateScore failed", e);
-            delta = 0;
         }
+    } catch (e) {
+        console.error("[Heroes] calculateScore failed", e);
+        delta = 0;
     }
-    if (delta !== 0) {
-        h.score = Math.max(0, (h.score || 0) + delta);
-    }
-    h.lastEvent = { hp, dp, score: delta };
-    // ---------------------------------------------------------
+    if (delta !== 0) h.score = Math.max(0, (h.score || 0) + delta);
 
-    // bookkeeping
-    h.lastEvent = { hp, dp, score: inc };
+    // Bookkeeping
+    h.lastEvent = { hp, dp, score: delta };
     h.lastUpdate = Date.now();
 
-    // dynamic HP bar ceiling
+    // Dynamic HP ceiling
     if (h.hp > state.maxHP) state.maxHP = h.hp * 1.05;
 
-    // hydrate buffs if present on the event
+    // Buffs
     if (evt.buffs && Object.keys(evt.buffs).length) h.buffs = evt.buffs;
 
     markDirty();
