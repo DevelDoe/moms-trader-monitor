@@ -323,18 +323,20 @@ body {
 .alert.new-high {
     background-color: #333d2a;
     filter: grayscale(0%) brightness(1);
+    position: relative;
+    outline: none !important;
 }
+
 .alert.new-high::after {
     content: "";
     position: absolute;
-    inset: -1px; /* sits just at the edge of the card */
-    border-left: 2px solid #ffd400; /* constant yellow ring */
-    border-right: 2px solid #ffd400; /* constant yellow ring */
-    border-top: none;
-    border-bottom: none;
-    border-radius: 0; /* match your flat style */
+    inset: -1px; /* stretch across */
+    border-top: 2px solid #ffd400; /* top bar */
+    border-bottom: 2px solid #ffd400; /* bottom bar */
+    border-left: none; /* kill left */
+    border-right: none; /* kill right */
     pointer-events: none;
-    z-index: 3; /* above fills, content, and outlines */
+    z-index: 3;
 }
 
 /* Keep your new-entry styling; ensure it doesn't hide the ring */

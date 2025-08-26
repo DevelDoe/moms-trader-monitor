@@ -42,31 +42,23 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "OSRH",
-      "ASST",
-      "EPIX",
-      "MRM",
-      "STSS",
-      "IREN",
+      "ALLR",
+      "PTHL",
       "TEST",
-      "SBLX",
-      "MEIP",
-      "AUUD",
-      "ETHZ",
-      "USBC",
-      "CRML",
-      "ACHV",
-      "ANTE",
-      "VEEA",
-      "OPAD",
+      "GERN",
+      "FMFC",
+      "MDAI",
+      "FBGL",
+      "BNC",
+      "MRM",
+      "TTEC",
+      "MRKR",
+      "COCH",
+      "DWSN",
       "STAI",
-      "NRXS",
-      "VTLE",
-      "AZTR",
-      "AIRE",
-      "TLS",
-      "PLG",
-      "DUO"
+      "CTXR",
+      "HTCR",
+      "MNTS"
     ]
   },
   "scanner": {
@@ -177,12 +169,12 @@
     "autoClose": true
   },
   "hod": {
-    "chimeVolume": 0.9,
-    "tickVolume": 1,
+    "chimeVolume": 0.6,
+    "tickVolume": 0,
     "symbolLength": 10
   },
   "events": {
-    "comboVolume": 0.5,
-    "newsAlertVolume": 0.45
+    "comboVolume": 1,
+    "newsAlertVolume": 0.7
   }
 }

@@ -268,6 +268,8 @@ function startScoreDecay() {
 function handleAlertEvent(evt) {
     const minPrice = state.settings?.top?.minPrice ?? 0;
     const maxPrice = state.settings?.top?.maxPrice > 0 ? state.settings.top.maxPrice : Infinity;
+    const hp = Number(evt.hp) || 0;
+    const dp = Number(evt.dp) || 0;
     if (!evt?.hero) return;
     if ((evt.one_min_volume ?? 0) <= 30000) return;
     if (evt.price < minPrice || evt.price > maxPrice) return;
@@ -296,16 +298,21 @@ function handleAlertEvent(evt) {
     h.hue = evt.hue ?? h.hue;
     h.strength = evt.one_min_volume ?? h.strength;
 
-    if (evt.hp > 0) h.hp += evt.hp;
-    if (evt.dp > 0) h.hp = Math.max(h.hp - evt.dp, 0);
+    if (hp > 0) h.hp += hp;
+    if (dp > 0) h.hp = Math.max(h.hp - dp, 0);
 
+    // history
     h.history = h.history || [];
-    h.history.push({ hp: evt.hp || 0, dp: evt.dp || 0, ts: Date.now() });
+    h.history.push({ hp, dp, ts: Date.now() });
     if (h.history.length > 10) h.history.shift();
 
-    const delta = window.helpers.calculateScore(h, evt);
-    h.score = Math.max(0, (h.score || 0) + delta);
-    h.lastEvent = { hp: evt.hp || 0, dp: evt.dp || 0, score: delta };
+    // score: add only on hp; ignore dp
+    // (use your helper if you want weighting—otherwise just use `hp`)
+    const inc = Math.abs(Number(window.helpers.calculateScore?.(h, evt)) || hp);
+    if (hp > 0) h.score = Math.max(0, (h.score || 0) + inc);
+
+    // bookkeeping
+    h.lastEvent = { hp, dp, score: hp > 0 ? inc : 0 };
     h.lastUpdate = Date.now();
 
     if (h.hp > state.maxHP) state.maxHP = h.hp * 1.05;

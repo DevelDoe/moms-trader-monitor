@@ -28,16 +28,6 @@ const symbolDownComboLastPrice = {};
 
 const UPTICK_WINDOW_MS = 60_000;
 
-// Solfeggio 6-note divine map (20 Hz – ~17 kHz), base = 396, 417, 528, 639, 741, 852 Hz
-const solfeggioHz = [
-    // 23.156, 26.063, 29.625, 33.469, 38.063, 42.625,
-    // 46.313, 52.125, 59.25, 66.938, 76.125, 85.25,
-    // 92.625, 104.25, 118.5,
-    133.875, 152.25, 170.5, 185.25, 208.5, 237.0, 267.75, 304.5, 341.0, 370.5, 417.0, 474.0, 535.5, 609.0, 682.0, 741.0, 834.0, 948.0, 1071.0, 1218.0, 1364.0, 1482.0, 1668.0, 1896.0, 2142.0, 2436.0,
-    2728.0, 2964.0, 3336.0, 3792.0, 4284.0, 4872.0, 5456.0, 5928.0, 6672.0, 7584.0, 8568.0, 9744.0, 10912.0, 11856.0, 13344.0,
-    // 15168.0, 17136.0
-];
-
 // Minimum volume required to reach each combo leve
 const COMBO_VOLUME_REQUIREMENTS = [
     0, // Level 0 → just started, no requirement
@@ -48,6 +38,77 @@ const COMBO_VOLUME_REQUIREMENTS = [
     100, // Level 5
     100, // Level 6+ → no requirement, just allow progression
 ];
+
+// === Sample packs ===
+const SAMPLE_COUNTS = { short: 32, long: 32 }; // your folders
+const SAMPLE_BASE = new URL(".", window.location.href).toString();
+const LONG_THRESHOLD_DEFAULT = 10_000; // volume cutoff for long pack
+
+let audioCtx = null;
+function getAudioCtx() {
+    if (!audioCtx || audioCtx.state === "closed") {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } else if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+// Buffers: { short: AudioBuffer[], long: AudioBuffer[] }
+const sampleBuffers = { short: [], long: [] };
+
+async function loadSampleToBuffer(url) {
+    const ctx = getAudioCtx();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+    const arr = await res.arrayBuffer();
+    return await ctx.decodeAudioData(arr);
+}
+
+async function preloadBank(bank, count) {
+    const jobs = [];
+    for (let i = 1; i <= count; i++) {
+        const url = `${SAMPLE_BASE}/${bank}/${i}.mp3`;
+        jobs.push(
+            loadSampleToBuffer(url)
+                .then((buf) => (sampleBuffers[bank][i - 1] = buf))
+                .catch((e) => console.warn("Audio load failed:", url, e))
+        );
+    }
+    await Promise.all(jobs);
+}
+
+async function preloadAllSamples() {
+    await Promise.all([preloadBank("short", SAMPLE_COUNTS.short), preloadBank("long", SAMPLE_COUNTS.long)]);
+    if (debugMode)
+        console.log("🎧 Sample packs ready:", {
+            short: sampleBuffers.short.filter(Boolean).length,
+            long: sampleBuffers.long.filter(Boolean).length,
+        });
+}
+
+function levelToIndex(level, count) {
+    const lv = Math.max(0, level | 0);
+    return lv % Math.max(1, count);
+}
+
+function pickBankByVolume(strength) {
+    const threshold = Number(window?.settings?.events?.longSampleThreshold) || LONG_THRESHOLD_DEFAULT;
+    return strength >= threshold ? "long" : "short";
+}
+
+function playSampleBuffer(bank, index, volume = 1.0) {
+    const ctx = getAudioCtx();
+    const buf = sampleBuffers[bank][index];
+    if (!buf) return false;
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    gain.gain.value = Math.max(0.001, Math.min(1, volume));
+    src.buffer = buf;
+    src.connect(gain).connect(ctx.destination);
+    src.start();
+    return true;
+}
 
 // ============================
 // Utility: Parse Volume String
@@ -99,10 +160,7 @@ function comboPercentFromLevel(level) {
 // ============================
 document.addEventListener("DOMContentLoaded", async () => {
     window.settings = await window.settingsAPI.get();
-    // console.log("loaded settings:", window.settings);
-
-    const magicDustAudio = new Audio("./magic.mp3");
-    magicDustAudio.volume = 0.3;
+    await preloadAllSamples();
 
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
@@ -110,72 +168,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     const logElement = document.getElementById("log");
-    const symbolColors = {};
-    const symbolUpticks = {};
 
     function getSymbolColor(hue) {
         return `hsla(${hue}, 80%, 50%, 0.5)`;
     }
 
-    let audioCtx = null;
-
-    function getAudioCtx() {
-        if (!audioCtx || audioCtx.state === "closed") {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        } else if (audioCtx.state === "suspended") {
-            audioCtx.resume();
-        }
-        return audioCtx;
-    }
-
-    function playNote(frequency, volumeValue = 0) {
-        const audioCtx = getAudioCtx();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        const filter = audioCtx.createBiquadFilter();
-
-        filter.type = "lowpass";
-        filter.frequency.value = 13000;
-        filter.Q.value = 1;
-
-        oscillator.connect(filter).connect(gainNode).connect(audioCtx.destination);
-        oscillator.frequency.value = frequency;
-
-        // ⏱️ Duration based on trade volume "strength"
-        let duration = 0.15;
-        if (volumeValue > 60_000) duration = 0.6;
-        else if (volumeValue > 30_000) duration = 0.45;
-        else if (volumeValue > 10_000) duration = 0.35;
-
-        // 🎚️ Apply Events Combo Volume (0..1)
-        const comboVol = getComboVolume();
-
-        // Start at comboVol, then decay. Use tiny non-zero floor for exp ramp.
-        const now = audioCtx.currentTime;
-        gainNode.gain.setValueAtTime(Math.max(0.001, comboVol), now);
-        gainNode.gain.exponentialRampToValueAtTime(Math.max(0.001, 0.01 * comboVol), now + duration);
-
-        oscillator.start();
-        oscillator.stop(now + duration);
-    }
-
     function createAlertElement(alertData) {
         const { hero, price, strength = 0, hp = 0, dp = 0 } = alertData;
-    
+
         const upLevel = symbolNoteIndices[hero] ?? -1;
         const downLevel = symbolDownNoteIndices[hero] ?? -1;
-    
+
         const upPercent = comboPercentFromLevel(upLevel);
         const downPercent = comboPercentFromLevel(downLevel);
-    
+
         const isUp = hp > 0;
         const isNewHigh = alertData.isHighOfDay === true;
         const isNewEntry = alertData.isNewEntry === true;
-    
+
         const alertDiv = document.createElement("li");
         alertDiv.dataset.symbol = hero;
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
-    
+
         // two independent layers
         const fillUp = document.createElement("div");
         fillUp.className = "combo-fill up";
@@ -183,10 +197,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         fillDown.className = "combo-fill down";
         alertDiv.appendChild(fillUp);
         alertDiv.appendChild(fillDown);
-    
+
         const contentDiv = document.createElement("div");
         contentDiv.className = "alert-content";
-    
+
         const valuesDiv = document.createElement("div");
         valuesDiv.className = "alert-values";
         valuesDiv.innerHTML = `
@@ -197,15 +211,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
         contentDiv.appendChild(valuesDiv);
         alertDiv.appendChild(contentDiv);
-    
+
         valuesDiv.querySelector(".alert-symbol").onclick = () => {
             navigator.clipboard.writeText(hero);
             window.activeAPI.setActiveTicker(hero);
         };
-    
+
         if (isNewHigh) alertDiv.classList.add("new-high");
         if (isNewEntry) alertDiv.classList.add("new-entry");
-    
+
         // blink / brightness
         alertDiv.classList.remove("blink-soft", "blink-medium", "blink-intense", "low-1", "low-2", "low-3", "low-4");
         if (isUp) {
@@ -219,7 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         else if (strength >= 500) brightnessClass = "low-3";
         else brightnessClass = "low-4";
         if (hp > 0 || dp > 0) alertDiv.classList.add(brightnessClass);
-    
+
         // 🔐 Direction-locked combo rendering:
         // Only show UP combo visuals on UP alerts
         if (isUp && upLevel >= 1) {
@@ -232,7 +246,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             fillUp.style.width = "0%";
             alertDiv.classList.remove("up-combo");
         }
-    
+
         // Only show DOWN combo visuals on DOWN alerts
         if (!isUp && downLevel >= 1) {
             alertDiv.classList.add("combo-active", "down-combo");
@@ -244,15 +258,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             fillDown.style.width = "0%";
             alertDiv.classList.remove("down-combo");
         }
-    
+
         // If neither side is active after the direction lock, drop combo-active
         if (!alertDiv.classList.contains("up-combo") && !alertDiv.classList.contains("down-combo")) {
             alertDiv.classList.remove("combo-active");
         }
-    
+
         return alertDiv;
     }
-    
 
     function flushAlerts() {
         flushScheduled = false;
@@ -370,10 +383,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                             symbolComboLastPrice[symbol] = price;
 
                             if (nextLevel >= 1 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                                const note = solfeggioHz[Math.min(nextLevel, solfeggioHz.length - 1)];
-                                playNote(note, strength);
+                                const bank = pickBankByVolume(strength); // "short" | "long"
+                                const count = SAMPLE_COUNTS[bank];
+                                const idx = levelToIndex(nextLevel, count);
+                                const vol = Math.max(0.1, getComboVolume()); // 0..1
+
+                                playSampleBuffer(bank, idx, vol); // fire-and-forget
                                 lastAudioTime = now;
-                                if (debugMode && debugCombo) console.log(`🎵 ${symbol} combo advanced to LV${nextLevel}`);
+
+                                if (debugMode && debugCombo) {
+                                    console.log(`🎧 ${symbol} ${bank}#${idx + 1} (LV${nextLevel}, vol=${vol.toFixed(2)})`);
+                                }
                             }
 
                             symbolUptickTimers[symbol] = setTimeout(() => {
@@ -404,23 +424,23 @@ document.addEventListener("DOMContentLoaded", async () => {
                     console.log(`   🧭 Previous Down Level: ${symbolDownNoteIndices[symbol] ?? "N/A (defaulting to 0)"}`);
                     console.log(`   💪 Volume: ${strength} | 🔻 DP: ${dp.toFixed(2)}`);
                 }
-            
+
                 const currentLevel = symbolDownNoteIndices[symbol] ?? -1;
                 const nextLevel = currentLevel + 1;
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
-            
+
                 if (symbolDowntickTimers[symbol]) {
                     clearTimeout(symbolDowntickTimers[symbol]);
-            
+
                     if (strength >= requiredVolume) {
                         const lastDownPrice = symbolDownComboLastPrice[symbol] ?? Infinity;
-            
+
                         if (price < lastDownPrice) {
                             symbolDownNoteIndices[symbol] = nextLevel;
                             symbolDownComboLastPrice[symbol] = price;
-            
+
                             if (debugMode && debugCombo) console.log(`🔥 ${symbol} down-combo advanced to LV${nextLevel}`);
-            
+
                             symbolDowntickTimers[symbol] = setTimeout(() => {
                                 if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                                 resetCombo(symbol, true);
@@ -444,16 +464,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                     // ✅ First downtick — start tracking (LV0)
                     symbolDownNoteIndices[symbol] = 0;
                     symbolDownComboLastPrice[symbol] = price;
-            
+
                     if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
-            
+
                     symbolDowntickTimers[symbol] = setTimeout(() => {
                         if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                         resetCombo(symbol, true);
                     }, UPTICK_WINDOW_MS);
                 }
             }
-            
 
             alertQueue.push(alertData);
             if (!flushScheduled) {

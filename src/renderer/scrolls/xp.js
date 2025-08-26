@@ -6,7 +6,7 @@ const debug = isDev;
 
 // inactivity thresholds
 const INACTIVE_UI_MS = 30_000; // 30s = just dull styling (already used)
-const INACTIVE_EVICT_MS = 30 * 60 * 1000; // 30 minutes = prune from source
+const INACTIVE_EVICT_MS = 15 * 60 * 1000; // 15 minutes = prune from source
 
 let trackedTickers = []; // 🧠 source of truth lives in the store; XP writes it
 const up = (s) => String(s || "").toUpperCase();

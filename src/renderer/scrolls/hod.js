@@ -9,13 +9,15 @@ const up = (s) =>
         .trim()
         .toUpperCase();
 const clamp = (n, mi, ma) => Math.max(mi, Math.min(ma, n));
-const formatPrice = (n) => (Number.isFinite(n) ? `$${n.toFixed(2) }` : "—");
+const formatPrice = (n) => (Number.isFinite(n) ? `$${n.toFixed(2)}` : "—");
 function silverTone(pctBelowHigh) {
     const pct = Number.isFinite(pctBelowHigh) ? pctBelowHigh : 1;
     const closeness = clamp(1 - pct, 0, 1);
-    const sat = Math.round(35 + 55 * closeness);
-    const light = Math.round(40 + 20 * closeness);
-    const alpha = 0.45 + 0.45 * closeness;
+
+    const sat = Math.round(45 + 40 * closeness); // 45–85%
+    const light = Math.round(55 + 25 * closeness); // 55–80% → lighter base
+    const alpha = 0.35 + 0.35 * closeness; // 0.35–0.7 opacity
+
     return `hsla(210, ${sat}%, ${light}%, ${alpha.toFixed(2)})`;
 }
 const symbolColors = {};
