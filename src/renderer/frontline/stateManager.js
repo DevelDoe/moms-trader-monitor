@@ -8,7 +8,7 @@
             handleNuke,
             resetXpLevels,
         };
-        if (window.isDev) console.log("⚡ frontlineStateManager attached to window");
+        if (window.appFlags?.isDev) console.log("⚡ frontlineStateManager attached to window");
     }
 
     if (document.readyState === "loading") {

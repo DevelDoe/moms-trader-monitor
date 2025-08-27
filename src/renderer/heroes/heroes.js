@@ -343,7 +343,7 @@ function handleAlertEvent(evt) {
         console.error("[Heroes] calculateScore failed", e);
         delta = 0;
     }
-    if (delta !== 0) h.score = Math.max(0, (h.score || 0) + delta);
+    if (delta !== 0) h.score = Math.max(0, (h.score || 0) + delta); // Allow score to decrease but not go below 0
 
     // Bookkeeping
     h.lastEvent = { hp, dp, score: delta };

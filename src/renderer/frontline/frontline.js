@@ -42,9 +42,9 @@
     /**************************************************************************
      * 2) Helpers exposed (unchanged behavior)
      **************************************************************************/
-    const logScoring = false;
-    let debugSamples = 10,
-        debugLimitSamples = 1500;
+    const logScoring = window.appFlags?.isDev || false;
+    let debugSamples = 0,
+        debugLimitSamples = 5;
 
     function abbreviatedValues(num) {
         if (num < 1_000) return String(num);
@@ -70,10 +70,12 @@
     function calculateScore(hero, event) {
         debugSamples++;
         const currentScore = Number(hero.score) || 0;
+        const shouldLog = logScoring && debugSamples <= debugLimitSamples;
 
         let baseScore = 0;
         const logStep = (emoji, msg, value) => {
-            if (logScoring) console.log(`${emoji} ${msg.padEnd(28)} ${(Number(value) || 0).toFixed(2)}`);
+            if (!shouldLog) return;
+            console.log(`${emoji} ${msg.padEnd(28)} ${(Number(value) || 0).toFixed(2)}`);
         };
 
         try {
@@ -96,7 +98,7 @@
             baseScore = 0;
         }
 
-        if (logScoring) {
+        if (shouldLog) {
             console.log("━".repeat(44));
             logStep("🎯", "TOTAL SCORE Δ", baseScore);
             console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n`);
@@ -109,11 +111,10 @@
         window.helpers = {
             calculateScore,
             computeVolumeScore,
-            startScoreDecay, // redefined below -> uses markDirty
             abbreviatedValues,
             getSymbolColor,
         };
-        if (window.isDev) console.log("⚡ helpers attached");
+        if (window.appFlags?.isDev) console.log("⚡ helpers attached");
     }
 
     // --- One-line buffs (frontline style) ---
@@ -216,26 +217,26 @@
         // const changeText = hero.lastEvent?.hp ? `+${hero.lastEvent.hp.toFixed(2)}%` : hero.lastEvent?.dp ? `-${hero.lastEvent.dp.toFixed(2)}%` : "";
 
         card.innerHTML = `
-  <div class="ticker-header">
-    <div class="ticker-symbol" style="background-color:${getSymbolColor(hero.hue || 0)}">
-      ${sym}
-      <span class="lv">
-        <span class="lv-medal">${medalForRank(state.rankMap.get(sym) || 0)}</span>
-        <span class="lv-price">$${(hero.price ?? 0).toFixed(2)}</span>
-      </span>
-    </div>
-    <div class="ticker-info">
-      <div class="ticker-data">
-        <span class="bar-text" style="color:${volumeColorFromImpact(hero)}">
-          ${abbreviatedValues(hero.strength || 0)}
-        </span>
-        <div class="buffs-container">${buildBuffInlineHTML(hero)}</div>
-      </div>
-      <div class="bars">
-        <div class="bar"><div class="bar-fill score" style="width:0%"></div></div>
-      </div>
-    </div>
-  </div>`;
+        <div class="ticker-header">
+            <div class="ticker-symbol" style="background-color:${getSymbolColor(hero.hue || 0)}">
+            ${sym}
+            <span class="lv">
+                <span class="lv-medal">${medalForRank(state.rankMap.get(sym) || 0)}</span>
+                <span class="lv-price">$${(hero.price ?? 0).toFixed(2)}</span>
+            </span>
+            </div>
+            <div class="ticker-info">
+            <div class="ticker-data">
+                <span class="bar-text" style="color:${volumeColorFromImpact(hero)}">
+                ${abbreviatedValues(hero.strength || 0)}
+                </span>
+                <div class="buffs-container">${buildBuffInlineHTML(hero)}</div>
+            </div>
+            <div class="bars">
+                <div class="bar"><div class="bar-fill score" style="width:0%"></div></div>
+            </div>
+            </div>
+        </div>`;
 
 
         const symEl = card.querySelector(".ticker-symbol");

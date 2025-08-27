@@ -1,16 +1,18 @@
 (() => {
-    const logScoring = false;
+    const logScoring = window.appFlags?.isDev || false;
 
     function exposeHelpers() {
         window.helpers = {
             calculateScore,
             computeVolumeScore,
-            startScoreDecay,
             abbreviatedValues,
             getSymbolColor,
         };
-        if (window.isDev) console.log("⚡ helper functions attached to window");
+        if (window.appFlags?.isDev) console.log("⚡ helper functions attached to window");
     }
+
+    let debugSamples = 0;
+    const debugLimitSamples = 5; // Fix: use global or default
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", exposeHelpers);
@@ -19,24 +21,21 @@
     }
 
     function calculateScore(hero, event) {
-
         debugSamples++;
         const currentScore = Number(hero.score) || 0;
+        const shouldLog = logScoring && debugSamples <= debugLimitSamples;
 
-        if (window.isDev && debugSamples < debugLimitSamples) {
-            if(logScoring) console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
-            if(logScoring) console.log(`📜 INITIAL STATE → Price: ${hero.price} | Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
+        if (shouldLog) {
+            console.log(`\n⚡⚡⚡ [${hero.hero}] SCORING BREAKDOWN ⚡⚡⚡`);
+            console.log(`📜 INITIAL STATE → Price: ${hero.price} | Score: ${currentScore.toFixed(2)} | HP: ${hero.hp || 0} | DP: ${hero.dp || 0}`);
         }
 
         let baseScore = 0;
 
-        
-
         const logStep = (emoji, message, value) => {
-            if (!logScoring) return;
+            if (!shouldLog) return;
             console.log(`${emoji} ${message.padEnd(30)} ${(Number(value) || 0).toFixed(2)}`);
         };
-
 
         try {
             if (event.hp > 0) {
@@ -61,7 +60,7 @@
             baseScore = 0;
         }
 
-        if (logScoring) {
+        if (shouldLog) {
             console.log("━".repeat(50));
             logStep("🎯", "TOTAL SCORE CHANGE", baseScore);
             console.log(`🎼 FINAL SCORE → ${Math.max(0, currentScore + baseScore).toFixed(2)}\n\n\n`);
@@ -87,49 +86,6 @@
     
         // return Math.min(score, 1000);
         return score;
-    }
-
-    function startScoreDecay() {
-        let decayTickCount = 0;
-        const DECAY_TICKS_BETWEEN_LOGS = 5;
-    
-        setInterval(() => {
-            decayTickCount++;
-            let changed = false;
-            let totalDecay = 0;
-            let heroesDecayed = 0;
-            const activeHeroes = [];
-    
-            Object.entries(frontlineState).forEach(([symbol, hero]) => {
-                if (hero.score > 0) {
-                    const originalScore = hero.score;
-                    const scale = 1 + hero.score / SCORE_NORMALIZATION;
-                    const decayAmount = XP_DECAY_PER_TICK * scale;
-                    let newScore = Math.max(0, hero.score - decayAmount);
-
-    
-                    if (hero.score !== newScore) {
-                        hero.score = newScore;
-                        hero.lastEvent.hp = 0;
-                        hero.lastEvent.dp = 0;
-    
-                        changed = true;
-                        totalDecay += originalScore - newScore;
-                        heroesDecayed++;
-                        activeHeroes.push(hero);
-                    }
-                } else if (hero.score === 0) {
-                    if (logScoring) console.log(`🧹 Removing ${symbol} from state (fully decayed)`);
-                    delete frontlineState[symbol];
-                    changed = true;
-                }
-            });
-    
-            if (changed) {
-                renderAll();
-                // window.frontlineStateManager.saveState();
-            }
-        }, DECAY_INTERVAL_MS);
     }
     
     function abbreviatedValues(num) {
