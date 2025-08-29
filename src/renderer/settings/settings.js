@@ -23,12 +23,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("Fetching settings...");
         window.settings = await window.settingsAPI.get(); // ✅ Store settings globally
         console.log("Retrieved settings:", window.settings);
+        
+
 
         initializeGeneralSection();
         initializeScannerSection();
         initializeTopSection();
         initializeNewsSection();
         initializeAdminSection();
+        
+        // Set up settings update handler to reload test settings
+        window.settingsAPI.onUpdate(async (updated) => {
+            window.settings = updated || {};
+            
+
+        });
 
         const defaultTab = document.querySelector(".tablinks.active");
         if (defaultTab) {
@@ -288,7 +297,10 @@ function initializeGeneralSection() {
     window.settings.hod ||= {};
     window.settings.events ||= {}; // ✅ this was missing
 
-    if (typeof window.settings.hod.chimeVolume !== "number") window.settings.hod.chimeVolume = 0.5;
+    if (typeof window.settings.hod.chimeVolume !== "number") {
+        window.settings.hod.chimeVolume = 0.5;
+        console.log(`[Settings] Setting default chime volume: 0.5`);
+    }
 
     if (typeof window.settings.hod.tickVolume !== "number") window.settings.hod.tickVolume = 0.5;
 
@@ -317,6 +329,7 @@ function initializeGeneralSection() {
         const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
         window.settings.hod.chimeVolume = v;
         hodChimeValue.textContent = Math.round(v * 100) + "%";
+        console.log(`[Settings] Saving chime volume: ${v}`);
         await window.settingsAPI.update(window.settings);
     });
 
@@ -340,6 +353,81 @@ function initializeGeneralSection() {
         newsAlertValue.textContent = Math.round(v * 100) + "%";
         await window.settingsAPI.update(window.settings);
     });
+
+    // Test buttons for all audio types
+    document.getElementById("test-chime-btn").addEventListener("click", () => {
+        console.log("Testing chime...");
+        if (window.hodChimeTest) {
+            window.hodChimeTest();
+        } else {
+            console.warn("hodChimeTest function not available");
+        }
+    });
+
+    document.getElementById("test-tick-btn").addEventListener("click", () => {
+        console.log("Testing tick...");
+        if (window.hodTickTest) {
+            window.hodTickTest(0.5); // Test with medium proximity
+        } else {
+            console.warn("hodTickTest function not available");
+        }
+    });
+
+    document.getElementById("test-combo-btn").addEventListener("click", () => {
+        console.log("Testing combo alert...");
+        if (window.testComboAlert) {
+            window.testComboAlert();
+        } else {
+            console.warn("testComboAlert function not available");
+        }
+    });
+
+    document.getElementById("test-news-btn").addEventListener("click", () => {
+        console.log("Testing news alert...");
+        if (window.testNewsAlert) {
+            window.testNewsAlert();
+        } else {
+            console.warn("testNewsAlert function not available");
+        }
+    });
+
+    document.getElementById("test-scanner-btn").addEventListener("click", () => {
+        console.log("Testing scanner alert...");
+        if (window.testScannerAlert) {
+            window.testScannerAlert();
+        } else {
+            console.warn("testScannerAlert function not available");
+        }
+    });
+
+    // Add a debug function to test audio file accessibility
+    window.testAudioFiles = async () => {
+        console.log("🔍 Testing audio file accessibility...");
+        
+        // Test events audio files
+        try {
+            const eventsResponse = await fetch("../events/short/1.mp3");
+            console.log("✅ Events audio accessible:", eventsResponse.ok);
+        } catch (error) {
+            console.error("❌ Events audio not accessible:", error);
+        }
+        
+        // Test HOD audio files
+        try {
+            const hodResponse = await fetch("../scrolls/magic.mp3");
+            console.log("✅ HOD magic audio accessible:", hodResponse.ok);
+        } catch (error) {
+            console.error("❌ HOD magic audio not accessible:", error);
+        }
+        
+        // Test news audio files
+        try {
+            const newsResponse = await fetch("../infobar/metal.wav");
+            console.log("✅ News audio accessible:", newsResponse.ok);
+        } catch (error) {
+            console.error("❌ News audio not accessible:", error);
+        }
+    };
 }
 
 function initializeAdminSection() {

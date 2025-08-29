@@ -76,7 +76,7 @@ let magicBase, ticksBase;
 const TICK_VOL_FLOOR = 0.15; // 0..1 fraction of user volume at the window edge
 const TICK_VOL_EASE = 0.6; // <1 = earlier loudness (perceptual boost)
 
-const HOD_CHIME_VOL_DEFAULT = 0.12;
+const HOD_CHIME_VOL_DEFAULT = 0.5;
 const TICK_VOL_DEFAULT = 0.06;
 
 // --- Chime limiter ---
@@ -142,13 +142,16 @@ function shouldPlayTick(sym) {
 
 function setupAudio() {
     if (magicBase && ticksBase) return;
+    console.log("[HOD] Setting up audio...");
     magicBase = new Audio("./magic.mp3");
     ticksBase = new Audio("./ticks.mp3");
     [magicBase, ticksBase].forEach((a) => {
         a.preload = "auto";
         a.addEventListener("error", () => console.warn("[HOD] audio failed:", a.src));
+        a.addEventListener("canplaythrough", () => console.log("[HOD] audio loaded:", a.src));
     });
     audioReady = true;
+    console.log("[HOD] Audio setup complete");
 
     // warm-up muted; if blocked, unlock on first gesture
     try {
@@ -177,21 +180,32 @@ function setupAudio() {
 
 function getChimeVol(settings) {
     const v = Number(settings?.hod?.chimeVolume);
-    return Number.isFinite(v) ? v : HOD_CHIME_VOL_DEFAULT;
+    const result = Number.isFinite(v) ? v : HOD_CHIME_VOL_DEFAULT;
+    console.log(`[HOD] Chime volume: settings=${JSON.stringify(settings?.hod)}, raw=${v}, result=${result}`);
+    return result;
 }
 function getTickVol(settings) {
     const v = Number(settings?.hod?.tickVolume);
     return Number.isFinite(v) ? v : TICK_VOL_DEFAULT;
 }
 function play(base, vol) {
-    if (!audioReady) return;
+    if (!audioReady) {
+        console.warn("[HOD] Audio not ready, skipping play");
+        return;
+    }
     const now = Date.now();
-    if (now - (window.lastAudioTime || 0) < window.MIN_AUDIO_INTERVAL_MS) return;
+    if (now - (window.lastAudioTime || 0) < window.MIN_AUDIO_INTERVAL_MS) {
+        console.log("[HOD] Audio interval too short, skipping play");
+        return;
+    }
     const a = base.cloneNode();
     if (!a.src) a.src = base.src;
     a.volume = clamp(vol, 0, 1);
     a.currentTime = 0;
-    a.play().catch(() => {});
+    console.log(`[HOD] Playing audio: volume=${vol}, src=${a.src}`);
+    a.play().catch((error) => {
+        console.error("[HOD] Failed to play audio:", error);
+    });
     window.lastAudioTime = now;
 }
 function simulateFirstGesture(delayMs = 800) {
@@ -411,11 +425,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     // volumes only
     try {
         state.settings = await window.settingsAPI.get();
-    } catch {
+        console.log(`[HOD] Initial settings loaded:`, state.settings);
+        
+
+    } catch (error) {
+        console.error(`[HOD] Failed to load initial settings:`, error);
         state.settings = {};
     }
-    window.settingsAPI.onUpdate((updated) => {
+    window.settingsAPI.onUpdate(async (updated) => {
+        console.log(`[HOD] Settings updated:`, updated);
         state.settings = updated || {};
+        
+
     });
 
     // Make content clickable in frameless windows
@@ -575,4 +596,11 @@ window.hodTickTest = (p = 0.0) => {
     const vol = clamp(user * shaped, 0, 1);
     console.log({ p, vol, user, shaped });
     play(ticksBase, vol);
+};
+
+window.hodChimeTest = () => {
+    const vol = getChimeVol(state.settings);
+    console.log(`[HOD] Testing chime with volume: ${vol}`);
+    console.log(`[HOD] Audio ready: ${audioReady}, Magic base: ${magicBase?.src || 'not loaded'}`);
+    play(magicBase, vol);
 };

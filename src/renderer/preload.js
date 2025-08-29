@@ -165,6 +165,15 @@ contextBridge.exposeInMainWorld("newsAPI", {
     onUpdate: (callback) => ipcRenderer.on("news-updated", callback),
 });
 
+// Audio Test API
+contextBridge.exposeInMainWorld("audioTestAPI", {
+    testComboAlert: () => ipcRenderer.invoke("test-combo-alert"),
+    testNewsAlert: () => ipcRenderer.invoke("test-news-alert"),
+    testChimeAlert: () => ipcRenderer.invoke("test-chime-alert"),
+    testTickAlert: () => ipcRenderer.invoke("test-tick-alert"),
+    testScannerAlert: () => ipcRenderer.invoke("test-scanner-alert"),
+});
+
 // electron-stores
 
 contextBridge.exposeInMainWorld("oracleStore", {

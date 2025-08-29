@@ -484,4 +484,46 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 });
+
+// Test functions for audio alerts
+window.testComboAlert = () => {
+    console.log("Testing combo alert sound...");
+    const volume = getComboVolume();
+    const bank = "short"; // Use short samples for testing
+    const index = levelToIndex(3, SAMPLE_COUNTS.short); // Test with level 3
+    console.log(`[Combo Test] Volume: ${volume}, Bank: ${bank}, Index: ${index}, Buffers loaded: ${sampleBuffers[bank]?.length || 0}`);
+    const success = playSampleBuffer(bank, index, volume);
+    console.log(`[Combo Test] Play result: ${success}`);
+};
+
+window.testScannerAlert = () => {
+    console.log("Testing scanner alert sound...");
+    // For scanner alerts, we can use a different sample or the same combo sound
+    const volume = getComboVolume();
+    const bank = "short";
+    const index = levelToIndex(1, SAMPLE_COUNTS.short); // Test with level 1
+    console.log(`[Scanner Test] Volume: ${volume}, Bank: ${bank}, Index: ${index}, Buffers loaded: ${sampleBuffers[bank]?.length || 0}`);
+    const success = playSampleBuffer(bank, index, volume);
+    console.log(`[Scanner Test] Play result: ${success}`);
+};
+
+// IPC listeners for audio test commands
+if (window.electronAPI) {
+    window.electronAPI.onTestComboAlert = (callback) => {
+        // This will be set up by the main process
+    };
+}
+
+// Listen for test commands from main process
+if (window.ipcRenderer) {
+    window.ipcRenderer.on("test-combo-alert", () => {
+        console.log("[Events] Received test-combo-alert command from main process");
+        window.testComboAlert();
+    });
+
+    window.ipcRenderer.on("test-scanner-alert", () => {
+        console.log("[Events] Received test-scanner-alert command from main process");
+        window.testScannerAlert();
+    });
+}
 //

@@ -42,6 +42,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // settings changes — DO NOT set trackedTickers from settings anymore
     window.settingsAPI.onUpdate(async (updated) => {
         window.settings = structuredClone(updated || {});
+        
+
+        
         const prev = showTrackedOnly;
         blockList = window.settings?.news?.blockList || [];
         showTrackedOnly = !!window.settings?.news?.showTrackedTickers;
@@ -75,6 +78,8 @@ async function loadSettings() {
             window.settingsAPI.update(window.settings).catch(() => {});
         }
 
+
+
         blockList = (window.settings.news?.blockList || []).map((w) => w.toLowerCase().trim());
         bullishList = (window.settings.news?.bullishList || []).map((w) => w.toLowerCase().trim());
         bearishList = (window.settings.news?.bearishList || []).map((w) => w.toLowerCase().trim());
@@ -93,6 +98,8 @@ function getNewsAlertVolume() {
     if (!Number.isFinite(v)) return 0.55;
     return Math.min(1, Math.max(0, v));
 }
+
+
 
 async function fetchNews() {
     try {
@@ -336,3 +343,11 @@ function hueClass(h) {
 
 // Show regular ticker
 initTicker(".bonus-list", bonusItems);
+
+// Test function for news alerts
+window.testNewsAlert = () => {
+    console.log("Testing news alert sound...");
+    console.log(`[News Test] Current volume: ${getNewsAlertVolume()}`);
+    console.log(`[News Test] Audio file path: ./metal.wav`);
+    playFlash();
+};

@@ -41,7 +41,7 @@ const publishTrackedTickers = debounce(async () => {
 
     window.scrollXpAPI?.publishTrackedTickers(tracked);
     try {
-        await window.storeAPI.setTracked(tracked, getSymbolLength()); // ← write to store
+        await window.storeAPI.setTracked(tracked, getSymbolLength());
     } catch (e) {
         console.warn("Failed to save tracked list to store:", e);
     }
