@@ -36,7 +36,7 @@ function createSplashWindow(isDevelopment) {
     const win = new BrowserWindow({
         ...bounds,
         frame: false,
-        alwaysOnTop: true,
+        alwaysOnTop: false,
         resizable: false, // keep it fixed; flip to true if you'd like
         show: false, // show after ready-to-show to avoid flash
         backgroundColor: "#000000", // solid bg behind your image

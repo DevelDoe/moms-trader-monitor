@@ -4,53 +4,94 @@
         <meta charset="UTF-8" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
         <link rel="stylesheet" href="../flat.css" />
-        <title>Legends</title>
+        <title>Hall of legends (xp)</title>
         <style>
             body {
                 padding: 10px;
-            }
-            .xp-line {
-                padding: 4px 8px;
-                border-radius: 4px;
-                margin-bottom: 2px;
-                font-size: 1.2rem;
-                font-weight: 200;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
             .symbol {
-                /* Your existing symbol styles */
-                white-space: nowrap; /* Prevents line breaks */
+                white-space: nowrap;
                 color: antiquewhite !important;
                 font-weight: 400;
+                font-size: 16px;
+                padding: 2px 4px;
+                border-radius: 1px;
+                cursor: pointer;
+                transition: all 0.2s ease;
                 width: 75px;
                 display: inline-block;
-                font-size: 22px;
-                padding: 0px 2px;
+                text-align: left;
+                vertical-align: bottom;
+            }
+            .symbol:hover {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+            .symbol-clicked {
+                opacity: 0.6;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 16px;
                 border-radius: 1px;
-                /* cursor: pointer; */
-                margin-right: 4px;
-                position: relative;
+                overflow: hidden;
+                /* background: rgba(0, 0, 0, 0.3); */
+                /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); */
+                background: transparent;
+            }
+            th {
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 16px;
+                letter-spacing: 0.5px;
                 cursor: pointer;
+                transition: all 0.2s ease;
+                user-select: none;
+                padding: 6px 8px;
+                text-align: left;
+                color: #666;
+                border-bottom: 1px solid #333;
             }
-            .xp-line {
-                transition: opacity 0.5s ease, filter 0.5s ease;
-                margin-left: -10px;
+            th:hover {
+                background: rgba(255, 255, 255, 0.15);
+                color: #fff !important;
             }
-            .lv {
-                font-size: 26px;
-                color: white;
-                font-weight: 300;
-                position: absolute;
-                right: 1px;
-                bottom: 1px;
-                background-color: #1b1f24;
-                padding: 0px 1px;
-                border-radius: 1px;
+            th:active {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            td {
+                padding: 6px 8px;
+                border-bottom: 1px solid #222;
+                color: #ccc;
+            }
+            tbody tr {
+                transition: all 0.2s ease;
+            }
+            
+            tr:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .sort-icon {
+                margin-left: 4px;
+                font-size: 14px;
+                opacity: 0.7;
+            }
+            .sort-active .sort-icon {
+                opacity: 1;
+                color: #00aeff;
+            }
+            
+            .sort-active {
+                /* background: rgba(0, 174, 255, 0.1); */
+                border-bottom: 2px solid #00aeff;
             }
         </style>
     </head>
     <body>
         <div class="drag-area"></div>
-        <h2>🏆 Hall of Legends (xp)</h2>
+        <h2>Hall of legends (xp)</h2>
         <div id="xp-scroll">Loading...</div>
 
         <script src="./xp.js"></script>

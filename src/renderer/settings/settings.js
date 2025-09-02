@@ -31,6 +31,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         initializeTopSection();
         initializeNewsSection();
         initializeAdminSection();
+        initializeXpSettingsSection();
+        initializeStatsSettingsSection();
         
         // Set up settings update handler to reload test settings
         window.settingsAPI.onUpdate(async (updated) => {
@@ -89,6 +91,9 @@ function initializeGeneralSection() {
 
     const showNewsToggle = document.getElementById("show-news");
     showNewsToggle.checked = window.settings.windows.newsWindow?.isOpen ?? false;
+
+    const showSessionHistoryToggle = document.getElementById("show-sessionHistory");
+    showSessionHistoryToggle.checked = window.settings.windows.sessionHistoryWindow?.isOpen ?? false;
 
     showEventsToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
@@ -241,6 +246,20 @@ function initializeGeneralSection() {
         // ✅ Persist the new state
         window.settings.windows.newsWindow = {
             ...(window.settings.windows.newsWindow || {}),
+            isOpen: event.target.checked,
+        };
+        await window.settingsAPI.update(window.settings);
+    });
+
+    showSessionHistoryToggle.addEventListener("change", async (event) => {
+        if (event.target.checked) {
+            window.sessionHistoryAPI.activate();
+        } else {
+            window.sessionHistoryAPI.deactivate();
+        }
+
+        window.settings.windows.sessionHistoryWindow = {
+            ...(window.settings.windows.sessionHistoryWindow || {}),
             isOpen: event.target.checked,
         };
         await window.settingsAPI.update(window.settings);
@@ -931,4 +950,380 @@ function setupKeywordManagement() {
 
     // ✅ Initialize UI with the latest data
     updateLists();
+}
+
+function initializeXpSettingsSection() {
+    console.log("Initializing XP Settings Section");
+
+    const xpListLengthInput = document.getElementById("xp-list-length");
+    const hodListLengthInput = document.getElementById("hod-list-length");
+    const xpShowHeadersToggle = document.getElementById("xp-show-headers");
+    const xpShowUpXpBtn = document.getElementById("xp-show-up-xp");
+    const xpShowDownXpBtn = document.getElementById("xp-show-down-xp");
+    const xpShowRatioBtn = document.getElementById("xp-show-ratio");
+    const xpShowTotalBtn = document.getElementById("xp-show-total");
+    const xpShowNetBtn = document.getElementById("xp-show-net");
+    const xpShowPriceBtn = document.getElementById("xp-show-price");
+    
+    if (!xpListLengthInput) {
+        console.error("❌ XP list length input not found!");
+        return;
+    }
+
+    if (!hodListLengthInput) {
+        console.error("❌ HOD list length input not found!");
+        return;
+    }
+
+    if (!xpShowHeadersToggle) {
+        console.error("❌ XP show headers toggle not found!");
+        return;
+    }
+
+    if (!xpShowUpXpBtn) {
+        console.error("❌ XP show up XP button not found!");
+        return;
+    }
+
+    if (!xpShowDownXpBtn) {
+        console.error("❌ XP show down XP button not found!");
+        return;
+    }
+
+    if (!xpShowRatioBtn) {
+        console.error("❌ XP show ratio button not found!");
+        return;
+    }
+
+    if (!xpShowTotalBtn) {
+        console.error("❌ XP show total button not found!");
+        return;
+    }
+
+    if (!xpShowNetBtn) {
+        console.error("❌ XP show net button not found!");
+        return;
+    }
+
+    if (!xpShowPriceBtn) {
+        console.error("❌ XP show price button not found!");
+        return;
+    }
+
+    // Load initial value from electron store
+    async function loadXpSettings() {
+        try {
+            const xpSettings = await window.xpSettingsAPI.get();
+            xpListLengthInput.value = xpSettings.listLength || 25;
+            xpShowHeadersToggle.checked = xpSettings.showHeaders || false;
+            updateButtonState(xpShowUpXpBtn, xpSettings.showUpXp !== false);
+            updateButtonState(xpShowDownXpBtn, xpSettings.showDownXp !== false);
+            updateButtonState(xpShowRatioBtn, xpSettings.showRatio !== false);
+            updateButtonState(xpShowTotalBtn, xpSettings.showTotal !== false);
+            updateButtonState(xpShowNetBtn, xpSettings.showNet !== false);
+            updateButtonState(xpShowPriceBtn, xpSettings.showPrice !== false);
+            console.log("✅ Loaded XP settings:", xpSettings);
+        } catch (error) {
+            console.error("❌ Failed to load XP settings:", error);
+            xpListLengthInput.value = 25; // fallback
+            xpShowHeadersToggle.checked = false; // fallback
+            updateButtonState(xpShowUpXpBtn, true); // fallback
+            updateButtonState(xpShowDownXpBtn, true); // fallback
+            updateButtonState(xpShowRatioBtn, true); // fallback
+            updateButtonState(xpShowTotalBtn, true); // fallback
+            updateButtonState(xpShowNetBtn, true); // fallback
+            updateButtonState(xpShowPriceBtn, true); // fallback
+        }
+    }
+
+    // Load initial HOD settings
+    async function loadHodSettings() {
+        try {
+            const hodSettings = await window.hodSettingsAPI.get();
+            hodListLengthInput.value = hodSettings.listLength || 10;
+            console.log("✅ Loaded HOD settings:", hodSettings);
+        } catch (error) {
+            console.error("❌ Failed to load HOD settings:", error);
+            hodListLengthInput.value = 10; // fallback
+        }
+    }
+
+    // Save XP settings
+    async function saveXpSettings() {
+        try {
+            const newLength = parseInt(xpListLengthInput.value, 10) || 25;
+            const clampedLength = Math.max(1, Math.min(50, newLength));
+            
+            if (clampedLength !== newLength) {
+                xpListLengthInput.value = clampedLength;
+            }
+            
+            const currentShowHeaders = xpShowHeadersToggle.checked;
+            await window.xpSettingsAPI.set({ listLength: clampedLength, showHeaders: currentShowHeaders });
+            console.log("✅ Saved XP list length:", clampedLength);
+        } catch (error) {
+            console.error("❌ Failed to save XP settings:", error);
+        }
+    }
+
+    // Save XP show headers setting
+    async function saveXpShowHeaders() {
+        try {
+            const showHeaders = xpShowHeadersToggle.checked;
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showHeaders, listLength: currentLength });
+            console.log("✅ Saved XP show headers:", showHeaders);
+        } catch (error) {
+            console.error("❌ Failed to save XP show headers setting:", error);
+        }
+    }
+
+    // Save XP show up XP setting
+    async function saveXpShowUpXp() {
+        try {
+            const showUpXp = xpShowUpXpBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showUpXp, listLength: currentLength });
+            console.log("✅ Saved XP show up XP:", showUpXp);
+        } catch (error) {
+            console.error("❌ Failed to save XP show up XP setting:", error);
+        }
+    }
+
+    // Save XP show down XP setting
+    async function saveXpShowDownXp() {
+        try {
+            const showDownXp = xpShowDownXpBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showDownXp, listLength: currentLength });
+            console.log("✅ Saved XP show down XP:", showDownXp);
+        } catch (error) {
+            console.error("❌ Failed to save XP show down XP setting:", error);
+        }
+    }
+
+    // Save XP show ratio setting
+    async function saveXpShowRatio() {
+        try {
+            const showRatio = xpShowRatioBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showRatio, listLength: currentLength });
+            console.log("✅ Saved XP show ratio:", showRatio);
+        } catch (error) {
+            console.error("❌ Failed to save XP show ratio setting:", error);
+        }
+    }
+
+    // Save XP show total setting
+    async function saveXpShowTotal() {
+        try {
+            const showTotal = xpShowTotalBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showTotal, listLength: currentLength });
+            console.log("✅ Saved XP show total:", showTotal);
+        } catch (error) {
+            console.error("❌ Failed to save XP show total setting:", error);
+        }
+    }
+
+    // Save XP show net setting
+    async function saveXpShowNet() {
+        try {
+            const showNet = xpShowNetBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showNet, listLength: currentLength });
+            console.log("✅ Saved XP show net:", showNet);
+        } catch (error) {
+            console.error("❌ Failed to save XP show net setting:", error);
+        }
+    }
+
+    // Save XP show price setting
+    async function saveXpShowPrice() {
+        try {
+            const showPrice = xpShowPriceBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showPrice, listLength: currentLength });
+            console.log("✅ Saved XP show price:", showPrice);
+        } catch (error) {
+            console.error("❌ Failed to save XP show price setting:", error);
+        }
+    }
+
+    // Save HOD settings
+    async function saveHodSettings() {
+        try {
+            const newLength = parseInt(hodListLengthInput.value, 10) || 10;
+            const clampedLength = Math.max(1, Math.min(50, newLength));
+            
+            if (clampedLength !== newLength) {
+                hodListLengthInput.value = clampedLength;
+            }
+            
+            await window.hodSettingsAPI.set({ listLength: clampedLength });
+            console.log("✅ Saved HOD list length:", clampedLength);
+        } catch (error) {
+            console.error("❌ Failed to save HOD settings:", error);
+        }
+    }
+
+    // Helper function to update button state
+    function updateButtonState(button, isActive) {
+        if (isActive) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    }
+
+    // Toggle functions for column buttons
+    async function toggleXpShowUpXp() {
+        const isActive = xpShowUpXpBtn.classList.contains('active');
+        updateButtonState(xpShowUpXpBtn, !isActive);
+        await saveXpShowUpXp();
+    }
+
+    async function toggleXpShowDownXp() {
+        const isActive = xpShowDownXpBtn.classList.contains('active');
+        updateButtonState(xpShowDownXpBtn, !isActive);
+        await saveXpShowDownXp();
+    }
+
+    async function toggleXpShowRatio() {
+        const isActive = xpShowRatioBtn.classList.contains('active');
+        updateButtonState(xpShowRatioBtn, !isActive);
+        await saveXpShowRatio();
+    }
+
+    async function toggleXpShowTotal() {
+        const isActive = xpShowTotalBtn.classList.contains('active');
+        updateButtonState(xpShowTotalBtn, !isActive);
+        await saveXpShowTotal();
+    }
+
+    async function toggleXpShowNet() {
+        const isActive = xpShowNetBtn.classList.contains('active');
+        updateButtonState(xpShowNetBtn, !isActive);
+        await saveXpShowNet();
+    }
+
+    async function toggleXpShowPrice() {
+        const isActive = xpShowPriceBtn.classList.contains('active');
+        updateButtonState(xpShowPriceBtn, !isActive);
+        await saveXpShowPrice();
+    }
+
+    // Load initial settings
+    loadXpSettings();
+    loadHodSettings();
+
+    // Listen for changes
+    xpListLengthInput.addEventListener("input", saveXpSettings);
+    xpShowHeadersToggle.addEventListener("change", saveXpShowHeaders);
+    xpShowUpXpBtn.addEventListener("click", toggleXpShowUpXp);
+    xpShowDownXpBtn.addEventListener("click", toggleXpShowDownXp);
+    xpShowRatioBtn.addEventListener("click", toggleXpShowRatio);
+    xpShowTotalBtn.addEventListener("click", toggleXpShowTotal);
+    xpShowNetBtn.addEventListener("click", toggleXpShowNet);
+    xpShowPriceBtn.addEventListener("click", toggleXpShowPrice);
+    hodListLengthInput.addEventListener("input", saveHodSettings);
+
+    // Listen for updates from other windows
+    window.xpSettingsAPI.onUpdate((updatedSettings) => {
+        if (updatedSettings) {
+            if (updatedSettings.listLength !== undefined) {
+                xpListLengthInput.value = updatedSettings.listLength;
+                console.log("✅ XP list length updated from other window:", updatedSettings.listLength);
+            }
+            if (updatedSettings.showHeaders !== undefined) {
+                xpShowHeadersToggle.checked = updatedSettings.showHeaders;
+                console.log("✅ XP show headers updated from other window:", updatedSettings.showHeaders);
+            }
+            if (updatedSettings.showUpXp !== undefined) {
+                updateButtonState(xpShowUpXpBtn, updatedSettings.showUpXp);
+                console.log("✅ XP show up XP updated from other window:", updatedSettings.showUpXp);
+            }
+            if (updatedSettings.showDownXp !== undefined) {
+                updateButtonState(xpShowDownXpBtn, updatedSettings.showDownXp);
+                console.log("✅ XP show down XP updated from other window:", updatedSettings.showDownXp);
+            }
+            if (updatedSettings.showRatio !== undefined) {
+                updateButtonState(xpShowRatioBtn, updatedSettings.showRatio);
+                console.log("✅ XP show ratio updated from other window:", updatedSettings.showRatio);
+            }
+            if (updatedSettings.showTotal !== undefined) {
+                updateButtonState(xpShowTotalBtn, updatedSettings.showTotal);
+                console.log("✅ XP show total updated from other window:", updatedSettings.showTotal);
+            }
+            if (updatedSettings.showNet !== undefined) {
+                updateButtonState(xpShowNetBtn, updatedSettings.showNet);
+                console.log("✅ XP show net updated from other window:", updatedSettings.showNet);
+            }
+            if (updatedSettings.showPrice !== undefined) {
+                updateButtonState(xpShowPriceBtn, updatedSettings.showPrice);
+                console.log("✅ XP show price updated from other window:", updatedSettings.showPrice);
+            }
+        }
+    });
+
+    window.hodSettingsAPI.onUpdate((updatedSettings) => {
+        if (updatedSettings && updatedSettings.listLength !== undefined) {
+            hodListLengthInput.value = updatedSettings.listLength;
+            console.log("✅ HOD settings updated from other window:", updatedSettings);
+        }
+    });
+}
+
+function initializeStatsSettingsSection() {
+    console.log("Initializing Stats Settings Section");
+
+    const statsListLengthInput = document.getElementById("stats-list-length");
+    
+    if (!statsListLengthInput) {
+        console.error("❌ Stats list length input not found!");
+        return;
+    }
+
+    // Load initial value from electron store
+    async function loadStatsSettings() {
+        try {
+            const statsSettings = await window.statsSettingsAPI.get();
+            statsListLengthInput.value = statsSettings.listLength || 25;
+            console.log("✅ Loaded Stats settings:", statsSettings);
+        } catch (error) {
+            console.error("❌ Failed to load Stats settings:", error);
+            statsListLengthInput.value = 25; // fallback
+        }
+    }
+
+    // Save Stats settings
+    async function saveStatsSettings() {
+        try {
+            const newLength = parseInt(statsListLengthInput.value, 10) || 25;
+            const clampedLength = Math.max(1, Math.min(50, newLength));
+            
+            if (clampedLength !== newLength) {
+                statsListLengthInput.value = clampedLength;
+            }
+            
+            await window.statsSettingsAPI.set({ listLength: clampedLength });
+            console.log("✅ Saved Stats list length:", clampedLength);
+        } catch (error) {
+            console.error("❌ Failed to save Stats settings:", error);
+        }
+    }
+
+    // Load initial settings
+    loadStatsSettings();
+
+    // Listen for changes
+    statsListLengthInput.addEventListener("input", saveStatsSettings);
+
+    // Listen for updates from other windows
+    window.statsSettingsAPI.onUpdate((updatedSettings) => {
+        if (updatedSettings && updatedSettings.listLength !== undefined) {
+            statsListLengthInput.value = updatedSettings.listLength;
+            console.log("✅ Stats settings updated from other window:", updatedSettings);
+        }
+    });
 }

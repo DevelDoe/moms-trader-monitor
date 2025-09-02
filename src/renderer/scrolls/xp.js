@@ -1,144 +1,170 @@
 const symbolColors = {};
-const allHeroes = {}; // 💾 all heroes, unfiltered
-const heroes = {}; // 🧹 filtered heroes based on settings
-const { isDev } = window.appFlags;
-const debug = isDev;
 
-// inactivity thresholds
-const INACTIVE_UI_MS = 30_000; // 30s = just dull styling (already used)
-const INACTIVE_EVICT_MS = 15 * 60 * 1000; // 15 minutes = prune from source
+// Oracle XP Active Stocks data
+let oracleActiveStocks = null;
 
-let trackedTickers = []; // 🧠 source of truth lives in the store; XP writes it
-const up = (s) => String(s || "").toUpperCase();
-
-let _lastKey = "";
-let _renderKey = "";
-
-function debounce(fn, wait = 300) {
-    let t;
-    return (...args) => {
-        clearTimeout(t);
-        t = setTimeout(() => fn(...args), wait);
-    };
-}
+// Sorting state
+let currentSort = { column: 'net', direction: 'desc' };
 
 function getSymbolLength() {
-    return Math.max(1, Number(window.settings?.top?.symbolLength) || 25);
+    return Math.max(1, Number(window.xpSettings?.listLength) || 25);
 }
 
-// XP publishes (writes) to the store whenever its computed top changes
-const publishTrackedTickers = debounce(async () => {
-    const tracked = Object.values(heroes)
-        .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
-        .slice(0, getSymbolLength())
-        .map((h) => up(h.hero));
-
-    if (!tracked.length) return;
-
-    const key = tracked.join(",");
-    if (key === _lastKey) return; // no change since last publish
-    _lastKey = key;
-
-    window.scrollXpAPI?.publishTrackedTickers(tracked);
-    try {
-        await window.storeAPI.setTracked(tracked, getSymbolLength());
-    } catch (e) {
-        console.warn("Failed to save tracked list to store:", e);
-    }
-}, 400);
-
-function pruneInactiveHeroes() {
-    const now = Date.now();
-    const removedSet = new Set();
-
-    const beforeCount = Object.keys(allHeroes).length;
-
-    for (const [sym, h] of Object.entries(allHeroes)) {
-        const last = h.lastUpdate ?? 0;
-        if (now - last >= INACTIVE_EVICT_MS) {
-            delete allHeroes[sym];
-            delete heroes[sym];
-            removedSet.add(up(sym));
+function sortData(data, column, direction) {
+    return [...data].sort((a, b) => {
+        let aVal, bVal;
+        
+        switch (column) {
+            case 'symbol':
+                aVal = a.hero.toLowerCase();
+                bVal = b.hero.toLowerCase();
+                break;
+            case 'upDownRatio':
+                aVal = a.up + a.down > 0 ? (a.up / (a.up + a.down)) : 0;
+                bVal = b.up + b.down > 0 ? (b.up / (b.up + b.down)) : 0;
+                break;
+            case 'total':
+                aVal = a.total;
+                bVal = b.total;
+                break;
+            case 'net':
+                aVal = a.net;
+                bVal = b.net;
+                break;
+            case 'price':
+                aVal = a.price;
+                bVal = b.price;
+                break;
+            default:
+                return 0;
         }
+        
+        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+function getSortIcon(column) {
+    if (currentSort.column !== column) {
+        return '↕️'; // Neutral sort icon
     }
+    return currentSort.direction === 'asc' ? '↑' : '↓';
+}
 
-    if (!removedSet.size) return;
-
-    console.log("🪓 Pruning inactive heroes:", [...removedSet]);
-    console.log(`Before prune: ${beforeCount} heroes, After prune: ${Object.keys(allHeroes).length}`);
-
-    const beforeKey = trackedTickers.join(",");
-    trackedTickers = trackedTickers.filter((s) => !removedSet.has(s));
-    const afterKey = trackedTickers.join(",");
-
-    _lastKey = ""; // force republish
-
-    filterHeroes();
+function handleSort(column) {
+    if (currentSort.column === column) {
+        // Toggle direction if same column
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        // New column, default to ascending
+        currentSort.column = column;
+        currentSort.direction = 'asc';
+    }
     refreshList();
-    publishTrackedTickers();
-
-    if (afterKey !== beforeKey) {
-        try {
-            window.storeAPI.setTracked(trackedTickers, getSymbolLength());
-        } catch (e) {
-            console.warn("Failed to persist pruned tracked list:", e);
-        }
-    }
 }
 
-
-// make refreshList global (move here, before DOMContentLoaded)
 function refreshList() {
-    const inactiveThreshold = INACTIVE_UI_MS; // 30s
-    const order = new Map(trackedTickers.map((s, i) => [s, i]));
-
-    let viewList =
-        order.size > 0
-            ? Object.values(heroes)
-                  .filter((h) => order.has(up(h.hero)))
-                  .sort((a, b) => order.get(up(a.hero)) - order.get(up(b.hero)))
-                  .slice(0, getSymbolLength())
-            : Object.values(heroes)
-                  .filter((h) => h.xp > 0)
-                  .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
-                  .slice(0, getSymbolLength());
-
-    // fallback if filters hide everything
-    if (order.size > 0 && viewList.length === 0) {
-        viewList = Object.values(heroes)
-            .filter((h) => h.xp > 0)
-            .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
-            .slice(0, getSymbolLength());
+    if (!oracleActiveStocks?.symbols || oracleActiveStocks.symbols.length === 0) {
+        const container = document.getElementById("xp-scroll");
+        if (container) {
+            container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Waiting for Oracle data...</div>';
+        }
+        return;
     }
 
-    const key = viewList.map((h) => up(h.hero)).join(",");
-    if (key === _renderKey) return;
-    _renderKey = key;
+    // Ensure we have the latest settings
+    if (!window.xpSettings) {
+        console.warn("XP settings not loaded yet, using fallback");
+        window.xpSettings = { listLength: 25, showHeaders: true };
+    }
 
-    const now = Date.now();
+    const viewList = oracleActiveStocks.symbols
+        .slice(0, getSymbolLength())
+        .map((s, index) => ({
+            hero: s.symbol,
+            up: s.up_xp || 0,
+            down: s.down_xp || 0,
+            total: s.total_xp_gained || 0,
+            net: s.net_xp || 0,
+            price: s.last_price || 0,
+            rank: index + 1
+        }));
+
+    // Always apply current sorting to the data before rendering
+    const sortedList = sortData(viewList, currentSort.column, currentSort.direction);
 
     const container = document.getElementById("xp-scroll");
     if (!container) return;
 
-    container.innerHTML = viewList
-        .map((h, i) => {
-            const bg = getSymbolColor(h.hero);
-            const age = now - (h.lastUpdate || 0);
-            const isInactive = age > inactiveThreshold;
-            const dullStyle = isInactive ? "opacity: 0.8; filter: grayscale(0.8);" : "";
+    // Check if headers should be shown based on settings
+    const showHeaders = window.xpSettings?.showHeaders === true; // Only show if explicitly true
+    
+    console.log("🔍 XP Settings for headers:", { 
+        showHeaders, 
+        xpSettings: window.xpSettings,
+        showHeadersValue: window.xpSettings?.showHeaders 
+    });
+    
+    const headersHtml = showHeaders ? `
+        <thead>
+            <tr style="border-bottom: 1px solid #333;">
+                <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Rank Position">
+                    #
+                </th>
+                <th class="${currentSort.column === 'symbol' ? 'sort-active' : ''}" data-sort="symbol" style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Symbol">
+                    Symbol <span class="sort-icon">${getSortIcon('symbol')}</span>
+                </th>
+                ${window.xpSettings?.showUpXp !== false ? `<th class="${currentSort.column === 'up' ? 'sort-active' : ''}" data-sort="up" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Up XP">
+                    Up XP<span class="sort-icon">${getSortIcon('up')}</span>
+                </th>` : ''}
+                ${window.xpSettings?.showDownXp !== false ? `<th class="${currentSort.column === 'down' ? 'sort-active' : ''}" data-sort="down" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Down XP">
+                    Down XP<span class="sort-icon">${getSortIcon('down')}</span>
+                </th>` : ''}
+                ${window.xpSettings?.showRatio !== false ? `<th class="${currentSort.column === 'upDownRatio' ? 'sort-active' : ''}" data-sort="upDownRatio" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Net XP Ratio">
+                    Ratio <span class="sort-icon">${getSortIcon('upDownRatio')}</span>
+                </th>` : ''}
+                ${window.xpSettings?.showTotal !== false ? `<th class="${currentSort.column === 'total' ? 'sort-active' : ''}" data-sort="total" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Total XP">
+                    Total <span class="sort-icon">${getSortIcon('total')}</span>
+                </th>` : ''}
+                ${window.xpSettings?.showNet !== false ? `<th class="${currentSort.column === 'net' ? 'sort-active' : ''}" data-sort="net" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Net XP">
+                    Net <span class="sort-icon">${getSortIcon('net')}</span>
+                </th>` : ''}
+                ${window.xpSettings?.showPrice !== false ? `<th class="${currentSort.column === 'price' ? 'sort-active' : ''}" data-sort="price" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Price">
+                    Price <span class="sort-icon">${getSortIcon('price')}</span>
+                </th>` : ''}
+            </tr>
+        </thead>
+    ` : '';
 
-            return `
-              <div class="xp-line ellipsis" style=" color: gray;">
-                <span class="text-tertiary" style="margin-right:6px; opacity:0.5; display:inline-block; width: 20px; text-align: right;">${i + 1}.</span>
-                <strong class="symbol" style="background: ${bg}; ${dullStyle};">
-                  ${h.hero} 
-                </strong>
-                <span style="font-weight: 600; color: ${getXpColorByRank(i, viewList.length)}; margin-left: 0px; ">
-                  ${abbreviateXp(h.totalXpGained)}
-                </span>
-              </div>`;
-        })
-        .join("");
+    container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 16px; border-radius: 1px; overflow: hidden; background: transparent; backdrop-filter: blur(10px); ">
+            ${headersHtml}
+            <tbody>
+                ${sortedList.map((h, i) => {
+                    const bg = getSymbolColor(h.hero);
+                    return `
+                        <tr style="border-bottom: 1px solid #222; transition: all 0.2s ease;">
+                            <td style="padding: 6px 8px; color: #666; text-align: right;" title="Rank Position">${i + 1}</td>
+                            <td style="padding: 6px 8px;" title="Symbol">
+                                <span class="symbol" style="background: ${bg}; padding: 2px 4px; border-radius: 1px; cursor: pointer;">
+                                    ${h.hero}
+                                </span>
+                            </td>
+                            ${window.xpSettings?.showUpXp !== false ? `<td style="padding: 6px 8px; text-align: right; color: #00ff00;" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
+                            ${window.xpSettings?.showDownXp !== false ? `<td style="padding: 6px 8px; text-align: right; color: #ff0000;" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
+                            ${window.xpSettings?.showRatio !== false ? `<td style="padding: 6px 8px; text-align: right;" title="Up/Down XP Ratio">
+                                <span style="color: ${h.up > h.down ? '#00ff00' : '#ff0000'};">${h.up + h.down > 0 ? Math.round(((h.up - h.down) / (h.up + h.down)) * 100) : 0}%</span>
+                            </td>` : ''}
+                            ${window.xpSettings?.showTotal !== false ? `<td style="padding: 6px 8px; text-align: right; color: #00aeff;" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
+                            ${window.xpSettings?.showNet !== false ? `<td style="padding: 6px 8px; text-align: right; color: #ffff00;" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
+                            ${window.xpSettings?.showPrice !== false ? `<td style="padding: 6px 8px; text-align: right; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
 
     // Click → copy + set active
     container.querySelectorAll(".symbol").forEach((el) => {
@@ -155,131 +181,74 @@ function refreshList() {
             e.stopPropagation();
         });
     });
+
+    // Setup sorting click handlers using event delegation
+    container.addEventListener("click", (e) => {
+        const th = e.target.closest("th[data-sort]");
+        if (th) {
+            const sortColumn = th.getAttribute("data-sort");
+            handleSort(sortColumn);
+            e.stopPropagation();
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
     if (!container) return;
 
-    // 1) load settings (for filters/length), and store (for tracked list)
-    window.settings = await window.settingsAPI.get();
+    // Load XP settings from electron store first
     try {
-        trackedTickers = (await window.storeAPI.getTracked()).map(up);
+        window.xpSettings = await window.xpSettingsAPI.get();
+        console.log("📊 Loaded XP settings:", window.xpSettings);
     } catch (e) {
-        console.warn("tracked:get failed; starting empty:", e);
-        trackedTickers = [];
+        console.warn("Failed to get XP settings:", e);
+        window.xpSettings = { 
+            listLength: 25, 
+            showHeaders: true,
+            showUpXp: true,
+            showDownXp: true,
+            showRatio: true,
+            showTotal: true,
+            showNet: true,
+            showPrice: true
+        }; // fallback
     }
 
-    // 2) load all symbols -> seed allHeroes
-    const all = await window.storeAPI.getSymbols();
-    all.forEach(({ symbol, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
-        allHeroes[symbol] = {
-            hero: symbol,
-            xp: Number(xp) || 0,
-            lv: Number(lv) || 1,
-            price: Number(price) || 0,
-            totalXpGained: totalXpGained !== undefined ? Number(totalXpGained) : Number(xp) || 0,
-            firstXpTimestamp: typeof firstXpTimestamp === "number" ? firstXpTimestamp : Date.now(),
-            lastUpdate: Date.now(),
-        };
+    // Request current Oracle data
+    try {
+        oracleActiveStocks = await window.xpAPI.getActiveStocks();
+        console.log("📊 Initial Oracle XP data requested");
+    } catch (e) {
+        console.warn("Failed to get initial Oracle XP data:", e);
+    }
+
+    // Listen for Oracle XP updates
+    window.xpAPI.onActiveStocksUpdate((data) => {
+        oracleActiveStocks = data;
+        console.log("🎯 Oracle XP Active Stocks Update Received");
+        refreshList();
     });
 
-    filterHeroes();
+    // Initial render
     refreshList();
-    publishTrackedTickers(); // seed/refresh store immediately from XP’s current view
-    // initial sweep + periodic pruning every minute
-    pruneInactiveHeroes();
-    setInterval(pruneInactiveHeroes, 60_000);
 
-    // 3) live hero updates
-    window.storeAPI.onHeroUpdate((payload) => {
-        const updates = Array.isArray(payload) ? payload : [payload]; // ← normalize
-
-        updates.forEach(({ hero, xp, lv, price, totalXpGained, firstXpTimestamp }) => {
-            if (!hero) return;
-
-            if (!allHeroes[hero]) {
-                allHeroes[hero] = {
-                    hero,
-                    xp: 0,
-                    lv: 1,
-                    price: 0,
-                    totalXpGained: 0,
-                    firstXpTimestamp: Date.now(),
-                };
-            }
-
-            const h = allHeroes[hero];
-            h.xp = Number.isFinite(xp) ? Number(xp) : 0;
-            h.lv = Number.isFinite(lv) ? Number(lv) : 1;
-            h.price = Number.isFinite(price) ? Number(price) : 0;
-            h.totalXpGained = Number.isFinite(totalXpGained) ? Number(totalXpGained) : h.xp;
-            h.firstXpTimestamp = typeof firstXpTimestamp === "number" ? firstXpTimestamp : h.firstXpTimestamp ?? Date.now();
-            h.lastUpdate = Date.now();
-        });
-
-        filterHeroes();
+    // XP Settings updates
+    window.xpSettingsAPI.onUpdate(async (updatedSettings) => {
+        console.log("⚙️ XP Settings update received:", updatedSettings);
+        window.xpSettings = updatedSettings;
+        console.log("⚙️ XP Settings updated:", updatedSettings);
         refreshList();
-        publishTrackedTickers(); // (debounced) keep store in sync with XP-derived top
     });
 
-    // 4) settings updates — DO NOT touch trackedTickers here
-    window.settingsAPI.onUpdate(async (updatedSettings) => {
-        window.settings = updatedSettings;
-        filterHeroes();
-        refreshList();
-        publishTrackedTickers();
-    });
-
-    // 5) react to store changes (if some other view/tools modifies it)
-    window.storeAPI.onTrackedUpdate((list) => {
-        trackedTickers = (list || []).map(up);
-        refreshList(); // will use exact saved order
-        // no publish here — store is already the source; avoid loops
-    });
-
-    // 6) XP reset
+    // XP reset
     window.electronAPI.onXpReset(() => {
-        Object.values(allHeroes).forEach((h) => {
-            h.xp = 0;
-            h.lv = 1;
-            h.totalXpGained = 0;
-            h.firstXpTimestamp = Date.now();
-            h.lastUpdate = Date.now();
-        });
-
-        filterHeroes();
+        oracleActiveStocks = null;
         refreshList();
-        publishTrackedTickers();
     });
-
 });
 
-// -------------------- helpers (unchanged) --------------------
-
-function filterHeroes() {
-    const { minPrice, realMaxPrice } = getPriceLimits();
-    Object.keys(heroes).forEach((key) => delete heroes[key]); // Clear heroes
-    for (const symbol in allHeroes) {
-        const h = allHeroes[symbol];
-        if (h.price >= minPrice && h.price <= realMaxPrice) {
-            heroes[symbol] = h;
-        }
-    }
-}
-
-function getPriceLimits() {
-    const min = Number(window.settings?.top?.minPrice) || 0;
-    const max = Number(window.settings?.top?.maxPrice) || 0;
-    const realMax = max > 0 ? max : Infinity;
-    return { minPrice: min, realMaxPrice: realMax };
-}
-
-function getTotalXP(lv, xp) {
-    let total = 0;
-    for (let i = 1; i < lv; i++) total += i * 1000;
-    return total + xp;
-}
+// -------------------- helpers --------------------
 
 function getSymbolColor(symbol) {
     if (!symbolColors[symbol]) {
@@ -293,49 +262,16 @@ function getSymbolColor(symbol) {
     return symbolColors[symbol];
 }
 
-function formatPrice(price) {
-    return typeof price === "number" ? `$${price.toFixed(2)}` : "—";
-}
-
 function abbreviateXp(num) {
-    if (num < 100) return String(num);
-    if (num < 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-    if (num < 1_000_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-    if (num < 1_000_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-    return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
-}
-
-function computeXpSegments(count) {
-    let para = Math.max(1, Math.floor(count * 0.1));
-    let high = Math.floor(count * 0.2);
-    let med = Math.floor(count * 0.3);
-    let used = para + high + med;
-    if (used > count) {
-        let over = used - count;
-        const take = (n, min) => {
-            const d = Math.min(over, Math.max(0, n - min));
-            over -= d;
-            return n - d;
-        };
-        med = take(med, 0);
-        high = take(high, 0);
-        para = take(para, 1);
-    }
-    const low = Math.max(0, count - (para + high + med));
-    return { para, high, med, low };
-}
-
-function getXpStageByRank(index, count) {
-    if (count <= 0) return "lowVol";
-    const { para, high, med } = computeXpSegments(count);
-    if (index < para) return "parabolicVol";
-    if (index < para + high) return "highVol";
-    if (index < para + high + med) return "mediumVol";
-    return "lowVol";
-}
-
-function getXpColorByRank(index, count) {
-    const stage = getXpStageByRank(index, count);
-    const getColorForStage = window.hlpsFunctions?.getColorForStage || ((key) => ({ lowVol: "#ccc", mediumVol: "#00aeff", highVol: "#263cff", parabolicVol: "#e25822" }[key] || "#ccc"));
-    return getColorForStage(stage);
+    const isNegative = num < 0;
+    const absNum = Math.abs(num);
+    
+    let result;
+    if (absNum < 100) result = String(absNum);
+    else if (absNum < 1_000) result = (absNum / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    else if (absNum < 1_000_000) result = (absNum / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    else if (absNum < 1_000_000_000) result = (absNum / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    else result = (absNum / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
+    
+    return isNegative ? "-" + result : result;
 }

@@ -4,8 +4,16 @@ const createLogger = require("../../hlps/logger");
 const store = require("../store");
 const { getLastAckCursor, setLastAckCursor } = require("../electronStores");
 const { fetchOpsSince } = require("../collectors/arcane_api");
+const { windows } = require("../windowManager");
 
 const log = createLogger(__filename);
+
+// Debug flag for XP data logging
+const XP_DEBUG = false;
+
+if (XP_DEBUG) {
+    log.log("🔍 XP Debug logging enabled - will show detailed data structures");
+}
 
 const URL = "wss://oracle.arcanemonitor.com:8443/ws";
 const RECONNECT_DELAY_MS = 5000;
@@ -18,6 +26,23 @@ let lastCursor = 0;
 
 let pulling = false;
 let queuedTarget = 0;
+
+// Store latest XP data for IPC requests
+let latestActiveStocks = null;
+let latestSessionHistory = null;
+let latestSessionUpdate = null;
+
+// Configure which windows should receive XP broadcasts
+const XP_BROADCAST_TARGETS = [
+    "scrollXp",
+    "scrollHod",
+    "sessionHistory",
+    "scrollStats"
+    // Add more windows here as needed:
+    // "frontline",
+    // "heroes",
+    // etc.
+];
 
 // ---- utils ----
 const safeParse = (data) => {
@@ -34,6 +59,21 @@ const asNum = (n, fb = NaN) => {
     const x = Number(n);
     return Number.isFinite(x) ? x : fb;
 };
+
+function broadcastXpData(type, data) {
+    // Only log session-related broadcasts
+    if (type === 'session-history') {
+        log.log(`📊 Broadcasting session history to ${XP_BROADCAST_TARGETS.length} windows`);
+    }
+    
+    // Broadcast to all configured target windows
+    XP_BROADCAST_TARGETS.forEach(windowName => {
+        const w = windows[windowName];
+        if (w?.webContents && !w.webContents.isDestroyed()) {
+            w.webContents.send(`xp-${type}`, data);
+        }
+    });
+}
 
 async function pullUntil(target) {
     const goal = asNum(target, NaN);
@@ -186,7 +226,7 @@ const createWebSocket = () => {
 
         if (type === "SYMBOLS_INVALIDATE" || type === "SYMBOLS_INVALIDATION" || type === "SYMBOLS_INVALIDATE_UNIVERSE" || msg.type === "symbols_invalidate") {
             const count = Array.isArray(msg.items) ? msg.items.length : 0;
-            log.log(`🧹 SYMBOLS_INVALIDATE v${msg.version ?? "?"} items=${count}`);
+            log.log(`�� SYMBOLS_INVALIDATE v${msg.version ?? "?"} items=${count}`);
             // Optional: delete listed, or trigger a fresh hydrate if it's a universe bump.
             if (count && store.deleteSymbols) {
                 const syms = msg.items.map((s) => (typeof s === "string" ? s : s?.symbol)).filter(Boolean);
@@ -194,10 +234,50 @@ const createWebSocket = () => {
             }
             return;
         }
+
+        // Handle XP Session Management messages
+        if (msg.type === "xp_session_history") {
+            // C backend sends data directly, not wrapped in payload
+            const sessionHistory = msg;
+            log.log(`📊 XP Session History: ${sessionHistory.sessions?.length || 0} sessions, has_current: ${sessionHistory.has_current_session || false}`);
+            
+            // Store latest data and broadcast to windows (preserve original structure)
+            latestSessionHistory = sessionHistory;
+            broadcastXpData("session-history", latestSessionHistory);
+            return;
+        }
+
+        if (msg.type === "xp_active_stocks") {
+            // C backend sends data directly, not wrapped in payload
+            const activeStocks = msg;
+            
+            if (activeStocks.symbols && activeStocks.symbols.length > 0) {
+                log.log(`📊 XP Active Stocks: ${activeStocks.symbols.length} symbols`);
+                // Store latest data and broadcast to windows (preserve original structure)
+                latestActiveStocks = activeStocks;
+                broadcastXpData("active-stocks", latestActiveStocks);
+            }
+            return;
+        }
+
+        if (msg.type === "xp_session_update") {
+            // C backend sends data directly, not wrapped in payload
+            const sessionUpdate = msg;
+            
+            if (sessionUpdate.sessions && sessionUpdate.sessions.length > 0) {
+                const latest = sessionUpdate.sessions[sessionUpdate.sessions.length - 1];
+                log.log(`📈 XP Session Update: ${latest.session_name} (${latest.symbol_count} symbols, ${latest.total_net_xp} net XP)`);
+                
+                // Store latest data (preserve original structure)
+                latestSessionUpdate = sessionUpdate;
+                broadcastXpData("session-update", latestSessionUpdate);
+            }
+            return;
+        }
     });
 
     ws.on("close", (code) => {
-        log.warn(`🔌 Disconnected (code: ${code})`);
+        log.warn(`�� Disconnected (code: ${code})`);
         if (!permanentlyRejected) reconnectAfterDelay();
         else log.warn("❌ Will not reconnect after rejection");
     });
@@ -218,4 +298,23 @@ const oracle = (authData) => {
     createWebSocket();
 };
 
-module.exports = { oracle };
+// IPC handlers for XP data requests
+const getXpActiveStocks = () => {
+    // log.log(`🔍 IPC getXpActiveStocks called, returning:`, latestActiveStocks ? 'data' : 'null');
+    return latestActiveStocks;
+};
+
+const getXpSessionHistory = () => {
+    if (latestSessionHistory) {
+        log.log(`📊 IPC getXpSessionHistory: returning ${latestSessionHistory.sessions?.length || 0} sessions`);
+    } else {
+        log.log(`📊 IPC getXpSessionHistory: no data available`);
+    }
+    return latestSessionHistory;
+};
+
+const getXpSessionUpdate = () => {
+    return latestSessionUpdate;
+};
+
+module.exports = { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate };

@@ -128,6 +128,408 @@ function resetCursor() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// XP Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const xpSettingsStore = createStore("xp-settings-store", "xp.");
+const xpSettingsBus = new EventEmitter();
+
+let _xpListLength = xpSettingsStore.get("listLength", 25); // Default to 25
+let _xpShowHeaders = xpSettingsStore.get("showHeaders", true); // Default to visible
+let _xpShowUpXp = xpSettingsStore.get("showUpXp", true); // Default to visible
+let _xpShowDownXp = xpSettingsStore.get("showDownXp", true); // Default to visible
+let _xpShowRatio = xpSettingsStore.get("showRatio", true); // Default to visible
+let _xpShowTotal = xpSettingsStore.get("showTotal", true); // Default to visible
+let _xpShowNet = xpSettingsStore.get("showNet", true); // Default to visible
+let _xpShowPrice = xpSettingsStore.get("showPrice", true); // Default to visible
+
+function getXpListLength() {
+    return _xpListLength;
+}
+
+function setXpListLength(length) {
+    const newLength = Math.max(1, Math.min(50, Number(length) || 25));
+    if (newLength === _xpListLength) return false;
+    
+    _xpListLength = newLength;
+    xpSettingsStore.set("listLength", _xpListLength);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowHeaders() {
+    return _xpShowHeaders;
+}
+
+function setXpShowHeaders(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowHeaders) return false;
+    
+    _xpShowHeaders = newShow;
+    xpSettingsStore.set("showHeaders", _xpShowHeaders);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowUpXp() {
+    return _xpShowUpXp;
+}
+
+function setXpShowUpXp(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowUpXp) return false;
+    
+    _xpShowUpXp = newShow;
+    xpSettingsStore.set("showUpXp", _xpShowUpXp);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowDownXp() {
+    return _xpShowDownXp;
+}
+
+function setXpShowDownXp(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowDownXp) return false;
+    
+    _xpShowDownXp = newShow;
+    xpSettingsStore.set("showDownXp", _xpShowDownXp);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowRatio() {
+    return _xpShowRatio;
+}
+
+function setXpShowRatio(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowRatio) return false;
+    
+    _xpShowRatio = newShow;
+    xpSettingsStore.set("showRatio", _xpShowRatio);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowTotal() {
+    return _xpShowTotal;
+}
+
+function setXpShowTotal(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowTotal) return false;
+    
+    _xpShowTotal = newShow;
+    xpSettingsStore.set("showTotal", _xpShowTotal);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowNet() {
+    return _xpShowNet;
+}
+
+function setXpShowNet(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowNet) return false;
+    
+    _xpShowNet = newShow;
+    xpSettingsStore.set("showNet", _xpShowNet);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowPrice() {
+    return _xpShowPrice;
+}
+
+function setXpShowPrice(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowPrice) return false;
+    
+    _xpShowPrice = newShow;
+    xpSettingsStore.set("showPrice", _xpShowPrice);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_registered__) {
+    app.__xp_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("xp-settings:get");
+    ipcMain.removeHandler("xp-settings:set");
+    ipcMain.handle("xp-settings:get", () => {
+        return { 
+            listLength: getXpListLength(), 
+            showHeaders: getXpShowHeaders(),
+            showUpXp: getXpShowUpXp(),
+            showDownXp: getXpShowDownXp(),
+            showRatio: getXpShowRatio(),
+            showTotal: getXpShowTotal(),
+            showNet: getXpShowNet(),
+            showPrice: getXpShowPrice()
+        };
+    });
+    ipcMain.handle("xp-settings:set", (_e, { listLength, showHeaders, showUpXp, showDownXp, showRatio, showTotal, showNet, showPrice }) => {
+        let changed = false;
+        if (listLength !== undefined) {
+            changed = setXpListLength(listLength) || changed;
+        }
+        if (showHeaders !== undefined) {
+            changed = setXpShowHeaders(showHeaders) || changed;
+        }
+        if (showUpXp !== undefined) {
+            changed = setXpShowUpXp(showUpXp) || changed;
+        }
+        if (showDownXp !== undefined) {
+            changed = setXpShowDownXp(showDownXp) || changed;
+        }
+        if (showRatio !== undefined) {
+            changed = setXpShowRatio(showRatio) || changed;
+        }
+        if (showTotal !== undefined) {
+            changed = setXpShowTotal(showTotal) || changed;
+        }
+        if (showNet !== undefined) {
+            changed = setXpShowNet(showNet) || changed;
+        }
+        if (showPrice !== undefined) {
+            changed = setXpShowPrice(showPrice) || changed;
+        }
+        return changed;
+    });
+
+    ipcMain.removeAllListeners("xp-settings:subscribe");
+    ipcMain.on("xp-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("xp-settings:change", data);
+        push({ 
+            listLength: getXpListLength(), 
+            showHeaders: getXpShowHeaders(),
+            showUpXp: getXpShowUpXp(),
+            showDownXp: getXpShowDownXp(),
+            showRatio: getXpShowRatio(),
+            showTotal: getXpShowTotal(),
+            showNet: getXpShowNet(),
+            showPrice: getXpShowPrice()
+        }); // prime immediately
+        xpSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[xp-settings] unsubscribe WC", wc.id);
+            xpSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// HOD Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const hodSettingsStore = createStore("hod-settings-store", "hod.");
+const hodSettingsBus = new EventEmitter();
+
+let _hodListLength = hodSettingsStore.get("listLength", 10); // Default to 10
+
+function getHodListLength() {
+    return _hodListLength;
+}
+
+function setHodListLength(length) {
+    const newLength = Math.max(1, Math.min(50, Number(length) || 10));
+    if (newLength === _hodListLength) return false;
+    
+    _hodListLength = newLength;
+    hodSettingsStore.set("listLength", _hodListLength);
+    
+    const payload = { listLength: _hodListLength };
+    hodSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("hod-settings:change", payload);
+        } catch (err) {
+            log.log("[hod-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__hod_settings_ipc_registered__) {
+    app.__hod_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("hod-settings:get");
+    ipcMain.removeHandler("hod-settings:set");
+    ipcMain.handle("hod-settings:get", () => {
+        return { listLength: getHodListLength() };
+    });
+    ipcMain.handle("hod-settings:set", (_e, { listLength }) => {
+        return setHodListLength(listLength);
+    });
+
+    ipcMain.removeAllListeners("hod-settings:subscribe");
+    ipcMain.on("hod-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("hod-settings:change", data);
+        push({ listLength: getHodListLength() }); // prime immediately
+        hodSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[hod-settings] unsubscribe WC", wc.id);
+            hodSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Stats Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const statsSettingsStore = createStore("stats-settings-store", "stats.");
+const statsSettingsBus = new EventEmitter();
+
+let _statsListLength = statsSettingsStore.get("listLength", 25); // Default to 25
+
+function getStatsListLength() {
+    return _statsListLength;
+}
+
+function setStatsListLength(length) {
+    const newLength = Math.max(1, Math.min(50, Number(length) || 25));
+    if (newLength === _statsListLength) return false;
+    
+    _statsListLength = newLength;
+    statsSettingsStore.set("listLength", _statsListLength);
+    
+    const payload = { listLength: _statsListLength };
+    statsSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("stats-settings:change", payload);
+        } catch (err) {
+            log.log("[stats-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__stats_settings_ipc_registered__) {
+    app.__stats_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("stats-settings:get");
+    ipcMain.removeHandler("stats-settings:set");
+    ipcMain.handle("stats-settings:get", () => {
+        return { listLength: getStatsListLength() };
+    });
+    ipcMain.handle("stats-settings:set", (_e, { listLength }) => {
+        return setStatsListLength(listLength);
+    });
+
+    ipcMain.removeAllListeners("stats-settings:subscribe");
+    ipcMain.on("stats-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("stats-settings:change", data);
+        push({ listLength: getStatsListLength() }); // prime immediately
+        statsSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[stats-settings] unsubscribe WC", wc.id);
+            statsSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Top-3 store (persist + broadcast)
 // ─────────────────────────────────────────────────────────────────────
 
@@ -234,4 +636,30 @@ module.exports = {
     // new exports (optional for other main modules)
     getTop3,
     setTop3,
+    
+    // XP settings exports
+    getXpListLength,
+    setXpListLength,
+    getXpShowHeaders,
+    setXpShowHeaders,
+    getXpShowUpXp,
+    setXpShowUpXp,
+    getXpShowDownXp,
+    setXpShowDownXp,
+    getXpShowRatio,
+    setXpShowRatio,
+    getXpShowTotal,
+    setXpShowTotal,
+    getXpShowNet,
+    setXpShowNet,
+    getXpShowPrice,
+    setXpShowPrice,
+    
+    // HOD settings exports
+    getHodListLength,
+    setHodListLength,
+    
+    // Stats settings exports
+    getStatsListLength,
+    setStatsListLength,
 };

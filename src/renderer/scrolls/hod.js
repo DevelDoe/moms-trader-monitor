@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// HOD Toplist — tracked-only, simple, reliable (subscribe-first)
+// HOD Toplist — Oracle top list, simple, reliable (subscribe-first)
 // ──────────────────────────────────────────────────────────────────────────────
 
 /* 0) Helpers */
@@ -46,7 +46,7 @@ window.MIN_AUDIO_INTERVAL_MS ??= 80;
 window.lastAudioTime ??= 0;
 
 const HOD_EVICT_MS = 60_000; // evict a row N ms after it hit HOD
-const HOD_SYMBOL_LENGTH = 10; // rows to show
+const HOD_SYMBOL_LENGTH_DEFAULT = 10; // default rows to show
 const PRICE_MOVE_EPS = 0; // any price change counts as movement
 
 // --- Stability knobs ---
@@ -229,15 +229,24 @@ function simulateFirstGesture(delayMs = 800) {
 /* 4) View state (small, KISS) */
 const state = {
     tickers: new Map(), // sym -> row
-    tracked: [], // array of SYM (UPPERCASED)
+    oracleActiveStocks: null, // Oracle's top list instead of tracked
     settings: {}, // volumes only
+    hodSettings: { listLength: HOD_SYMBOL_LENGTH_DEFAULT }, // HOD-specific settings
     renderKey: "",
     rafPending: false,
     prevOrder: [], // last displayed order of symbols
     lastRenderAt: 0,
     renderTimer: null,
 };
-const isTracked = (sym) => state.tracked.includes(up(sym));
+
+function getHodListLength() {
+    return state.hodSettings?.listLength || HOD_SYMBOL_LENGTH_DEFAULT;
+}
+const isTracked = (sym) => {
+    // Use oracle active stocks list instead of manually tracked list
+    if (!state.oracleActiveStocks?.symbols) return false;
+    return state.oracleActiveStocks.symbols.some(s => up(s.symbol) === up(sym));
+};
 
 function markDirty() {
     const now = Date.now();
@@ -274,14 +283,34 @@ function render() {
         items.push(t);
     }
 
-    // 1) Ideal order by smoothed metric (fallback to raw), then recency
+    // 1) Ideal order: first by Oracle ranking, then by HOD proximity, then recency
+    const getOracleRank = (sym) => {
+        if (!state.oracleActiveStocks?.symbols) return Infinity;
+        const index = state.oracleActiveStocks.symbols.findIndex(s => up(s.symbol) === up(sym));
+        return index >= 0 ? index : Infinity;
+    };
+    
     const metric = (t) => {
         if (Number.isFinite(t.pctSmooth)) return t.pctSmooth;
         if (Number.isFinite(t.pctBelowHigh)) return t.pctBelowHigh;
         return 1; // worst
     };
-    items.sort((a, b) => metric(a) - metric(b) || (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0));
-    const ideal = items.slice(0, HOD_SYMBOL_LENGTH);
+    
+    items.sort((a, b) => {
+        // Primary: Oracle ranking (lower is better)
+        const aRank = getOracleRank(a.hero);
+        const bRank = getOracleRank(b.hero);
+        if (aRank !== bRank) return aRank - bRank;
+        
+        // Secondary: HOD proximity (lower is better)
+        const aMetric = metric(a);
+        const bMetric = metric(b);
+        if (aMetric !== bMetric) return aMetric - bMetric;
+        
+        // Tertiary: recency (newer is better)
+        return (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0);
+    });
+    const ideal = items.slice(0, getHodListLength());
 
     // 2) Stabilize: start from previous order, insert newcomers, then only allow a one-pass bubble-up
     //    if improvement exceeds RANK_HYSTERESIS
@@ -366,7 +395,7 @@ function render() {
         })
         .join("");
 
-    state.prevOrder = display.slice(0, HOD_SYMBOL_LENGTH).map((t) => t.hero);
+    state.prevOrder = display.slice(0, getHodListLength()).map((t) => t.hero);
 
     // one delegated click handler
     if (!container.__boundClick) {
@@ -397,28 +426,12 @@ function pruneReachedHod() {
     if (removed) markDirty();
 }
 
-const INACTIVE_EVICT_MS = 15 * 60 * 1000; // auto-evict after 15min inactivity
-
-// function pruneInactive() {
-//     const now = Date.now();
-//     let removed = false;
-//     for (const [sym, t] of state.tickers) {
-//         const last = t.lastMoveAt ?? t.lastUpdate ?? 0;
-//         if (now - last >= INACTIVE_EVICT_MS) {
-//             state.tickers.delete(sym);
-//             removed = true;
-//         }
-//     }
-//     if (removed) markDirty();
-// }
-
 setInterval(pruneReachedHod, 5_000);
-// setInterval(pruneInactive, 6000);
 
 /* 7) Boot */
 document.addEventListener("DOMContentLoaded", async () => {
     // Wait for bridges
-    while (!(window.settingsAPI && window.storeAPI && window.eventsAPI && window.electronAPI)) {
+    while (!(window.settingsAPI && window.xpAPI && window.eventsAPI && window.electronAPI && window.hodSettingsAPI)) {
         await new Promise((r) => setTimeout(r, 200));
     }
 
@@ -439,6 +452,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     });
 
+    // Load HOD settings
+    try {
+        state.hodSettings = await window.hodSettingsAPI.get();
+        console.log(`[HOD] Initial HOD settings loaded:`, state.hodSettings);
+    } catch (error) {
+        console.error(`[HOD] Failed to load initial HOD settings:`, error);
+        state.hodSettings = { listLength: HOD_SYMBOL_LENGTH_DEFAULT };
+    }
+
+    // Subscribe to HOD settings updates
+    window.hodSettingsAPI.onUpdate(async (updated) => {
+        console.log(`[HOD] HOD settings updated:`, updated);
+        state.hodSettings = updated || { listLength: HOD_SYMBOL_LENGTH_DEFAULT };
+        markDirty();
+    });
+
     // Make content clickable in frameless windows
     try {
         document.body.style["-webkit-app-region"] = "no-drag";
@@ -451,12 +480,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         simulateFirstGesture(1000);
     }
 
-    // Subscribe FIRST so we never miss the initial tracked push
-    const unsubscribeTracked = window.storeAPI.onTrackedUpdate((list = []) => {
-        state.tracked = (list || []).map(up);
-        // Hard prune anything no longer tracked
-        if (state.tracked.length) {
-            const allow = new Set(state.tracked);
+    // Subscribe to Oracle's active stocks list
+    const unsubscribeOracle = window.xpAPI.onActiveStocksUpdate((data) => {
+        state.oracleActiveStocks = data;
+        console.log("[HOD] Oracle active stocks update received:", data?.symbols?.length || 0, "symbols");
+        
+        // Hard prune anything not in oracle list
+        if (state.oracleActiveStocks?.symbols?.length) {
+            const allow = new Set(state.oracleActiveStocks.symbols.map(s => up(s.symbol)));
             let removed = false;
             for (const sym of Array.from(state.tickers.keys())) {
                 if (!allow.has(sym)) {
@@ -465,98 +496,97 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
             if (removed) markDirty();
-            state.prevOrder = (state.prevOrder || []).filter((s) => allow.has(s)).slice(0, HOD_SYMBOL_LENGTH);
+            state.prevOrder = (state.prevOrder || []).filter((s) => allow.has(s)).slice(0, getHodListLength());
         }
         markDirty();
     });
 
     // Optional: one-time snapshot (safe even if event fires first)
     try {
-        const snap = await window.storeAPI.getTracked();
-        if (Array.isArray(snap) && snap.length) {
-            state.tracked = snap.map(up);
+        const snap = await window.xpAPI.getActiveStocks();
+        if (snap?.symbols?.length) {
+            state.oracleActiveStocks = snap;
+            console.log("[HOD] Initial Oracle data loaded:", snap.symbols.length, "symbols");
             markDirty();
         }
-    } catch {}
-
-    // Strict tracked-only alert handling
-    if (window.eventsAPI?.onAlert) {
-        window.eventsAPI.onAlert((p = {}) => {
-            const sym = up(p.hero);
-            if (!sym || !isTracked(sym)) return;
-
-            const t = state.tickers.get(sym) || { hero: sym };
-            const prevPrice = t.price;
-            const prevHigh = t.sessionHigh;
-
-            if (Number.isFinite(p.price)) t.price = p.price;
-            if (Number.isFinite(p.sessionHigh)) t.sessionHigh = p.sessionHigh;
-            if (Number.isFinite(p.pctBelowHigh)) t.pctBelowHigh = p.pctBelowHigh;
-
-            const rawPct = Number.isFinite(p.pctBelowHigh) ? p.pctBelowHigh : t.pctBelowHigh;
-            if (Number.isFinite(rawPct)) {
-                t.pctSmooth = Number.isFinite(t.pctSmooth) ? t.pctSmooth * (1 - EMA_ALPHA) + rawPct * EMA_ALPHA : rawPct;
-            }
-
-            t.lastUpdate = Date.now();
-
-            // movement (price OR new highs)
-            let moved = false;
-            if (Number.isFinite(p.price)) moved ||= Number.isFinite(prevPrice) ? Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS : true;
-            if (Number.isFinite(p.sessionHigh)) moved ||= Number.isFinite(prevHigh) ? p.sessionHigh > prevHigh : true;
-            if (moved) t.lastMoveAt = t.lastUpdate;
-
-            if (Number.isFinite(p.price) && Number.isFinite(prevPrice) && Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS) {
-                t.lastPriceDir = p.price > prevPrice ? 1 : -1; // up = 1, down = -1
-                t.lastPriceChangeAt = Date.now();
-            }
-
-            // window + audio
-            const diffUSD = Number.isFinite(p.centsBelowHigh)
-                ? Math.max(0, p.centsBelowHigh / 100)
-                : Number.isFinite(t.sessionHigh) && Number.isFinite(t.price)
-                ? Math.max(0, t.sessionHigh - t.price)
-                : Infinity;
-
-            const priceRef = Number.isFinite(t.price) && t.price > 0 ? t.price : t.sessionHigh || 0;
-            const thrUSD = hodThresholdUSDFromPrice(priceRef);
-            t.diffUSD = diffUSD;
-            t.thrUSD = thrUSD;
-
-            const isHOD = p.isHighOfDay === true || (isFinite(diffUSD) && diffUSD <= AT_HIGH_EPS);
-            const inWindow = isFinite(diffUSD) && isFinite(thrUSD) && diffUSD > AT_HIGH_EPS && diffUSD <= thrUSD;
-
-            const isUptick = Number.isFinite(p.hp) && p.hp > 0;
-
-            if (isHOD) {
-                if (shouldPlayHodChime(sym)) {
-                    play(magicBase, getChimeVol(state.settings));
-                }
-                t.hodAt = Date.now();
-            } else {
-                // Volume ramps from 0 at the edge (diff == thr) to full at HOD (diff -> 0).
-                const dist = Number.isFinite(t.diffUSD) ? t.diffUSD : Infinity;
-                const thr = Number.isFinite(t.thrUSD) ? t.thrUSD : 0;
-                const prox = thr > 0 ? clamp(1 - dist / thr, 0, 1) : 0; // 0..1
-
-                if (isUptick && prox > 0 && shouldPlayTick(sym)) {
-                    const user = clamp(getTickVol(state.settings), 0, 1);
-                    // psychoacoustic easing + audible floor at the window edge
-                    const eased = Math.pow(prox, TICK_VOL_EASE); // 0..1
-                    const shaped = TICK_VOL_FLOOR + (1 - TICK_VOL_FLOOR) * eased; // floor..1
-                    const vol = clamp(user * shaped, 0, 1);
-                    play(ticksBase, vol);
-                }
-            }
-
-            state.tickers.set(sym, t);
-            markDirty();
-        });
-    } else {
-        console.warn("[HOD] eventsAPI.onAlert not available");
+    } catch (error) {
+        console.warn("[HOD] Failed to get initial Oracle data:", error);
     }
 
-    // Nuke resets rows only; tracked comes from subscription
+    // Oracle-filtered alert handling
+    window.eventsAPI.onAlert((p = {}) => {
+        const sym = up(p.hero);
+        if (!sym || !isTracked(sym)) return;
+
+        const t = state.tickers.get(sym) || { hero: sym };
+        const prevPrice = t.price;
+        const prevHigh = t.sessionHigh;
+
+        if (Number.isFinite(p.price)) t.price = p.price;
+        if (Number.isFinite(p.sessionHigh)) t.sessionHigh = p.sessionHigh;
+        if (Number.isFinite(p.pctBelowHigh)) t.pctBelowHigh = p.pctBelowHigh;
+
+        const rawPct = Number.isFinite(p.pctBelowHigh) ? p.pctBelowHigh : t.pctBelowHigh;
+        if (Number.isFinite(rawPct)) {
+            t.pctSmooth = Number.isFinite(t.pctSmooth) ? t.pctSmooth * (1 - EMA_ALPHA) + rawPct * EMA_ALPHA : rawPct;
+        }
+
+        t.lastUpdate = Date.now();
+
+        // movement (price OR new highs)
+        let moved = false;
+        if (Number.isFinite(p.price)) moved ||= Number.isFinite(prevPrice) ? Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS : true;
+        if (Number.isFinite(p.sessionHigh)) moved ||= Number.isFinite(prevHigh) ? p.sessionHigh > prevHigh : true;
+        if (moved) t.lastMoveAt = t.lastUpdate;
+
+        if (Number.isFinite(p.price) && Number.isFinite(prevPrice) && Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS) {
+            t.lastPriceDir = p.price > prevPrice ? 1 : -1; // up = 1, down = -1
+            t.lastPriceChangeAt = Date.now();
+        }
+
+        // window + audio
+        const diffUSD = Number.isFinite(p.centsBelowHigh)
+            ? Math.max(0, p.centsBelowHigh / 100)
+            : Number.isFinite(t.sessionHigh) && Number.isFinite(t.price)
+            ? Math.max(0, t.sessionHigh - t.price)
+            : Infinity;
+
+        const priceRef = Number.isFinite(t.price) && t.price > 0 ? t.price : t.sessionHigh || 0;
+        const thrUSD = hodThresholdUSDFromPrice(priceRef);
+        t.diffUSD = diffUSD;
+        t.thrUSD = thrUSD;
+
+        const isHOD = p.isHighOfDay === true || (isFinite(diffUSD) && diffUSD <= AT_HIGH_EPS);
+        const inWindow = isFinite(diffUSD) && isFinite(thrUSD) && diffUSD > AT_HIGH_EPS && diffUSD <= thrUSD;
+
+        const isUptick = Number.isFinite(p.hp) && p.hp > 0;
+
+        if (isHOD) {
+            if (shouldPlayHodChime(sym)) {
+                play(magicBase, getChimeVol(state.settings));
+            }
+            t.hodAt = Date.now();
+        } else {
+            // Volume ramps from 0 at the edge (diff == thr) to full at HOD (diff -> 0).
+            const dist = Number.isFinite(t.diffUSD) ? t.diffUSD : Infinity;
+            const thr = Number.isFinite(t.thrUSD) ? t.thrUSD : 0;
+            const prox = thr > 0 ? clamp(1 - dist / thr, 0, 1) : 0; // 0..1
+
+            if (isUptick && prox > 0 && shouldPlayTick(sym)) {
+                const user = clamp(getTickVol(state.settings), 0, 1);
+                // psychoacoustic easing + audible floor at the window edge
+                const eased = Math.pow(prox, TICK_VOL_EASE); // 0..1
+                const shaped = TICK_VOL_FLOOR + (1 - TICK_VOL_FLOOR) * eased; // floor..1
+                const vol = clamp(user * shaped, 0, 1);
+                play(ticksBase, vol);
+            }
+        }
+
+        state.tickers.set(sym, t);
+        markDirty();
+    });
+
+    // Nuke resets rows only; oracle data comes from subscription
     window.electronAPI.onNukeState?.(() => {
         state.tickers.clear();
         state.renderKey = "";
@@ -572,7 +602,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 /* 8) Debug helpers */
 window.hodPeek = () => {
     const first = state.tickers.values().next().value || null;
-    console.log({ tracked: state.tracked.slice(), count: state.tickers.size, sample: first });
+    console.log({ 
+        oracleSymbols: state.oracleActiveStocks?.symbols?.length || 0,
+        oracleSample: state.oracleActiveStocks?.symbols?.slice(0, 3) || [],
+        tickerCount: state.tickers.size, 
+        sample: first 
+    });
 };
 window.hodAudioStatus = () => {
     setupAudio?.();
@@ -586,6 +621,20 @@ window.hodAudioStatus = () => {
         ticksSrc: ticksBase?.src || "(unset)",
         minAudioIntervalMs: window.MIN_AUDIO_INTERVAL_MS,
         lastAudioTime: window.lastAudioTime,
+    });
+};
+
+window.hodOracleStatus = () => {
+    console.log({
+        oracleData: state.oracleActiveStocks ? {
+            symbolCount: state.oracleActiveStocks.symbols?.length || 0,
+            top5: state.oracleActiveStocks.symbols?.slice(0, 5).map(s => s.symbol) || [],
+            hasXpAPI: !!window.xpAPI,
+            hasGetActiveStocks: !!window.xpAPI?.getActiveStocks,
+            hasOnActiveStocksUpdate: !!window.xpAPI?.onActiveStocksUpdate
+        } : null,
+        tickerCount: state.tickers.size,
+        activeSymbols: Array.from(state.tickers.keys()).slice(0, 5)
     });
 };
 

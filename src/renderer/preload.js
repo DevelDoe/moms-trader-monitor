@@ -165,6 +165,11 @@ contextBridge.exposeInMainWorld("newsAPI", {
     onUpdate: (callback) => ipcRenderer.on("news-updated", callback),
 });
 
+contextBridge.exposeInMainWorld("sessionHistoryAPI", {
+    activate: () => ipcRenderer.send("activate-sessionHistory"),
+    deactivate: () => ipcRenderer.send("deactivate-sessionHistory"),
+});
+
 // Audio Test API
 contextBridge.exposeInMainWorld("audioTestAPI", {
     testComboAlert: () => ipcRenderer.invoke("test-combo-alert"),
@@ -174,11 +179,57 @@ contextBridge.exposeInMainWorld("audioTestAPI", {
     testScannerAlert: () => ipcRenderer.invoke("test-scanner-alert"),
 });
 
+// XP Data API
+contextBridge.exposeInMainWorld("xpAPI", {
+    getActiveStocks: () => ipcRenderer.invoke("get-xp-active-stocks"),
+    getSessionHistory: () => ipcRenderer.invoke("get-xp-session-history"),
+    getSessionUpdate: () => ipcRenderer.invoke("get-xp-session-update"),
+    onActiveStocksUpdate: (callback) => ipcRenderer.on("xp-active-stocks", (_, data) => callback(data)),
+    onSessionHistoryUpdate: (callback) => ipcRenderer.on("xp-session-history", (_, data) => callback(data)),
+    onSessionUpdate: (callback) => ipcRenderer.on("xp-session-update", (_, data) => callback(data)),
+});
+
 // electron-stores
 
 contextBridge.exposeInMainWorld("oracleStore", {
     getLastAckCursor: () => ipcRenderer.invoke("get-last-ack-cursor"),
     setLastAckCursor: (c) => ipcRenderer.invoke("set-last-ack-cursor", c),
+});
+
+// XP Settings API
+contextBridge.exposeInMainWorld("xpSettingsAPI", {
+    get: () => ipcRenderer.invoke("xp-settings:get"),
+    set: (settings) => ipcRenderer.invoke("xp-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("xp-settings:change", handler);
+        ipcRenderer.send("xp-settings:subscribe");
+        return () => ipcRenderer.removeListener("xp-settings:change", handler);
+    },
+});
+
+// HOD Settings API
+contextBridge.exposeInMainWorld("hodSettingsAPI", {
+    get: () => ipcRenderer.invoke("hod-settings:get"),
+    set: (settings) => ipcRenderer.invoke("hod-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("hod-settings:change", handler);
+        ipcRenderer.send("hod-settings:subscribe");
+        return () => ipcRenderer.removeListener("hod-settings:change", handler);
+    },
+});
+
+// Stats Settings API
+contextBridge.exposeInMainWorld("statsSettingsAPI", {
+    get: () => ipcRenderer.invoke("stats-settings:get"),
+    set: (settings) => ipcRenderer.invoke("stats-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("stats-settings:change", handler);
+        ipcRenderer.send("stats-settings:subscribe");
+        return () => ipcRenderer.removeListener("stats-settings:change", handler);
+    },
 });
 
 // preload.js

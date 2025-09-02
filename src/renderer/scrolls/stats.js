@@ -4,6 +4,7 @@ const up = (s) => String(s || "").toUpperCase();
 
 let trackedTickers = []; // ← persisted order from settings
 let _renderKey = ""; // micro-perf: skip unchanged renders
+let activeStocksData = null; // ← Oracle active stocks data
 
 let _top3Debounce = null;
 function pushTop3Debounced(entries) {
@@ -16,7 +17,19 @@ function pushTop3Debounced(entries) {
 }
 
 function getSymbolLength() {
-    return Math.max(1, Number(window.settings?.top?.symbolLength) || 25);
+    return Math.max(1, Number(window.statsSettings?.listLength) || 25);
+}
+
+// Load stats settings from electron store
+async function loadStatsSettings() {
+    try {
+        const statsSettings = await window.statsSettingsAPI.get();
+        window.statsSettings = statsSettings;
+        console.log("✅ Loaded stats settings:", statsSettings);
+    } catch (error) {
+        console.error("❌ Failed to load stats settings:", error);
+        window.statsSettings = { listLength: 25 }; // fallback
+    }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -34,10 +47,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         // trackedTickers defines WHO can show; not the order
         const order = new Map(trackedTickers.map((s, i) => [up(s), i]));
 
+        // Filter heroes to only include those in the active Oracle stocks list
+        const activeHeroes = activeStocksData?.symbols 
+            ? Object.values(heroes).filter(h => 
+                activeStocksData.symbols.some(s => s.symbol === h.hero)
+            )
+            : Object.values(heroes);
+
         // 1) pick candidates
         const candidates = order.size
-            ? Object.values(heroes).filter((h) => order.has(up(h.hero)))
-            : Object.values(heroes)
+            ? activeHeroes.filter((h) => order.has(up(h.hero)))
+            : activeHeroes
                   .filter((h) => h.xp > 0)
                   .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
                   .slice(0, getSymbolLength());
@@ -45,11 +65,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // if filters wipe them out, fallback to LV/XP
         const baseList =
             order.size && candidates.length === 0
-                ? Object.values(heroes)
-                      /* This code snippet is filtering out the heroes whose experience points (`xp`) are
-                    greater than 0 and then sorting them based on their level (`lv`) in descending
-                    order. If two heroes have the same level, they are further sorted based on their
-                    experience points in descending order. */
+                ? activeHeroes
                       .filter((h) => h.xp > 0)
                       .sort((a, b) => (b.lv !== a.lv ? b.lv - a.lv : b.xp - a.xp))
                 : candidates;
@@ -127,6 +143,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         // Load settings (for symbolLength etc.), and the tracked list from the STORE
         window.settings = await window.settingsAPI.get();
+        
+        // Load stats settings from electron store
+        await loadStatsSettings();
+        
         try {
             trackedTickers = (await window.storeAPI.getTracked()).map(up);
         } catch (e) {
@@ -168,7 +188,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.storeAPI.onHeroUpdate((payload) => {
             const items = Array.isArray(payload) ? payload : [payload];
 
-            items.forEach(({ hero, buffs, xp, lv, price, totalXpGained, firstXpTimestamp, lastEvent }) => {
+            items.forEach(({ hero, buffs, xp, lv, price, firstXpTimestamp, lastEvent }) => {
                 if (!hero) return;
 
                 if (!heroes[hero]) {
@@ -178,7 +198,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                         lv: 1,
                         buffs: {},
                         price: 0,
-                        totalXpGained: 0,
                         firstXpTimestamp: Date.now(),
                         lastUpdate: Date.now(),
                     };
@@ -189,7 +208,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (typeof xp === "number") h.xp = xp;
                 if (typeof lv === "number") h.lv = lv;
                 if (typeof price === "number") h.price = price;
-                if (typeof totalXpGained === "number") h.totalXpGained = totalXpGained;
+
                 if (typeof firstXpTimestamp === "number") h.firstXpTimestamp = firstXpTimestamp;
                 if (lastEvent) h.lastEvent = lastEvent;
 
@@ -203,6 +222,30 @@ document.addEventListener("DOMContentLoaded", async () => {
             window.settings = updated;
             refreshList(); // use the new symbolLength/filters, but don't touch trackedTickers
         });
+
+        // Listen for stats settings updates from electron store
+        window.statsSettingsAPI.onUpdate((updatedSettings) => {
+            if (updatedSettings) {
+                window.statsSettings = updatedSettings;
+                console.log("✅ Stats settings updated from settings:", updatedSettings);
+                refreshList(); // re-render with new list length
+            }
+        });
+
+        // Listen for Oracle active stocks updates
+        window.xpAPI.onActiveStocksUpdate((data) => {
+            console.log("🔄 Oracle active stocks update received:", data);
+            activeStocksData = data;
+            refreshList();
+        });
+
+        // Get initial Oracle data
+        try {
+            activeStocksData = await window.xpAPI.getActiveStocks();
+            console.log("📊 Initial Oracle active stocks data:", activeStocksData);
+        } catch (e) {
+            console.warn("Failed to get initial Oracle data:", e);
+        }
     } catch (err) {
         console.error("Failed to load stats scroll:", err);
     }

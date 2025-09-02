@@ -42,31 +42,31 @@
     ],
     "allowMultiSymbols": false,
     "trackedTickers": [
-      "CWD",
-      "SOGP",
-      "OPAD",
-      "AQB",
-      "AEO",
-      "OTLK",
-      "PTNM",
-      "RGTI",
-      "QMMM",
-      "MIMI",
-      "LGHL",
-      "THAR",
-      "STSS",
-      "RIME",
-      "PBM",
-      "OPEN",
-      "TELO",
-      "RAY",
-      "AEVA",
-      "RR",
-      "BTAI",
-      "MB",
-      "SUIG",
-      "LPSN",
-      "LASE"
+      "JHX",
+      "REAL",
+      "SNDX",
+      "YDES",
+      "UP",
+      "GRAB",
+      "LCID",
+      "RPT",
+      "TSLA",
+      "PCG",
+      "TMC",
+      "BDSX",
+      "RIVN",
+      "GAP",
+      "MARA",
+      "RKT",
+      "TGHL",
+      "UPB",
+      "DNN",
+      "ELOG",
+      "S",
+      "PTON",
+      "THH",
+      "VERA",
+      "LYG"
     ]
   },
   "scanner": {
@@ -89,15 +89,15 @@
     "settingsWindow": {
       "width": 907,
       "height": 805,
-      "x": 216,
-      "y": 523,
+      "x": 0,
+      "y": 822,
       "isOpen": false
     },
     "infobarWindow": {
-      "width": 744,
-      "height": 75,
+      "width": 611,
+      "height": 107,
       "x": 1768,
-      "y": 1064,
+      "y": 1025,
       "isOpen": true
     },
     "wizardWindow": {
@@ -111,8 +111,8 @@
       "isOpen": true,
       "width": 400,
       "height": 85,
-      "x": 3378,
-      "y": 83
+      "x": 3033,
+      "y": 145
     },
     "progressWindow": {
       "width": 1442,
@@ -136,38 +136,45 @@
       "isOpen": true
     },
     "heroesWindow": {
-      "width": 494,
-      "height": 488,
-      "x": 1771,
-      "y": 1132,
+      "width": 609,
+      "height": 493,
+      "x": 1770,
+      "y": 1129,
       "isOpen": true
     },
     "scrollXpWindow": {
       "isOpen": true,
-      "width": 210,
-      "height": 1081,
-      "x": 2680,
-      "y": 539
+      "width": 503,
+      "height": 468,
+      "x": 2378,
+      "y": 1153
     },
     "scrollStatsWindow": {
       "isOpen": true,
-      "width": 186,
-      "height": 1084,
-      "x": 2500,
-      "y": 538
+      "width": 235,
+      "height": 450,
+      "x": 2645,
+      "y": 539
     },
     "newsWindow": {
-      "width": 746,
-      "height": 528,
+      "width": 612,
+      "height": 529,
       "x": 1767,
-      "y": 538,
+      "y": 539,
       "isOpen": true
     },
     "scrollHodWindow": {
-      "width": 247,
-      "height": 482,
-      "x": 2254,
-      "y": 1138,
+      "width": 266,
+      "height": 447,
+      "x": 2379,
+      "y": 539,
+      "isOpen": true
+    },
+    "sessionHistoryWindow": {
+      "width": 501,
+      "height": 168,
+      "x": 2379,
+      "y": 986,
       "isOpen": true
     }
   },
@@ -177,8 +184,8 @@
     "autoClose": true
   },
   "hod": {
-    "chimeVolume": 0.25,
-    "tickVolume": 0.2,
+    "chimeVolume": 0.05,
+    "tickVolume": 0.05,
     "symbolLength": 10
   },
   "events": {

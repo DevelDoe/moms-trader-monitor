@@ -4,6 +4,7 @@ let blockList = [];
 let allNews = [];
 let showTrackedOnly = false;
 let trackedTickers = [];
+let activeStocksData = null; // ← Oracle active stocks data
 
 // --- boot ---
 document.addEventListener("DOMContentLoaded", async () => {
@@ -12,13 +13,54 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadSettings();
     await refreshNewsFromStore();
 
-
     // ✅ NEW: stay in sync with store
     window.storeAPI.onTrackedUpdate((list) => {
         trackedTickers = (Array.isArray(list) ? list : []).map((s) => String(s).toUpperCase());
         // console.log("onTrackedUpdate trackedTickers", trackedTickers);
         render();
     });
+
+    // Listen for Oracle active stocks updates
+    window.xpAPI.onActiveStocksUpdate((data) => {
+        console.log("🔄 Oracle active stocks update received:", data);
+        console.log("🔍 Previous active stocks data:", activeStocksData);
+        
+        // Log the new active stocks list details
+        if (data?.symbols && Array.isArray(data.symbols)) {
+            console.log(`📊 NEW ACTIVE STOCKS LIST RECEIVED: ${data.symbols.length} symbols`);
+            console.log("📋 Active stocks symbols:", data.symbols.map(s => s.symbol));
+        } else {
+            console.log("⚠️ Active stocks update received but no valid symbols data");
+        }
+        
+        activeStocksData = data;
+        console.log("🔍 New active stocks data:", activeStocksData);
+        
+        if (data?.symbols && data.symbols.length > 0) {
+            console.log("✅ Active stocks data updated, re-rendering with", data.symbols.length, "symbols");
+        } else {
+            console.log("⚠️ Active stocks update received but no symbols data");
+        }
+        
+        render(); // re-render with new active stocks filter
+    });
+
+    // Get initial Oracle data
+    try {
+        activeStocksData = await window.xpAPI.getActiveStocks();
+        console.log("📊 Initial Oracle active stocks data:", activeStocksData);
+        
+        // If we got data, re-render to apply any active stocks filtering
+        if (activeStocksData?.symbols && activeStocksData.symbols.length > 0) {
+            console.log("✅ Got initial active stocks, re-rendering...");
+            render();
+        } else {
+            console.log("⚠️ No initial active stocks data available yet");
+        }
+    } catch (e) {
+        console.warn("Failed to get initial Oracle data:", e);
+        activeStocksData = null;
+    }
 
     // settings changes
     window.settingsAPI.onUpdate(async (updated) => {
@@ -32,6 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // news pushed from main
     window.newsAPI.onUpdate(async () => {
+        console.log("🔄 News update received in news.js, refreshing from store...");
         await refreshNewsFromStore();
     });
 
@@ -57,8 +100,10 @@ function hueClass(h) {
 
 async function refreshNewsFromStore() {
     try {
+        console.log("📢 Refreshing news from store in news.js...");
         const newsData = await window.newsAPI.get();
         allNews = Array.isArray(newsData) ? newsData : [];
+        console.log(`📰 Loaded ${allNews.length} news items from store`);
         render();
     } catch (e) {
         console.error("refreshNewsFromStore failed:", e);
@@ -75,8 +120,21 @@ function render() {
 
         if (showTrackedOnly) {
             const syms = Array.isArray(n.symbols) ? n.symbols : n.symbol ? [n.symbol] : [];
-            if (!syms.length || !trackedTickers.length) return false;
-            if (!syms.some((s) => trackedTickers.includes(String(s).toUpperCase()))) return false;
+            if (!syms.length) return false;
+            
+            // First check if any symbol is in tracked tickers
+            const hasTrackedSymbol = syms.some((s) => trackedTickers.includes(String(s).toUpperCase()));
+            if (hasTrackedSymbol) return true;
+            
+            // If no tracked symbols, check if any symbol is in Oracle active stocks
+            if (activeStocksData?.symbols && activeStocksData.symbols.length > 0) {
+                const hasActiveSymbol = syms.some((s) => 
+                    activeStocksData.symbols.some(active => active.symbol === String(s).toUpperCase())
+                );
+                if (hasActiveSymbol) return true;
+            }
+            
+            return false;
         }
 
         return true;
@@ -174,3 +232,20 @@ async function loadSettings() {
         trackedTickers = [];
     }
 }
+
+// Test function for active stocks integration
+window.testNewsActiveStocks = () => {
+    console.log("Testing news active stocks integration...");
+    console.log(`[News Test] Current active stocks:`, activeStocksData);
+    console.log(`[News Test] Current tracked tickers:`, trackedTickers);
+    console.log(`[News Test] Show tracked only:`, showTrackedOnly);
+    console.log(`[News Test] Total news items:`, allNews?.length || 0);
+    
+    if (activeStocksData?.symbols) {
+        console.log(`[News Test] Active stocks symbols:`, activeStocksData.symbols.map(s => s.symbol));
+    }
+    
+    if (trackedTickers.length > 0) {
+        console.log(`[News Test] Tracked tickers:`, trackedTickers);
+    }
+};

@@ -117,6 +117,14 @@
                         </label>
                         <span class="toggle-label">The Bard</span>
                     </div>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="show-sessionHistory" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Register of Conquerors</span>
+                    </div>
                 </section>
 
                 <section id="section-traderview">
@@ -145,6 +153,53 @@
                         </label>
                         <span class="toggle-label">Enable TradingView for Frontline tickers</span>
                     </div> -->
+                </section>
+
+                <section id="section-hall-of-legends">
+                    <h2>Hall of Legends</h2>
+
+                    <label for="xp-list-length">
+                        Max List Length:
+                        <input type="number" id="xp-list-length" min="1" max="50" step="1" />
+                        <span>(1-50 entries)</span>
+                    </label>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="xp-show-headers" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Show Column Headers</span>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="button" id="xp-show-up-xp" class="column-btn active" data-column="up-xp">Up XP</button>
+                        <button type="button" id="xp-show-down-xp" class="column-btn active" data-column="down-xp">Down XP</button>
+                        <button type="button" id="xp-show-ratio" class="column-btn active" data-column="ratio">Net Ratio</button>
+                        <button type="button" id="xp-show-total" class="column-btn active" data-column="total">Total XP</button>
+                        <button type="button" id="xp-show-net" class="column-btn active" data-column="net">Net XP</button>
+                        <button type="button" id="xp-show-price" class="column-btn active" data-column="price">Price</button>
+                    </div>
+                </section>
+
+                <section id="section-ledger-of-summits">
+                    <h2>Ledger of Summits</h2>
+
+                    <label for="hod-list-length">
+                        Max List Length:
+                        <input type="number" id="hod-list-length" min="1" max="50" step="1" />
+                        <span>(1-50 entries)</span>
+                    </label>
+                </section>
+
+                <section id="section-sigil-of-merit">
+                    <h2>Sigil of Merit</h2>
+
+                    <label for="stats-list-length">
+                        Max List Length:
+                        <input type="number" id="stats-list-length" min="1" max="50" step="1" />
+                        <span>(1-50 entries)</span>
+                    </label>
                 </section>
 
                 <section id="section-audio">

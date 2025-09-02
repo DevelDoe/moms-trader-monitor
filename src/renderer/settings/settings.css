@@ -507,3 +507,41 @@ section {
     overflow-y: auto;
     /* same hidden scrollbar styles */
 }
+
+/* Button row and column button styles */
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.column-btn {
+    background: #333;
+    border: 1px solid #555;
+    color: #ccc;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    min-width: 60px;
+    text-align: center;
+}
+
+.column-btn:hover {
+    background: #444;
+    border-color: #666;
+    color: #fff;
+}
+
+.column-btn.active {
+    background: #4CAF50;
+    border-color: #45a049;
+    color: #fff;
+}
+
+.column-btn.active:hover {
+    background: #45a049;
+    border-color: #4CAF50;
+}

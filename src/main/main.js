@@ -46,7 +46,6 @@ const crypto = require("crypto");
 // Disable autoplay policy (allowing audio to play without user gesture)
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 
-
 // 🔒 Encrypted password storage
 const PASSWORD_FILE = path.join(app.getPath("userData"), "password.json");
 
@@ -84,7 +83,7 @@ const { broadcast } = require("./utils/broadcast");
 const windowManager = require("./windowManager");
 
 // Import modularized IPC handlers
-const { setupAllIpcHandlers } = require("./ipcHandlers");
+// const { setupAllIpcHandlers } = require("../../dump/ipcHandlers");
 
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch("disable-gpu-shader-disk-cache");
@@ -108,7 +107,7 @@ const { hydrateAndApplySymbols } = require("./collectors/arcane_api");
 const { startMockNews } = require("./collectors/news");
 const { getLastAckCursor, setLastAckCursor, setTop3, getTop3 } = require("./electronStores");
 const { chronos } = require("./collectors/chronos");
-const { oracle } = require("./collectors/oracle");
+const { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate } = require("./collectors/oracle");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -145,6 +144,8 @@ const { createProgressWindow } = require("./windows/progress");
 const { createWizardWindow } = require("./windows/wizard");
 
 const { createNewsWindow } = require("./windows/news");
+
+const { createSessionHistoryWindow } = require("./windows/sessionHistory");
 
 let windows = {};
 
@@ -764,11 +765,16 @@ ipcMain.handle("store:tracked:set", (_evt, list, maxLen = 25) => tickerStore.set
 // forward store events to renderers
 tickerStore.on("tracked-update", (list) => {
     broadcast("tracked-update", list); // ← was "store:tracked:update"
-  });
+});
 
 // electron stores
 ipcMain.handle("get-last-ack-cursor", () => getLastAckCursor());
 ipcMain.handle("set-last-ack-cursor", (_evt, cursor) => setLastAckCursor(cursor));
+
+// XP Data handlers
+ipcMain.handle("get-xp-active-stocks", () => getXpActiveStocks());
+ipcMain.handle("get-xp-session-history", () => getXpSessionHistory());
+ipcMain.handle("get-xp-session-update", () => getXpSessionUpdate());
 
 // Events
 ipcMain.on("activate-events", () => {
@@ -1172,4 +1178,25 @@ ipcMain.on("activate-news", () => {
 
 ipcMain.on("deactivate-news", () => {
     destroyWindow("news");
+});
+
+// Session History window
+ipcMain.on("activate-sessionHistory", () => {
+    try {
+        console.log("🎯 Activating sessionHistory window...");
+        const win = createWindow("sessionHistory", () => createSessionHistoryWindow(isDevelopment));
+        if (win) {
+            console.log("✅ SessionHistory window created successfully");
+            win.show();
+            console.log("✅ SessionHistory window shown");
+        } else {
+            console.error("❌ Failed to create sessionHistory window");
+        }
+    } catch (err) {
+        console.error("Failed to activate sessionHistory window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-sessionHistory", () => {
+    destroyWindow("sessionHistory");
 });

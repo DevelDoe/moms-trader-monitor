@@ -21,6 +21,7 @@ const { createScrollXpWindow } = require("./windows/scrollXp");
 const { createScrollStatsWindow } = require("./windows/scrollStats");
 const { createScrollHodWindow } = require("./windows/scrollHOD");
 const { createNewsWindow } = require("./windows/news");
+const { createSessionHistoryWindow } = require("./windows/sessionHistory");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -43,7 +44,8 @@ function createWindow(name, createFn) {
         });
     }
 
-    setWindowState(`${name}Window`, true);
+    // Don't automatically set window state to open - let the caller decide
+    // setWindowState(`${name}Window`, true);
 
     return win;
 }
@@ -82,7 +84,7 @@ async function restoreWindows() {
         settings: "settingsWindow",
         frontline: "frontlineWindow",
         heroes: "heroesWindow",
-        scanner: "scannerWindow",
+        events: "scannerWindow", // scanner window maps to events functionality
         infobar: "infobarWindow",
         docker: "dockerWindow",
         traderview: "traderviewWindow",
@@ -92,6 +94,7 @@ async function restoreWindows() {
         scrollStats: "scrollStatsWindow",
         scrollHod: "scrollHodWindow",
         news: "newsWindow",
+        sessionHistory: "sessionHistoryWindow",
     };
 
     // First, restore all non-dependent windows
@@ -101,6 +104,8 @@ async function restoreWindows() {
             log.log(`Restoring window: ${name}`);
             windows[name] = createWindow(name, () => createWindowByName(name));
             windows[name].show();
+            // Set the window state to open since we're restoring it
+            setWindowState(stateKey, true);
         }
     });
 
@@ -114,11 +119,15 @@ async function restoreWindows() {
         if (heroesWindowState?.isOpen && !windows.heroes) {
             windows.heroes = createWindow("heroes", () => createWindowByName("heroes"));
             windows.heroes.show();
+            // Set the window state to open since we're restoring it
+            setWindowState("heroesWindow", true);
         }
 
         // Create the active window
         windows.active = createWindow("active", () => createActiveWindow(isDevelopment));
-        windows.active.show(); 
+        windows.active.show();
+        // Set the window state to open since we're restoring it
+        setWindowState("activeWindow", true); 
 
         // Immediately set buffered ticker (if any)
         if (global.sharedState?.activeTicker) {
@@ -152,7 +161,7 @@ function createWindowByName(name) {
             return createHeroesWindow(isDevelopment);
         case "active":
             return createActiveWindow(isDevelopment, global.sharedState?.activeTicker);
-        case "scanner":
+        case "events":
             return createEventsWindow(isDevelopment);
         case "infobar":
             return createInfobarWindow(isDevelopment);
@@ -168,6 +177,8 @@ function createWindowByName(name) {
             return createScrollHodWindow(isDevelopment);
         case "news":
             return createNewsWindow(isDevelopment);
+        case "sessionHistory":
+            return createSessionHistoryWindow(isDevelopment);
         default:
             throw new Error(`No creator function for window: ${name}`);
     }
