@@ -93,6 +93,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         activeStocksData = null;
     }
 
+    // Add fallback to last session data for overnight continuity
+    if (!activeStocksData?.symbols) {
+        try {
+            const sessionHistory = await window.xpAPI.getSessionHistory();
+            if (sessionHistory?.sessions) {
+                const lastActiveSession = sessionHistory.sessions
+                    .filter(s => s.symbols?.length > 0)
+                    .sort((a, b) => b.end_time - a.end_time)[0];
+                
+                if (lastActiveSession) {
+                    activeStocksData = { symbols: lastActiveSession.symbols };
+                    console.log(`🌙 Using last session data (${lastActiveSession.session_name}) for overnight continuity: ${lastActiveSession.symbols.length} symbols`);
+                    fetchNews(); // Re-filter with fallback data
+                }
+            }
+        } catch (fallbackError) {
+            console.warn("Failed to get session history fallback:", fallbackError);
+        }
+    }
+
     // settings changes — DO NOT set trackedTickers from settings anymore
     window.settingsAPI.onUpdate(async (updated) => {
         window.settings = structuredClone(updated || {});

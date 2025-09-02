@@ -270,6 +270,35 @@ const createWebSocket = () => {
                 
                 // Store latest data (preserve original structure)
                 latestSessionUpdate = sessionUpdate;
+                
+                // CRITICAL: Update the session history with the new session data
+                // This ensures symbols arrays are preserved when sessions transition
+                if (latestSessionHistory && latestSessionHistory.sessions) {
+                    // Find and update the existing session, or add new one
+                    const existingIndex = latestSessionHistory.sessions.findIndex(
+                        s => s.session_name === latest.session_name
+                    );
+                    
+                    if (existingIndex >= 0) {
+                        // Update existing session with new data (preserve symbols array)
+                        latestSessionHistory.sessions[existingIndex] = {
+                            ...latestSessionHistory.sessions[existingIndex],
+                            ...latest,
+                            // Ensure symbols array is preserved if it exists
+                            symbols: latest.symbols || latestSessionHistory.sessions[existingIndex].symbols
+                        };
+                        log.log(`🔄 Updated existing session ${latest.session_name} in history`);
+                    } else {
+                        // Add new session to history
+                        latestSessionHistory.sessions.push(latest);
+                        log.log(`➕ Added new session ${latest.session_name} to history`);
+                    }
+                    
+                    // Broadcast updated session history to all windows
+                    broadcastXpData("session-history", latestSessionHistory);
+                }
+                
+                // Also broadcast the session update
                 broadcastXpData("session-update", latestSessionUpdate);
             }
             return;
