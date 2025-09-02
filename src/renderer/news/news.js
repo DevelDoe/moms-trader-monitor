@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // settings changes
+    // settings change
     window.settingsAPI.onUpdate(async (updated) => {
         window.settings = structuredClone(updated || {});
         blockList = window.settings?.news?.blockList || [];
