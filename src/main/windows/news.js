@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createNewsWindow(isDevelopment) {
     const KEY = "newsWindow";
@@ -41,8 +42,8 @@ function createNewsWindow(isDevelopment) {
 
     // ✅ save to the same key
     const save = () => setWindowBounds(KEY, window.getBounds());
-    window.on("move", save);
-    window.on("resize", save);
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "newsWindow");
 
     return window;
 }

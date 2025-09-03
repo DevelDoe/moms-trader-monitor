@@ -14,16 +14,6 @@ let ws;
 let permanentlyRejected = false;
 let CHRONOS_AUTH = null;
 
-const safeParse = (data) => {
-    try {
-        const sanitized = data.toString().replace(/[^\x20-\x7F]/g, "");
-        return JSON.parse(sanitized);
-    } catch (err) {
-        log.error("[chronos] Failed to parse message:", data.toString());
-        return null;
-    }
-};
-
 const createWebSocket = () => {
     if (reconnecting) return;
 
@@ -61,11 +51,9 @@ const createWebSocket = () => {
     });
 
     ws.on("message", (data) => {
-        const msg = safeParse(data);
-        if (!msg) return;
+        const msg = JSON.parse(data);
 
         if (msg.type === "ping") {
-            // log.log("[chronos] ↪️ Received ping, sending pong");
             try {
                 ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
             } catch (err) {
@@ -75,50 +63,27 @@ const createWebSocket = () => {
         }
 
         if (msg.type === "alert") {
-            log.log(`[chronos] 📥 Received alert message:`, {
-                payloadType: typeof msg.payload,
-                isArray: Array.isArray(msg.payload),
-                payloadLength: Array.isArray(msg.payload) ? msg.payload.length : 'N/A',
-                payloadKeys: Array.isArray(msg.payload) ? Object.keys(msg.payload[0] || {}) : Object.keys(msg.payload || {})
-            });
-
             // Store the alert in ticker store
             if (tickerStore?.addEvent) {
                 tickerStore.addEvent(msg.payload);
             } else {
                 log.warn(`[chronos] ⚠️ tickerStore.addEvent not available`);
             }
-
-            // Unwrap array if needed before broadcasting
-            const payloadToSend = Array.isArray(msg.payload) ? msg.payload[0] : msg.payload;
-            
-            log.log(`[chronos] 📤 Broadcasting unwrapped payload:`, {
-                payloadType: typeof payloadToSend,
-                isArray: Array.isArray(payloadToSend),
-                payloadKeys: Object.keys(payloadToSend || {}),
-                hero: payloadToSend?.hero,
-                price: payloadToSend?.price,
-                strength: payloadToSend?.strength
-            });
             
             // Broadcast to all relevant windows
-            broadcastAlert(payloadToSend);
+            broadcastAlert(msg.payload);
         }
 
         if (msg.type === "register_ack") {
             if (msg.status === "unauthorized") {
                 log.warn("[chronos] 🚫 Registration rejected: unauthorized");
-                permanentlyRejected = true; // ✅ Prevent retry
+                permanentlyRejected = true;
                 ws.close(4001, "Unauthorized");
                 return;
             } else {
                 log.log(`[chronos] ✅ Registered as ${msg.client_id}`);
             }
         }
-
-        // TODO: Handle real-time data messages here later
-
-        // log.log("[chronos] 📥 Message from CDSH:", JSON.stringify(msg));
     });
 
     ws.on("close", (code, reason) => {
@@ -143,7 +108,6 @@ const createWebSocket = () => {
 };
 
 function broadcastAlert(payload) {
-    // Use the broadcast utility instead of directly accessing windows
     const { broadcast } = require("../utils/broadcast");
     
     try {
@@ -156,7 +120,7 @@ function broadcastAlert(payload) {
 
 const reconnectAfterDelay = () => {
     if (ws && ws.readyState !== WebSocket.CLOSED) {
-        ws.terminate(); // Cleanup just in case
+        ws.terminate();
     }
 
     setTimeout(() => {

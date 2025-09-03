@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createWizardWindow(isDevelopment) {
     const state = getWindowState("wizardWindow");
@@ -37,15 +38,8 @@ function createWizardWindow(isDevelopment) {
         });
     }
     
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("wizardWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("wizardWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "wizardWindow");
 
     return window;
 }

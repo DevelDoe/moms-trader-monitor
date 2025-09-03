@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createInfobarWindow(isDevelopment) {
     const state = getWindowState("infobarWindow");
@@ -32,15 +33,8 @@ function createInfobarWindow(isDevelopment) {
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("infobarWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("infobarWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "infobarWindow");
 
     return window; // ✅ Return the window instance
 }

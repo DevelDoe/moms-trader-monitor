@@ -2,7 +2,7 @@
 // Global Variables
 // ============================
 // Debug Mode
-const debugMode = true; // TEMPORARILY FORCE DEBUG MODE
+const debugMode = window.appFlags?.isDev === true;
 const debugCombo = true;
 if (!debugMode) {
     console.log = () => {};
@@ -330,31 +330,15 @@ async function initializeApp() {
             // DO NOT touch .new-high
         });
 
-
+        if (debugMode) console.log(`🔄 ${symbol} ${isDown ? "down-combo" : "up-combo"} reset`);
     }
 
     // ============================
     // Alert Event Listener
     // ============================
-    
-    // TEST: Check if the API is available
-    console.log("🔍 [EVENTS] Checking if eventsAPI is available:", {
-        hasEventsAPI: !!window.eventsAPI,
-        hasOnAlert: !!(window.eventsAPI?.onAlert),
-        eventsAPIType: typeof window.eventsAPI,
-        onAlertType: typeof window.eventsAPI?.onAlert
-    });
-    
-    if (!window.eventsAPI || !window.eventsAPI.onAlert) {
-        console.error("❌ [EVENTS] eventsAPI.onAlert is NOT available! This is why alerts aren't working!");
-        return;
-    }
-    
-    console.log("✅ [EVENTS] eventsAPI.onAlert is available, setting up listener...");
-    
     window.eventsAPI.onAlert((alertData) => {
         try {
-
+            // if (debugMode) console.log("[CLIENT] Received via IPC:", alertData);
 
             const topSettings = window.settings?.top || {};
             const scannerSettings = window.settings?.scanner || {};
@@ -364,9 +348,16 @@ async function initializeApp() {
             const symbol = alertData.hero || alertData.symbol;
             const { price = 0, hp = 0, dp = 0, strength = 0 } = alertData;
 
+            // 🔍 Debug the actual filter values and the incoming data
+            // if (debugMode) {
+            //     console.log("🧪 Settings:", { minPrice, maxPrice, minChangePercent, minVolume });
+            //     console.log("🧪 Alert candidate:", { symbol, price, hp, dp, strength });
+            // }
+
             const passesFilters = (minPrice === 0 || price >= minPrice) && (maxPrice === 0 || price <= maxPrice) && (hp >= minChangePercent || dp >= minChangePercent) && strength >= minVolume;
 
             if (!passesFilters) {
+                // if (debugMode) console.log("⛔️ Filtered out:", symbol);
                 return;
             }
 
@@ -375,6 +366,13 @@ async function initializeApp() {
             const quietTime = isQuietTimeEST();
 
             if (hp > 0 && strength >= minVolume) {
+                if (debugMode && debugCombo) console.log(`🔍 ${symbol} tick detected — HP: ${hp.toFixed(2)} | Volume: ${strength}`);
+
+                if (debugMode && debugCombo) {
+                    console.log(`\n📌 ${symbol} — Incoming Tick`);
+                    console.log(`   🧭 Previous Level: ${symbolNoteIndices[symbol] ?? "N/A (defaulting to 0)"}`);
+                    console.log(`   💪 Volume: ${strength} | 🔺 HP: ${hp.toFixed(2)}`);
+                }
 
                 const currentLevel = symbolNoteIndices[symbol] ?? -1;
                 const nextLevel = currentLevel + 1;
@@ -400,6 +398,10 @@ async function initializeApp() {
 
                                 playSampleBuffer(bank, idx, vol); // fire-and-forget
                                 lastAudioTime = now;
+
+                                if (debugMode && debugCombo) {
+                                    console.log(`🎧 ${symbol} ${bank}#${idx + 1} (LV${nextLevel}, vol=${vol.toFixed(2)})`);
+                                }
                             }
 
                             symbolUptickTimers[symbol] = setTimeout(() => {
@@ -407,20 +409,29 @@ async function initializeApp() {
                                 resetCombo(symbol);
                             }, UPTICK_WINDOW_MS);
                         } else {
+                            if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not higher than last combo price (${price} ≤ ${lastPrice})`);
                             return; // stop combo progression
                         }
                     }
                 } else {
                     // First uptick — start tracking
                     symbolNoteIndices[symbol] = 0;
+                    if (debugMode && debugCombo) console.log(`🧪 ${symbol} started tracking (LV0)`);
 
                     symbolUptickTimers[symbol] = setTimeout(() => {
+                        if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
                         resetCombo(symbol);
                     }, UPTICK_WINDOW_MS);
                 }
             }
 
             if (dp > 0 && strength >= minVolume) {
+                if (debugMode && debugCombo) {
+                    console.log(`🔍 ${symbol} tick detected — DP: ${dp.toFixed(2)} | Volume: ${strength}`);
+                    console.log(`\n📌 ${symbol} — Incoming Down Tick`);
+                    console.log(`   🧭 Previous Down Level: ${symbolDownNoteIndices[symbol] ?? "N/A (defaulting to 0)"}`);
+                    console.log(`   💪 Volume: ${strength} | 🔻 DP: ${dp.toFixed(2)}`);
+                }
 
                 const currentLevel = symbolDownNoteIndices[symbol] ?? -1;
                 const nextLevel = currentLevel + 1;
@@ -436,18 +447,24 @@ async function initializeApp() {
                             symbolDownNoteIndices[symbol] = nextLevel;
                             symbolDownComboLastPrice[symbol] = price;
 
+                            if (debugMode && debugCombo) console.log(`🔥 ${symbol} down-combo advanced to LV${nextLevel}`);
+
                             symbolDowntickTimers[symbol] = setTimeout(() => {
+                                if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                                 resetCombo(symbol, true);
                             }, UPTICK_WINDOW_MS);
                         } else {
+                            if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not lower than last down-combo price (${price} ≥ ${lastDownPrice})`);
                             // no advance, but keep timer alive
                             symbolDowntickTimers[symbol] = setTimeout(() => {
+                                if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                                 resetCombo(symbol, true);
                             }, UPTICK_WINDOW_MS);
                         }
                     } else {
                         // not enough volume to advance — just refresh timer
                         symbolDowntickTimers[symbol] = setTimeout(() => {
+                            if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                             resetCombo(symbol, true);
                         }, UPTICK_WINDOW_MS);
                     }
@@ -456,7 +473,10 @@ async function initializeApp() {
                     symbolDownNoteIndices[symbol] = 0;
                     symbolDownComboLastPrice[symbol] = price;
 
+                    if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
+
                     symbolDowntickTimers[symbol] = setTimeout(() => {
+                        if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                         resetCombo(symbol, true);
                     }, UPTICK_WINDOW_MS);
                 }
@@ -499,22 +519,16 @@ window.testScannerAlert = () => {
 };
 
 // IPC listeners for audio test commands
-if (window.electronAPI) {
-    window.electronAPI.onTestComboAlert = (callback) => {
-        // This will be set up by the main process
-    };
-}
-
-// Listen for test commands from main process
-if (window.ipcRenderer) {
-    window.ipcRenderer.on("test-combo-alert", () => {
+if (window.ipcListenerAPI) {
+    window.ipcListenerAPI.onTestComboAlert(() => {
         console.log("[Events] Received test-combo-alert command from main process");
         window.testComboAlert();
     });
 
-    window.ipcRenderer.on("test-scanner-alert", () => {
+    window.ipcListenerAPI.onTestScannerAlert(() => {
         console.log("[Events] Received test-scanner-alert command from main process");
         window.testScannerAlert();
     });
 }
-//
+
+

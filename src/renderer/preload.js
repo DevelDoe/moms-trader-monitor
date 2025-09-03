@@ -51,6 +51,7 @@ contextBridge.exposeInMainWorld("hlpsFunctions", {
 
 contextBridge.exposeInMainWorld("appFlags", {
     isDev: process.env.NODE_ENV === "development",
+    eventsDebug: process.env.EVENTS_DEBUG === "true",
 });
 
 contextBridge.exposeInMainWorld("settingsAPI", {
@@ -176,6 +177,35 @@ contextBridge.exposeInMainWorld("audioTestAPI", {
     testChimeAlert: () => ipcRenderer.invoke("test-chime-alert"),
     testTickAlert: () => ipcRenderer.invoke("test-tick-alert"),
     testScannerAlert: () => ipcRenderer.invoke("test-scanner-alert"),
+});
+
+// IPC Listener API for renderer windows
+contextBridge.exposeInMainWorld("ipcListenerAPI", {
+    onTestComboAlert: (callback) => {
+        const handler = () => callback();
+        ipcRenderer.on("test-combo-alert", handler);
+        return () => ipcRenderer.removeListener("test-combo-alert", handler);
+    },
+    onTestNewsAlert: (callback) => {
+        const handler = () => callback();
+        ipcRenderer.on("test-news-alert", handler);
+        return () => ipcRenderer.removeListener("test-news-alert", handler);
+    },
+    onTestChimeAlert: (callback) => {
+        const handler = () => callback();
+        ipcRenderer.on("test-chime-alert", handler);
+        return () => ipcRenderer.removeListener("test-chime-alert", handler);
+    },
+    onTestTickAlert: (callback) => {
+        const handler = () => callback();
+        ipcRenderer.on("test-tick-alert", handler);
+        return () => ipcRenderer.removeListener("test-tick-alert", handler);
+    },
+    onTestScannerAlert: (callback) => {
+        const handler = () => callback();
+        ipcRenderer.on("test-scanner-alert", handler);
+        return () => ipcRenderer.removeListener("test-scanner-alert", handler);
+    },
 });
 
 // XP Data API

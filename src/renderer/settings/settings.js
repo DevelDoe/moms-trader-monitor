@@ -42,23 +42,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             window.settings = updated || {};
         });
 
-        // Set up HOD settings update handler
-        window.hodSettingsAPI.onUpdate(async (updated) => {
-            if (updated) {
-                if (updated.chimeVolume !== undefined) {
-                    hodChimeVolumeSlider.value = updated.chimeVolume;
-                    hodChimeValue.textContent = Math.round(updated.chimeVolume * 100) + "%";
-                }
-                if (updated.tickVolume !== undefined) {
-                    hodTickVolumeSlider.value = updated.tickVolume;
-                    hodTickValue.textContent = Math.round(updated.tickVolume * 100) + "%";
-                }
-                if (updated.symbolLength !== undefined && hodSymbolLengthInput) {
-                    hodSymbolLengthInput.value = updated.symbolLength;
-                }
-                console.log("✅ HOD settings updated from other window:", updated);
-            }
-        });
+        // Set up HOD settings update handler - moved to after initialization
+        // window.hodSettingsAPI.onUpdate(async (updated) => {
+        //     if (updated) {
+        //         if (updated.chimeVolume !== undefined) {
+        //         hodChimeVolumeSlider.value = updated.chimeVolume;
+        //         hodChimeValue.textContent = Math.round(updated.chimeVolume * 100) + "%";
+        //         }
+        //         if (updated.tickVolume !== undefined) {
+        //         hodTickVolumeSlider.value = updated.tickVolume;
+        //         hodTickValue.textContent = Math.round(updated.tickVolume * 100) + "%";
+        //         }
+        //         if (updated.symbolLength !== undefined && hodSymbolLengthInput) {
+        //         hodSymbolLengthInput.value = updated.symbolLength;
+        //         }
+        //         console.log("✅ HOD settings updated from other window:", updated);
+        //         }
+        // });
 
         // Set up window settings update handler
         window.windowSettingsAPI.onUpdate(async (updated) => {
@@ -329,6 +329,21 @@ function initializeGeneralSection() {
     const newsAlertVolumeSlider = document.getElementById("news-alert-volume");
     const newsAlertValue = document.getElementById("news-alert-volume-value");
 
+    // Ensure all elements exist before proceeding
+    if (!hodChimeVolumeSlider || !hodTickVolumeSlider || !hodChimeValue || !hodTickValue || !eventsComboVolumeSlider || !eventsComboValue || !newsAlertVolumeSlider || !newsAlertValue) {
+        console.error("❌ Audio control elements not found:", {
+            hodChimeVolumeSlider,
+            hodTickVolumeSlider,
+            hodChimeValue,
+            hodTickValue,
+            eventsComboVolumeSlider,
+            eventsComboValue,
+            newsAlertVolumeSlider,
+            newsAlertValue
+        });
+        return;
+    }
+
     // ensure events settings structure + defaults
     window.settings ||= {};
     const before = JSON.stringify(window.settings);
@@ -416,50 +431,63 @@ function initializeGeneralSection() {
     });
 
     // Test buttons for all audio types
-    document.getElementById("test-chime-btn").addEventListener("click", () => {
+    document.getElementById("test-chime-btn").addEventListener("click", async () => {
         console.log("Testing chime...");
-        if (window.hodChimeTest) {
-            window.hodChimeTest();
-        } else {
-            console.warn("hodChimeTest function not available");
+        try {
+            if (window.audioTestAPI?.testChimeAlert) {
+                const result = await window.audioTestAPI.testChimeAlert();
+                console.log("Chime test result:", result);
+            } else {
+                console.warn("audioTestAPI.testChimeAlert not available");
+            }
+        } catch (error) {
+            console.error("Error testing chime:", error);
         }
     });
 
-    document.getElementById("test-tick-btn").addEventListener("click", () => {
+    document.getElementById("test-tick-btn").addEventListener("click", async () => {
         console.log("Testing tick...");
-        if (window.hodTickTest) {
-            window.hodTickTest(0.5); // Test with medium proximity
-        } else {
-            console.warn("hodTickTest function not available");
+        try {
+            if (window.audioTestAPI?.testTickAlert) {
+                const result = await window.audioTestAPI.testTickAlert();
+                console.log("Tick test result:", result);
+            } else {
+                console.warn("audioTestAPI.testTickAlert not available");
+            }
+        } catch (error) {
+            console.error("Error testing tick:", error);
         }
     });
 
-    document.getElementById("test-combo-btn").addEventListener("click", () => {
+    document.getElementById("test-combo-btn").addEventListener("click", async () => {
         console.log("Testing combo alert...");
-        if (window.testComboAlert) {
-            window.testComboAlert();
-        } else {
-            console.warn("testComboAlert function not available");
+        try {
+            if (window.audioTestAPI?.testComboAlert) {
+                const result = await window.audioTestAPI.testComboAlert();
+                console.log("Combo test result:", result);
+            } else {
+                console.warn("audioTestAPI.testComboAlert not available");
+            }
+        } catch (error) {
+            console.error("Error testing combo alert:", error);
         }
     });
 
-    document.getElementById("test-news-btn").addEventListener("click", () => {
+    document.getElementById("test-news-btn").addEventListener("click", async () => {
         console.log("Testing news alert...");
-        if (window.testNewsAlert) {
-            window.testNewsAlert();
-        } else {
-            console.warn("testNewsAlert function not available");
+        try {
+            if (window.audioTestAPI?.testNewsAlert) {
+                const result = await window.audioTestAPI.testNewsAlert();
+                console.log("News test result:", result);
+            } else {
+                console.warn("audioTestAPI.testNewsAlert not available");
+            }
+        } catch (error) {
+            console.error("Error testing news alert:", error);
         }
     });
 
-    document.getElementById("test-scanner-btn").addEventListener("click", () => {
-        console.log("Testing scanner alert...");
-        if (window.testScannerAlert) {
-            window.testScannerAlert();
-        } else {
-            console.warn("testScannerAlert function not available");
-        }
-    });
+
 
     // Add a debug function to test audio file accessibility
     window.testAudioFiles = async () => {
@@ -489,6 +517,24 @@ function initializeGeneralSection() {
             console.error("❌ News audio not accessible:", error);
         }
     };
+
+    // Set up HOD settings update handler after elements are initialized
+    window.hodSettingsAPI.onUpdate(async (updated) => {
+        if (updated) {
+            if (updated.chimeVolume !== undefined && hodChimeVolumeSlider) {
+                hodChimeVolumeSlider.value = updated.chimeVolume;
+                hodChimeValue.textContent = Math.round(updated.chimeVolume * 100) + "%";
+            }
+            if (updated.tickVolume !== undefined && hodTickVolumeSlider) {
+                hodTickVolumeSlider.value = updated.tickVolume;
+                hodTickValue.textContent = Math.round(updated.tickVolume * 100) + "%";
+            }
+            if (updated.symbolLength !== undefined && hodSymbolLengthInput) {
+                hodSymbolLengthInput.value = updated.symbolLength;
+            }
+            console.log("✅ HOD settings updated from other window:", updated);
+        }
+    });
 }
 
 function initializeAdminSection() {

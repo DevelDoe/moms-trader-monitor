@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../electronStores");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createHeroesWindow(isDevelopment) {
     const state = getWindowState("heroesWindow");
@@ -39,15 +40,8 @@ function createHeroesWindow(isDevelopment) {
         });
     }
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("heroesWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("heroesWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "heroesWindow");
 
     return window;
 }

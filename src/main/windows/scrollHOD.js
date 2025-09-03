@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../electronStores");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createScrollHodWindow(isDevelopment) {
     const state = getWindowState("scrollHodWindow");
@@ -51,15 +52,8 @@ function createScrollHodWindow(isDevelopment) {
         });
     }
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("scrollHodWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("scrollHodWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "scrollHodWindow");
 
     return window;
 }

@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createScrollStatsWindow(isDevelopment) {
     const state = getWindowState("scrollStatsWindow");
@@ -36,15 +37,8 @@ function createScrollStatsWindow(isDevelopment) {
         });
     }
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("scrollStatsWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("scrollStatsWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "scrollStatsWindow");
 
     return window;
 }

@@ -2,6 +2,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createTraderWidgetViewWindow(isDevelopment) {
     const state = getWindowState("traderviewWidgetWindow");
@@ -31,15 +32,8 @@ function createTraderWidgetViewWindow(isDevelopment) {
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("traderviewWindow", bounds);
-    });
-    
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("traderviewWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "traderviewWindow");
     
 
     return window;

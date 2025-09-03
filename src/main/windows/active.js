@@ -1,6 +1,7 @@
 const { BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../electronStores");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 const log = require("../../hlps/logger")(__filename);
 
 function createActiveWindow(isDevelopment) {
@@ -83,17 +84,8 @@ function createActiveWindow(isDevelopment) {
         window.webContents.openDevTools({ mode: "detach" });
     }
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        log.log("🔄 activeWindow moved:", bounds);
-        setWindowBounds("activeWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        log.log("🔄 activeWindow resized:", bounds);
-        setWindowBounds("activeWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "activeWindow");
 
     window.on("close", () => {
         // Clean up listeners

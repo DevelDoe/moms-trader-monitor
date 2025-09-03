@@ -947,7 +947,7 @@ function calculateWindowPosition(position, width = 0, height = 0) {
         }
     } catch (error) {
         // If screen module is not available (app not ready), return safe defaults
-        log.log("[window-settings] Screen module not ready, using safe defaults");
+        // log.log("[window-settings] Screen module not ready, using safe defaults");
         return { x: 20, y: 20 };
     }
 }

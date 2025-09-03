@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createLiveWindow(isDevelopment) {
     const state = getWindowState("liveWindow");
@@ -32,15 +33,8 @@ function createLiveWindow(isDevelopment) {
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("liveWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("liveWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "liveWindow");
 
     return window;
 }

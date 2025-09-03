@@ -687,3 +687,18 @@ window.hodChimeTest = () => {
     console.log(`[HOD] Audio ready: ${audioReady}, Magic base: ${magicBase?.src || 'not loaded'}`);
     play(magicBase, vol);
 };
+
+// IPC listeners for audio test commands
+if (window.ipcListenerAPI) {
+    window.ipcListenerAPI.onTestChimeAlert(() => {
+        console.log("[HOD] Received test-chime-alert command from main process");
+        window.hodChimeTest();
+    });
+
+    window.ipcListenerAPI.onTestTickAlert(() => {
+        console.log("[HOD] Received test-tick-alert command from main process");
+        window.hodTickTest(0.5); // Test with medium proximity
+    });
+}
+
+

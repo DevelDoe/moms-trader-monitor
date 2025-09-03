@@ -454,3 +454,13 @@ window.testActiveStocks = () => {
     console.log(`[Active Stocks Test] News queue length:`, newsQueue.length);
     console.log(`[Active Stocks Test] Currently displaying news:`, isNewsDisplaying);
 };
+
+// IPC listeners for audio test commands
+if (window.ipcListenerAPI) {
+    window.ipcListenerAPI.onTestNewsAlert(() => {
+        console.log("[Infobar] Received test-news-alert command from main process");
+        window.testNewsAlert();
+    });
+}
+
+

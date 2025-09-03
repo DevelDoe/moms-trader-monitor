@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createSessionHistoryWindow(isDevelopment) {
     const state = getWindowState("sessionHistoryWindow");
@@ -36,15 +37,8 @@ function createSessionHistoryWindow(isDevelopment) {
         });
     }
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("sessionHistoryWindow", bounds);
-    });
-
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("sessionHistoryWindow", bounds);
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "sessionHistoryWindow");
 
     return window;
 }

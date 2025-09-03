@@ -3,6 +3,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../electronStores");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createEventsWindow(isDevelopment) {
     const state = getWindowState("eventsWindow"); // ✅ Fixed: use eventsWindow state
@@ -35,15 +36,8 @@ function createEventsWindow(isDevelopment) {
 
     if (isDevelopment) window.webContents.openDevTools({ mode: "detach" });
 
-    window.on("move", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("eventsWindow", bounds); // ✅ Fixed: use eventsWindow state
-    });
-    
-    window.on("resize", () => {
-        const bounds = window.getBounds();
-        setWindowBounds("eventsWindow", bounds); // ✅ Fixed: use eventsWindow state
-    });
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "eventsWindow");
 
     
 

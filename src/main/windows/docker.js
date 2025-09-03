@@ -1,7 +1,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
-const { debounce } = require("../utils/debounce");
+const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
 function createDockerWindow(isDevelopment) {
     const state = getWindowState("dockerWindow");
@@ -29,16 +29,8 @@ function createDockerWindow(isDevelopment) {
 
     window.loadFile(path.join(__dirname, "../../renderer/docker/docker.html"));
 
-    // Save window position/size on move/resize
-    const saveBounds = () => {
-        if (!window.isDestroyed()) {
-            setWindowBounds("dockerWindow", window.getBounds());
-        }
-    };
-
-    const debouncedSave = debounce(saveBounds, 300);
-    window.on("move", debouncedSave);
-    window.on("resize", debouncedSave);
+    // Setup optimized bounds saving
+    setupWindowBoundsSaving(window, "dockerWindow");
 
     // Optional devtools
     // if (isDevelopment) {

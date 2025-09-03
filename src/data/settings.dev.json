@@ -49,7 +49,7 @@
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 35,
-    "scannerVolume": 0
+    "scannerVolume": 1
   },
   "traderview": {
     "visibility": false,
@@ -57,7 +57,7 @@
     "autoClose": true
   },
   "events": {
-    "comboVolume": 1,
+    "comboVolume": 0.4,
     "newsAlertVolume": 0.7
   }
 }
