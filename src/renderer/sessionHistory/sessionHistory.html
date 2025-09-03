@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+
+        <link rel="stylesheet" href="./sessionHistory.css" />
+        <link rel="stylesheet" href="../flat.css" />
+        <title>Register of Conquerors</title>
+        <style>
+            body {
+                padding: 10px;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 16px;
+                border-radius: 1px;
+                overflow: hidden;
+                /* background: rgba(0, 0, 0, 0.3); */
+                /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); */
+                background: transparent;
+            }
+
+            th {
+                font-weight: 400;
+                text-transform: uppercase;
+                font-size: 14px;
+                letter-spacing: 0.5px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                user-select: none;
+                backdrop-filter: blur(5px);
+                padding: 2px 8px;
+                text-align: center;
+                color: #666;
+                border-bottom: 1px solid #333;
+            }
+
+            th:hover {
+                background: rgba(255, 255, 255, 0.05);
+                color: #fff !important;
+            }
+
+            th:active {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            tr:first-child {
+                margin-top: 20px !important;
+            }
+
+            tr:first-child td {
+                padding-top: 10px;
+            }
+
+            td {
+                padding: 6px 8px;
+                border-bottom: 1px solid #222;
+                color: #ccc;
+            }
+
+            tr:hover {
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .sort-icon {
+                margin-left: 4px;
+                font-size: 12px;
+                opacity: 0.7;
+            }
+
+            .sort-active .sort-icon {
+                opacity: 1;
+                color: #00aeff;
+            }
+
+            .session-name {
+                font-weight: 600;
+                color: #00aeff;
+            }
+
+            .symbol-count {
+                color: #00ff00;
+                text-align: center;
+            }
+
+            .net-xp {
+                color: #ffff00;
+                text-align: right;
+            }
+
+            .positive {
+                color: #00ff00;
+            }
+
+            .negative {
+                color: #ff0000;
+            }
+
+            .neutral {
+                color: #cccccc;
+            }
+
+            .loading {
+                color: #666;
+                text-align: center;
+                padding: 40px;
+                font-style: italic;
+            }
+
+            .no-data {
+                color: #666;
+                text-align: center;
+                padding: 40px;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="drag-area"></div>
+        <h2>Register of Conquerors (Sessions)</h2>
+        <div id="session-history-table">
+            <div class="loading">Loading session data...</div>
+        </div>
+
+        <script src="./sessionHistory.js"></script>
+    </body>
+</html>

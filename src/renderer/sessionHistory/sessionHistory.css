@@ -1,0 +1,312 @@
+/* Session History View Styles */
+
+/* Additional styling for the session history table */
+.session-history-container {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 1px;
+    margin: 10px 0;
+}
+
+/* Enhanced table styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    border-radius: 1px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.3);
+    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); */
+}
+
+/* Column-specific styling */
+.column-pre {
+    background: rgba(255, 165, 0, 0.1);
+}
+
+.column-news {
+    background: rgba(0, 255, 255, 0.1);
+}
+
+.column-open {
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.column-power {
+    background: rgba(255, 0, 255, 0.1);
+}
+
+.column-post {
+    background: rgba(255, 255, 0, 0.1);
+}
+
+/* Session name highlighting */
+.session-name {
+    position: relative;
+}
+
+.session-name::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 16px;
+    background: #00aeff;
+    border-radius: 1px;
+}
+
+/* Session name highlighting */
+.session-name {
+    position: relative;
+}
+
+.session-name::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 16px;
+    background: #00aeff;
+    border-radius: 1px;
+}
+
+/* XP value animations */
+.positive {
+    animation: pulse-green 2s infinite;
+}
+
+.negative {
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes pulse-red {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    table {
+        font-size: 12px;
+    }
+    
+    th, td {
+        padding: 6px 4px;
+    }
+}
+
+/* @media (max-width: 800px) {
+    .drag-area {
+        height: 15px;
+    }
+    
+    h2 {
+        font-size: 16px;
+        margin: 15px 0 10px 0;
+    }
+    
+    body {
+        padding: 5px;
+    }
+} */
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    table {
+        font-size: 12px;
+    }
+    
+    th, td {
+        padding: 6px 4px;
+    }
+}
+
+/* @media (max-width: 800px) {
+    .drag-area {
+        height: 15px;
+    }
+    
+    h2 {
+        font-size: 16px;
+        margin: 15px 0 10px 0;
+    }
+    
+    body {
+        padding: 5px;
+    }
+} */
+
+/* Loading animation */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.loading::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid #666;
+    border-top: 2px solid #00aeff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Hover effects for table rows */
+tbody tr {
+    transition: all 0.2s ease;
+}
+
+tbody tr:hover {
+    /* background: rgba(255, 255, 255, 0.1); */
+}
+
+/* Sort indicator styling */
+.sort-active {
+    /* background: rgba(0, 174, 255, 0.1); */
+    border-bottom: 2px solid #00aeff;
+}
+
+/* XP value formatting */
+.xp-value {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+/* Session stats summary */
+.session-summary {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 10px;
+    /* background: rgba(0, 0, 0, 0.2); */
+    border-radius: 1px;
+    font-size: 12px;
+    color: #ccc;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.summary-label {
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.summary-value {
+    font-weight: 600;
+    color: #00aeff;
+}
+
+/* Session stats summary */
+.session-summary {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 10px;
+    /* background: rgba(0, 0, 0, 0.2); */
+    border-radius: 1px;
+    font-size: 12px;
+    color: #ccc;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.summary-label {
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.summary-value {
+    font-weight: 600;
+    color: #00aeff;
+}
+
+/* Stock cell styling */
+.stock-cell {
+    text-align: center;
+    padding: 0px 0px;
+    vertical-align: top;
+    transition: all 0.2s ease;
+}
+
+.stock-cell:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.stock-cell.empty {
+    color: #666;
+    font-style: italic;
+}
+
+.stock-symbol {
+    white-space: nowrap;
+    color: antiquewhite !important;
+    font-weight: 400;
+    font-size: 16px;
+    padding: 2px 4px;
+    border-radius: 1px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    width: 75px;
+    display: inline-block;
+    text-align: left;
+    vertical-align: bottom;
+    margin-bottom: 4px;
+}
+
+.stock-symbol:hover {
+    opacity: 0.8;
+}
+
+.stock-symbol-clicked {
+    opacity: 0.6;
+}
+
+.stock-xp {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.stock-level {
+    font-size: 10px;
+    color: #888;
+    font-weight: 400;
+}
+
+/* Current session highlighting */
+.current-session {
+    /* background: rgba(0, 174, 255, 0.2) !important; */
+    color: #00aeff !important;
+    border-bottom: 2px solid #00aeff !important;
+}
+
+.current-session-cell {
+    /* background: rgba(0, 174, 255, 0.1); */
+    /* border-left: 3px solid #00aeff;
+    border-right: 3px solid #00aeff; */
+}

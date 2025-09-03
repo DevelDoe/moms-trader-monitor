@@ -1,0 +1,81 @@
+/* ===== COMPONENTS CSS ===== */
+/* Centralized styling for reusable components across the app */
+
+/* ===== SYMBOL COMPONENT ===== */
+/* 
+USAGE EXAMPLES:
+- Small: <span class="symbol small" style="background: ${bg};">${symbol}</span>
+- Medium: <span class="symbol medium" style="background: ${bg};">${symbol}</span>
+- Large: <span class="symbol large" style="background: ${bg};">${symbol}</span>
+
+FEATURES:
+- Clickable symbol with consistent styling
+- Size variants (small, medium, large)
+- Hover and click effects
+- Bottom-left text alignment (design choice)
+- Dynamic background color via inline style
+
+HTML STRUCTURE EXAMPLES:
+
+1. TABLE ROW (XP View):
+<td style="padding: 4px;">
+    <span class="symbol medium" style="background: ${bg};">${symbol}</span>
+</td>
+
+2. LIST ITEM (HOD View):
+<div class="hod-line">
+    <span class="symbol medium" style="background: ${bg};">${symbol}</span>
+    <span class="price-old">${oldPrice}</span>
+    <span class="price-new">${newPrice}</span>
+</div>
+
+3. COMPACT LIST:
+<div class="compact-item">
+    <span class="symbol small" style="background: ${bg};">${symbol}</span>
+    <span class="value">${value}</span>
+</div>
+
+4. PROMINENT DISPLAY:
+<div class="hero-item">
+    <span class="symbol large" style="background: ${bg};">${symbol}</span>
+    <div class="details">${details}</div>
+</div>
+*/
+
+.symbol {
+    white-space: nowrap;
+    color: antiquewhite !important;
+    font-weight: 400;
+    padding: 2px 4px;
+    border-radius: 1px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    display: inline-block;
+    text-align: left;
+    vertical-align: bottom;
+}
+
+/* Size variants */
+.symbol.small { 
+    font-size: 12px; 
+    width: 60px; 
+}
+
+.symbol.medium { 
+    font-size: 16px; 
+    width: 75px; 
+}
+
+.symbol.large { 
+    font-size: 20px; 
+    width: 90px; 
+}
+
+/* Interactive states */
+.symbol:hover {
+    opacity: 0.8;
+}
+
+.symbol-clicked {
+    opacity: 0.6;
+}
