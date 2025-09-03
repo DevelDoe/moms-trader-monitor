@@ -492,6 +492,9 @@ const hodSettingsStore = createStore("hod-settings-store", "hod.");
 const hodSettingsBus = new EventEmitter();
 
 let _hodListLength = hodSettingsStore.get("listLength", 10); // Default to 10
+let _hodChimeVolume = hodSettingsStore.get("chimeVolume", 0.05); // Default to 0.05
+let _hodTickVolume = hodSettingsStore.get("tickVolume", 0.05); // Default to 0.05
+let _hodSymbolLength = hodSettingsStore.get("symbolLength", 10); // Default to 10
 
 function getHodListLength() {
     return _hodListLength;
@@ -504,7 +507,102 @@ function setHodListLength(length) {
     _hodListLength = newLength;
     hodSettingsStore.set("listLength", _hodListLength);
     
-    const payload = { listLength: _hodListLength };
+    const payload = { 
+        listLength: _hodListLength,
+        chimeVolume: _hodChimeVolume,
+        tickVolume: _hodTickVolume,
+        symbolLength: _hodSymbolLength
+    };
+    hodSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("hod-settings:change", payload);
+        } catch (err) {
+            log.log("[hod-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getHodChimeVolume() {
+    return _hodChimeVolume;
+}
+
+function setHodChimeVolume(volume) {
+    const newVolume = Math.max(0, Math.min(1, Number(volume) || 0.05));
+    if (newVolume === _hodChimeVolume) return false;
+    
+    _hodChimeVolume = newVolume;
+    hodSettingsStore.set("chimeVolume", _hodChimeVolume);
+    
+    const payload = { 
+        listLength: _hodListLength,
+        chimeVolume: _hodChimeVolume,
+        tickVolume: _hodTickVolume,
+        symbolLength: _hodSymbolLength
+    };
+    hodSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("hod-settings:change", payload);
+        } catch (err) {
+            log.log("[hod-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getHodTickVolume() {
+    return _hodTickVolume;
+}
+
+function setHodTickVolume(volume) {
+    const newVolume = Math.max(0, Math.min(1, Number(volume) || 0.05));
+    if (newVolume === _hodTickVolume) return false;
+    
+    _hodTickVolume = newVolume;
+    hodSettingsStore.set("tickVolume", _hodTickVolume);
+    
+    const payload = { 
+        listLength: _hodListLength,
+        chimeVolume: _hodChimeVolume,
+        tickVolume: _hodTickVolume,
+        symbolLength: _hodSymbolLength
+    };
+    hodSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("hod-settings:change", payload);
+        } catch (err) {
+            log.log("[hod-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getHodSymbolLength() {
+    return _hodSymbolLength;
+}
+
+function setHodSymbolLength(length) {
+    const newLength = Math.max(1, Number(length) || 10);
+    if (newLength === _hodSymbolLength) return false;
+    
+    _hodSymbolLength = newLength;
+    hodSettingsStore.set("symbolLength", _hodSymbolLength);
+    
+    const payload = { 
+        listLength: _hodListLength,
+        chimeVolume: _hodChimeVolume,
+        tickVolume: _hodTickVolume,
+        symbolLength: _hodSymbolLength
+    };
     hodSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -524,17 +622,40 @@ if (app && ipcMain && typeof app.on === "function" && !app.__hod_settings_ipc_re
     ipcMain.removeHandler("hod-settings:get");
     ipcMain.removeHandler("hod-settings:set");
     ipcMain.handle("hod-settings:get", () => {
-        return { listLength: getHodListLength() };
+        return { 
+            listLength: getHodListLength(),
+            chimeVolume: getHodChimeVolume(),
+            tickVolume: getHodTickVolume(),
+            symbolLength: getHodSymbolLength()
+        };
     });
-    ipcMain.handle("hod-settings:set", (_e, { listLength }) => {
-        return setHodListLength(listLength);
+    ipcMain.handle("hod-settings:set", (_e, { listLength, chimeVolume, tickVolume, symbolLength }) => {
+        let changed = false;
+        if (listLength !== undefined) {
+            changed = setHodListLength(listLength) || changed;
+        }
+        if (chimeVolume !== undefined) {
+            changed = setHodChimeVolume(chimeVolume) || changed;
+        }
+        if (tickVolume !== undefined) {
+            changed = setHodTickVolume(tickVolume) || changed;
+        }
+        if (symbolLength !== undefined) {
+            changed = setHodSymbolLength(symbolLength) || changed;
+        }
+        return changed;
     });
 
     ipcMain.removeAllListeners("hod-settings:subscribe");
     ipcMain.on("hod-settings:subscribe", (e) => {
         const wc = e.sender;
         const push = (data) => wc.send("hod-settings:change", data);
-        push({ listLength: getHodListLength() }); // prime immediately
+        push({ 
+            listLength: getHodListLength(),
+            chimeVolume: getHodChimeVolume(),
+            tickVolume: getHodTickVolume(),
+            symbolLength: getHodSymbolLength()
+        }); // prime immediately
         hodSettingsBus.on("change", push);
         wc.once("destroyed", () => {
             log.log("[hod-settings] unsubscribe WC", wc.id);
@@ -1152,6 +1273,12 @@ module.exports = {
     // HOD settings exports
     getHodListLength,
     setHodListLength,
+    getHodChimeVolume,
+    setHodChimeVolume,
+    getHodTickVolume,
+    setHodTickVolume,
+    getHodSymbolLength,
+    setHodSymbolLength,
     
     // Stats settings exports
     getStatsListLength,

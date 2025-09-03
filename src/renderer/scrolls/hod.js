@@ -184,13 +184,13 @@ function setupAudio() {
 }
 
 function getChimeVol(settings) {
-    const v = Number(settings?.hod?.chimeVolume);
+    const v = Number(settings?.chimeVolume);
     const result = Number.isFinite(v) ? v : HOD_CHIME_VOL_DEFAULT;
-    console.log(`[HOD] Chime volume: settings=${JSON.stringify(settings?.hod)}, raw=${v}, result=${result}`);
+    console.log(`[HOD] Chime volume: settings=${JSON.stringify(settings)}, raw=${v}, result=${result}`);
     return result;
 }
 function getTickVol(settings) {
-    const v = Number(settings?.hod?.tickVolume);
+    const v = Number(settings?.tickVolume);
     return Number.isFinite(v) ? v : TICK_VOL_DEFAULT;
 }
 function play(base, vol) {
@@ -245,7 +245,7 @@ const state = {
 };
 
 function getHodListLength() {
-    return state.hodSettings?.listLength || HOD_SYMBOL_LENGTH_DEFAULT;
+    return state.settings?.symbolLength || HOD_SYMBOL_LENGTH_DEFAULT;
 }
 const isTracked = (sym) => {
     // Use oracle active stocks list instead of manually tracked list
@@ -456,38 +456,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         await new Promise((r) => setTimeout(r, 200));
     }
 
-    // volumes only
+    // Load HOD settings from electron store
     try {
-        state.settings = await window.settingsAPI.get();
-        console.log(`[HOD] Initial settings loaded:`, state.settings);
-        
-
-    } catch (error) {
-        console.error(`[HOD] Failed to load initial settings:`, error);
-        state.settings = {};
-    }
-    window.settingsAPI.onUpdate(async (updated) => {
-        console.log(`[HOD] Settings updated:`, updated);
-        state.settings = updated || {};
-        
-
-    });
-
-    // Load HOD settings
-    try {
-        state.hodSettings = await window.hodSettingsAPI.get();
-        console.log(`[HOD] Initial HOD settings loaded:`, state.hodSettings);
+        state.settings = await window.hodSettingsAPI.get();
+        console.log(`[HOD] Initial HOD settings loaded:`, state.settings);
     } catch (error) {
         console.error(`[HOD] Failed to load initial HOD settings:`, error);
-        state.hodSettings = { listLength: HOD_SYMBOL_LENGTH_DEFAULT };
+        state.settings = { chimeVolume: HOD_CHIME_VOL_DEFAULT, tickVolume: TICK_VOL_DEFAULT };
     }
-
+    
     // Subscribe to HOD settings updates
     window.hodSettingsAPI.onUpdate(async (updated) => {
         console.log(`[HOD] HOD settings updated:`, updated);
-        state.hodSettings = updated || { listLength: HOD_SYMBOL_LENGTH_DEFAULT };
-        markDirty();
+        state.settings = updated || { chimeVolume: HOD_CHIME_VOL_DEFAULT, tickVolume: TICK_VOL_DEFAULT };
+        
+        // Trigger re-render if symbol length changed
+        if (updated?.symbolLength !== undefined) {
+            markDirty();
+        }
     });
+
+
 
     // Make content clickable in frameless windows
     try {

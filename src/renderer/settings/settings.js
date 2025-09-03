@@ -42,6 +42,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             window.settings = updated || {};
         });
 
+        // Set up HOD settings update handler
+        window.hodSettingsAPI.onUpdate(async (updated) => {
+            if (updated) {
+                if (updated.chimeVolume !== undefined) {
+                    hodChimeVolumeSlider.value = updated.chimeVolume;
+                    hodChimeValue.textContent = Math.round(updated.chimeVolume * 100) + "%";
+                }
+                if (updated.tickVolume !== undefined) {
+                    hodTickVolumeSlider.value = updated.tickVolume;
+                    hodTickValue.textContent = Math.round(updated.tickVolume * 100) + "%";
+                }
+                if (updated.symbolLength !== undefined && hodSymbolLengthInput) {
+                    hodSymbolLengthInput.value = updated.symbolLength;
+                }
+                console.log("✅ HOD settings updated from other window:", updated);
+            }
+        });
+
         // Set up window settings update handler
         window.windowSettingsAPI.onUpdate(async (updated) => {
             window.windowSettings = updated || {};
@@ -305,24 +323,17 @@ function initializeGeneralSection() {
     const hodTickVolumeSlider = document.getElementById("hod-tick-volume");
     const hodChimeValue = document.getElementById("hod-chime-volume-value");
     const hodTickValue = document.getElementById("hod-tick-volume-value");
+    const hodSymbolLengthInput = document.getElementById("hod-symbol-length");
     const eventsComboVolumeSlider = document.getElementById("events-combo-volume");
     const eventsComboValue = document.getElementById("events-combo-volume-value");
     const newsAlertVolumeSlider = document.getElementById("news-alert-volume");
     const newsAlertValue = document.getElementById("news-alert-volume-value");
 
-    // ensure settings structure + defaults
+    // ensure events settings structure + defaults
     window.settings ||= {};
     const before = JSON.stringify(window.settings);
 
-    window.settings.hod ||= {};
     window.settings.events ||= {}; // ✅ this was missing
-
-    if (typeof window.settings.hod.chimeVolume !== "number") {
-        window.settings.hod.chimeVolume = 0.5;
-        console.log(`[Settings] Setting default chime volume: 0.5`);
-    }
-
-    if (typeof window.settings.hod.tickVolume !== "number") window.settings.hod.tickVolume = 0.5;
 
     if (typeof window.settings.events.comboVolume !== "number") window.settings.events.comboVolume = 0.5;
 
@@ -334,12 +345,36 @@ function initializeGeneralSection() {
         window.settingsAPI.update(window.settings).catch(() => {});
     }
 
+    // Load HOD settings from electron store
+    async function loadHodSettings() {
+        try {
+            const hodSettings = await window.hodSettingsAPI.get();
+            hodChimeVolumeSlider.value = hodSettings.chimeVolume || 0.05;
+            hodTickVolumeSlider.value = hodSettings.tickVolume || 0.05;
+            if (hodSymbolLengthInput) {
+                hodSymbolLengthInput.value = hodSettings.symbolLength || 10;
+            }
+            hodChimeValue.textContent = Math.round((hodSettings.chimeVolume || 0.05) * 100) + "%";
+            hodTickValue.textContent = Math.round((hodSettings.tickVolume || 0.05) * 100) + "%";
+            console.log(`[Settings] Loaded HOD settings:`, hodSettings);
+        } catch (error) {
+            console.error(`[Settings] Failed to load HOD settings:`, error);
+            // Set defaults
+            hodChimeVolumeSlider.value = 0.05;
+            hodTickVolumeSlider.value = 0.05;
+            if (hodSymbolLengthInput) {
+                hodSymbolLengthInput.value = 10;
+            }
+            hodChimeValue.textContent = "5%";
+            hodTickValue.textContent = "5%";
+        }
+    }
+
+    // Load initial HOD settings
+    loadHodSettings();
+
     // set UI from settings
-    hodChimeVolumeSlider.value = window.settings.hod.chimeVolume;
-    hodTickVolumeSlider.value = window.settings.hod.tickVolume;
     eventsComboVolumeSlider.value = window.settings.events.comboVolume;
-    hodChimeValue.textContent = Math.round(window.settings.hod.chimeVolume * 100) + "%";
-    hodTickValue.textContent = Math.round(window.settings.hod.tickVolume * 100) + "%";
     eventsComboValue.textContent = Math.round(window.settings.events.comboVolume * 100) + "%";
     newsAlertVolumeSlider.value = window.settings.events.newsAlertVolume;
     newsAlertValue.textContent = Math.round(window.settings.events.newsAlertVolume * 100) + "%";
@@ -347,18 +382,24 @@ function initializeGeneralSection() {
     // wire inputs → settings (parse to number, clamp 0..1)
     hodChimeVolumeSlider.addEventListener("input", async (e) => {
         const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
-        window.settings.hod.chimeVolume = v;
         hodChimeValue.textContent = Math.round(v * 100) + "%";
         console.log(`[Settings] Saving chime volume: ${v}`);
-        await window.settingsAPI.update(window.settings);
+        await window.hodSettingsAPI.set({ chimeVolume: v });
     });
 
     hodTickVolumeSlider.addEventListener("input", async (e) => {
         const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
-        window.settings.hod.tickVolume = v;
         hodTickValue.textContent = Math.round(v * 100) + "%";
-        await window.settingsAPI.update(window.settings);
+        await window.hodSettingsAPI.set({ tickVolume: v });
     });
+
+    // HOD symbol length input
+    if (hodSymbolLengthInput) {
+        hodSymbolLengthInput.addEventListener("input", async (e) => {
+            const v = Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 10));
+            await window.hodSettingsAPI.set({ symbolLength: v });
+        });
+    }
 
     eventsComboVolumeSlider.addEventListener("input", async (e) => {
         const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
