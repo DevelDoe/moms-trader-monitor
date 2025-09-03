@@ -2,7 +2,7 @@ const symbolColors = {};
 let globalBuffs = {}; // ⬅️ Buff map for score lookup
 const up = (s) => String(s || "").toUpperCase();
 
-let trackedTickers = []; // ← persisted order from settings
+let trackedTickers = []; // ← persisted order from store API
 let _renderKey = ""; // micro-perf: skip unchanged renders
 let activeStocksData = null; // ← Oracle active stocks data
 
@@ -220,7 +220,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         window.settingsAPI.onUpdate((updated) => {
             window.settings = updated;
-            refreshList(); // use the new symbolLength/filters, but don't touch trackedTickers
+            refreshList(); // use the new symbolLength/filters
         });
 
         // Listen for stats settings updates from electron store

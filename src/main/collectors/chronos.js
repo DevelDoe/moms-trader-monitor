@@ -2,7 +2,6 @@
 
 const WebSocket = require("ws");
 const createLogger = require("../../hlps/logger");
-const { windows } = require("../windowManager");
 const tickerStore = require("../store");
 
 const log = createLogger(__filename);
@@ -76,17 +75,11 @@ const createWebSocket = () => {
         }
 
         if (msg.type === "alert") {
-            log.log(`[chronos] 🚨 ALERT received:`, {
-                type: msg.type,
-                payloadKeys: Object.keys(msg.payload),
-                sampleData: {
-                    hero: msg.payload.hero,
-                    price: msg.payload.price,
-                    hp: msg.payload.hp,
-                    dp: msg.payload.dp,
-                    strength: msg.payload.strength,
-                    volume: msg.payload.one_min_volume
-                }
+            log.log(`[chronos] 📥 Received alert message:`, {
+                payloadType: typeof msg.payload,
+                isArray: Array.isArray(msg.payload),
+                payloadLength: Array.isArray(msg.payload) ? msg.payload.length : 'N/A',
+                payloadKeys: Array.isArray(msg.payload) ? Object.keys(msg.payload[0] || {}) : Object.keys(msg.payload || {})
             });
 
             // Store the alert in ticker store
@@ -96,9 +89,20 @@ const createWebSocket = () => {
                 log.warn(`[chronos] ⚠️ tickerStore.addEvent not available`);
             }
 
+            // Unwrap array if needed before broadcasting
+            const payloadToSend = Array.isArray(msg.payload) ? msg.payload[0] : msg.payload;
+            
+            log.log(`[chronos] 📤 Broadcasting unwrapped payload:`, {
+                payloadType: typeof payloadToSend,
+                isArray: Array.isArray(payloadToSend),
+                payloadKeys: Object.keys(payloadToSend || {}),
+                hero: payloadToSend?.hero,
+                price: payloadToSend?.price,
+                strength: payloadToSend?.strength
+            });
+            
             // Broadcast to all relevant windows
-            // log.log(`[chronos] 📡 Broadcasting alert to windows`);
-            broadcastAlert(msg.payload);
+            broadcastAlert(payloadToSend);
         }
 
         if (msg.type === "register_ack") {
@@ -139,38 +143,14 @@ const createWebSocket = () => {
 };
 
 function broadcastAlert(payload) {
-    // log.log(`[chronos] 📡 Broadcasting to windows:`, {
-    //     events: !!windows.events,
-    //     frontline: !!windows.frontline,
-    //     heroes: !!windows.heroes,
-    //     scrollHod: !!windows.scrollHod,
-    //     progress: !!windows.progress
-    // });
+    // Use the broadcast utility instead of directly accessing windows
+    const { broadcast } = require("../utils/broadcast");
     
-    // Add progress window to the broadcast list
-    const targetWindows = [
-        { name: 'events', window: windows.events },
-        { name: 'frontline', window: windows.frontline },
-        { name: 'heroes', window: windows.heroes },
-        { name: 'scrollHod', window: windows.scrollHod },
-        { name: 'progress', window: windows.progress }
-    ];
-    
-    for (const { name, window: w } of targetWindows) {
-        if (w?.webContents && !w.webContents.isDestroyed()) {
-            try {
-                // log.log(`[chronos] 📤 Sending alert to ${name} (ID: ${w.id})`);
-                w.webContents.send("ws-alert", payload);
-            } catch (err) {
-                log.error(`[chronos] ❌ Failed to send to ${name}:`, err.message);
-            }
-        } else {
-            log.warn(`[chronos] ⚠️ ${name} not available:`, {
-                exists: !!w,
-                hasWebContents: !!(w?.webContents),
-                isDestroyed: w?.webContents?.isDestroyed?.() || 'unknown'
-            });
-        }
+    try {
+        broadcast("ws-alert", payload);
+        log.log(`[chronos] ✅ Alert broadcasted successfully`);
+    } catch (err) {
+        log.error(`[chronos] ❌ Failed to broadcast alert:`, err.message);
     }
 }
 

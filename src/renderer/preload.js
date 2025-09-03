@@ -82,7 +82,7 @@ contextBridge.exposeInMainWorld("storeAPI", {
 contextBridge.exposeInMainWorld("eventsAPI", {
     activate: () => ipcRenderer.send("activate-events"),
     deactivate: () => ipcRenderer.send("deactivate-events"),
-    onAlert: (callback) => ipcRenderer.on("ws-alert", (_, data) => callback([data])),
+    onAlert: (callback) => ipcRenderer.on("ws-alert", (_, data) => callback(data)),
 });
 
 contextBridge.exposeInMainWorld("frontlineAPI", {

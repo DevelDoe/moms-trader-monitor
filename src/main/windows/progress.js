@@ -2,7 +2,7 @@
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
-const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { getWindowState, setWindowBounds } = require("../electronStores");
 
 function createProgressWindow(isDevelopment) {
     const state = getWindowState("progressWindow");
@@ -27,6 +27,9 @@ function createProgressWindow(isDevelopment) {
             nodeIntegration: false,
         },
     });
+
+    // Set window name for broadcast utility
+    window.windowName = "progress";
 
     window.loadFile(path.join(__dirname, "../../renderer/progress/progress.html"));
 

@@ -422,6 +422,26 @@ async function boot() {
         state.settings = s || {};
         markDirty();
     });
+
+    // ============================
+    // Alert Event Listener
+    // ============================
+    
+    // TEST: Check if the API is available
+    console.log("🔍 [HEROES] Checking if eventsAPI is available:", {
+        hasEventsAPI: !!window.eventsAPI,
+        hasOnAlert: !!(window.eventsAPI?.onAlert),
+        eventsAPIType: typeof window.eventsAPI,
+        onAlertType: typeof window.eventsAPI?.onAlert
+    });
+    
+    if (!window.eventsAPI || !window.eventsAPI.onAlert) {
+        console.error("❌ [HEROES] eventsAPI.onAlert is NOT available! This is why alerts aren't working!");
+        return;
+    }
+    
+    console.log("✅ [HEROES] eventsAPI.onAlert is available, setting up listener...");
+    
     window.eventsAPI.onAlert(handleAlertEvent);
 
     window.storeAPI.onHeroUpdate?.((payload) => {

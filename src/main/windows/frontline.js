@@ -2,7 +2,7 @@
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
-const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { getWindowState, setWindowBounds } = require("../electronStores");
 
 function createFrontlineWindow(isDevelopment) {
     const state = getWindowState("frontlineWindow");
@@ -27,6 +27,9 @@ function createFrontlineWindow(isDevelopment) {
             nodeIntegration: false,
         },
     });
+
+    // Set window name for broadcast utility
+    window.windowName = "frontline";
 
     window.loadFile(path.join(__dirname, "../../renderer/frontline/frontline.html"));
 

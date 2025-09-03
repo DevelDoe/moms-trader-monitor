@@ -40,34 +40,7 @@
       "Stock Downgrade",
       "Downgrades to Sell"
     ],
-    "allowMultiSymbols": false,
-    "trackedTickers": [
-      "JHX",
-      "REAL",
-      "SNDX",
-      "YDES",
-      "UP",
-      "GRAB",
-      "LCID",
-      "RPT",
-      "TSLA",
-      "PCG",
-      "TMC",
-      "BDSX",
-      "RIVN",
-      "GAP",
-      "MARA",
-      "RKT",
-      "TGHL",
-      "UPB",
-      "DNN",
-      "ELOG",
-      "S",
-      "PTON",
-      "THH",
-      "VERA",
-      "LYG"
-    ]
+    "allowMultiSymbols": false
   },
   "scanner": {
     "minPrice": 0,
@@ -82,11 +55,6 @@
     "visibility": false,
     "enableHeroes": false,
     "autoClose": true
-  },
-  "hod": {
-    "chimeVolume": 0.05,
-    "tickVolume": 0.05,
-    "symbolLength": 10
   },
   "events": {
     "comboVolume": 1,

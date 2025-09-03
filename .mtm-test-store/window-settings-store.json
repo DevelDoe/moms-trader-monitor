@@ -10,7 +10,7 @@
 		"heroesWindow": {
 			"width": 900,
 			"height": 700,
-			"isOpen": false,
+			"isOpen": true,
 			"x": 200,
 			"y": 200
 		},

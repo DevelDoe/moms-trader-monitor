@@ -87,8 +87,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.settings = structuredClone(updated || {});
         blockList = window.settings?.news?.blockList || [];
         showTrackedOnly = !!window.settings?.news?.showTrackedTickers;
-        trackedTickers = (window.settings?.news?.trackedTickers || []).map((s) => String(s).toUpperCase());
-        // console.log("onUpdate trackedTickers", trackedTickers);
+
         render();
     });
 
@@ -244,7 +243,7 @@ async function loadSettings() {
         window.settings = await window.settingsAPI.get();
         blockList = window.settings?.news?.blockList || [];
         showTrackedOnly = !!window.settings?.news?.showTrackedTickers;
-        trackedTickers = (window.settings?.news?.trackedTickers || []).map((s) => String(s).toUpperCase());
+
     } catch (e) {
         console.warn("settings load failed:", e);
         blockList = [];

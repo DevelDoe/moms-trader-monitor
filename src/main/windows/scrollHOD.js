@@ -2,7 +2,7 @@
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
-const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { getWindowState, setWindowBounds } = require("../electronStores");
 
 function createScrollHodWindow(isDevelopment) {
     const state = getWindowState("scrollHodWindow");
@@ -29,6 +29,9 @@ function createScrollHodWindow(isDevelopment) {
             autoplayPolicy: "no-user-gesture-required", // best-effort; supported in newer Electron
         },
     });
+
+    // Set window name for broadcast utility
+    window.windowName = "scrollHod";
 
     window.loadFile(path.join(__dirname, "../../renderer/scrolls/hod.html"));
 

@@ -1,5 +1,5 @@
 const { BrowserWindow } = require("electron");
-const { getWindowState, saveWindowState, setWindowState, nukeTradingViewWindowStates, setWindowBounds } = require("./utils/windowState");
+const { getWindowState, saveWindowState, setWindowState, nukeTradingViewWindowStates, setWindowBounds } = require("./electronStores");
 const { loadSettings } = require("./settings");
 const log = require("../hlps/logger")(__filename);
 const { safeSend } = require("./utils/safeSend");

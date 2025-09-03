@@ -2,7 +2,7 @@
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
-const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { getWindowState, setWindowBounds } = require("../electronStores");
 
 function createEventsWindow(isDevelopment) {
     const state = getWindowState("eventsWindow"); // ✅ Fixed: use eventsWindow state
@@ -27,6 +27,9 @@ function createEventsWindow(isDevelopment) {
             nodeIntegration: false,
         },
     });
+
+    // Set window name for broadcast utility
+    window.windowName = "events";
 
     window.loadFile(path.join(__dirname, "../../renderer/events/events.html"));
 

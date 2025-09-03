@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // settings changes — DO NOT set trackedTickers from settings anymore
+
     window.settingsAPI.onUpdate(async (updated) => {
         window.settings = structuredClone(updated || {});
         
@@ -122,8 +122,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const prev = showTrackedOnly;
         blockList = window.settings?.news?.blockList || [];
         showTrackedOnly = !!window.settings?.news?.showTrackedTickers;
-        trackedTickers = (window.settings?.news?.trackedTickers || []).map((s) => String(s).toUpperCase());
-        console.log("onUpdate trackedTickers", trackedTickers);
         if (prev !== showTrackedOnly) fetchNews(); // only re-filter if toggle changed
     });
 

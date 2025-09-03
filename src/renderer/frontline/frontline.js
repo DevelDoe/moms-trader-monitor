@@ -400,6 +400,27 @@
         markDirty();
     }
 
+    // ============================
+    // Alert Event Listener
+    // ============================
+    
+    // TEST: Check if the API is available
+    console.log("🔍 [FRONTLINE] Checking if eventsAPI is available:", {
+        hasEventsAPI: !!window.eventsAPI,
+        hasOnAlert: !!(window.eventsAPI?.onAlert),
+        eventsAPIType: typeof window.eventsAPI,
+        onAlertType: typeof window.eventsAPI?.onAlert
+    });
+    
+    if (!window.eventsAPI || !window.eventsAPI.onAlert) {
+        console.error("❌ [FRONTLINE] eventsAPI.onAlert is NOT available! This is why alerts aren't working!");
+        return;
+    }
+    
+    console.log("✅ [FRONTLINE] eventsAPI.onAlert is available, setting up listener...");
+    
+    window.eventsAPI.onAlert(handleAlert);
+
     /**************************************************************************
      * 6) Top3 subscription (kept same contract, but lighter)
      **************************************************************************/
@@ -458,7 +479,6 @@
         });
 
         // alerts + hero updates + nukes
-        window.eventsAPI.onAlert(handleAlert);
         window.storeAPI.onHeroUpdate((payload) => {
             const items = Array.isArray(payload) ? payload : [payload];
             items.forEach(({ hero, price, one_min_volume, buffs }) => {

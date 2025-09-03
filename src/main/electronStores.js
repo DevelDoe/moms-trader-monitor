@@ -833,7 +833,7 @@ const DEFAULT_WINDOW_STATES = {
     eventsWindow: {
         width: 167,
         height: 479,
-        isOpen: false,
+        isOpen: true,
     },
     settingsWindow: {
         width: 907,
@@ -858,12 +858,12 @@ const DEFAULT_WINDOW_STATES = {
     progressWindow: {
         width: 800,
         height: 14,
-        isOpen: false,
+        isOpen: true,
     },
     frontlineWindow: {
         width: 321,
         height: 479,
-        isOpen: false,
+        isOpen: true,
     },
     activeWindow: {
         width: 802,
@@ -873,7 +873,7 @@ const DEFAULT_WINDOW_STATES = {
     heroesWindow: {
         width: 850,
         height: 660,
-        isOpen: false,
+        isOpen: true,
     },
     scrollXpWindow: {
         width: 300,
@@ -893,7 +893,7 @@ const DEFAULT_WINDOW_STATES = {
     scrollHodWindow: {
         width: 297,
         height: 447,
-        isOpen: false,
+        isOpen: true,
     },
     sessionHistoryWindow: {
         width: 532,
