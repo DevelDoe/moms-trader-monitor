@@ -82,8 +82,7 @@ contextBridge.exposeInMainWorld("storeAPI", {
 contextBridge.exposeInMainWorld("eventsAPI", {
     activate: () => ipcRenderer.send("activate-events"),
     deactivate: () => ipcRenderer.send("deactivate-events"),
-    onAlert: (callback) => ipcRenderer.on("ws-alert", (_, data) => callback(data)),
-    // onAlertEvents: (callback) => ipcRenderer.on("ws-events", (event, data) => callback(data)),
+    onAlert: (callback) => ipcRenderer.on("ws-alert", (_, data) => callback([data])),
 });
 
 contextBridge.exposeInMainWorld("frontlineAPI", {
@@ -230,6 +229,28 @@ contextBridge.exposeInMainWorld("statsSettingsAPI", {
         ipcRenderer.send("stats-settings:subscribe");
         return () => ipcRenderer.removeListener("stats-settings:change", handler);
     },
+});
+
+// Window Settings API
+contextBridge.exposeInMainWorld("windowSettingsAPI", {
+    getAll: () => ipcRenderer.invoke("window-settings:get"),
+    getWindow: (windowKey) => ipcRenderer.invoke("window-settings:get-window", windowKey),
+    setWindow: (windowKey, state) => ipcRenderer.invoke("window-settings:set-window", { windowKey, state }),
+    setBounds: (windowKey, bounds) => ipcRenderer.invoke("window-settings:set-bounds", { windowKey, bounds }),
+    setOpenState: (windowKey, isOpen) => ipcRenderer.invoke("window-settings:set-open-state", { windowKey, isOpen }),
+    resetWindow: (windowKey) => ipcRenderer.invoke("window-settings:reset-window", windowKey),
+    resetAll: () => ipcRenderer.invoke("window-settings:reset-all"),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("window-settings:change", handler);
+        ipcRenderer.send("window-settings:subscribe");
+        return () => ipcRenderer.removeListener("window-settings:change", handler);
+    },
+});
+
+// Emergency reset function - accessible from any window
+contextBridge.exposeInMainWorld("emergencyResetWindows", () => {
+    return ipcRenderer.invoke("emergency-reset-windows");
 });
 
 // preload.js

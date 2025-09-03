@@ -24,7 +24,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.settings = await window.settingsAPI.get(); // ✅ Store settings globally
         console.log("Retrieved settings:", window.settings);
         
-
+        // Fetch window settings from electron store
+        console.log("Fetching window settings...");
+        window.windowSettings = await window.windowSettingsAPI.getAll();
+        console.log("Retrieved window settings:", window.windowSettings);
 
         initializeGeneralSection();
         initializeScannerSection();
@@ -37,8 +40,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Set up settings update handler to reload test settings
         window.settingsAPI.onUpdate(async (updated) => {
             window.settings = updated || {};
-            
+        });
 
+        // Set up window settings update handler
+        window.windowSettingsAPI.onUpdate(async (updated) => {
+            window.windowSettings = updated || {};
+            // Re-initialize general section to update window toggles
+            initializeGeneralSection();
         });
 
         const defaultTab = document.querySelector(".tablinks.active");
@@ -67,33 +75,33 @@ function initializeGeneralSection() {
     const showEventsToggle = document.getElementById("show-events");
     const showFrontlineToggle = document.getElementById("show-frontline");
     const showHeroesToggle = document.getElementById("show-heroes");
-    showEventsToggle.checked = window.settings.windows.scannerWindow?.isOpen ?? false;
-    showFrontlineToggle.checked = window.settings.windows.frontlineWindow?.isOpen ?? false;
-    showHeroesToggle.checked = window.settings.windows.heroesWindow?.isOpen ?? false;
+    showEventsToggle.checked = window.windowSettings.eventsWindow?.isOpen ?? false;
+    showFrontlineToggle.checked = window.windowSettings.frontlineWindow?.isOpen ?? false;
+    showHeroesToggle.checked = window.windowSettings.heroesWindow?.isOpen ?? false;
 
     const showActiveToggle = document.getElementById("show-active");
-    showActiveToggle.checked = window.settings.windows.activeWindow?.isOpen ?? false;
+    showActiveToggle.checked = window.windowSettings.activeWindow?.isOpen ?? false;
 
     const showScrollXpToggle = document.getElementById("show-scrollXp");
-    showScrollXpToggle.checked = window.settings.windows.scrollXpWindow?.isOpen ?? false;
+    showScrollXpToggle.checked = window.windowSettings.scrollXpWindow?.isOpen ?? false;
     const showScrollStatsToggle = document.getElementById("show-scrollStats");
-    showScrollStatsToggle.checked = window.settings.windows.scrollStatsWindow?.isOpen ?? false;
+    showScrollStatsToggle.checked = window.windowSettings.scrollStatsWindow?.isOpen ?? false;
     const showScrollHodToggle = document.getElementById("show-scrollHod");
-    showScrollHodToggle.checked = window.settings.windows.scrollHodWindow?.isOpen ?? false;
+    showScrollHodToggle.checked = window.windowSettings.scrollHodWindow?.isOpen ?? false;
 
     const showInfobarToggle = document.getElementById("show-infobar");
-    showInfobarToggle.checked = window.settings.windows.infobarWindow?.isOpen ?? false;
+    showInfobarToggle.checked = window.windowSettings.infobarWindow?.isOpen ?? false;
 
     const showProgressToggle = document.getElementById("show-progress");
     const showWizardToggle = document.getElementById("show-wizard");
-    showProgressToggle.checked = window.settings.windows.progressWindow?.isOpen ?? false;
-    showWizardToggle.checked = window.settings.windows.wizardWindow?.isOpen ?? false;
+    showProgressToggle.checked = window.windowSettings.progressWindow?.isOpen ?? false;
+    showWizardToggle.checked = window.windowSettings.wizardWindow?.isOpen ?? false;
 
     const showNewsToggle = document.getElementById("show-news");
-    showNewsToggle.checked = window.settings.windows.newsWindow?.isOpen ?? false;
+    showNewsToggle.checked = window.windowSettings.newsWindow?.isOpen ?? false;
 
     const showSessionHistoryToggle = document.getElementById("show-sessionHistory");
-    showSessionHistoryToggle.checked = window.settings.windows.sessionHistoryWindow?.isOpen ?? false;
+    showSessionHistoryToggle.checked = window.windowSettings.sessionHistoryWindow?.isOpen ?? false;
 
     showEventsToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
@@ -102,11 +110,7 @@ function initializeGeneralSection() {
             window.eventsAPI.deactivate();
         }
 
-        window.settings.windows.scannerWindow = {
-            ...(window.settings.windows.scannerWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("eventsWindow", event.target.checked);
     });
 
     showFrontlineToggle.addEventListener("change", async (event) => {
@@ -116,11 +120,7 @@ function initializeGeneralSection() {
             window.frontlineAPI.deactivate();
         }
 
-        window.settings.windows.frontlineWindow = {
-            ...(window.settings.windows.frontlineWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("frontlineWindow", event.target.checked);
     });
 
     showHeroesToggle.addEventListener("change", async (event) => {
@@ -130,11 +130,7 @@ function initializeGeneralSection() {
             window.heroesAPI.deactivate();
         }
 
-        window.settings.windows.heroesWindow = {
-            ...(window.settings.windows.heroesWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("heroesWindow", event.target.checked);
     });
 
     showActiveToggle.addEventListener("change", async (event) => {
@@ -144,11 +140,7 @@ function initializeGeneralSection() {
             window.activeAPI.deactivate();
         }
 
-        window.settings.windows.activeWindow = {
-            ...(window.settings.windows.activeWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("activeWindow", event.target.checked);
     });
 
     showScrollXpToggle.addEventListener("change", async (event) => {
@@ -158,11 +150,7 @@ function initializeGeneralSection() {
             window.scrollXpAPI.deactivate();
         }
 
-        window.settings.windows.scrollXpWindow = {
-            ...(window.settings.windows.scrollXpWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("scrollXpWindow", event.target.checked);
     });
 
     showScrollStatsToggle.addEventListener("change", async (event) => {
@@ -172,11 +160,7 @@ function initializeGeneralSection() {
             window.scrollStatsAPI.deactivate();
         }
 
-        window.settings.windows.scrollStatsWindow = {
-            ...(window.settings.windows.scrollStatsWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("scrollStatsWindow", event.target.checked);
     });
 
     showScrollHodToggle.addEventListener("change", async (event) => {
@@ -185,11 +169,7 @@ function initializeGeneralSection() {
         } else {
             window.scrollHodAPI.deactivate();
         }
-        window.settings.windows.scrollHodWindow = {
-            ...(window.settings.windows.scrollHodWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("scrollHodWindow", event.target.checked);
     });
 
     showInfobarToggle.addEventListener("change", async (event) => {
@@ -199,11 +179,7 @@ function initializeGeneralSection() {
             window.infobarAPI.deactivate();
         }
 
-        window.settings.windows.infobarWindow = {
-            ...(window.settings.windows.infobarWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("infobarWindow", event.target.checked);
     });
 
     showProgressToggle.addEventListener("change", async (event) => {
@@ -214,11 +190,7 @@ function initializeGeneralSection() {
         }
 
         // ✅ Persist the new state
-        window.settings.windows.progressWindow = {
-            ...(window.settings.windows.progressWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("progressWindow", event.target.checked);
     });
 
     showWizardToggle.addEventListener("change", async (event) => {
@@ -229,11 +201,7 @@ function initializeGeneralSection() {
         }
 
         // ✅ Persist the new state
-        window.settings.windows.wizardWindow = {
-            ...(window.settings.windows.wizardWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("wizardWindow", event.target.checked);
     });
 
     showNewsToggle.addEventListener("change", async (event) => {
@@ -244,11 +212,7 @@ function initializeGeneralSection() {
         }
 
         // ✅ Persist the new state
-        window.settings.windows.newsWindow = {
-            ...(window.settings.windows.newsWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("newsWindow", event.target.checked);
     });
 
     showSessionHistoryToggle.addEventListener("change", async (event) => {
@@ -258,11 +222,48 @@ function initializeGeneralSection() {
             window.sessionHistoryAPI.deactivate();
         }
 
-        window.settings.windows.sessionHistoryWindow = {
-            ...(window.settings.windows.sessionHistoryWindow || {}),
-            isOpen: event.target.checked,
-        };
-        await window.settingsAPI.update(window.settings);
+        await window.windowSettingsAPI.setOpenState("sessionHistoryWindow", event.target.checked);
+    });
+
+    // Reset All Windows Button
+    const resetAllWindowsBtn = document.getElementById("reset-all-windows-btn");
+    resetAllWindowsBtn.addEventListener("click", async () => {
+        try {
+            // Show confirmation dialog
+            const confirmed = confirm("⚠️ This will reset ALL windows to their default positions.\n\nThis is useful if windows are off-screen or on non-existent monitors.\n\nAre you sure you want to continue?");
+            
+            if (!confirmed) return;
+
+            // Show loading state
+            resetAllWindowsBtn.textContent = "🔄 Resetting...";
+            resetAllWindowsBtn.disabled = true;
+
+            // Call the reset function
+            await window.windowSettingsAPI.resetAll();
+
+            // Show success message
+            resetAllWindowsBtn.textContent = "✅ Reset Complete!";
+            resetAllWindowsBtn.style.backgroundColor = "#4caf50";
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                resetAllWindowsBtn.textContent = "🔄 Reset All Windows to Default Positions";
+                resetAllWindowsBtn.style.backgroundColor = "#d32f2f";
+                resetAllWindowsBtn.disabled = false;
+            }, 3000);
+
+        } catch (error) {
+            console.error("Failed to reset windows:", error);
+            resetAllWindowsBtn.textContent = "❌ Reset Failed";
+            resetAllWindowsBtn.style.backgroundColor = "#f44336";
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                resetAllWindowsBtn.textContent = "🔄 Reset All Windows to Default Positions";
+                resetAllWindowsBtn.style.backgroundColor = "#d32f2f";
+                resetAllWindowsBtn.disabled = false;
+            }, 3000);
+        }
     });
 
     // 🪞 Trader's View Subsettings
@@ -964,6 +965,8 @@ function initializeXpSettingsSection() {
     const xpShowTotalBtn = document.getElementById("xp-show-total");
     const xpShowNetBtn = document.getElementById("xp-show-net");
     const xpShowPriceBtn = document.getElementById("xp-show-price");
+    const xpShowTotalVolumeBtn = document.getElementById("xp-show-total-volume");
+    const xpShowLevelBtn = document.getElementById("xp-show-level");
     
     if (!xpListLengthInput) {
         console.error("❌ XP list length input not found!");
@@ -1010,6 +1013,16 @@ function initializeXpSettingsSection() {
         return;
     }
 
+    if (!xpShowTotalVolumeBtn) {
+        console.error("❌ XP show total volume button not found!");
+        return;
+    }
+
+    if (!xpShowLevelBtn) {
+        console.error("❌ XP show level button not found!");
+        return;
+    }
+
     // Load initial value from electron store
     async function loadXpSettings() {
         try {
@@ -1022,6 +1035,8 @@ function initializeXpSettingsSection() {
             updateButtonState(xpShowTotalBtn, xpSettings.showTotal !== false);
             updateButtonState(xpShowNetBtn, xpSettings.showNet !== false);
             updateButtonState(xpShowPriceBtn, xpSettings.showPrice !== false);
+            updateButtonState(xpShowTotalVolumeBtn, xpSettings.showTotalVolume !== false);
+            updateButtonState(xpShowLevelBtn, xpSettings.showLevel !== false);
             console.log("✅ Loaded XP settings:", xpSettings);
         } catch (error) {
             console.error("❌ Failed to load XP settings:", error);
@@ -1033,6 +1048,8 @@ function initializeXpSettingsSection() {
             updateButtonState(xpShowTotalBtn, true); // fallback
             updateButtonState(xpShowNetBtn, true); // fallback
             updateButtonState(xpShowPriceBtn, true); // fallback
+            updateButtonState(xpShowTotalVolumeBtn, true); // fallback
+            updateButtonState(xpShowLevelBtn, true); // fallback
         }
     }
 
@@ -1150,6 +1167,30 @@ function initializeXpSettingsSection() {
         }
     }
 
+    // Save XP show total volume setting
+    async function saveXpShowTotalVolume() {
+        try {
+            const showTotalVolume = xpShowTotalVolumeBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showTotalVolume, listLength: currentLength });
+            console.log("✅ Saved XP show total volume:", showTotalVolume);
+        } catch (error) {
+            console.error("❌ Failed to save XP show total volume setting:", error);
+        }
+    }
+
+    // Save XP show level setting
+    async function saveXpShowLevel() {
+        try {
+            const showLevel = xpShowLevelBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showLevel, listLength: currentLength });
+            console.log("✅ Saved XP show level:", showLevel);
+        } catch (error) {
+            console.error("❌ Failed to save XP show level setting:", error);
+        }
+    }
+
     // Save HOD settings
     async function saveHodSettings() {
         try {
@@ -1213,6 +1254,18 @@ function initializeXpSettingsSection() {
         await saveXpShowPrice();
     }
 
+    async function toggleXpShowTotalVolume() {
+        const isActive = xpShowTotalVolumeBtn.classList.contains('active');
+        updateButtonState(xpShowTotalVolumeBtn, !isActive);
+        await saveXpShowTotalVolume();
+    }
+
+    async function toggleXpShowLevel() {
+        const isActive = xpShowLevelBtn.classList.contains('active');
+        updateButtonState(xpShowLevelBtn, !isActive);
+        await saveXpShowLevel();
+    }
+
     // Load initial settings
     loadXpSettings();
     loadHodSettings();
@@ -1226,6 +1279,8 @@ function initializeXpSettingsSection() {
     xpShowTotalBtn.addEventListener("click", toggleXpShowTotal);
     xpShowNetBtn.addEventListener("click", toggleXpShowNet);
     xpShowPriceBtn.addEventListener("click", toggleXpShowPrice);
+    xpShowTotalVolumeBtn.addEventListener("click", toggleXpShowTotalVolume);
+    xpShowLevelBtn.addEventListener("click", toggleXpShowLevel);
     hodListLengthInput.addEventListener("input", saveHodSettings);
 
     // Listen for updates from other windows
@@ -1262,6 +1317,14 @@ function initializeXpSettingsSection() {
             if (updatedSettings.showPrice !== undefined) {
                 updateButtonState(xpShowPriceBtn, updatedSettings.showPrice);
                 console.log("✅ XP show price updated from other window:", updatedSettings.showPrice);
+            }
+            if (updatedSettings.showTotalVolume !== undefined) {
+                updateButtonState(xpShowTotalVolumeBtn, updatedSettings.showTotalVolume);
+                console.log("✅ XP show total volume updated from other window:", updatedSettings.showTotalVolume);
+            }
+            if (updatedSettings.showLevel !== undefined) {
+                updateButtonState(xpShowLevelBtn, updatedSettings.showLevel);
+                console.log("✅ XP show level updated from other window:", updatedSettings.showLevel);
             }
         }
     });

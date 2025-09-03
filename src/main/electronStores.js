@@ -142,6 +142,8 @@ let _xpShowRatio = xpSettingsStore.get("showRatio", true); // Default to visible
 let _xpShowTotal = xpSettingsStore.get("showTotal", true); // Default to visible
 let _xpShowNet = xpSettingsStore.get("showNet", true); // Default to visible
 let _xpShowPrice = xpSettingsStore.get("showPrice", true); // Default to visible
+let _xpShowTotalVolume = xpSettingsStore.get("showTotalVolume", true); // Default to visible
+let _xpShowLevel = xpSettingsStore.get("showLevel", true); // Default to visible
 
 function getXpListLength() {
     return _xpListLength;
@@ -154,7 +156,7 @@ function setXpListLength(length) {
     _xpListLength = newLength;
     xpSettingsStore.set("listLength", _xpListLength);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -179,7 +181,7 @@ function setXpShowHeaders(show) {
     _xpShowHeaders = newShow;
     xpSettingsStore.set("showHeaders", _xpShowHeaders);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -204,7 +206,7 @@ function setXpShowUpXp(show) {
     _xpShowUpXp = newShow;
     xpSettingsStore.set("showUpXp", _xpShowUpXp);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -229,7 +231,7 @@ function setXpShowDownXp(show) {
     _xpShowDownXp = newShow;
     xpSettingsStore.set("showDownXp", _xpShowDownXp);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -254,7 +256,7 @@ function setXpShowRatio(show) {
     _xpShowRatio = newShow;
     xpSettingsStore.set("showRatio", _xpShowRatio);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -279,7 +281,7 @@ function setXpShowTotal(show) {
     _xpShowTotal = newShow;
     xpSettingsStore.set("showTotal", _xpShowTotal);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -304,7 +306,7 @@ function setXpShowNet(show) {
     _xpShowNet = newShow;
     xpSettingsStore.set("showNet", _xpShowNet);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -329,7 +331,57 @@ function setXpShowPrice(show) {
     _xpShowPrice = newShow;
     xpSettingsStore.set("showPrice", _xpShowPrice);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowTotalVolume() {
+    return _xpShowTotalVolume;
+}
+
+function setXpShowTotalVolume(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowTotalVolume) return false;
+    
+    _xpShowTotalVolume = newShow;
+    xpSettingsStore.set("showTotalVolume", _xpShowTotalVolume);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowLevel() {
+    return _xpShowLevel;
+}
+
+function setXpShowLevel(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowLevel) return false;
+    
+    _xpShowLevel = newShow;
+    xpSettingsStore.set("showLevel", _xpShowLevel);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -357,10 +409,12 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
             showRatio: getXpShowRatio(),
             showTotal: getXpShowTotal(),
             showNet: getXpShowNet(),
-            showPrice: getXpShowPrice()
+            showPrice: getXpShowPrice(),
+            showTotalVolume: getXpShowTotalVolume(),
+            showLevel: getXpShowLevel()
         };
     });
-    ipcMain.handle("xp-settings:set", (_e, { listLength, showHeaders, showUpXp, showDownXp, showRatio, showTotal, showNet, showPrice }) => {
+    ipcMain.handle("xp-settings:set", (_e, { listLength, showHeaders, showUpXp, showDownXp, showRatio, showTotal, showNet, showPrice, showTotalVolume, showLevel }) => {
         let changed = false;
         if (listLength !== undefined) {
             changed = setXpListLength(listLength) || changed;
@@ -386,6 +440,12 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
         if (showPrice !== undefined) {
             changed = setXpShowPrice(showPrice) || changed;
         }
+        if (showTotalVolume !== undefined) {
+            changed = setXpShowTotalVolume(showTotalVolume) || changed;
+        }
+        if (showLevel !== undefined) {
+            changed = setXpShowLevel(showLevel) || changed;
+        }
         return changed;
     });
 
@@ -401,7 +461,9 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
             showRatio: getXpShowRatio(),
             showTotal: getXpShowTotal(),
             showNet: getXpShowNet(),
-            showPrice: getXpShowPrice()
+            showPrice: getXpShowPrice(),
+            showTotalVolume: getXpShowTotalVolume(),
+            showLevel: getXpShowLevel()
         }); // prime immediately
         xpSettingsBus.on("change", push);
         wc.once("destroyed", () => {
@@ -627,6 +689,406 @@ if (app && ipcMain && typeof app.on === "function" && !app.__top3_ipc_registered
     });
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Window Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const windowSettingsStore = createStore("window-settings-store", "windows.");
+const windowSettingsBus = new EventEmitter();
+
+// Default window states - positions calculated dynamically
+const DEFAULT_WINDOW_STATES = {
+    eventsWindow: {
+        width: 167,
+        height: 479,
+        isOpen: false,
+    },
+    settingsWindow: {
+        width: 907,
+        height: 755,
+        isOpen: false,
+    },
+    infobarWindow: {
+        width: 465,
+        height: 39,
+        isOpen: false,
+    },
+    wizardWindow: {
+        width: 2400,
+        height: 504,
+        isOpen: false,
+    },
+    dockerWindow: {
+        width: 200,
+        height: 100,
+        isOpen: true,
+    },
+    progressWindow: {
+        width: 800,
+        height: 14,
+        isOpen: false,
+    },
+    frontlineWindow: {
+        width: 321,
+        height: 479,
+        isOpen: false,
+    },
+    activeWindow: {
+        width: 802,
+        height: 404,
+        isOpen: false,
+    },
+    heroesWindow: {
+        width: 850,
+        height: 660,
+        isOpen: false,
+    },
+    scrollXpWindow: {
+        width: 300,
+        height: 200,
+        isOpen: false,
+    },
+    scrollStatsWindow: {
+        width: 300,
+        height: 200,
+        isOpen: false,
+    },
+    newsWindow: {
+        width: 582,
+        height: 529,
+        isOpen: false,
+    },
+    scrollHodWindow: {
+        width: 297,
+        height: 447,
+        isOpen: false,
+    },
+    sessionHistoryWindow: {
+        width: 532,
+        height: 168,
+        isOpen: false,
+    },
+};
+
+// Load all window states from store or use defaults
+let _windowStates = {};
+
+// Smart positioning system to prevent window overlap
+function calculateWindowPosition(position, width = 0, height = 0) {
+    try {
+        const { screen } = require('electron');
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+        
+        // Add some padding from screen edges
+        const padding = 20;
+        const safeWidth = Math.max(0, screenWidth - padding * 2);
+        const safeHeight = Math.max(0, screenHeight - padding * 2);
+        
+        switch (position) {
+            case "top-left":
+                return { x: padding, y: padding };
+            case "top-center":
+                return { x: Math.max(padding, (screenWidth - width) / 2), y: padding };
+            case "top-right":
+                return { x: Math.max(padding, screenWidth - width - padding), y: padding };
+            case "center-left":
+                return { x: padding, y: Math.max(padding, (screenHeight - height) / 2) };
+            case "center":
+                return { 
+                    x: Math.max(padding, (screenWidth - width) / 2), 
+                    y: Math.max(padding, (screenHeight - height) / 2) 
+                };
+            case "center-right":
+                return { 
+                    x: Math.max(padding, screenWidth - width - padding), 
+                    y: Math.max(padding, (screenHeight - height) / 2) 
+                };
+            case "bottom-left":
+                return { x: padding, y: Math.max(padding, screenHeight - height - padding) };
+            case "bottom-center":
+                return { x: Math.max(padding, (screenWidth - width) / 2), y: Math.max(padding, screenHeight - height - padding) };
+            case "bottom-right":
+                return { x: Math.max(padding, screenWidth - width - padding), y: Math.max(padding, screenHeight - height - padding) };
+            default:
+                return { x: padding, y: padding };
+        }
+    } catch (error) {
+        // If screen module is not available (app not ready), return safe defaults
+        log.log("[window-settings] Screen module not ready, using safe defaults");
+        return { x: 20, y: 20 };
+    }
+}
+
+// Simple positioning - windows default near center (where mouse typically is)
+function calculateSmartWindowPosition(windowKey, width = 0, height = 0) {
+    try {
+        const { screen } = require('electron');
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+        
+        const padding = 20;
+        
+        // Simple approach: spread windows around the center area with small offsets
+        const centerX = (screenWidth - width) / 2;
+        const centerY = (screenHeight - height) / 2;
+        
+        // Small offsets to prevent exact overlap
+        const offsets = {
+            eventsWindow: { x: 50, y: -100 },
+            frontlineWindow: { x: -50, y: -100 },
+            infobarWindow: { x: 0, y: -200 },
+            activeWindow: { x: -100, y: 0 },
+            heroesWindow: { x: 100, y: 0 },
+            settingsWindow: { x: 0, y: 0 },
+            wizardWindow: { x: 0, y: 0 },
+            dockerWindow: { x: 100, y: 100 },
+            progressWindow: { x: 0, y: 100 },
+            scrollXpWindow: { x: -100, y: 100 },
+            scrollStatsWindow: { x: -100, y: 150 },
+            newsWindow: { x: -100, y: 200 },
+            scrollHodWindow: { x: -100, y: 250 },
+            sessionHistoryWindow: { x: -100, y: 300 },
+        };
+        
+        const offset = offsets[windowKey] || { x: 0, y: 0 };
+        const x = Math.max(padding, Math.min(screenWidth - width - padding, centerX + offset.x));
+        const y = Math.max(padding, Math.min(screenHeight - height - padding, centerY + offset.y));
+        
+        return { x, y };
+        
+    } catch (error) {
+        log.log("[window-settings] Screen module not ready, using safe defaults");
+        return { x: 20, y: 20 };
+    }
+}
+
+// Initialize window states (positions will be calculated when app is ready)
+for (const [windowKey, defaultState] of Object.entries(DEFAULT_WINDOW_STATES)) {
+    const storedState = windowSettingsStore.get(windowKey, defaultState);
+    
+    // Always start with safe defaults and let the app ready handler recalculate
+    _windowStates[windowKey] = {
+        ...storedState,
+        x: 0, // Safe default, will be recalculated when app is ready
+        y: 0
+    };
+    
+    log.log(`[window-settings] 📋 Initialized ${windowKey}:`, {
+        position: storedState.position,
+        isOpen: storedState.isOpen,
+        width: storedState.width,
+        height: storedState.height,
+        x: 0, // Always start at 0
+        y: 0
+    });
+}
+
+// Function to recalculate positions when app is ready
+function recalculatePositionsWhenReady() {
+    log.log("[window-settings] 🔄 Recalculating positions for all windows");
+    
+    for (const [windowKey, storedState] of Object.entries(_windowStates)) {
+        const defaultState = DEFAULT_WINDOW_STATES[windowKey];
+        if (defaultState) {
+            // Use smart positioning to prevent overlap
+            const calculatedPos = calculateSmartWindowPosition(
+                windowKey,
+                storedState.width || defaultState.width,
+                storedState.height || defaultState.height
+            );
+            
+            // Check if position actually needs updating
+            if (storedState.x !== calculatedPos.x || storedState.y !== calculatedPos.y) {
+                log.log(`[window-settings] 📍 Updating ${windowKey} position:`, {
+                    from: { x: storedState.x, y: storedState.y },
+                    to: calculatedPos,
+                    width: storedState.width || defaultState.width,
+                    height: storedState.height || defaultState.height
+                });
+                setWindowState(windowKey, { ...storedState, ...calculatedPos });
+            }
+        }
+    }
+    
+    log.log("[window-settings] ✅ Position recalculation complete");
+}
+
+function getAllWindowStates() {
+    return { ..._windowStates };
+}
+
+function getWindowState(windowKey) {
+    return _windowStates[windowKey] ? { ..._windowStates[windowKey] } : null;
+}
+
+function setWindowState(windowKey, state) {
+    if (!_windowStates[windowKey]) {
+        _windowStates[windowKey] = {};
+    }
+    
+    const oldState = _windowStates[windowKey];
+    const newState = { ..._windowStates[windowKey], ...state };
+    
+    // Check if anything actually changed
+    const changed = JSON.stringify(oldState) !== JSON.stringify(newState);
+    if (!changed) return false;
+    
+    _windowStates[windowKey] = newState;
+    windowSettingsStore.set(windowKey, newState);
+    
+    const payload = getAllWindowStates();
+    windowSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("window-settings:change", payload);
+        } catch (err) {
+            log.log("[window-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function setWindowBounds(windowKey, bounds) {
+    return setWindowState(windowKey, bounds);
+}
+
+function setWindowOpenState(windowKey, isOpen) {
+    return setWindowState(windowKey, { isOpen });
+}
+
+function resetWindowToDefault(windowKey) {
+    if (DEFAULT_WINDOW_STATES[windowKey]) {
+        const defaultState = DEFAULT_WINDOW_STATES[windowKey];
+        const calculatedPos = calculateSmartWindowPosition(
+            windowKey,
+            defaultState.width,
+            defaultState.height
+        );
+        return setWindowState(windowKey, { ...defaultState, ...calculatedPos });
+    }
+    return false;
+}
+
+function resetAllWindowsToDefault() {
+    let changed = false;
+    for (const [windowKey, defaultState] of Object.entries(DEFAULT_WINDOW_STATES)) {
+        const calculatedPos = calculateSmartWindowPosition(
+            windowKey,
+            defaultState.width,
+            defaultState.height
+        );
+        changed = setWindowState(windowKey, { ...defaultState, ...calculatedPos }) || changed;
+    }
+    return changed;
+}
+
+function clearAllWindowSettings() {
+    const initialState = {};
+    for (const [windowKey, defaultState] of Object.entries(DEFAULT_WINDOW_STATES)) {
+        initialState[windowKey] = {
+            ...defaultState,
+            x: 0,
+            y: 0
+        };
+    }
+    _windowStates = initialState;
+    windowSettingsStore.clear(); // Clear all stored settings
+    windowSettingsBus.emit("change", initialState);
+    return true;
+}
+
+// Recalculate all window positions (useful for screen size changes)
+function recalculateAllPositions() {
+    let changed = false;
+    for (const [windowKey, storedState] of Object.entries(_windowStates)) {
+        const defaultState = DEFAULT_WINDOW_STATES[windowKey];
+        if (defaultState && storedState.position) {
+            const calculatedPos = calculateWindowPosition(
+                storedState.position,
+                storedState.width,
+                storedState.height
+            );
+            changed = setWindowState(windowKey, { ...storedState, ...calculatedPos }) || changed;
+        }
+    }
+    return changed;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__window_settings_ipc_registered__) {
+    app.__window_settings_ipc_registered__ = true;
+    
+    // Recalculate window positions when app is ready
+    if (!app.__window_positions_calculated__) {
+        app.__window_positions_calculated__ = true;
+        app.once('ready', () => {
+            log.log("[window-settings] App ready, recalculating window positions");
+            recalculatePositionsWhenReady();
+        });
+    }
+
+    ipcMain.removeHandler("window-settings:get");
+    ipcMain.removeHandler("window-settings:get-window");
+    ipcMain.removeHandler("window-settings:set-window");
+    ipcMain.removeHandler("window-settings:set-bounds");
+    ipcMain.removeHandler("window-settings:set-open-state");
+    ipcMain.removeHandler("window-settings:reset-window");
+    ipcMain.removeHandler("window-settings:reset-all");
+    ipcMain.removeHandler("window-settings:clear-all");
+    
+    ipcMain.handle("window-settings:get", () => {
+        return getAllWindowStates();
+    });
+    
+    ipcMain.handle("window-settings:get-window", (_e, windowKey) => {
+        return getWindowState(windowKey);
+    });
+    
+    ipcMain.handle("window-settings:set-window", (_e, { windowKey, state }) => {
+        return setWindowState(windowKey, state);
+    });
+    
+    ipcMain.handle("window-settings:set-bounds", (_e, { windowKey, bounds }) => {
+        return setWindowBounds(windowKey, bounds);
+    });
+    
+    ipcMain.handle("window-settings:set-open-state", (_e, { windowKey, isOpen }) => {
+        return setWindowOpenState(windowKey, isOpen);
+    });
+    
+    ipcMain.handle("window-settings:reset-window", (_e, windowKey) => {
+        return resetWindowToDefault(windowKey);
+    });
+    
+    ipcMain.handle("window-settings:reset-all", () => {
+        return resetAllWindowsToDefault();
+    });
+
+    ipcMain.handle("window-settings:clear-all", () => {
+        return clearAllWindowSettings();
+    });
+
+    // Emergency reset handler - accessible from any window
+    ipcMain.handle("emergency-reset-windows", () => {
+        log.log("[window-settings] 🚨 Emergency reset triggered");
+        return clearAllWindowSettings();
+    });
+
+    ipcMain.removeAllListeners("window-settings:subscribe");
+    ipcMain.on("window-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("window-settings:change", data);
+        push(getAllWindowStates()); // prime immediately
+        windowSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[window-settings] unsubscribe WC", wc.id);
+            windowSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
 module.exports = {
     // keep your existing exports...
     getLastAckCursor,
@@ -654,6 +1116,10 @@ module.exports = {
     setXpShowNet,
     getXpShowPrice,
     setXpShowPrice,
+    getXpShowTotalVolume,
+    setXpShowTotalVolume,
+    getXpShowLevel,
+    setXpShowLevel,
     
     // HOD settings exports
     getHodListLength,
@@ -662,4 +1128,15 @@ module.exports = {
     // Stats settings exports
     getStatsListLength,
     setStatsListLength,
+    
+    // Window settings exports
+    getAllWindowStates,
+    getWindowState,
+    setWindowState,
+    setWindowBounds,
+    setWindowOpenState,
+    resetWindowToDefault,
+    resetAllWindowsToDefault,
+    recalculateAllPositions,
+    clearAllWindowSettings,
 };

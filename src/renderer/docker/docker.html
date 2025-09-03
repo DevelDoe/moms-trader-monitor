@@ -87,20 +87,29 @@
             }
             /* Draggable Area */
             .drag-area {
-                height: 30px;
+                height: 100%;
                 -webkit-app-region: drag; /* Enable dragging */
                 position: absolute;
                 top: 0px;
+                left: 0px;
                 width: 100%;
-                z-index: 10;
+                z-index: 1;
+                pointer-events: none; /* Let clicks pass through to buttons */
+            }
+            
+            /* Ensure buttons are clickable */
+            .dock a {
+                -webkit-app-region: no-drag; /* Prevent dragging when clicking buttons */
+                position: relative;
+                z-index: 2;
             }
         </style>
     </head>
     <body>
         <div class="drag-area"></div>
         <div class="dock" id="dock">
-            <a href="#" id="settings-btn" class="no-drag" onclick="window.settingsAPI.toggle()" title="Settings"><i class="fas fa-cog"></i></a>
-            <a href="#" id="exit-btn" class="no-drag" onclick="window.electronAPI.exitApp()" title="Exit"><i class="fas fa-power-off"></i></a>
+            <a href="#" id="settings-btn" onclick="window.settingsAPI.toggle()" title="Settings"><i class="fas fa-cog"></i></a>
+            <a href="#" id="exit-btn" onclick="window.electronAPI.exitApp()" title="Exit"><i class="fas fa-power-off"></i></a>
         </div>
 
         <script>

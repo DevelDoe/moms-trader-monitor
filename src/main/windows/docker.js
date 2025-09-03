@@ -12,6 +12,7 @@ function createDockerWindow(isDevelopment) {
         x: state.x,
         y: state.y,
         frame: false,
+        movable: true,
         alwaysOnTop: true,
         resizable: true,
         transparent: true,

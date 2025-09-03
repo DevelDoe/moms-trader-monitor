@@ -158,7 +158,15 @@ function comboPercentFromLevel(level) {
 // ============================
 // App Initialization
 // ============================
-document.addEventListener("DOMContentLoaded", async () => {
+async function initializeApp() {
+    // Check if DOM is already loaded
+    if (document.readyState === 'loading') {
+        // DOM is still loading, wait for DOMContentLoaded
+        document.addEventListener("DOMContentLoaded", initializeApp);
+        return;
+    }
+    
+    // DOM is already loaded, proceed with initialization
     window.settings = await window.settingsAPI.get();
     await preloadAllSamples();
 
@@ -483,7 +491,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.error("[CLIENT] Error handling alert:", error);
         }
     });
-});
+}
+
+// Start initialization immediately
+initializeApp();
 
 // Test functions for audio alerts
 window.testComboAlert = () => {

@@ -81,73 +81,6 @@ const DEFAULT_SETTINGS = {
         maxAlerts: 20,
         scannerVolume: 1,
     },
-    windows: {
-        scannerWindow: {
-            width: 167,
-            height: 479,
-            x: 1461,
-            y: 0,
-            isOpen: true,
-        },
-        settingsWindow: {
-            width: 907,
-            height: 755,
-            x: 1351,
-            y: 273,
-            isOpen: false,
-        },
-        infobarWindow: {
-            width: 465,
-            height: 39,
-            x: 725,
-            y: -837,
-            isOpen: true,
-        },
-        wizardWindow: {
-            width: 2400,
-            height: 504,
-            x: 554,
-            y: -449,
-            isOpen: false,
-        },
-        dockerWindow: {
-            isOpen: true,
-        },
-        progressWindow: {
-            width: 1442,
-            height: 14,
-            x: -253,
-            y: -13,
-            isOpen: true,
-        },
-        frontlineWindow: {
-            width: 321,
-            height: 479,
-            x: 1628,
-            y: 0,
-            isOpen: true,
-        },
-        activeWindow: {
-            width: 802,
-            height: 404,
-            x: 1553,
-            y: 667,
-            isOpen: true,
-        },
-        heroesWindow: {
-            width: 850,
-            height: 660,
-            x: 1022,
-            y: 809,
-            isOpen: false,
-        },
-        scrollXpWindow: {
-            isOpen: true,
-        },
-        scrollStatsWindow: {
-            isOpen: true,
-        },
-    },
     traderview: {
         visibility: false,
         enableHeroes: false,
@@ -175,12 +108,10 @@ function loadSettings() {
         const parsedSettings = JSON.parse(data);
         const mergedSettings = mergeSettingsWithDefaults(parsedSettings, DEFAULT_SETTINGS);
 
-        // auto-remove unknown dynamic windows
-        Object.keys(mergedSettings.windows).forEach((key) => {
-            if (key.startsWith("traderviewWindow_") && !(key in DEFAULT_SETTINGS.windows)) {
-                delete mergedSettings.windows[key];
-            }
-        });
+        // Remove window settings since they're now managed by electron store
+        if (mergedSettings.windows) {
+            delete mergedSettings.windows;
+        }
 
         saveSettings(mergedSettings); // Save back merged settings if needed
 

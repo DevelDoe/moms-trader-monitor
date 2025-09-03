@@ -16,8 +16,22 @@ function accumulateStrength(event) {
 }
 
 // Every incoming trade alert:
-window.eventsAPI.onAlertEvents((events) => {
-    events.forEach(accumulateStrength);
+window.eventsAPI.onAlert((events) => {
+    console.log(`[progress] 🎯 Received ${events.length} events:`, events);
+    
+    events.forEach((event, index) => {
+        console.log(`[progress] 📊 Event ${index + 1}:`, {
+            symbol: event.hero,
+            price: event.price,
+            volume: event.one_min_volume,
+            hp: event.hp,
+            dp: event.dp,
+            strength: event.strength
+        });
+        
+        accumulateStrength(event);
+        processMarketFlow(event);
+    });
 });
 
 // Every 5 min, dump and reset:
@@ -49,12 +63,30 @@ let hpTotal = 0;
 let dpTotal = 0;
 
 function processMarketFlow(event) {
-    if (event.strength < 1000) return; // ⛔️ Ignore weak trades
+    // Check if this is a valid trade event with hp/dp data
+    if (!event.hp && !event.dp) {
+        console.log(`[progress] ⚠️ Skipping event without direction data:`, event);
+        return;
+    }
+    
+    // Use strength if available, otherwise use volume as fallback
+    const eventStrength = event.strength || event.one_min_volume || 1000;
+    if (eventStrength < 1000) {
+        console.log(`[progress] ⚠️ Skipping weak trade (strength: ${eventStrength}):`, event);
+        return;
+    }
+
+    console.log(`[progress] ✅ Processing market flow for:`, {
+        symbol: event.hero,
+        hp: event.hp,
+        dp: event.dp,
+        strength: eventStrength
+    });
 
     tradeRateRaw++;
 
     // Normalize strength to 0–1 (e.g., using 500k as strong)
-    const normalizedStrength = Math.min(event.strength / 500000, 1);
+    const normalizedStrength = Math.min(eventStrength / 500000, 1);
 
     const hpChange = event.hp > 0 ? event.hp * normalizedStrength : 0;
     const dpChange = event.dp > 0 ? event.dp * normalizedStrength : 0;
@@ -65,6 +97,8 @@ function processMarketFlow(event) {
 
     hpTotal = hpTotal * 0.95 + hpChange;
     dpTotal = dpTotal * 0.95 + dpChange;
+
+    console.log(`[progress] 📈 Updated totals:`, { hpTotal, dpTotal, hpChange, dpChange });
 
     updateFlowVisual();
 }
@@ -121,7 +155,7 @@ function updateFlowVisual() {
 }
 
 // Connect to your event stream
-window.eventsAPI.onAlertEvents((events) => {
+window.eventsAPI.onAlert((events) => {
     events.forEach(processMarketFlow);
 });
 

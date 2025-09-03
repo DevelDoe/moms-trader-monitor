@@ -35,6 +35,14 @@ function sortData(data, column, direction) {
                 aVal = a.price;
                 bVal = b.price;
                 break;
+            case 'totalVolume':
+                aVal = a.totalVolume;
+                bVal = b.totalVolume;
+                break;
+            case 'level':
+                aVal = a.level;
+                bVal = b.level;
+                break;
             default:
                 return 0;
         }
@@ -81,15 +89,28 @@ function refreshList() {
 
     const viewList = oracleActiveStocks.symbols
         .slice(0, getSymbolLength())
-        .map((s, index) => ({
-            hero: s.symbol,
-            up: s.up_xp || 0,
-            down: s.down_xp || 0,
-            total: s.total_xp_gained || 0,
-            net: s.net_xp || 0,
-            price: s.last_price || 0,
-            rank: index + 1
-        }));
+        .map((s, index) => {
+            // Debug logging to see the actual data structure
+            if (index === 0) {
+                console.log("🔍 First symbol data structure:", s);
+                console.log("🔍 Available fields:", Object.keys(s));
+                console.log("🔍 Volume-related fields:", Object.keys(s).filter(key => key.toLowerCase().includes('volume')));
+                console.log("🔍 Level-related fields:", Object.keys(s).filter(key => key.toLowerCase().includes('level') || key.toLowerCase().includes('lv')));
+                console.log("🔍 All field values:", Object.fromEntries(Object.entries(s).map(([k, v]) => [k, typeof v === 'number' ? v : String(v).substring(0, 50)])));
+            }
+            
+            return {
+                hero: s.symbol,
+                up: s.up_xp || 0,
+                down: s.down_xp || 0,
+                total: s.total_xp_gained || 0,
+                net: s.net_xp || 0,
+                price: s.last_price || 0,
+                totalVolume: s.one_min_volume ||    s.total_volume || s.volume || s.fiveMinVolume || s.strength || 0,
+                level: s.lv || s.level || 0,
+                rank: index + 1
+            };
+        });
 
     // Always apply current sorting to the data before rendering
     const sortedList = sortData(viewList, currentSort.column, currentSort.direction);
@@ -112,25 +133,31 @@ function refreshList() {
                 <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Rank Position">
                     #
                 </th>
-                <th class="${currentSort.column === 'symbol' ? 'sort-active' : ''}" data-sort="symbol" style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Symbol">
+                <th class="${currentSort.column === 'symbol' ? 'sort-active' : ''}" data-sort="symbol" style="text-align: left; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Symbol">
                     Symbol <span class="sort-icon">${getSortIcon('symbol')}</span>
                 </th>
-                ${window.xpSettings?.showUpXp !== false ? `<th class="${currentSort.column === 'up' ? 'sort-active' : ''}" data-sort="up" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Up XP">
+                ${window.xpSettings?.showUpXp !== false ? `<th class="${currentSort.column === 'up' ? 'sort-active' : ''}" data-sort="up" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Up XP">
                     Up XP<span class="sort-icon">${getSortIcon('up')}</span>
                 </th>` : ''}
-                ${window.xpSettings?.showDownXp !== false ? `<th class="${currentSort.column === 'down' ? 'sort-active' : ''}" data-sort="down" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Down XP">
+                ${window.xpSettings?.showDownXp !== false ? `<th class="${currentSort.column === 'down' ? 'sort-active' : ''}" data-sort="down" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Down XP">
                     Down XP<span class="sort-icon">${getSortIcon('down')}</span>
                 </th>` : ''}
-                ${window.xpSettings?.showRatio !== false ? `<th class="${currentSort.column === 'upDownRatio' ? 'sort-active' : ''}" data-sort="upDownRatio" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Net XP Ratio">
+                ${window.xpSettings?.showRatio !== false ? `<th class="${currentSort.column === 'upDownRatio' ? 'sort-active' : ''}" data-sort="upDownRatio" style="text-align: right; padding: 6px 8px; color: #666;    text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Net XP Ratio">
                     Ratio <span class="sort-icon">${getSortIcon('upDownRatio')}</span>
                 </th>` : ''}
-                ${window.xpSettings?.showTotal !== false ? `<th class="${currentSort.column === 'total' ? 'sort-active' : ''}" data-sort="total" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Total XP">
+                ${window.xpSettings?.showTotal !== false ? `<th class="${currentSort.column === 'total' ? 'sort-active' : ''}" data-sort="total" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Total XP">
                     Total <span class="sort-icon">${getSortIcon('total')}</span>
                 </th>` : ''}
-                ${window.xpSettings?.showNet !== false ? `<th class="${currentSort.column === 'net' ? 'sort-active' : ''}" data-sort="net" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Net XP">
+                ${window.xpSettings?.showNet !== false ? `<th class="${currentSort.column === 'net' ? 'sort-active' : ''}" data-sort="net" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Net XP">
                     Net <span class="sort-icon">${getSortIcon('net')}</span>
                 </th>` : ''}
-                ${window.xpSettings?.showPrice !== false ? `<th class="${currentSort.column === 'price' ? 'sort-active' : ''}" data-sort="price" style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Price">
+                ${window.xpSettings?.showTotalVolume !== false ? `<th class="${currentSort.column === 'totalVolume' ? 'sort-active' : ''}" data-sort="totalVolume" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Total Volume">
+                    Volume <span class="sort-icon">${getSortIcon('totalVolume')}</span>
+                </th>` : ''}
+                ${window.xpSettings?.showLevel !== false ? `<th class="${currentSort.column === 'level' ? 'sort-active' : ''}" data-sort="level" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Level">
+                    Level <span class="sort-icon">${getSortIcon('level')}</span>
+                </th>` : ''}
+                ${window.xpSettings?.showPrice !== false ? `<th class="${currentSort.column === 'price' ? 'sort-active' : ''}" data-sort="price" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Price">
                     Price <span class="sort-icon">${getSortIcon('price')}</span>
                 </th>` : ''}
             </tr>
@@ -158,6 +185,8 @@ function refreshList() {
                             </td>` : ''}
                             ${window.xpSettings?.showTotal !== false ? `<td style="padding: 6px 8px; text-align: right; color: #00aeff;" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
                             ${window.xpSettings?.showNet !== false ? `<td style="padding: 6px 8px; text-align: right; color: #ffff00;" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
+                            ${window.xpSettings?.showTotalVolume !== false ? `<td style="padding: 6px 8px; text-align: right; color: #00ff00;" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
+                            ${window.xpSettings?.showLevel !== false ? `<td style="padding: 6px 8px; text-align: right; color: #00aeff;" title="Level">${h.level}</td>` : ''}
                             ${window.xpSettings?.showPrice !== false ? `<td style="padding: 6px 8px; text-align: right; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
                         </tr>
                     `;
@@ -211,7 +240,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             showRatio: true,
             showTotal: true,
             showNet: true,
-            showPrice: true
+            showPrice: true,
+            showTotalVolume: true,
+            showLevel: true
         }; // fallback
     }
 
@@ -274,4 +305,11 @@ function abbreviateXp(num) {
     else result = (absNum / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
     
     return isNegative ? "-" + result : result;
+}
+
+function abbreviateVolume(num) {
+    if (num < 1_000) return num.toString();
+    else if (num < 1_000_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    else if (num < 1_000_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    else return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
 }

@@ -50,9 +50,14 @@ const HOD_SYMBOL_LENGTH_DEFAULT = 10; // default rows to show
 const PRICE_MOVE_EPS = 0; // any price change counts as movement
 
 // --- Stability knobs ---
-const EMA_ALPHA = 0.35; // 0..1, higher = snappier
-const RANK_HYSTERESIS = 0.01; // need 1pp advantage to swap
-const RENDER_THROTTLE_MS = 200; // min ms between paints
+const EMA_ALPHA = 0.6; // 0..1, higher = snappier (was 0.35)
+const RANK_HYSTERESIS = 0.002; // need 0.2pp advantage to swap (was 0.01)
+const RENDER_THROTTLE_MS = 100; // min ms between paints (was 200)
+
+// Performance tuning: enable turbo mode for maximum responsiveness
+const TURBO_MODE = true; // Set to false to restore original conservative behavior
+const TURBO_RENDER_MS = TURBO_MODE ? 50 : RENDER_THROTTLE_MS; // 20 FPS in turbo mode
+const TURBO_HYSTERESIS = TURBO_MODE ? RANK_HYSTERESIS * 0.5 : RANK_HYSTERESIS; // More aggressive in turbo
 
 // Let brand-new HODs bypass hysteresis briefly
 const HOT_HOD_MS = 1500; // ms after HOD to allow instant bubble-up
@@ -255,18 +260,22 @@ function markDirty() {
     // already scheduled
     if (state.renderTimer) return;
 
-    if (since >= RENDER_THROTTLE_MS) {
+    // More aggressive rendering: reduce delay for immediate updates
+    const throttleMs = TURBO_MODE ? TURBO_RENDER_MS : RENDER_THROTTLE_MS;
+    if (since >= throttleMs) {
         state.renderTimer = setTimeout(() => {
             state.renderTimer = null;
             state.lastRenderAt = Date.now();
             render();
         }, 0);
     } else {
+        // Reduce the delay to make it more responsive
+        const delay = Math.max(0, throttleMs - since - 50); // 50ms faster
         state.renderTimer = setTimeout(() => {
             state.renderTimer = null;
             state.lastRenderAt = Date.now();
             render();
-        }, RENDER_THROTTLE_MS - since);
+        }, delay);
     }
 }
 
@@ -302,10 +311,10 @@ function render() {
         const bRank = getOracleRank(b.hero);
         if (aRank !== bRank) return aRank - bRank;
         
-        // Secondary: HOD proximity (lower is better)
+        // Secondary: HOD proximity (lower is better) - more aggressive
         const aMetric = metric(a);
         const bMetric = metric(b);
-        if (aMetric !== bMetric) return aMetric - bMetric;
+        if (Math.abs(aMetric - bMetric) > 0.001) return aMetric - bMetric; // smaller threshold for immediate sorting
         
         // Tertiary: recency (newer is better)
         return (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0);
@@ -328,20 +337,32 @@ function render() {
         if (!stable.includes(t.hero)) stable.push(t.hero);
     }
 
-    // one pass of guarded swaps (cheap and effective)
-    for (let i = 1; i < stable.length; i++) {
-        const aSym = stable[i - 1],
-            bSym = stable[i];
-        const a = bySym.get(aSym),
-            b = bySym.get(bSym);
-        if (!a || !b) continue;
-        const aM = metric(a),
-            bM = metric(b);
+    // More aggressive bubble-up: allow multiple passes for hot symbols and reduce hysteresis
+    let swapped = true;
+    let passCount = 0;
+    const maxPasses = 3; // Allow up to 3 passes for better positioning
+    
+    while (swapped && passCount < maxPasses) {
+        swapped = false;
+        passCount++;
+        
+        for (let i = 1; i < stable.length; i++) {
+            const aSym = stable[i - 1],
+                bSym = stable[i];
+            const a = bySym.get(aSym),
+                b = bySym.get(bSym);
+            if (!a || !b) continue;
+            const aM = metric(a),
+                bM = metric(b);
 
-        // lower metric is better (closer to HOD). Only swap if b beats a by meaningful margin.
-        if (isHot(bSym) || aM - bM > RANK_HYSTERESIS) {
-            stable[i - 1] = bSym;
-            stable[i] = aSym;
+            // More aggressive swapping: lower threshold for hot symbols, allow multiple passes
+            const baseHysteresis = TURBO_MODE ? TURBO_HYSTERESIS : RANK_HYSTERESIS;
+            const hysteresis = isHot(bSym) ? baseHysteresis * 0.5 : baseHysteresis;
+            if (aM - bM > hysteresis) {
+                stable[i - 1] = bSym;
+                stable[i] = aSym;
+                swapped = true;
+            }
         }
     }
 
@@ -542,6 +563,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (Number.isFinite(p.price) && Number.isFinite(prevPrice) && Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS) {
             t.lastPriceDir = p.price > prevPrice ? 1 : -1; // up = 1, down = -1
             t.lastPriceChangeAt = Date.now();
+            
+            // Force immediate re-render on significant price changes for better responsiveness
+            if (Math.abs(p.price - prevPrice) / prevPrice > 0.005) { // 0.5% change
+                setTimeout(() => markDirty(), 0); // Immediate update
+            }
         }
 
         // window + audio
@@ -636,6 +662,25 @@ window.hodOracleStatus = () => {
         tickerCount: state.tickers.size,
         activeSymbols: Array.from(state.tickers.keys()).slice(0, 5)
     });
+};
+
+window.hodPerformanceStatus = () => {
+    console.log({
+        turboMode: TURBO_MODE,
+        renderThrottleMs: TURBO_MODE ? TURBO_RENDER_MS : RENDER_THROTTLE_MS,
+        rankHysteresis: TURBO_MODE ? TURBO_HYSTERESIS : RANK_HYSTERESIS,
+        emaAlpha: EMA_ALPHA,
+        maxBubblePasses: 3,
+        immediateUpdateThreshold: "0.5% price change",
+        currentFPS: Math.round(1000 / (TURBO_MODE ? TURBO_RENDER_MS : RENDER_THROTTLE_MS))
+    });
+};
+
+window.hodToggleTurbo = () => {
+    // This would require reloading the page to take effect, but we can show the current state
+    console.log(`[HOD] Turbo mode is currently ${TURBO_MODE ? 'ENABLED' : 'DISABLED'}`);
+    console.log(`[HOD] To change, set TURBO_MODE = ${!TURBO_MODE} in the code and reload`);
+    console.log(`[HOD] Current performance: ${Math.round(1000 / (TURBO_MODE ? TURBO_RENDER_MS : RENDER_THROTTLE_MS))} FPS max`);
 };
 
 window.hodTickTest = (p = 0.0) => {

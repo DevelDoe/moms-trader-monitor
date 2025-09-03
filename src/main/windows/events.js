@@ -5,7 +5,7 @@ const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 
 function createEventsWindow(isDevelopment) {
-    const state = getWindowState("scannerWindow");
+    const state = getWindowState("eventsWindow"); // ✅ Fixed: use eventsWindow state
 
     const window = new BrowserWindow({
         width: state.width || 850,
@@ -34,12 +34,12 @@ function createEventsWindow(isDevelopment) {
 
     window.on("move", () => {
         const bounds = window.getBounds();
-        setWindowBounds("scannerWindow", bounds);
+        setWindowBounds("eventsWindow", bounds); // ✅ Fixed: use eventsWindow state
     });
     
     window.on("resize", () => {
         const bounds = window.getBounds();
-        setWindowBounds("scannerWindow", bounds);
+        setWindowBounds("eventsWindow", bounds); // ✅ Fixed: use eventsWindow state
     });
 
     

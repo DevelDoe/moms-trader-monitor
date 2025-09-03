@@ -125,6 +125,16 @@
                         </label>
                         <span class="toggle-label">Register of Conquerors</span>
                     </div>
+
+                    <div class="window-controls" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #444;">
+                        <h3>Window Management</h3>
+                        <button id="reset-all-windows-btn" class="danger-btn" style="background-color: #d32f2f; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                            🔄 Reset All Windows to Default Positions
+                        </button>
+                        <p style="font-size: 12px; color: #888; margin-top: 8px;">
+                            Use this if windows are off-screen or on non-existent monitors
+                        </p>
+                    </div>
                 </section>
 
                 <section id="section-traderview">
@@ -160,8 +170,8 @@
 
                     <label for="xp-list-length">
                         Max List Length:
-                        <input type="number" id="xp-list-length" min="1" max="50" step="1" />
-                        <span>(1-50 entries)</span>
+                        <input type="number" id="xp-list-length" min="1"  step="1" />
+
                     </label>
 
                     <div class="toggle-row">
@@ -179,6 +189,8 @@
                         <button type="button" id="xp-show-total" class="column-btn active" data-column="total">Total XP</button>
                         <button type="button" id="xp-show-net" class="column-btn active" data-column="net">Net XP</button>
                         <button type="button" id="xp-show-price" class="column-btn active" data-column="price">Price</button>
+                        <button type="button" id="xp-show-total-volume" class="column-btn active" data-column="total-volume">Volume</button>
+                        <button type="button" id="xp-show-level" class="column-btn active" data-column="level">Level</button>
                     </div>
                 </section>
 
@@ -187,8 +199,8 @@
 
                     <label for="hod-list-length">
                         Max List Length:
-                        <input type="number" id="hod-list-length" min="1" max="50" step="1" />
-                        <span>(1-50 entries)</span>
+                        <input type="number" id="hod-list-length" min="1"  step="1" />
+
                     </label>
                 </section>
 
@@ -197,8 +209,8 @@
 
                     <label for="stats-list-length">
                         Max List Length:
-                        <input type="number" id="stats-list-length" min="1" max="50" step="1" />
-                        <span>(1-50 entries)</span>
+                        <input type="number" id="stats-list-length" min="1"  step="1" />
+
                     </label>
                 </section>
 

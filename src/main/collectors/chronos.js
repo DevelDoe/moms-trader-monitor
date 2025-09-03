@@ -76,15 +76,29 @@ const createWebSocket = () => {
         }
 
         if (msg.type === "alert") {
-            // log.log(`[chronos] 🚨 ALERT received: ${JSON.stringify(msg.payload)}`);
+            log.log(`[chronos] 🚨 ALERT received:`, {
+                type: msg.type,
+                payloadKeys: Object.keys(msg.payload),
+                sampleData: {
+                    hero: msg.payload.hero,
+                    price: msg.payload.price,
+                    hp: msg.payload.hp,
+                    dp: msg.payload.dp,
+                    strength: msg.payload.strength,
+                    volume: msg.payload.one_min_volume
+                }
+            });
 
-            // Store
-            if (tickerStore?.addEvent) tickerStore.addEvent(msg.payload);
-
-            if (msg.type === "alert") {
-                tickerStore?.addEvent?.(msg.payload);
-                broadcastAlert(msg.payload);
+            // Store the alert in ticker store
+            if (tickerStore?.addEvent) {
+                tickerStore.addEvent(msg.payload);
+            } else {
+                log.warn(`[chronos] ⚠️ tickerStore.addEvent not available`);
             }
+
+            // Broadcast to all relevant windows
+            // log.log(`[chronos] 📡 Broadcasting alert to windows`);
+            broadcastAlert(msg.payload);
         }
 
         if (msg.type === "register_ack") {
@@ -125,9 +139,37 @@ const createWebSocket = () => {
 };
 
 function broadcastAlert(payload) {
-    for (const w of [windows.scanner, windows.frontline, windows.heroes, windows.scrollHod]) {
+    // log.log(`[chronos] 📡 Broadcasting to windows:`, {
+    //     events: !!windows.events,
+    //     frontline: !!windows.frontline,
+    //     heroes: !!windows.heroes,
+    //     scrollHod: !!windows.scrollHod,
+    //     progress: !!windows.progress
+    // });
+    
+    // Add progress window to the broadcast list
+    const targetWindows = [
+        { name: 'events', window: windows.events },
+        { name: 'frontline', window: windows.frontline },
+        { name: 'heroes', window: windows.heroes },
+        { name: 'scrollHod', window: windows.scrollHod },
+        { name: 'progress', window: windows.progress }
+    ];
+    
+    for (const { name, window: w } of targetWindows) {
         if (w?.webContents && !w.webContents.isDestroyed()) {
-            w.webContents.send("ws-alert", payload);
+            try {
+                // log.log(`[chronos] 📤 Sending alert to ${name} (ID: ${w.id})`);
+                w.webContents.send("ws-alert", payload);
+            } catch (err) {
+                log.error(`[chronos] ❌ Failed to send to ${name}:`, err.message);
+            }
+        } else {
+            log.warn(`[chronos] ⚠️ ${name} not available:`, {
+                exists: !!w,
+                hasWebContents: !!(w?.webContents),
+                isDestroyed: w?.webContents?.isDestroyed?.() || 'unknown'
+            });
         }
     }
 }

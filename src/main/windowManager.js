@@ -84,7 +84,7 @@ async function restoreWindows() {
         settings: "settingsWindow",
         frontline: "frontlineWindow",
         heroes: "heroesWindow",
-        events: "scannerWindow", // scanner window maps to events functionality
+        events: "eventsWindow", // ✅ Fixed: events should map to eventsWindow
         infobar: "infobarWindow",
         docker: "dockerWindow",
         traderview: "traderviewWindow",
@@ -100,12 +100,25 @@ async function restoreWindows() {
     // First, restore all non-dependent windows
     Object.entries(windowKeyMap).forEach(([name, stateKey]) => {
         const windowState = getWindowState(stateKey);
+        log.log(`[windowManager] Checking window ${name} (${stateKey}):`, {
+            isOpen: windowState?.isOpen,
+            hasState: !!windowState,
+            stateData: windowState
+        });
+        
         if (windowState?.isOpen) {
-            log.log(`Restoring window: ${name}`);
-            windows[name] = createWindow(name, () => createWindowByName(name));
-            windows[name].show();
-            // Set the window state to open since we're restoring it
-            setWindowState(stateKey, true);
+            log.log(`[windowManager] ✅ Restoring window: ${name}`);
+            try {
+                windows[name] = createWindow(name, () => createWindowByName(name));
+                windows[name].show();
+                // Set the window state to open since we're restoring it
+                setWindowState(stateKey, true);
+                log.log(`[windowManager] ✅ Successfully created and showed window: ${name}`);
+            } catch (error) {
+                log.error(`[windowManager] ❌ Failed to create window ${name}:`, error.message);
+            }
+        } else {
+            log.log(`[windowManager] ⏭️ Skipping window ${name} - not open or no state`);
         }
     });
 
@@ -143,9 +156,20 @@ async function restoreWindows() {
         windows.docker.show();
     }
 
-    // Send settings to all windows
+    // Send settings to all windows (excluding window settings which are managed separately)
+    const settingsWithoutWindows = { ...settings };
+    delete settingsWithoutWindows.windows;
+    
+    log.log(`[windowManager] 📊 Available windows after restore:`, {
+        total: Object.keys(windows).length,
+        windows: Object.keys(windows),
+        progress: !!windows.progress,
+        events: !!windows.events,
+        docker: !!windows.docker
+    });
+    
     Object.values(windows).forEach((win) => {
-        safeSend(win, "settings-updated", settings);
+        safeSend(win, "settings-updated", settingsWithoutWindows);
     });
 }
 

@@ -237,9 +237,17 @@ app.on("ready", async () => {
             }
         }
 
-        windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
+        // Docker window will be created by windowManager.restoreWindows() if needed
+        // windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
 
         restoreWindows();
+
+        // Ensure docker window always exists (fallback if windowManager didn't create it)
+        if (!windows.docker) {
+            log.log("[main] 🐳 Creating docker window (fallback)");
+            windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
+            windows.docker.show();
+        }
 
         chronos(authInfo);
         oracle(authInfo);
@@ -779,7 +787,7 @@ ipcMain.handle("get-xp-session-update", () => getXpSessionUpdate());
 // Events
 ipcMain.on("activate-events", () => {
     try {
-        const win = createWindow("scanner", () => createEventsWindow(isDevelopment));
+        const win = createWindow("events", () => createEventsWindow(isDevelopment)); // ✅ Fixed: use "events" not "scanner"
         if (win) win.show();
         const settings = loadSettings();
         settings.scanner.scannerVolume = 1;
@@ -790,7 +798,7 @@ ipcMain.on("activate-events", () => {
 });
 
 ipcMain.on("deactivate-events", () => {
-    destroyWindow("scanner");
+    destroyWindow("events"); // ✅ Fixed: use "events" not "scanner"
     const settings = loadSettings();
     settings.scanner.scannerVolume = 0;
     saveSettings(settings);
@@ -960,7 +968,7 @@ ipcMain.on("deactivate-scrollHod", () => {
 // Audio Test Handlers
 ipcMain.handle("test-combo-alert", async () => {
     try {
-        const eventsWindow = getWindow("scanner");
+        const eventsWindow = getWindow("events"); // ✅ Fixed: use "events" not "scanner"
         if (eventsWindow && !eventsWindow.isDestroyed()) {
             safeSend(eventsWindow, "test-combo-alert");
             return { success: true, message: "Combo alert test sent to events window" };
@@ -1020,7 +1028,7 @@ ipcMain.handle("test-tick-alert", async () => {
 
 ipcMain.handle("test-scanner-alert", async () => {
     try {
-        const eventsWindow = getWindow("scanner");
+        const eventsWindow = getWindow("events"); // ✅ Fixed: use "events" not "scanner"
         if (eventsWindow && !eventsWindow.isDestroyed()) {
             safeSend(eventsWindow, "test-scanner-alert");
             return { success: true, message: "Scanner alert test sent to events window" };
