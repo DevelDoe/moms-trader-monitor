@@ -102,7 +102,18 @@ function createStore(name, keyPrefix = "") {
         });
     }
 
-    return { get, set, flushSync, _store: store };
+    function clear() {
+        // Clear the buffer first
+        buffer.clear();
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+        }
+        // Clear the underlying store
+        store.clear();
+    }
+
+    return { get, set, flushSync, clear, _store: store };
 }
 
 // --- Oracle cursor store ---
@@ -150,7 +161,7 @@ function getXpListLength() {
 }
 
 function setXpListLength(length) {
-    const newLength = Math.max(1, Math.min(50, Number(length) || 25));
+    const newLength = Math.max(1, Number(length) || 25);
     if (newLength === _xpListLength) return false;
     
     _xpListLength = newLength;
@@ -487,7 +498,7 @@ function getHodListLength() {
 }
 
 function setHodListLength(length) {
-    const newLength = Math.max(1, Math.min(50, Number(length) || 10));
+    const newLength = Math.max(1, Number(length) || 10);
     if (newLength === _hodListLength) return false;
     
     _hodListLength = newLength;
@@ -546,7 +557,7 @@ function getStatsListLength() {
 }
 
 function setStatsListLength(length) {
-    const newLength = Math.max(1, Math.min(50, Number(length) || 25));
+    const newLength = Math.max(1, Number(length) || 25);
     if (newLength === _statsListLength) return false;
     
     _statsListLength = newLength;
@@ -863,50 +874,63 @@ function calculateSmartWindowPosition(windowKey, width = 0, height = 0) {
     }
 }
 
-// Initialize window states (positions will be calculated when app is ready)
+// Initialize window states (preserve stored positions if they exist)
 for (const [windowKey, defaultState] of Object.entries(DEFAULT_WINDOW_STATES)) {
     const storedState = windowSettingsStore.get(windowKey, defaultState);
     
-    // Always start with safe defaults and let the app ready handler recalculate
+    // Preserve stored positions if they exist, otherwise use safe defaults
+    const hasStoredPosition = storedState.x !== undefined && storedState.y !== undefined;
+    
     _windowStates[windowKey] = {
         ...storedState,
-        x: 0, // Safe default, will be recalculated when app is ready
-        y: 0
+        x: hasStoredPosition ? storedState.x : 0,
+        y: hasStoredPosition ? storedState.y : 0
     };
     
-    log.log(`[window-settings] 📋 Initialized ${windowKey}:`, {
-        position: storedState.position,
-        isOpen: storedState.isOpen,
-        width: storedState.width,
-        height: storedState.height,
-        x: 0, // Always start at 0
-        y: 0
-    });
+    // Log only in development or when debugging
+    if (process.env.NODE_ENV === 'development') {
+        log.log(`[window-settings] 📋 Initialized ${windowKey}:`, {
+            position: storedState.position,
+            isOpen: storedState.isOpen,
+            width: storedState.width,
+            height: storedState.height,
+            x: _windowStates[windowKey].x,
+            y: _windowStates[windowKey].y,
+            hasStoredPosition
+        });
+    }
 }
 
 // Function to recalculate positions when app is ready
 function recalculatePositionsWhenReady() {
-    log.log("[window-settings] 🔄 Recalculating positions for all windows");
+    log.log("[window-settings] 🔄 Recalculating positions for windows without stored positions");
     
     for (const [windowKey, storedState] of Object.entries(_windowStates)) {
         const defaultState = DEFAULT_WINDOW_STATES[windowKey];
         if (defaultState) {
-            // Use smart positioning to prevent overlap
-            const calculatedPos = calculateSmartWindowPosition(
-                windowKey,
-                storedState.width || defaultState.width,
-                storedState.height || defaultState.height
-            );
+            // Only recalculate if no stored position exists
+            const hasStoredPosition = storedState.x !== undefined && storedState.y !== undefined;
             
-            // Check if position actually needs updating
-            if (storedState.x !== calculatedPos.x || storedState.y !== calculatedPos.y) {
-                log.log(`[window-settings] 📍 Updating ${windowKey} position:`, {
+            if (!hasStoredPosition) {
+                // Use smart positioning to prevent overlap
+                const calculatedPos = calculateSmartWindowPosition(
+                    windowKey,
+                    storedState.width || defaultState.width,
+                    storedState.height || defaultState.height
+                );
+                
+                log.log(`[window-settings] 📍 Calculating new position for ${windowKey}:`, {
                     from: { x: storedState.x, y: storedState.y },
                     to: calculatedPos,
                     width: storedState.width || defaultState.width,
                     height: storedState.height || defaultState.height
                 });
                 setWindowState(windowKey, { ...storedState, ...calculatedPos });
+            } else {
+                log.log(`[window-settings] ✅ ${windowKey} already has stored position:`, {
+                    x: storedState.x,
+                    y: storedState.y
+                });
             }
         }
     }
@@ -919,7 +943,8 @@ function getAllWindowStates() {
 }
 
 function getWindowState(windowKey) {
-    return _windowStates[windowKey] ? { ..._windowStates[windowKey] } : null;
+    const state = _windowStates[windowKey] ? { ..._windowStates[windowKey] } : null;
+    return state;
 }
 
 function setWindowState(windowKey, state) {
@@ -932,9 +957,12 @@ function setWindowState(windowKey, state) {
     
     // Check if anything actually changed
     const changed = JSON.stringify(oldState) !== JSON.stringify(newState);
-    if (!changed) return false;
+    if (!changed) {
+        return false;
+    }
     
     _windowStates[windowKey] = newState;
+    
     windowSettingsStore.set(windowKey, newState);
     
     const payload = getAllWindowStates();
@@ -1021,7 +1049,7 @@ if (app && ipcMain && typeof app.on === "function" && !app.__window_settings_ipc
     app.__window_settings_ipc_registered__ = true;
     
     // Recalculate window positions when app is ready
-    if (!app.__window_positions_calculated__) {
+    if (app && !app.__window_positions_calculated__) {
         app.__window_positions_calculated__ = true;
         app.once('ready', () => {
             log.log("[window-settings] App ready, recalculating window positions");
@@ -1139,4 +1167,8 @@ module.exports = {
     resetAllWindowsToDefault,
     recalculateAllPositions,
     clearAllWindowSettings,
+    
+    // For testing - expose IPC handlers and stores
+    ipcMain: app && ipcMain ? ipcMain : undefined,
+    windowSettingsStore: app ? windowSettingsStore : undefined,
 };

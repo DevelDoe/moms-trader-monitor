@@ -1,16 +1,17 @@
 const { BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const { getWindowState, setWindowBounds } = require("../utils/windowState");
+const { getWindowState, setWindowBounds } = require("../electronStores");
 const log = require("../../hlps/logger")(__filename);
 
 function createActiveWindow(isDevelopment) {
     const state = getWindowState("activeWindow");
+    log.log("📋 Creating activeWindow with state:", state);
 
     const window = new BrowserWindow({
         width: state.width || 850,
         height: state.height || 660,
-        x: state.x,
-        y: state.y,
+        x: state.x || 100,
+        y: state.y || 100,
         alwaysOnTop: false,
         resizable: true,
         roundedCorners: false,
@@ -50,6 +51,20 @@ function createActiveWindow(isDevelopment) {
 
         isWindowReady = true;
         window.show(); // Now show the window
+        
+        // Ensure window is positioned correctly after showing
+        if (state.x && state.y) {
+            window.setPosition(state.x, state.y);
+            log.log(`📍 Repositioned activeWindow to:`, { x: state.x, y: state.y });
+        }
+        
+        // Save initial window bounds to ensure we have a baseline
+        const initialBounds = window.getBounds();
+        if (initialBounds.x !== state.x || initialBounds.y !== state.y || 
+            initialBounds.width !== state.width || initialBounds.height !== state.height) {
+            log.log(`💾 Saving initial activeWindow bounds:`, initialBounds);
+            setWindowBounds("activeWindow", initialBounds);
+        }
     });
 
     // Handle ticker updates from main process
@@ -70,11 +85,13 @@ function createActiveWindow(isDevelopment) {
 
     window.on("move", () => {
         const bounds = window.getBounds();
+        log.log("🔄 activeWindow moved:", bounds);
         setWindowBounds("activeWindow", bounds);
     });
 
     window.on("resize", () => {
         const bounds = window.getBounds();
+        log.log("🔄 activeWindow resized:", bounds);
         setWindowBounds("activeWindow", bounds);
     });
 

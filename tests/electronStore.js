@@ -52,7 +52,7 @@ describe("top3 store", () => {
         };
 
         const app = withApp
-            ? { on: () => {}, __top3_ipc_registered__: false } // no getPath => forces cwd store path
+            ? { on: () => {}, once: () => {}, __top3_ipc_registered__: false } // no getPath => forces cwd store path
             : undefined;
 
         const electronStub = { app, ipcMain, webContents };
@@ -227,7 +227,7 @@ describe("XP settings store", () => {
         };
 
         const app = withApp
-            ? { on: () => {}, __xp_settings_ipc_registered__: false }
+            ? { on: () => {}, once: () => {}, __xp_settings_ipc_registered__: false }
             : undefined;
 
         const electronStub = { app, ipcMain, webContents };
@@ -288,16 +288,16 @@ describe("XP settings store", () => {
         expect(payload.showHeaders).to.equal(false);
     });
 
-    it("should clamp XP list length to valid range", () => {
+    it("should clamp XP list length to minimum of 1", () => {
         const { stores } = loadStoresWithStubs({ withApp: true });
 
         // Test below minimum - 0 defaults to 25 due to || 25 fallback
         stores.setXpListLength(0);
         expect(stores.getXpListLength()).to.equal(25);
 
-        // Test above maximum
+        // Test above minimum - should allow any value
         stores.setXpListLength(100);
-        expect(stores.getXpListLength()).to.equal(50);
+        expect(stores.getXpListLength()).to.equal(100);
 
         // Test valid range
         stores.setXpListLength(30);
@@ -398,7 +398,7 @@ describe("HOD settings store", () => {
         };
 
         const app = withApp
-            ? { on: () => {}, __hod_settings_ipc_registered__: false }
+            ? { on: () => {}, once: () => {}, __hod_settings_ipc_registered__: false }
             : undefined;
 
         const electronStub = { app, ipcMain, webContents };
@@ -440,16 +440,16 @@ describe("HOD settings store", () => {
         expect(payload.listLength).to.equal(15);
     });
 
-    it("should clamp HOD list length to valid range", () => {
+    it("should clamp HOD list length to minimum of 1", () => {
         const { stores } = loadStoresWithStubs({ withApp: true });
 
         // Test below minimum - 0 defaults to 10 due to || 10 fallback
         stores.setHodListLength(0);
         expect(stores.getHodListLength()).to.equal(10);
 
-        // Test above maximum
+        // Test above minimum - should allow any value
         stores.setHodListLength(100);
-        expect(stores.getHodListLength()).to.equal(50);
+        expect(stores.getHodListLength()).to.equal(100);
 
         // Test valid range
         stores.setHodListLength(25);
