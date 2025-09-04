@@ -539,9 +539,9 @@ ipcMain.on("resize-window-to-content", (event, { width, height }) => {
 
 // Auth
 ipcMain.on("set-auth-info", (event, info) => {
-    log.log("[auth] Raw info from splash:", info); // 🕵️ add this
+    // log.log("[auth] Raw info from splash:", info);
     authInfo = info;
-    log.log(`[auth] ✅ Received auth info: ${info?.userId}`);
+    // log.log(`[auth] ✅ Received auth info: ${info?.userId}`);
 });
 
 ipcMain.handle("login", async (_event, { email, password }) => {
@@ -1058,6 +1058,22 @@ ipcMain.on("publish-tracked-tickers", (_evt, tracked = []) => {
     } catch (err) {
         log.error("publish-tracked-tickers failed:", err);
     }
+});
+
+ipcMain.handle("update-trophy-data", (event, trophyData) => {
+    // log.log(`[IPC] Received trophy data update:`, trophyData);
+    tickerStore.updateTrophyData(trophyData);
+    return { success: true };
+});
+
+ipcMain.handle("get-trophy-data", () => {
+    return tickerStore.getTrophyData();
+});
+
+// Forward trophy updates to all windows
+tickerStore.on("trophy-updated", (trophyData) => {
+    // log.log(`[IPC] Broadcasting trophy update to all windows:`, trophyData);
+    broadcast("trophy-updated", trophyData);
 });
 
 module.exports = {

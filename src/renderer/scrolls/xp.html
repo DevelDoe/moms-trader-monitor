@@ -87,7 +87,46 @@
                 /* background: rgba(0, 174, 255, 0.1); */
                 border-bottom: 2px solid #00aeff;
             }
+            
+            /* Trophy styles */
+            .trophy {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                margin-right: 4px;
+                vertical-align: middle;
+                margin-right: -3px;
+            }
+
+            
+            .rank-cell {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 4px;
+            }
         </style>
+        
+        <!-- Trophy SVG Sprite - Hidden but accessible -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position: absolute; visibility: hidden;">
+            <defs>
+                <symbol id="trophy-gold" viewBox="0 0 100 100">
+                    <path d="M50 10 L65 40 H35 Z" fill="gold"/>
+                    <circle cx="50" cy="45" r="20" fill="gold"/>
+                    <rect x="40" y="65" width="20" height="20" fill="gold"/>
+                </symbol>
+                <symbol id="trophy-silver" viewBox="0 0 100 100">
+                    <path d="M50 10 L65 40 H35 Z" fill="silver"/>
+                    <circle cx="50" cy="45" r="20" fill="silver"/>
+                    <rect x="40" y="65" width="20" height="20" fill="silver"/>
+                </symbol>
+                <symbol id="trophy-bronze" viewBox="0 0 100 100">
+                    <path d="M50 10 L65 40 H35 Z" fill="#cd7f32"/>
+                    <circle cx="50" cy="45" r="20" fill="#cd7f32"/>
+                    <rect x="40" y="65" width="20" height="20" fill="#cd7f32"/>
+                </symbol>
+            </defs>
+        </svg>
     </head>
     <body>
         <div class="drag-area"></div>

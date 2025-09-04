@@ -112,7 +112,7 @@ function broadcastAlert(payload) {
     
     try {
         broadcast("ws-alert", payload);
-        log.log(`[chronos] ✅ Alert broadcasted successfully`);
+        // log.log(`[chronos] ✅ Alert broadcasted successfully`);
     } catch (err) {
         log.error(`[chronos] ❌ Failed to broadcast alert:`, err.message);
     }

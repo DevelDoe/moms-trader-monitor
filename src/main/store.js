@@ -685,6 +685,16 @@ class Store extends EventEmitter {
         }
         this.emit("xp-reset");
     }
+
+    updateTrophyData(trophyData) {
+        // log.log(`[updateTrophyData] Received trophy data:`, trophyData);
+        this.trophyData = trophyData;
+        this.emit("trophy-updated", trophyData);
+    }
+
+    getTrophyData() {
+        return this.trophyData || [];
+    }
 }
 
 // Singleton instance

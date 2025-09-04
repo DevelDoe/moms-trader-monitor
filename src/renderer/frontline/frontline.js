@@ -37,6 +37,7 @@
 
         // medals/top3
         rankMap: new Map(),
+        trophyMap: new Map(),
     };
 
     /**************************************************************************
@@ -180,6 +181,20 @@
         return "";
     }
 
+    function getSymbolMedal(sym) {
+        const trophy = state.trophyMap.get(sym) || '';
+        const medal = medalForRank(state.rankMap.get(sym) || 0);
+        
+        if (trophy && medal) {
+            return `<span class="trophy">${trophy}</span><span class="medal">${medal}</span>`;
+        } else if (trophy) {
+            return `<span class="trophy">${trophy}</span>`;
+        } else if (medal) {
+            return `<span class="medal">${medal}</span>`;
+        }
+        return '';
+    }
+
     // cheap per-card patch (kept minimal here — keep your existing visuals if needed)
     function patchCardDOM(sym, hero) {
         const card = state.container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
@@ -198,7 +213,9 @@
         if (priceEl) priceEl.textContent = `$${(hero.price ?? 0).toFixed(2)}`;
 
         const medalEl = card.querySelector(".lv-medal");
-        if (medalEl) medalEl.textContent = medalForRank(state.rankMap.get(sym) || 0);
+        if (medalEl) {
+            medalEl.innerHTML = getSymbolMedal(sym);
+        }
 
         // flash on update
         card.classList.add("card-update-highlight");
@@ -221,7 +238,7 @@
             <div class="ticker-symbol" style="background-color:${getSymbolColor(hero.hue || 0)}">
             ${sym}
             <span class="lv">
-                <span class="lv-medal">${medalForRank(state.rankMap.get(sym) || 0)}</span>
+                <span class="lv-medal">${getSymbolMedal(sym)}</span>
                 <span class="lv-price">$${(hero.price ?? 0).toFixed(2)}</span>
             </span>
             </div>
@@ -437,7 +454,9 @@
             state.container?.querySelectorAll(".ticker-card").forEach((card) => {
                 const sym = card.dataset.symbol?.toUpperCase();
                 const medalEl = card.querySelector(".lv-medal");
-                if (sym && medalEl) medalEl.textContent = medalForRank(state.rankMap.get(sym));
+                if (sym && medalEl) {
+                    medalEl.innerHTML = getSymbolMedal(sym);
+                }
             });
         });
     }
@@ -501,6 +520,30 @@
 
         // top3 medals
         await initTop3();
+
+        // Initialize trophy data from the store
+        try {
+            const trophyData = await window.storeAPI.getTrophyData();
+            state.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
+            console.log("🏆 [FRONTLINE] Initial trophy data loaded:", state.trophyMap);
+        } catch (error) {
+            console.error("❌ [FRONTLINE] Failed to load initial trophy data:", error);
+        }
+
+        // Subscribe to trophy updates
+        window.storeAPI.onTrophyUpdate?.((trophyData) => {
+            console.log("🏆 [FRONTLINE] Trophy update received:", trophyData);
+            state.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
+            
+            // Update visible cards with new trophies
+            state.container?.querySelectorAll(".ticker-card").forEach((card) => {
+                const sym = card.dataset.symbol?.toUpperCase();
+                const medalEl = card.querySelector(".lv-medal");
+                if (sym && medalEl) {
+                    medalEl.innerHTML = getSymbolMedal(sym);
+                }
+            });
+        });
 
         // decay
         startScoreDecay();

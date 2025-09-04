@@ -49,7 +49,7 @@
     "minChangePercent": 0,
     "minVolume": 0,
     "maxAlerts": 35,
-    "scannerVolume": 1
+    "scannerVolume": 0
   },
   "traderview": {
     "visibility": false,

@@ -27,12 +27,26 @@ const state = {
 
     // medals
     rankMap: new Map(),
+    trophyMap: new Map(),
     top3Unsub: null,
 };
 
 /* ===== 2) Utils ===== */
 const medalForRank = (r) => (r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : "");
-const getSymbolMedal = (s) => medalForRank(state.rankMap.get(String(s || "").toUpperCase()) || 0);
+const getSymbolMedal = (s) => {
+    const sym = String(s || "").toUpperCase();
+    const trophy = state.trophyMap.get(sym) || '';
+    const medal = medalForRank(state.rankMap.get(sym) || 0);
+    
+    if (trophy && medal) {
+        return `<span class="trophy">${trophy}</span><span class="medal">${medal}</span>`;
+    } else if (trophy) {
+        return `<span class="trophy">${trophy}</span>`;
+    } else if (medal) {
+        return `<span class="medal">${medal}</span>`;
+    }
+    return '';
+};
 
 function buffSignature(h) {
     const b = h.buffs || {};
@@ -157,7 +171,7 @@ function patchCardDOM(sym, h) {
     if (priceEl) priceEl.textContent = `$${(h.price ?? 0).toFixed(2)}`;
 
     const medalEl = card.querySelector(".lv-medal");
-    if (medalEl) medalEl.textContent = getSymbolMedal(sym);
+    if (medalEl) medalEl.innerHTML = getSymbolMedal(sym);
 
     const impact = window.hlpsFunctions?.calculateImpact?.(h.strength || 0, h.price || 0, state.buffsMaster) || { style: { color: "" } };
     const { xpPercent } = window.helpers.getXpProgress(h);
@@ -369,7 +383,7 @@ async function initTop3() {
         state.container?.querySelectorAll(".ticker-card").forEach((card) => {
             const sym = card.dataset.symbol?.toUpperCase();
             const el = card.querySelector(".lv-medal");
-            if (sym && el) el.textContent = medalForRank(state.rankMap.get(sym) || 0);
+            if (sym && el) el.innerHTML = getSymbolMedal(sym);
         });
     });
 }
@@ -483,6 +497,31 @@ async function boot() {
     });
 
     await initTop3();
+
+    // Initialize trophy data from the store
+    try {
+        const trophyData = await window.storeAPI.getTrophyData();
+        state.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
+        console.log("🏆 [HEROES] Initial trophy data loaded:", state.trophyMap);
+    } catch (error) {
+        console.error("❌ [HEROES] Failed to load initial trophy data:", error);
+    }
+
+    // Subscribe to trophy updates
+    window.storeAPI.onTrophyUpdate?.((trophyData) => {
+        console.log("🏆 [HEROES] Trophy update received:", trophyData);
+        state.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
+        
+        // Update visible cards with new trophies
+        state.container?.querySelectorAll(".ticker-card").forEach((card) => {
+            const sym = card.dataset.symbol?.toUpperCase();
+            const medalEl = card.querySelector(".lv-medal");
+            if (sym && medalEl) {
+                medalEl.innerHTML = getSymbolMedal(sym);
+            }
+        });
+    });
+
     startScoreDecay();
     markDirty();
 }

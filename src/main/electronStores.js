@@ -1009,27 +1009,27 @@ for (const [windowKey, defaultState] of Object.entries(DEFAULT_WINDOW_STATES)) {
     };
     
     // Log only in development or when debugging
-    if (process.env.NODE_ENV === 'development') {
-        log.log(`[window-settings] 📋 Initialized ${windowKey}:`, {
-            position: storedState.position,
-            isOpen: storedState.isOpen,
-            width: storedState.width,
-            height: storedState.height,
-            x: _windowStates[windowKey].x,
-            y: _windowStates[windowKey].y,
-            hasStoredPosition
-        });
-    }
+    // if (process.env.NODE_ENV === 'development') {
+    //     log.log(`[window-settings] 📋 Initialized ${windowKey}:`, {
+    //         position: storedState.position,
+    //         isOpen: storedState.isOpen,
+    //         width: storedState.width,
+    //         height: storedState.height,
+    //         x: _windowStates[windowKey].x,
+    //         y: _windowStates[windowKey].y,
+    //         hasStoredPosition
+    //     });
+    // }
 }
 
 // Function to recalculate positions when app is ready
 function recalculatePositionsWhenReady() {
-    log.log("[window-settings] 🔄 Recalculating positions for windows without stored positions");
+    // log.log("[window-settings] 🔄 Recalculating positions for windows without stored positions");
     
     for (const [windowKey, storedState] of Object.entries(_windowStates)) {
         const defaultState = DEFAULT_WINDOW_STATES[windowKey];
         if (defaultState) {
-            // Only recalculate if no stored position exists
+            // Only recalculate if no stored position exists    
             const hasStoredPosition = storedState.x !== undefined && storedState.y !== undefined;
             
             if (!hasStoredPosition) {
@@ -1040,12 +1040,12 @@ function recalculatePositionsWhenReady() {
                     storedState.height || defaultState.height
                 );
                 
-                log.log(`[window-settings] 📍 Calculating new position for ${windowKey}:`, {
-                    from: { x: storedState.x, y: storedState.y },
-                    to: calculatedPos,
-                    width: storedState.width || defaultState.width,
-                    height: storedState.height || defaultState.height
-                });
+                // log.log(`[window-settings] 📍 Calculating new position for ${windowKey}:`, {
+                //     from: { x: storedState.x, y: storedState.y },
+                //     to: calculatedPos,
+                //     width: storedState.width || defaultState.width,
+                //     height: storedState.height || defaultState.height
+                // });
                 setWindowState(windowKey, { ...storedState, ...calculatedPos });
             } else {
                 log.log(`[window-settings] ✅ ${windowKey} already has stored position:`, {
@@ -1056,7 +1056,7 @@ function recalculatePositionsWhenReady() {
         }
     }
     
-    log.log("[window-settings] ✅ Position recalculation complete");
+    // log.log("[window-settings] ✅ Position recalculation complete");
 }
 
 function getAllWindowStates() {
@@ -1173,7 +1173,7 @@ if (app && ipcMain && typeof app.on === "function" && !app.__window_settings_ipc
     if (app && !app.__window_positions_calculated__) {
         app.__window_positions_calculated__ = true;
         app.once('ready', () => {
-            log.log("[window-settings] App ready, recalculating window positions");
+            // log.log("[window-settings] App ready, recalculating window positions");
             recalculatePositionsWhenReady();
         });
     }
@@ -1221,7 +1221,7 @@ if (app && ipcMain && typeof app.on === "function" && !app.__window_settings_ipc
 
     // Emergency reset handler - accessible from any window
     ipcMain.handle("emergency-reset-windows", () => {
-        log.log("[window-settings] 🚨 Emergency reset triggered");
+        // log.log("[window-settings] 🚨 Emergency reset triggered");
         return clearAllWindowSettings();
     });
 
@@ -1232,7 +1232,7 @@ if (app && ipcMain && typeof app.on === "function" && !app.__window_settings_ipc
         push(getAllWindowStates()); // prime immediately
         windowSettingsBus.on("change", push);
         wc.once("destroyed", () => {
-            log.log("[window-settings] unsubscribe WC", wc.id);
+            // log.log("[window-settings] unsubscribe WC", wc.id); 
             windowSettingsBus.removeListener("change", push);
         });
     });

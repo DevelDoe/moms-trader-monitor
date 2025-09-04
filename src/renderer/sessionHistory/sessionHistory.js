@@ -1,5 +1,10 @@
 // Session History View
 // Displays XP session history data from Oracle
+//
+// LOGGING SYSTEM:
+// - Uses simple window.log API for all logging (already handles production vs development)
+// - Debug logging only shown in development
+// - Errors are always logged (production and development)
 
 let sessionHistoryData = null;
 let activeStocksData = null;
@@ -50,12 +55,17 @@ function getCurrentSession() {
         }
     }
     
-    // Handle overnight gap (8 PM to 4 AM) - default to pre
+    // Handle overnight gap (8 PM to 4 AM) - return null to indicate outside market hours
     if (currentHour >= 20 || currentHour < 4) {
-        return 'pre';
+        return null; // null indicates outside market hours
     }
     
     return 'pre'; // fallback
+}
+
+// Helper function to check if we're currently outside market hours
+function isOutsideMarketHours() {
+    return getCurrentSession() === null;
 }
 
 // Render the top stocks by session phase
@@ -63,25 +73,14 @@ function renderSessionHistory() {
     const container = document.getElementById('session-history-table');
     if (!container) return;
 
-    console.log('🎨 Rendering session history...');
-    console.log('📊 Session history data:', sessionHistoryData);
-    console.log('📊 Active stocks data:', activeStocksData);
-
     if (!sessionHistoryData || !sessionHistoryData.sessions || sessionHistoryData.sessions.length === 0) {
-        console.warn('⚠️ No session data available, showing no-data message');
+        window.log.warn('No session data available, showing no-data message');
         container.innerHTML = '<div class="no-data">No session data available</div>';
         return;
     }
 
     // Get current session for highlighting
     const currentSession = getCurrentSession();
-    console.log('🔍 Current session:', currentSession);
-    
-    // Log the actual structure of the first session
-    if (sessionHistoryData.sessions[0]) {
-        console.log('🔍 First session structure:', sessionHistoryData.sessions[0]);
-        console.log('🔍 First session keys:', Object.keys(sessionHistoryData.sessions[0]));
-    }
     
     // Create table HTML for top stocks by phase
     const tableHtml = `
@@ -113,7 +112,7 @@ function renderSessionHistory() {
                 el.classList.add("stock-symbol-clicked");
                 setTimeout(() => el.classList.remove("stock-symbol-clicked"), 200);
             } catch (err) {
-                console.error(`⚠️ Failed to handle click for ${symbol}:`, err);
+                window.log.error(`Failed to handle click for ${symbol}`, err);
             }
             e.stopPropagation();
         });
@@ -122,25 +121,21 @@ function renderSessionHistory() {
 
 // Generate rows for top 3 stocks in each phase
 function generateTopStocksRows(sessions, activeStocks, currentSession) {
-    // console.log('🔍 Sessions data:', sessions);
-    // console.log('🔍 Active stocks data:', activeStocks);
-    // console.log('🔍 Current session:', currentSession);
-    
     // Group sessions by phase and get top stocks for each
     const phaseData = {
-        pre: getTopStocksForPhase(sessions, 'pre'),
-        news: getTopStocksForPhase(sessions, 'news'),
-        open: getTopStocksForPhase(sessions, 'open'),
-        power: getTopStocksForPhase(sessions, 'power'),
-        post: getTopStocksForPhase(sessions, 'post')
+        pre: getTopStocksForPhase(sessions, 'pre', currentSession),
+        news: getTopStocksForPhase(sessions, 'news', currentSession),
+        open: getTopStocksForPhase(sessions, 'open', currentSession),
+        power: getTopStocksForPhase(sessions, 'power', currentSession),
+        post: getTopStocksForPhase(sessions, 'post', currentSession)
     };
     
-    // Use active stocks for the current session
-    const currentSessionStocks = activeStocks?.symbols || [];
-    const topCurrentStocks = currentSessionStocks.slice(0, 3);
+    // Check if we're outside market hours
+    const outsideMarketHours = isOutsideMarketHours();
     
-    // console.log('🔍 Phase data:', phaseData);
-    // console.log('🔍 Top current stocks:', topCurrentStocks);
+    // Use active stocks for the current session ONLY if we're inside market hours
+    const currentSessionStocks = (!outsideMarketHours && activeStocks?.symbols) ? activeStocks.symbols : [];
+    const topCurrentStocks = currentSessionStocks.slice(0, 3);
     
     // Create rows for top 3 stocks
     let rows = '';
@@ -151,25 +146,24 @@ function generateTopStocksRows(sessions, activeStocks, currentSession) {
         ['pre', 'news', 'open', 'power', 'post'].forEach(phase => {
             let stock;
             
-            if (phase === currentSession) {
-                // Use active stocks for current session
+            if (!outsideMarketHours && phase === currentSession) {
+                // Use active stocks for current session (only when inside market hours)
                 stock = topCurrentStocks[i];
             } else {
-                // Use historical data for other sessions
+                // Use historical data for other sessions OR all sessions when outside market hours
                 stock = phaseData[phase][i];
             }
             
             if (stock) {
                 const netXp = stock.xp || 0;
                 const xpClass = netXp > 0 ? 'positive' : netXp < 0 ? 'negative' : 'neutral';
-                const isCurrentSession = phase === currentSession;
+                const isCurrentSession = (!outsideMarketHours && phase === currentSession);
                 
                 rows += `
                     <td class="stock-cell ${isCurrentSession ? 'current-session-cell' : ''}">
                         <div class="stock-symbol" style="background: ${getSymbolColor(stock.symbol)};" data-symbol="${stock.symbol}">
                             ${stock.symbol || 'N/A'}
                         </div>
-                        
                     </td>
                 `;
             } else {
@@ -183,16 +177,10 @@ function generateTopStocksRows(sessions, activeStocks, currentSession) {
     return rows;
 }
 
-// <div class="stock-xp ${xpClass}">${formatXp(netXp)}</div>
-                        // <div class="stock-level">Lv.${stock.level || 0}</div>
-
 // Get top 3 stocks for a specific phase
-function getTopStocksForPhase(sessions, phaseName) {
-    // console.log(`🔍 Looking for phase: ${phaseName}`);
-    // console.log(`🔍 Available sessions:`, sessions);
-    
+function getTopStocksForPhase(sessions, phaseName, currentSession) {
     if (!Array.isArray(sessions)) {
-        console.warn(`⚠️ Sessions is not an array:`, sessions);
+        window.log.warn(`Sessions is not an array:`, sessions);
         return [];
     }
     
@@ -205,32 +193,20 @@ function getTopStocksForPhase(sessions, phaseName) {
     );
     
     if (!phaseSession) {
-        console.warn(`⚠️ No session found for phase: ${phaseName}`);
+        // Don't warn if this is the current session - it's expected to not have historical data
+        if (phaseName !== currentSession) {
+            window.log.warn(`No session found for phase: ${phaseName}`);
+        } 
         return [];
     }
-    
-    // console.log(`✅ Found session for ${phaseName}:`, phaseSession);
-    // console.log(`🔍 Session keys:`, Object.keys(phaseSession));
-    // console.log(`🔍 Session values:`, Object.values(phaseSession));
     
     // Check different possible symbol properties
     const symbols = phaseSession.symbols || phaseSession.stocks || phaseSession.data || phaseSession.top_symbols || phaseSession.top_stocks || [];
     
     if (!Array.isArray(symbols)) {
-        console.warn(`⚠️ Symbols is not an array for ${phaseName}:`, symbols);
-        console.warn(`⚠️ Symbols type:`, typeof symbols);
-        console.warn(`⚠️ Symbols value:`, symbols);
-        
-        // If symbols is not an array, maybe it's a different structure
-        if (phaseSession.symbol_count > 0) {
-            console.log(`🔍 Session has ${phaseSession.symbol_count} symbols but symbols array is missing`);
-            console.log(`🔍 Full session object:`, JSON.stringify(phaseSession, null, 2));
-        }
-        
+        window.log.warn(`Symbols is not an array for ${phaseName}:`, { symbols, type: typeof symbols, phaseName });
         return [];
     }
-    
-    // console.log(`📊 Found ${symbols.length} symbols for ${phaseName}:`, symbols);
     
     // Return first 3 symbols as they come from the API
     return symbols.slice(0, 3);
@@ -238,22 +214,18 @@ function getTopStocksForPhase(sessions, phaseName) {
 
 // Initialize the view
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🔄 Session History view initializing...');
-
     try {
         // Get initial session history data
         sessionHistoryData = await window.xpAPI.getSessionHistory();
-        console.log('📊 Initial session history data:', sessionHistoryData);
         
         // Get initial active stocks data
         activeStocksData = await window.xpAPI.getActiveStocks();
-        console.log('📊 Initial active stocks data:', activeStocksData);
         
         if (sessionHistoryData) {
             renderSessionHistory();
         }
     } catch (error) {
-        console.error('❌ Failed to get initial session history:', error);
+        window.log.error('Failed to get initial session history', error);
         const container = document.getElementById('session-history-table');
         if (container) {
             container.innerHTML = '<div class="no-data">Failed to load session history data</div>';
@@ -262,21 +234,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Listen for session history updates
     window.xpAPI.onSessionHistoryUpdate((data) => {
-        console.log('🔄 Session history update received:', data);
-        console.log('🔍 Data type:', typeof data);
-        console.log('🔍 Data keys:', Object.keys(data || {}));
-        console.log('🔍 Sessions array:', data?.sessions);
-        if (data?.sessions) {
-            console.log('🔍 First session:', data.sessions[0]);
-            console.log('🔍 First session keys:', Object.keys(data.sessions[0] || {}));
-        }
         sessionHistoryData = data;
         renderSessionHistory();
     });
 
     // Listen for session updates
     window.xpAPI.onSessionUpdate((data) => {
-        console.log('🔄 Session update received:', data);
         // Refresh the data if we have session history
         if (data && data.session_history) {
             sessionHistoryData = data.session_history;
@@ -286,21 +249,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Listen for active stocks updates (current session)
     window.xpAPI.onActiveStocksUpdate((data) => {
-        console.log('🔄 Active stocks update received:', data);
         activeStocksData = data;
         renderSessionHistory();
     });
 });
-
-// Debug function to log current data
-function debugData() {
-    console.log('🔍 Current session history data:', sessionHistoryData);
-    console.log('🔍 Current active stocks data:', activeStocksData);
-    console.log('🔍 Current sort settings:', currentSort);
-}
-
-// Expose debug function globally for development
-window.debugSessionHistory = debugData;
 
 // -------------------- helpers --------------------
 

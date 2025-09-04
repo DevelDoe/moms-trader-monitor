@@ -60,7 +60,7 @@ function cleanupWindow(name, win) {
         }
     }
     delete windows[name];
-    log.log(`[WindowManager] Removed reference to closed window: ${name}`);
+    // log.log(`[WindowManager] Removed reference to closed window: ${name}`);
 }
 
 function destroyWindow(name) {
@@ -69,7 +69,7 @@ function destroyWindow(name) {
         win.destroy(); // Ensure it is destroyed properly
         cleanupWindow(name, win);
         setWindowState(`${name}Window`, false);
-        log.log(`[WindowManager] Manually destroyed window: ${name}`);
+        // log.log(`[WindowManager] Manually destroyed window: ${name}`);
     }
 }
 
@@ -100,20 +100,20 @@ async function restoreWindows() {
     // First, restore all non-dependent windows
     Object.entries(windowKeyMap).forEach(([name, stateKey]) => {
         const windowState = getWindowState(stateKey);
-        log.log(`[windowManager] Checking window ${name} (${stateKey}):`, {
-            isOpen: windowState?.isOpen,
-            hasState: !!windowState,
-            stateData: windowState
-        });
+        // log.log(`[windowManager] Checking window ${name} (${stateKey}):`, {
+        //     isOpen: windowState?.isOpen,
+        //     hasState: !!windowState,
+        //     stateData: windowState
+        // });
         
         if (windowState?.isOpen) {
-            log.log(`[windowManager] ✅ Restoring window: ${name}`);
+            // log.log(`[windowManager] ✅ Restoring window: ${name}`);
             try {
                 windows[name] = createWindow(name, () => createWindowByName(name));
                 windows[name].show();
                 // Set the window state to open since we're restoring it
                 setWindowState(stateKey, true);
-                log.log(`[windowManager] ✅ Successfully created and showed window: ${name}`);
+                // log.log(`[windowManager] ✅ Successfully created and showed window: ${name}`);
             } catch (error) {
                 log.error(`[windowManager] ❌ Failed to create window ${name}:`, error.message);
             }
@@ -160,13 +160,13 @@ async function restoreWindows() {
     const settingsWithoutWindows = { ...settings };
     delete settingsWithoutWindows.windows;
     
-    log.log(`[windowManager] 📊 Available windows after restore:`, {
-        total: Object.keys(windows).length,
-        windows: Object.keys(windows),
-        progress: !!windows.progress,
-        events: !!windows.events,
-        docker: !!windows.docker
-    });
+    // log.log(`[windowManager] 📊 Available windows after restore:`, {
+    //     total: Object.keys(windows).length,
+    //     windows: Object.keys(windows),
+    //     progress: !!windows.progress,
+    //     events: !!windows.events,
+    //     docker: !!windows.docker
+    // });
     
     Object.values(windows).forEach((win) => {
         safeSend(win, "settings-updated", settingsWithoutWindows);

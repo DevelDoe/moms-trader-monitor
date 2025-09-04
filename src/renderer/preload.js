@@ -78,6 +78,13 @@ contextBridge.exposeInMainWorld("storeAPI", {
     getTracked: () => ipcRenderer.invoke("store:tracked:get"),
     setTracked: (list, maxLen) => ipcRenderer.invoke("store:tracked:set", list, maxLen),
     onTrackedUpdate: (fn) => ipcRenderer.on("tracked-update", (_e, list) => fn(list)),
+    getTrophyData: () => ipcRenderer.invoke("get-trophy-data"),
+    updateTrophyData: (trophyData) => ipcRenderer.invoke("update-trophy-data", trophyData),
+    onTrophyUpdate: (callback) => {
+        const handler = (_event, data) => callback(data);
+        ipcRenderer.on("trophy-updated", handler);
+        return () => ipcRenderer.off("trophy-updated", handler);
+    },
 });
 
 contextBridge.exposeInMainWorld("eventsAPI", {
@@ -281,6 +288,72 @@ contextBridge.exposeInMainWorld("windowSettingsAPI", {
 // Emergency reset function - accessible from any window
 contextBridge.exposeInMainWorld("emergencyResetWindows", () => {
     return ipcRenderer.invoke("emergency-reset-windows");
+});
+
+// Centralized logging API for all renderer views
+// This provides a unified logging interface that respects production vs development environments
+// - Errors are always logged (production and development)
+// - Warnings, info, and debug are only logged in development or when debug flags are enabled
+contextBridge.exposeInMainWorld("rendererLogger", {
+    error: (message, error, context = {}) => {
+        // Always log errors in production and development
+        console.error(`[Renderer Error] ${message}`, error, context);
+        // In the future, we could send this to a central logging service
+        // ipcRenderer.send("renderer-error", { message, error: error?.message, stack: error?.stack, context });
+    },
+    warn: (message, data = {}) => {
+        // Only log warnings in development or when debug flags are enabled
+        if (process.env.NODE_ENV === "development" || process.env.EVENTS_DEBUG === "true") {
+            console.warn(`[Renderer Warning] ${message}`, data);
+        }
+    },
+    info: (message, data = {}) => {
+        // Only log info in development or when debug flags are enabled
+        if (process.env.NODE_ENV === "development" || process.env.EVENTS_DEBUG === "true") {
+            console.info(`[Renderer Info] ${message}`, data);
+        }
+    },
+    debug: (message, data = {}) => {
+        // Only log debug in development or when debug flags are enabled
+        if (process.env.NODE_ENV === "development" || process.env.EVENTS_DEBUG === "true") {
+            console.debug(`[Renderer Debug] ${message}`, data);
+        }
+    }
+});
+
+// Centralized logging helpers for all renderer views
+// These functions respect the existing window.log API and provide safe fallbacks
+contextBridge.exposeInMainWorld("loggingHelpers", {
+    // Conditional debug logging (only in development or when debug flags enabled)
+    log: (message, data = null) => {
+        if (isDev || process.env.EVENTS_DEBUG === "true") {
+            if (data) {
+                console.log(message, data);
+            } else {
+                console.log(message);
+            }
+        }
+    },
+    
+    // Safe error logging with fallback
+    logError: (message, error, context = {}) => {
+        if (window.rendererLogger?.error) {
+            window.rendererLogger.error(message, error, context);
+        } else {
+            // Fallback to console.error if rendererLogger is not available
+            console.error(`[Renderer Error] ${message}`, error, context);
+        }
+    },
+    
+    // Safe warning logging with fallback
+    logWarning: (message, data = {}) => {
+        if (window.rendererLogger?.warn) {
+            window.rendererLogger.warn(message, data);
+        } else if (isDev || process.env.EVENTS_DEBUG === "true") {
+            // Fallback to console.warn if rendererLogger is not available
+            console.warn(`[Renderer Warning] ${message}`, data);
+        }
+    }
 });
 
 // preload.js

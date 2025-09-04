@@ -239,7 +239,20 @@ const createWebSocket = () => {
         if (msg.type === "xp_session_history") {
             // C backend sends data directly, not wrapped in payload
             const sessionHistory = msg;
-            log.log(`📊 XP Session History: ${sessionHistory.sessions?.length || 0} sessions, has_current: ${sessionHistory.has_current_session || false}`);
+            
+            // Dump top level structure to console for debugging
+            console.log('🔍 === RAW XP SESSION HISTORY FROM BACKEND ===');
+            console.log('🔍 Top level keys:', Object.keys(msg));
+            console.log('🔍 Sessions count:', sessionHistory.sessions?.length || 0);
+            console.log('🔍 Has current session:', sessionHistory.has_current_session || false);
+            
+            if (sessionHistory.sessions) {
+                // Log all sessions with name & symbol count
+                console.log('🔍 === ALL SESSIONS ===');
+                sessionHistory.sessions.forEach(session => {
+                    console.log(`🔍 ${session.session_name}: ${session.symbol_count} symbols`);
+                });
+            }
             
             // Store latest data and broadcast to windows (preserve original structure)
             latestSessionHistory = sessionHistory;
@@ -251,12 +264,14 @@ const createWebSocket = () => {
             // C backend sends data directly, not wrapped in payload
             const activeStocks = msg;
             
-            if (activeStocks.symbols && activeStocks.symbols.length > 0) {
-                log.log(`📊 XP Active Stocks: ${activeStocks.symbols.length} symbols`);
-                // Store latest data and broadcast to windows (preserve original structure)
-                latestActiveStocks = activeStocks;
-                broadcastXpData("active-stocks", latestActiveStocks);
+            // Only log when symbols count changes significantly (reduce flooding)
+            if (latestActiveStocks?.symbols?.length !== activeStocks.symbols?.length) {
+                log.log(`📊 XP Active Stocks: ${activeStocks.symbols?.length || 0} symbols`);
             }
+            
+            // Store latest data and broadcast to windows (preserve original structure)
+            latestActiveStocks = activeStocks;
+            broadcastXpData("active-stocks", latestActiveStocks);
             return;
         }
 
@@ -281,13 +296,20 @@ const createWebSocket = () => {
                     
                     if (existingIndex >= 0) {
                         // Update existing session with new data (preserve symbols array)
-                        latestSessionHistory.sessions[existingIndex] = {
-                            ...latestSessionHistory.sessions[existingIndex],
+                        // Only update symbols if the update actually contains symbols
+                        const existingSession = latestSessionHistory.sessions[existingIndex];
+                        const updatedSession = {
+                            ...existingSession,
                             ...latest,
-                            // Ensure symbols array is preserved if it exists
-                            symbols: latest.symbols || latestSessionHistory.sessions[existingIndex].symbols
+                            // CRITICAL: Only overwrite symbols if the update actually contains symbols
+                            // Session updates often don't contain the full symbols array
+                            symbols: (latest.symbols && latest.symbols.length > 0) 
+                                ? latest.symbols 
+                                : existingSession.symbols
                         };
-                        log.log(`🔄 Updated existing session ${latest.session_name} in history`);
+                        
+                        latestSessionHistory.sessions[existingIndex] = updatedSession;
+                        log.log(`🔄 Updated existing session ${latest.session_name} in history (preserved ${existingSession.symbols?.length || 0} symbols, update had ${latest.symbols?.length || 0} symbols)`);
                     } else {
                         // Add new session to history
                         latestSessionHistory.sessions.push(latest);

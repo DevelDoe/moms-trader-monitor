@@ -1,10 +1,25 @@
 const symbolColors = {};
 
+// Trophy utility function - can be reused throughout the application
+function getTrophyIcon(rank) {
+    if (rank === 1) {
+        return '<img src="./img/gold-cup.png" alt="Gold Trophy" class="trophy trophy-gold" width="24" height="24">';
+    } else if (rank === 2) {
+        return '<img src="./img/silver-cup.png" alt="Silver Trophy" class="trophy trophy-silver" width="24" height="24">';
+    } else if (rank === 3) {
+        return '<img src="./img/bronze-cup.png" alt="Bronze Trophy" class="trophy trophy-bronze" width="24" height="24">';
+    }
+    return '';
+}
+
 // Oracle XP Active Stocks data
 let oracleActiveStocks = null;
 
 // Sorting state
 let currentSort = { column: 'net', direction: 'desc' };
+
+// Trophy hash tracking
+let lastTrophyHash = null;
 
 function getSymbolLength() {
     return Math.max(1, Number(window.xpSettings?.listLength) || 25);
@@ -72,7 +87,7 @@ function handleSort(column) {
     refreshList();
 }
 
-function refreshList() {
+async function refreshList() {
     if (!oracleActiveStocks?.symbols || oracleActiveStocks.symbols.length === 0) {
         const container = document.getElementById("xp-scroll");
         if (container) {
@@ -114,6 +129,30 @@ function refreshList() {
 
     // Always apply current sorting to the data before rendering
     const sortedList = sortData(viewList, currentSort.column, currentSort.direction);
+
+    // Extract top 3 symbols for trophy data
+    const top3Trophies = sortedList.slice(0, 3).map((item, index) => ({
+        symbol: item.hero,
+        rank: index + 1,
+        trophy: getTrophyIcon(index + 1)
+    }));
+
+    // Create hash of top 3 symbols to detect changes
+    const currentTrophyHash = top3Trophies.map(t => t.symbol).join('|');
+    
+    // Only update if the symbols have changed
+    if (currentTrophyHash !== lastTrophyHash) {
+        try {
+            await window.storeAPI.updateTrophyData(top3Trophies);
+            console.log("🏆 Trophy data updated in store:", top3Trophies);
+            console.log("🔑 Trophy hash changed:", lastTrophyHash, "→", currentTrophyHash);
+            lastTrophyHash = currentTrophyHash;
+        } catch (error) {
+            console.error("❌ Failed to send trophy data to store:", error);
+        }
+    } else {
+        console.log("🏆 Trophy symbols unchanged, skipping update:", currentTrophyHash);
+    }
 
     const container = document.getElementById("xp-scroll");
     if (!container) return;
@@ -172,7 +211,11 @@ function refreshList() {
                     const bg = getSymbolColor(h.hero);
                     return `
                         <tr style="border-bottom: 1px solid #222; transition: all 0.2s ease;">
-                            <td style="padding: 6px 8px; color: #666; text-align: right;" title="Rank Position">${i + 1}</td>
+                            <td style="padding: 6px 8px; color: #666; text-align: right;" title="Rank Position">
+                                <div class="rank-cell">
+                                    ${i < 3 ? getTrophyIcon(i + 1) : `<span>${i + 1}</span>`}
+                                </div>
+                            </td>
                             <td style="padding: 6px 8px;" title="Symbol">
                                 <span class="symbol" style="background: ${bg}; padding: 2px 4px; border-radius: 1px; cursor: pointer;">
                                     ${h.hero}

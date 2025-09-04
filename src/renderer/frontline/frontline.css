@@ -292,6 +292,21 @@ body::-webkit-scrollbar {
     background-color: transparent;
     font-size: 16px;
     z-index: 100;
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+}
+
+/* Trophy specific styling */
+.lv-medal .trophy {
+    display: inline-block;
+    transform: scale(0.8);
+    transform-origin: center;
+}
+
+/* Medal specific styling */
+.lv-medal .medal {
+    font-size: 16px;
 }
 
 .lv-price {
