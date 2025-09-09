@@ -15,6 +15,7 @@ const NEWS_DEBUG = DEBUG && false;      // News data logging
 const FILING_DEBUG = DEBUG && false;    // Filing data logging
 const SESSION_DEBUG = DEBUG && false;   // Session data logging
 const SYMBOL_DEBUG = DEBUG && false;    // Symbol data logging
+const HYDRATION_DEBUG = DEBUG && false;    // Symbol data logging
 
 if (XP_DEBUG) {
     log.log("🔍 XP Debug logging enabled - will show detailed XP data structures");
@@ -24,6 +25,9 @@ if (NEWS_DEBUG) {
 }
 if (FILING_DEBUG) {
     log.log("📁 Filing Debug logging enabled - will show detailed filing data structures");
+}
+if (HYDRATION_DEBUG) {
+    log.log("🔄 Hydration Debug logging enabled - will show hydration flow details");
 }
 if (SESSION_DEBUG) {
     log.log("📊 Session Debug logging enabled - will show detailed session data structures");
@@ -282,7 +286,9 @@ const createWebSocket = () => {
                 lastCursor = getLastAckCursor() || 0;
 
                 // Request hydration (both headlines and filings) on successful registration
-                log.log("🔄 [ORACLE] Registration complete - requesting hydration...");
+                if (HYDRATION_DEBUG) {
+                    log.log("🔄 [ORACLE] Registration complete - requesting hydration...");
+                }
                 requestHydration();
                 return;
             }
@@ -440,7 +446,9 @@ const createWebSocket = () => {
             const filings = payload.filings || [];
             const metadata = payload.metadata || {};
 
-            log.log(`🔄 [ORACLE] HYDRATION STARTED: ${headlines.length} headlines, ${filings.length} filings`);
+            if (HYDRATION_DEBUG) {
+                log.log(`🔄 [ORACLE] HYDRATION STARTED: ${headlines.length} headlines, ${filings.length} filings`);
+            }
             if (NEWS_DEBUG || FILING_DEBUG) {
                 log.log(`📊 Metadata: headlines_count=${metadata.headlines_count}, filings_count=${metadata.filings_count}`);
             }
@@ -554,7 +562,9 @@ const createWebSocket = () => {
             latestNewsCount = metadata.headlines_count || headlines.length;
             latestFilingCount = metadata.filings_count || filings.length;
 
-            log.log(`✅ [ORACLE] HYDRATION COMPLETE: ${headlines.length} headlines, ${filings.length} filings processed`);
+            if (HYDRATION_DEBUG) {
+                log.log(`✅ [ORACLE] HYDRATION COMPLETE: ${headlines.length} headlines, ${filings.length} filings processed`);
+            }
             
             // Mark news hydration as complete so news buffs will be computed going forward
             store.markNewsHydrationComplete();
@@ -764,7 +774,9 @@ function requestHydration() {
 
     try {
         ws.send(JSON.stringify(request));
-        log.log("🔄 [ORACLE] Requested hydration (headlines + filings) from CDSH");
+        if (HYDRATION_DEBUG) {
+            log.log("🔄 [ORACLE] Requested hydration (headlines + filings) from CDSH");
+        }
         if (NEWS_DEBUG || FILING_DEBUG) {
             log.log("🔄 Requested hydration (headlines + filings) from CDSH");
         }
