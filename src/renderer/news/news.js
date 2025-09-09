@@ -83,6 +83,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     render();
 
+    // Start periodic re-render timer to collapse items after 4 minutes
+    startCollapseTimer();
+
     // 2. SUBSCRIBE - Listen for Oracle news and filing updates
     window.newsAPI.onHeadlines((headlines) => {
         console.log(`📰 News headlines event received:`, headlines);
@@ -369,4 +372,22 @@ function parseTs(t) {
     if (!Number.isNaN(n)) return parseTs(n);
     const d = new Date(t).getTime();
     return Number.isNaN(d) ? NaN : d;
+}
+
+// Timer to periodically re-render news items so they can collapse after 4 minutes
+let collapseTimer = null;
+
+function startCollapseTimer() {
+    // Clear any existing timer
+    if (collapseTimer) {
+        clearInterval(collapseTimer);
+    }
+    
+    // Check every 30 seconds for items that need to collapse
+    collapseTimer = setInterval(() => {
+        console.log("📰 Collapse timer: checking for items to collapse");
+        render();
+    }, 30000); // 30 seconds
+    
+    console.log("📰 Collapse timer started: checking every 30 seconds");
 }
