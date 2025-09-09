@@ -13,6 +13,80 @@ if (!debugMode) {
 const alertQueue = [];
 let flushScheduled = false;
 
+// Blink Animation Manager - ensures only one blink type is active at a time
+const blinkManager = {
+    currentBlinkType: null,
+    activeElements: new Set(),
+    
+    // Priority order: intense > medium > soft
+    getBlinkPriority(type) {
+        const priorities = { 'blink-intense': 3, 'blink-medium': 2, 'blink-soft': 1 };
+        return priorities[type] || 0;
+    },
+    
+    // Set the dominant blink type and update all elements
+    setBlinkType(newType) {
+        if (!newType) {
+            this.clearAllBlink();
+            return;
+        }
+        
+        const newPriority = this.getBlinkPriority(newType);
+        const currentPriority = this.getBlinkPriority(this.currentBlinkType);
+        
+        // Only change if new type has higher priority
+        if (newPriority > currentPriority) {
+            this.currentBlinkType = newType;
+            this.updateAllElements();
+        }
+    },
+    
+    // Clear all blink animations
+    clearAllBlink() {
+        this.currentBlinkType = null;
+        this.activeElements.forEach(element => {
+            element.classList.remove('blink-soft', 'blink-medium', 'blink-intense');
+        });
+        this.activeElements.clear();
+    },
+    
+    // Update all active elements to use the current blink type
+    updateAllElements() {
+        this.activeElements.forEach(element => {
+            // Remove all blink classes
+            element.classList.remove('blink-soft', 'blink-medium', 'blink-intense');
+            // Add the current dominant blink type
+            if (this.currentBlinkType) {
+                element.classList.add(this.currentBlinkType);
+            }
+        });
+    },
+    
+    // Register an element for blink management
+    registerElement(element, blinkType) {
+        this.activeElements.add(element);
+        
+        if (!this.currentBlinkType || this.getBlinkPriority(blinkType) > this.getBlinkPriority(this.currentBlinkType)) {
+            this.setBlinkType(blinkType);
+        } else if (this.currentBlinkType) {
+            // Use the current dominant type
+            element.classList.remove('blink-soft', 'blink-medium', 'blink-intense');
+            element.classList.add(this.currentBlinkType);
+        }
+    },
+    
+    // Unregister an element
+    unregisterElement(element) {
+        this.activeElements.delete(element);
+        element.classList.remove('blink-soft', 'blink-medium', 'blink-intense');
+        
+        // If this was the last element, clear the current type
+        if (this.activeElements.size === 0) {
+            this.currentBlinkType = null;
+        }
+    }
+};
+
 // Audio
 let lastAudioTime = 0;
 const MIN_AUDIO_INTERVAL_MS = 93;
@@ -237,13 +311,20 @@ async function initializeApp() {
         if (isNewEntry) alertDiv.classList.add("new-entry");
 
         // Optimized class management - batch operations
-        const classesToRemove = ["blink-soft", "blink-medium", "blink-intense", "low-1", "low-2", "low-3", "low-4"];
+        const classesToRemove = ["low-1", "low-2", "low-3", "low-4"];
         alertDiv.classList.remove(...classesToRemove);
         
+        // Determine blink type but don't apply directly - let blink manager handle it
+        let blinkType = null;
         if (isUp) {
-            if (strength >= 100_000) alertDiv.classList.add("blink-intense");
-            else if (strength >= 50_000) alertDiv.classList.add("blink-medium");
-            else if (strength >= 10_000) alertDiv.classList.add("blink-soft");
+            if (strength >= 100_000) blinkType = "blink-intense";
+            else if (strength >= 50_000) blinkType = "blink-medium";
+            else if (strength >= 10_000) blinkType = "blink-soft";
+        }
+        
+        // Register with blink manager if there's a blink type
+        if (blinkType) {
+            blinkManager.registerElement(alertDiv, blinkType);
         }
         
         let brightnessClass = "";
@@ -300,7 +381,10 @@ async function initializeApp() {
 
         // ⏱ Do this only once per frame
         while (logElement.children.length > maxAlerts) {
-            logElement.removeChild(logElement.firstChild);
+            const removedElement = logElement.firstChild;
+            // Unregister from blink manager before removing
+            blinkManager.unregisterElement(removedElement);
+            logElement.removeChild(removedElement);
         }
 
         alertQueue.length = 0;
@@ -517,7 +601,8 @@ let performanceStats = {
     alertsProcessed: 0,
     audioPlayed: 0,
     domUpdates: 0,
-    lastCleanup: Date.now()
+    lastCleanup: Date.now(),
+    blinkAnimationsActive: 0
 };
 
 // Cleanup function to prevent memory leaks
@@ -531,6 +616,8 @@ function performCleanup() {
         const excess = logElement.children.length - 50;
         for (let i = 0; i < excess; i++) {
             if (logElement.firstChild) {
+                // Unregister from blink manager before removing
+                blinkManager.unregisterElement(logElement.firstChild);
                 logElement.removeChild(logElement.firstChild);
             }
         }
@@ -574,6 +661,11 @@ window.getEventsPerformanceStats = () => {
         audioBuffersLoaded: {
             short: sampleBuffers.short.filter(Boolean).length,
             long: sampleBuffers.long.filter(Boolean).length
+        },
+        blinkManager: {
+            currentBlinkType: blinkManager.currentBlinkType || 'none',
+            activeElements: blinkManager.activeElements.size,
+            totalElements: logElement ? logElement.children.length : 0
         }
     };
     console.table(stats);
@@ -600,6 +692,36 @@ window.testScannerAlert = () => {
     console.log(`[Scanner Test] Volume: ${volume}, Bank: ${bank}, Index: ${index}, Buffers loaded: ${sampleBuffers[bank]?.length || 0}`);
     const success = playSampleBuffer(bank, index, volume);
     console.log(`[Scanner Test] Play result: ${success}`);
+};
+
+// Test function for blink animation system
+window.testBlinkAnimations = () => {
+    console.log("Testing blink animation system...");
+    console.log(`Current blink type: ${blinkManager.currentBlinkType || 'none'}`);
+    console.log(`Active elements: ${blinkManager.activeElements.size}`);
+    console.log(`All elements:`, Array.from(blinkManager.activeElements).map(el => ({
+        symbol: el.dataset.symbol,
+        classes: Array.from(el.classList).filter(c => c.startsWith('blink-'))
+    })));
+    
+    // Test switching between blink types
+    const testElement = document.querySelector('.alert');
+    if (testElement) {
+        console.log("Testing blink type switching...");
+        blinkManager.registerElement(testElement, 'blink-soft');
+        setTimeout(() => {
+            blinkManager.registerElement(testElement, 'blink-medium');
+            setTimeout(() => {
+                blinkManager.registerElement(testElement, 'blink-intense');
+                setTimeout(() => {
+                    blinkManager.unregisterElement(testElement);
+                    console.log("Blink test completed");
+                }, 1000);
+            }, 1000);
+        }, 1000);
+    } else {
+        console.log("No alert elements found for testing");
+    }
 };
 
 // IPC listeners for audio test commands
