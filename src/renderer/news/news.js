@@ -358,6 +358,15 @@ function renderFilingItem(filingItem, container) {
             ${when ? `<div class="filing-time">${when}</div>` : ""}
         `;
     } else {
+        // Debug: Log the exact values being used in expanded template
+        console.log(`🔍 EXPANDED TEMPLATE VALUES:`, {
+            form_type: filingItem.form_type,
+            form_description: filingItem.form_description,
+            title: filingItem.title,
+            form_type_type: typeof filingItem.form_type,
+            form_description_type: typeof filingItem.form_description
+        });
+        
         // Expanded view: Symbol + Full Title + Company + Time + URL
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
