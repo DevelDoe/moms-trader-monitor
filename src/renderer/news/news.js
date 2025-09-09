@@ -321,7 +321,8 @@ function renderFilingItem(filingItem, container) {
     
     const isCollapsed = isFilingItemCollapsed(filingItem);
     const ts = filingItem.filing_date;
-    const when = ts ? formatNewsTime(ts) : "";
+    // Use filing_date directly for formatting
+    const when = ts ? formatFilingTime(ts) : "";
     
     // Get symbol from filing item
     const symbol = filingItem.symbol;
@@ -398,7 +399,31 @@ function renderFilingItem(filingItem, container) {
 }
 
 function getFilingTime(filingItem) {
-    return toMs(filingItem.filing_date) || 0;
+    // Use filing_date directly - it's already in ISO format
+    if (!filingItem.filing_date) return 0;
+    const date = new Date(filingItem.filing_date);
+    return Number.isFinite(date.getTime()) ? date.getTime() : 0;
+}
+
+function formatFilingTime(filingDate) {
+    // Format filing date directly from ISO string
+    if (!filingDate) return "";
+    const date = new Date(filingDate);
+    if (!Number.isFinite(date.getTime())) return "";
+    
+    const now = new Date();
+    const sameDay = date.getFullYear() === now.getFullYear() && 
+                   date.getMonth() === now.getMonth() && 
+                   date.getDate() === now.getDate();
+
+    return sameDay
+        ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : date.toLocaleString([], {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
 }
 
 // Check if filing item is older than 15 minutes
@@ -406,7 +431,9 @@ function isFilingItemCollapsed(filingItem) {
     const ts = filingItem.filing_date;
     if (!ts) return true; // If no timestamp, treat as collapsed
     
-    const ms = parseTs(ts);
+    // Use filing_date directly - it's already in ISO format
+    const date = new Date(ts);
+    const ms = Number.isFinite(date.getTime()) ? date.getTime() : NaN;
     if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
