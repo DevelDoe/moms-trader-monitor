@@ -311,27 +311,8 @@ function renderNewsItem(newsItem, container) {
 
 function renderFilingItem(filingItem, container) {
     // Debug: Log what's actually being rendered
-    console.log(`🔍 RENDERING FILING ITEM:`, {
-        symbol: filingItem.symbol,
-        form_type: filingItem.form_type,
-        form_description: filingItem.form_description,
-        title: filingItem.title,
-        ALL_FIELDS: Object.keys(filingItem)
-    });
-    
     const isCollapsed = isFilingItemCollapsed(filingItem);
-    const ts = filingItem.filing_date;
-    // Use filing_date directly for formatting
-    const when = ts ? formatFilingTime(ts) : "";
-    
-    // Debug: Log collapse decision
-    console.log(`🔍 COLLAPSE DECISION:`, {
-        symbol: filingItem.symbol,
-        filing_date: filingItem.filing_date,
-        isCollapsed: isCollapsed,
-        when: when
-    });
-    
+    const when = filingItem.filing_date ? formatFilingTime(filingItem.filing_date) : "";
     const symbolSize = isCollapsed ? "small" : "medium";
 
     const itemDiv = document.createElement("div");
@@ -346,14 +327,6 @@ function renderFilingItem(filingItem, container) {
     }
     
     if (isCollapsed) {
-        // Debug: Log the exact values being used in template
-        console.log(`🔍 TEMPLATE VALUES:`, {
-            form_type: filingItem.form_type,
-            form_description: filingItem.form_description,
-            form_type_type: typeof filingItem.form_type,
-            form_description_type: typeof filingItem.form_description
-        });
-        
         // Collapsed view: Symbol + Form Type + Time
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
@@ -365,15 +338,6 @@ function renderFilingItem(filingItem, container) {
             ${when ? `<div class="filing-time">${when}</div>` : ""}
         `;
     } else {
-        // Debug: Log the exact values being used in expanded template
-        console.log(`🔍 EXPANDED TEMPLATE VALUES:`, {
-            form_type: filingItem.form_type,
-            form_description: filingItem.form_description,
-            title: filingItem.title,
-            form_type_type: typeof filingItem.form_type,
-            form_description_type: typeof filingItem.form_description
-        });
-        
         // Expanded view: Symbol + Full Title + Company + Time + URL
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
