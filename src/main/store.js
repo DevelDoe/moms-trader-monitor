@@ -26,6 +26,7 @@ const isDevelopment = process.env.NODE_ENV === "development";
 
 const debugXp = false;
 const debug = false;
+const HYDRATION_DEBUG = false; // Hydration flow logging
 
 // ✅ Declare SETTINGS_FILE before logging it
 const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(require("electron").app.getPath("userData"), "settings.json");
@@ -459,11 +460,15 @@ class Store extends EventEmitter {
         ticker.News = ticker.News || [];
         if (!ticker.News.some((n) => n.id === newsItem.id)) {
             ticker.News.push(newsItem);
-            log.log(`📰 [STORE] Attached news to ${symbol}: "${newsItem.headline?.substring(0, 50)}..."`);
+            if (HYDRATION_DEBUG) {
+                log.log(`📰 [STORE] Attached news to ${symbol}: "${newsItem.headline?.substring(0, 50)}..."`);
+            }
         }
 
         // Recompute all buffs for this symbol (including news sentiment)
-        log.log(`🔄 [STORE] Recomputing buffs for ${symbol} after news attachment`);
+        if (HYDRATION_DEBUG) {
+            log.log(`🔄 [STORE] Recomputing buffs for ${symbol} after news attachment`);
+        }
         this.recomputeBuffsForSymbol(symbol);
     }
 
@@ -481,7 +486,7 @@ class Store extends EventEmitter {
         const newBuffs = this._computeBuffsForSymbol(ticker, true);
         
         // Debug: Log if news buff was computed (only for news buffs to reduce noise)
-        if (newBuffs.news) {
+        if (HYDRATION_DEBUG && newBuffs.news) {
             log.log(`🎯 [STORE] ${symbol} got news buff: ${newBuffs.news.key} (${newBuffs.news.desc})`);
         }
         
@@ -500,7 +505,7 @@ class Store extends EventEmitter {
         ]);
         
         // Only log buff updates for symbols with news buffs to reduce noise
-        if (newBuffs.news) {
+        if (HYDRATION_DEBUG && newBuffs.news) {
             log.log(`📤 [STORE] Emitted buffs-updated for ${symbol} with ${Object.keys(newBuffs).length} buffs (including news buff)`);
         }
     }
@@ -541,7 +546,9 @@ class Store extends EventEmitter {
 
     markNewsHydrationComplete() {
         this._newsHydrationComplete = true;
-        log.log("✅ [STORE] News hydration complete - news buffs will now be computed for all symbols");
+        if (HYDRATION_DEBUG) {
+            log.log("✅ [STORE] News hydration complete - news buffs will now be computed for all symbols");
+        }
     }
 
     clearAllFilings() {

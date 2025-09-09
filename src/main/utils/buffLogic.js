@@ -1,5 +1,7 @@
 // ./src/main/utils/buffLogic.js
 
+const HYDRATION_DEBUG = false; // Hydration flow logging
+
 function sanitize(str) {
     if (typeof str !== "string") return "";
     return str.toLowerCase().replace(/[^a-z0-9]/gi, "");
@@ -147,12 +149,14 @@ function getNewsBuff(symbolData, buffList = [], blockList = [], skipIfNoNews = f
         };
     }
 
-    // Log stats every 30 seconds to avoid flooding
+    // Log stats every 30 seconds to avoid flooding (only if debug enabled)
     
-    const now = Date.now();
-    if (now - newsBuffStats.lastLogTime > 30000) { // 30 seconds
-        console.log(`[getNewsBuff] Stats: ${newsBuffStats.processedCount} processed, ${newsBuffStats.noNewsCount} no news, ${newsBuffStats.noHeadlineCount} no headline, ${newsBuffStats.blockedCount} blocked`);
-        newsBuffStats.lastLogTime = now;
+    if (HYDRATION_DEBUG) {
+        const now = Date.now();
+        if (now - newsBuffStats.lastLogTime > 30000) { // 30 seconds
+            console.log(`[getNewsBuff] Stats: ${newsBuffStats.processedCount} processed, ${newsBuffStats.noNewsCount} no news, ${newsBuffStats.noHeadlineCount} no headline, ${newsBuffStats.blockedCount} blocked`);
+            newsBuffStats.lastLogTime = now;
+        }
     }
 
     if (isBullish) {
