@@ -519,7 +519,8 @@ class Store extends EventEmitter {
 
         // Attach filing to symbol
         ticker.Filings = ticker.Filings || [];
-        if (!ticker.Filings.some((f) => f.id === filingItem.id)) {
+        // Use accession_number for deduplication
+        if (!ticker.Filings.some((f) => f.accession_number === filingItem.accession_number)) {
             ticker.Filings.push(filingItem);
         }
 

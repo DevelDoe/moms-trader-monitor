@@ -739,16 +739,16 @@ function renderOracleNews(symbolData = null) {
     
     // Debug: Log filing details to check for duplicates
     console.log(`🔍 Symbol filings for ${currentActiveSymbol}:`, symbolFilings.map(f => ({
-        id: f.id,
+        accession_number: f.accession_number,
         form_type: f.form_type,
         title: f.title?.substring(0, 50) + "...",
         symbol: f.symbol
     })));
     
-    // Deduplicate filings by ID to prevent double rendering
-    const uniqueFilings = symbolFilings.filter((filing, index, self) => 
-        index === self.findIndex(f => f.id === filing.id)
-    );
+    // Deduplicate filings by accession_number to prevent double rendering
+    const uniqueFilings = symbolFilings.filter((filing, index, self) => {
+        return index === self.findIndex(f => f.accession_number === filing.accession_number);
+    });
     
     console.log(`🔍 Deduplicated filings: ${symbolFilings.length} -> ${uniqueFilings.length}`);
     
@@ -837,24 +837,28 @@ function renderOracleNews(symbolData = null) {
             if (isCollapsed) {
                 // Collapsed view: Form Type + Title + Time
                 itemDiv.innerHTML = `
-                    <h5>${filingItem.symbol || filingItem.symbols?.[0] || "Unknown"} has filed a ${filingItem.form_type || "filing"} ${filingItem.form_description || "document"}</h5>
+                    <h5>${filingItem.symbol} has filed a ${filingItem.form_type} ${filingItem.form_description}</h5>
                     ${when ? `<div class="filing-time">${when}</div>` : ""}
                    
                 `;
             } else {
-                // Large 15-minute view: Form Type + Title + Company + Time + URL
+                // Large 15-minute view: Full Title + Company + Time + Summary + URL
                 itemDiv.innerHTML = `
                     <div class="filing-content">
-                        <h3 class="filing-title-large">${filingItem.symbol || filingItem.symbols?.[0] || "Unknown"} has filed a ${filingItem.form_type || "filing"} ${filingItem.form_description || "document"}</h3>
+                        <h3 class="filing-title-large">${filingItem.title}</h3>
                         ${filingItem.company_name || when ? `
                             <div class="filing-meta">
                                 ${when ? `<div class="filing-time">${when}</div>` : ''}
                                 ${filingItem.company_name ? `<div class="filing-company">${filingItem.company_name}</div>` : ''}
                             </div>
                         ` : ''}
+                        ${filingItem.summary ? `
+                            <div class="filing-summary">${filingItem.summary}</div>
+                        ` : ''}
+                        <div class="filing-accession">Accession: ${filingItem.accession_with_dashes}</div>
                         ${filingItem.filing_url ? `
                             <div class="filing-url">
-                                <span class="filing-link-text">Click anywhere to view on SEC.gov</span>
+                                <span class="filing-link-text">📄 Click anywhere to view on SEC.gov</span>
                             </div>
                         ` : ''}
                     </div>
@@ -875,23 +879,7 @@ function renderOracleNews(symbolData = null) {
 
 // Helper function to extract timestamp from filing objects
 function getFilingTimestamp(filingItem) {
-    // Try different timestamp fields in order of preference
-    if (filingItem.filing_date) return new Date(filingItem.filing_date).getTime();
-    if (filingItem.received_at) return new Date(filingItem.received_at).getTime();
-    if (filingItem.timestamp) return new Date(filingItem.timestamp).getTime();
-    
-    // Debug: log what fields are available
-    console.log("🔍 No timestamp found for filing item:", {
-        symbol: filingItem.symbol,
-        form_type: filingItem.form_type,
-        title: filingItem.title?.substring(0, 50) + "...",
-        availableFields: Object.keys(filingItem),
-        filing_date: filingItem.filing_date,
-        received_at: filingItem.received_at,
-        timestamp: filingItem.timestamp
-    });
-    
-    return 0; // fallback
+    return filingItem.filing_date ? new Date(filingItem.filing_date).getTime() : 0;
 }
 
 // Helper function to format filing timestamps

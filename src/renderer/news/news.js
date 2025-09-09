@@ -269,37 +269,60 @@ function renderNewsItem(newsItem, container) {
 
 function renderFilingItem(filingItem, container) {
     const isCollapsed = isFilingItemCollapsed(filingItem);
-    const ts = filingItem.filing_date ?? filingItem.received_at ?? filingItem.timestamp;
+    const ts = filingItem.filing_date;
     const when = ts ? formatNewsTime(ts) : "";
     
     // Get symbol from filing item
-    const symbol = filingItem.symbol || filingItem.symbols?.[0] || "N/A";
+    const symbol = filingItem.symbol;
     const symbolSize = isCollapsed ? "small" : "medium";
 
     const itemDiv = document.createElement("div");
     itemDiv.className = `filing-item${isCollapsed ? ' collapsed' : ''}`;
     
+    // Make the entire filing item clickable if there's a URL
+    if (filingItem.filing_url) {
+        itemDiv.style.cursor = "pointer";
+        itemDiv.addEventListener("click", () => {
+            window.open(filingItem.filing_url, "_blank", "noopener,noreferrer");
+        });
+    }
+    
     if (isCollapsed) {
-        // Collapsed view: Symbol + Form Type + Title + Time
+        // Collapsed view: Symbol + Form Type + Time
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
                 symbol: symbol, 
                 size: symbolSize,
                 onClick: true
             })}
-            <h5>📁 ${filingItem.symbol || filingItem.symbols?.[0] || "Unknown"} has filed a ${filingItem.form_type || "filing"} ${filingItem.form_description || "document"}</h5>
+            <h5>📁 ${filingItem.form_type} - ${filingItem.form_description}</h5>
             ${when ? `<div class="filing-time">${when}</div>` : ""}
         `;
     } else {
-        // Normal view: Symbol + Form Type + Title + Time
+        // Expanded view: Symbol + Full Title + Company + Time + URL
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
                 symbol: symbol, 
                 size: symbolSize,
                 onClick: true
             })}
-            <h5>📁 ${filingItem.symbol || filingItem.symbols?.[0] || "Unknown"} has filed a ${filingItem.form_type || "filing"} ${filingItem.form_description || "document"}</h5>
-            ${when ? `<div class="filing-time">${when}</div>` : ""}
+            <div class="filing-content">
+                <h3 class="filing-title-large">${filingItem.title}</h3>
+                ${filingItem.company_name || when ? `
+                    <div class="filing-meta">
+                        ${when ? `<div class="filing-time">${when}</div>` : ''}
+                        ${filingItem.company_name ? `<div class="filing-company">${filingItem.company_name}</div>` : ''}
+                    </div>
+                ` : ''}
+                ${filingItem.summary ? `
+                    <div class="filing-summary">${filingItem.summary}</div>
+                ` : ''}
+                ${filingItem.filing_url ? `
+                    <div class="filing-url">
+                        <span class="filing-link-text">📄 View on SEC.gov</span>
+                    </div>
+                ` : ''}
+            </div>
         `;
     }
     
@@ -307,12 +330,12 @@ function renderFilingItem(filingItem, container) {
 }
 
 function getFilingTime(filingItem) {
-    return toMs(filingItem.filing_date) || toMs(filingItem.received_at) || toMs(filingItem.timestamp) || 0;
+    return toMs(filingItem.filing_date) || 0;
 }
 
 // Check if filing item is older than 15 minutes
 function isFilingItemCollapsed(filingItem) {
-    const ts = filingItem.filing_date ?? filingItem.received_at ?? filingItem.timestamp;
+    const ts = filingItem.filing_date;
     if (!ts) return true; // If no timestamp, treat as collapsed
     
     const ms = parseTs(ts);

@@ -79,27 +79,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.filingAPI.onDelta((filingItem) => {
         if (filingItem) {
             console.log("📁 New filing delta received:", filingItem.form_type, filingItem.title);
-            const isDuplicate = displayedNewsKeys.has(filingItem.id || filingItem.accession_number);
+            const isDuplicate = displayedNewsKeys.has(filingItem.accession_number);
 
             // Skip duplicate filings
             if (isDuplicate) return;
 
             const type = "filing"; // Filings are always neutral
-            const symbol = filingItem.symbol || filingItem.symbols?.[0] || "Unknown";
-            const formType = filingItem.form_type || "filing";
-            const description = filingItem.form_description || "document";
+            const symbol = filingItem.symbol;
+            const formType = filingItem.form_type;
+            const description = filingItem.form_description;
             let truncated = `${symbol} has filed a ${formType} ${description}`;
             if (truncated.length > 240) truncated = truncated.slice(0, 239).trimEnd() + "…";
 
             // Extract symbols from filingItem
-            const symbols = [];
-            if (filingItem.symbol) {
-                symbols.push(filingItem.symbol);
-            } else if (filingItem.symbols && Array.isArray(filingItem.symbols)) {
-                symbols.push(...filingItem.symbols);
-            }
+            const symbols = [filingItem.symbol];
 
-            queueNewsItem(truncated, filingItem.id || filingItem.accession_number, type, symbols);
+            queueNewsItem(truncated, filingItem.accession_number, type, symbols);
         }
     });
 
