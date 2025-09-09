@@ -381,24 +381,21 @@ function getFilingTime(filingItem) {
 }
 
 function formatFilingTime(filingDate) {
-    // Format filing date directly from ISO string
+    // Format filing date directly from ISO string - don't convert timezone
     if (!filingDate) return "";
-    const date = new Date(filingDate);
-    if (!Number.isFinite(date.getTime())) return "";
     
-    const now = new Date();
-    const sameDay = date.getFullYear() === now.getFullYear() && 
-                   date.getMonth() === now.getMonth() && 
-                   date.getDate() === now.getDate();
-
-    return sameDay
-        ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        : date.toLocaleString([], {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-        });
+    // Extract time from ISO string directly: "2025-09-09T16:28:40-04:00" -> "4:28 PM"
+    const timeMatch = filingDate.match(/T(\d{2}):(\d{2}):\d{2}/);
+    if (!timeMatch) return "";
+    
+    const hours = parseInt(timeMatch[1]);
+    const minutes = timeMatch[2];
+    
+    // Convert 24h to 12h format
+    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const ampm = hours >= 12 ? "PM" : "AM";
+    
+    return `${displayHours}:${minutes} ${ampm}`;
 }
 
 // Check if filing item is older than 15 minutes
@@ -412,9 +409,9 @@ function isFilingItemCollapsed(filingItem) {
     if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
-    const fifteenMinutesInMs = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
     
-    return (now - ms) > fifteenMinutesInMs;
+    return (now - ms) > fourMinutesInMs;
 }
 
 function getTime(item) {
