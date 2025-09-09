@@ -11,8 +11,8 @@ const log = createLogger(__filename);
 // Debug flags for different features - can be toggled independently when DEBUG=true
 const DEBUG = process.env.DEBUG === "true";
 const XP_DEBUG = DEBUG && false;        // XP data logging
-const NEWS_DEBUG = false;      // News data logging - disabled after hydration fix
-const FILING_DEBUG = false;    // Filing data logging - disabled after hydration fix
+const NEWS_DEBUG = DEBUG && false;      // News data logging  
+const FILING_DEBUG = DEBUG && false;    // Filing data logging
 const SESSION_DEBUG = DEBUG && false;   // Session data logging
 const SYMBOL_DEBUG = DEBUG && false;    // Symbol data logging
 
@@ -459,7 +459,9 @@ const createWebSocket = () => {
 
             // Handle headlines
             if (headlines.length > 0) {
-                log.log(`📰 [ORACLE] Processing ${headlines.length} headlines for symbol attachment`);
+                if (NEWS_DEBUG) {
+                    log.log(`📰 [ORACLE] Processing ${headlines.length} headlines for symbol attachment`);
+                }
                 
                 // Store latest headlines data
                 latestNewsHeadlines = headlines;
@@ -479,7 +481,9 @@ const createWebSocket = () => {
                         });
                     }
                 });
-                log.log(`📰 [ORACLE] Attached news to ${attachmentCount} symbol instances`);
+                if (NEWS_DEBUG) {
+                    log.log(`📰 [ORACLE] Attached news to ${attachmentCount} symbol instances`);
+                }
 
                 // Broadcast to all configured news target windows
                 let actualBroadcastCount = 0;
@@ -502,7 +506,9 @@ const createWebSocket = () => {
 
             // Handle filings
             if (filings.length > 0) {
-                log.log(`📁 [ORACLE] Processing ${filings.length} filings for symbol attachment`);
+                if (FILING_DEBUG) {
+                    log.log(`📁 [ORACLE] Processing ${filings.length} filings for symbol attachment`);
+                }
                 
                 // Store latest filings data
                 latestFilings = filings;
@@ -527,7 +533,9 @@ const createWebSocket = () => {
                         filingAttachmentCount++;
                     }
                 });
-                log.log(`📁 [ORACLE] Attached filings to ${filingAttachmentCount} symbol instances`);
+                if (FILING_DEBUG) {
+                    log.log(`📁 [ORACLE] Attached filings to ${filingAttachmentCount} symbol instances`);
+                }
 
                 // Broadcast to all configured filing target windows
                 FILING_BROADCAST_TARGETS.forEach((windowName) => {
@@ -640,7 +648,7 @@ const createWebSocket = () => {
                 
                 
                 // Log filing object structure only once
-                if (!hasLoggedFilingStructure) {
+                if (FILING_DEBUG && !hasLoggedFilingStructure) {
                     log.log(`📁 Filing object structure (first time):`, JSON.stringify(filingItem, null, 2));
                     hasLoggedFilingStructure = true;
                 }
