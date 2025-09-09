@@ -5,31 +5,16 @@ let blockList = [];
 let bullishList = [];
 let bearishList = [];
 let lastJFlashTime = 0;
-let trackedTickers = [];
 
 let lastActivePush = 0;
 const ACTIVE_PUSH_COOLDOWN = 8000; // ms
-let activeStocksData = null; // ← Oracle active stocks data
 
 function maybeActivateFromSymbols(symbols) {
     if (!Array.isArray(symbols) || !symbols.length) return;
     const sym = String(symbols[0] || "").toUpperCase();
     if (!sym) return;
 
-    // honor the UI filter when it's on
-    if (showTrackedOnly) {
-        // Check if symbol is in tracked tickers
-        if (trackedTickers.includes(sym)) {
-            // Allow activation
-        } else if (activeStocksData?.symbols && activeStocksData.symbols.length > 0) {
-            // Check if symbol is in Oracle active stocks
-            const isActiveStock = activeStocksData.symbols.some(active => active.symbol === sym);
-            if (!isActiveStock) return; // Not in active stocks either
-        } else {
-            return; // No active stocks data and not in tracked tickers
-        }
-    }
-
+    // No filtering needed - backend only sends news/filings for active stocks
     const now = Date.now();
     if (now - lastActivePush < ACTIVE_PUSH_COOLDOWN) return;
 
@@ -40,76 +25,11 @@ function maybeActivateFromSymbols(symbols) {
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Page Loaded. Initializing...");
 
-    await loadSettings(); // blockList + showTrackedOnly
+    await loadSettings(); // blockList + bullishList + bearishList
     // Don't fetch initial news - only listen for deltas
 
-    window.storeAPI.onTrackedUpdate((list) => {
-        console.log("trackedTickers", list);
-        trackedTickers = (Array.isArray(list) ? list : []).map((s) => String(s).toUpperCase());
-        console.log("trackedTickers", trackedTickers);
-        // Don't re-filter - only listen for new deltas
-    });
 
-    // Listen for Oracle active stocks updates
-    window.xpAPI.onActiveStocksUpdate((data) => {
-        console.log("🔄 Oracle active stocks update received:", data);
-        console.log("🔍 Previous active stocks data:", activeStocksData);
-        
-        // Log the new active stocks list details
-        if (data?.symbols && Array.isArray(data.symbols)) {
-            console.log(`📊 NEW ACTIVE STOCKS LIST RECEIVED: ${data.symbols.length} symbols`);
-            console.log("📋 Active stocks symbols:", data.symbols.map(s => s.symbol));
-        } else {
-            console.log("⚠️ Active stocks update received but no valid symbols data");
-        }
-        
-        activeStocksData = data;
-        console.log("🔍 New active stocks data:", activeStocksData);
-        
-        if (data?.symbols && data.symbols.length > 0) {
-            console.log("✅ Active stocks data updated, re-filtering news with", data.symbols.length, "symbols");
-        } else {
-            console.log("⚠️ Active stocks update received but no symbols data");
-        }
-        
-        // Don't re-filter - only listen for new deltas
-    });
 
-    // Get initial Oracle data
-    try {
-        activeStocksData = await window.xpAPI.getActiveStocks();
-        console.log("📊 Initial Oracle active stocks data:", activeStocksData);
-        
-        // Don't re-filter - only listen for new deltas
-        if (activeStocksData?.symbols && activeStocksData.symbols.length > 0) {
-            console.log("✅ Got initial active stocks data");
-        } else {
-            console.log("⚠️ No initial active stocks data available yet");
-        }
-    } catch (e) {
-        console.warn("Failed to get initial Oracle data:", e);
-        activeStocksData = null;
-    }
-
-    // Add fallback to last session data for overnight continuity
-    if (!activeStocksData?.symbols) {
-        try {
-            const sessionHistory = await window.xpAPI.getSessionHistory();
-            if (sessionHistory?.sessions) {
-                const lastActiveSession = sessionHistory.sessions
-                    .filter(s => s.symbols?.length > 0)
-                    .sort((a, b) => b.end_time - a.end_time)[0];
-                
-                if (lastActiveSession) {
-                    activeStocksData = { symbols: lastActiveSession.symbols };
-                    console.log(`🌙 Using last session data (${lastActiveSession.session_name}) for overnight continuity: ${lastActiveSession.symbols.length} symbols`);
-                    // Don't re-filter - only listen for new deltas
-                }
-            }
-        } catch (fallbackError) {
-            console.warn("Failed to get session history fallback:", fallbackError);
-        }
-    }
 
 
     window.settingsAPI.onUpdate(async (updated) => {
@@ -443,23 +363,14 @@ window.testNewsAlert = () => {
     playFlash();
 };
 
-// Test function for active stocks integration
-window.testActiveStocks = () => {
-    console.log("Testing active stocks integration...");
-    console.log(`[Active Stocks Test] Current active stocks:`, activeStocksData);
-    console.log(`[Active Stocks Test] Current tracked tickers:`, trackedTickers);
-    console.log(`[Active Stocks Test] Show tracked only:`, showTrackedOnly);
-    
-    if (activeStocksData?.symbols) {
-        console.log(`[Active Stocks Test] Active stocks symbols:`, activeStocksData.symbols.map(s => s.symbol));
-    }
-    
-    if (trackedTickers.length > 0) {
-        console.log(`[Active Stocks Test] Tracked tickers:`, trackedTickers);
-    }
-    
-    console.log(`[Active Stocks Test] News queue length:`, newsQueue.length);
-    console.log(`[Active Stocks Test] Currently displaying news:`, isNewsDisplaying);
+// Test function for news integration
+window.testNewsIntegration = () => {
+    console.log("Testing news integration...");
+    console.log(`[News Test] News queue length:`, newsQueue.length);
+    console.log(`[News Test] Currently displaying news:`, isNewsDisplaying);
+    console.log(`[News Test] Block list:`, blockList);
+    console.log(`[News Test] Bullish list:`, bullishList);
+    console.log(`[News Test] Bearish list:`, bearishList);
 };
 
 // IPC listeners for audio test commands
