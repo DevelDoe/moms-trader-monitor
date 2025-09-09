@@ -135,41 +135,41 @@ async function initializeOracleNews() {
     
     try {
         // 1. HYDRATE - Get initial headlines from Oracle
-        console.log("📰 Requesting headlines from Oracle...");
+        // console.log("📰 Requesting headlines from Oracle...");
         const headlines = await window.newsAPI.getHeadlines();
-        console.log("📰 Received headlines response:", headlines);
+        // console.log("📰 Received headlines response:", headlines);
         
         if (Array.isArray(headlines)) {
             allOracleNews = headlines;
-            console.log(`📰 Active view hydrated: ${allOracleNews.length} headlines`);
+            // console.log(`📰 Active view hydrated: ${allOracleNews.length} headlines`);
             
             // Dump first news object structure for analysis
             if (headlines.length > 0) {
-                console.log("🔍 === RAW NEWS OBJECT STRUCTURE FROM ACTIVE VIEW ===");
-                console.log("🔍 First news item:", JSON.stringify(headlines[0], null, 2));
-                console.log("🔍 Available fields:", Object.keys(headlines[0]));
-                console.log("🔍 Sample of first 3 news items:");
-                headlines.slice(0, 3).forEach((item, index) => {
-                    console.log(`🔍 News item ${index + 1}:`, {
-                        symbol: item.symbol,
-                        headline: item.headline?.substring(0, 50) + "...",
-                        hasBody: !!item.body,
-                        hasAuthor: !!item.author,
-                        hasLocation: !!item.location,
-                        hasImage: !!item.image,
-                        hasImageCaption: !!item.image_caption,
-                        hasSummary: !!item.summary,
-                        hasContent: !!item.content,
-                        hasAlpacaData: !!item.alpaca_data,
-                        timestamp: item.created_at ?? item.received_at ?? item.updated_at,
-                        url: item.url,
-                        source: item.source,
-                        priority: item.priority,
-                        allFields: Object.keys(item),
-                        alpacaDataParsed: item.alpaca_data ? JSON.parse(item.alpaca_data) : null
-                    });
-                });
-                console.log("🔍 ==============================================");
+                // console.log("🔍 === RAW NEWS OBJECT STRUCTURE FROM ACTIVE VIEW ===");
+                // console.log("🔍 First news item:", JSON.stringify(headlines[0], null, 2));
+                // console.log("🔍 Available fields:", Object.keys(headlines[0]));
+                // console.log("🔍 Sample of first 3 news items:");
+                // headlines.slice(0, 3).forEach((item, index) => {
+                //     console.log(`🔍 News item ${index + 1}:`, {
+                //         symbol: item.symbol,
+                //         headline: item.headline?.substring(0, 50) + "...",
+                //         hasBody: !!item.body,
+                //         hasAuthor: !!item.author,
+                //         hasLocation: !!item.location,
+                //         hasImage: !!item.image,
+                //         hasImageCaption: !!item.image_caption,
+                //         hasSummary: !!item.summary,
+                //         hasContent: !!item.content,
+                //         hasAlpacaData: !!item.alpaca_data,
+                //         timestamp: item.created_at ?? item.received_at ?? item.updated_at,
+                //         url: item.url,
+                //         source: item.source,
+                //         priority: item.priority,
+                //         allFields: Object.keys(item),
+                //         alpacaDataParsed: item.alpaca_data ? JSON.parse(item.alpaca_data) : null
+                //     });
+                // });
+                // console.log("🔍 ==============================================");
             }
             
             // Filing display now handled in renderOracleNews() when UI updates
@@ -184,23 +184,23 @@ async function initializeOracleNews() {
     window.newsAPI.onHeadlines((headlines) => {
         if (Array.isArray(headlines)) {
             allOracleNews = headlines;
-            console.log(`📰 Active view full refresh: ${allOracleNews.length} headlines`);
+            // console.log(`📰 Active view full refresh: ${allOracleNews.length} headlines`);
             
             // Dump sample of headlines for debugging
             if (headlines.length > 0) {
-                console.log("🔍 === HEADLINES REFRESH SAMPLE ===");
-                headlines.slice(0, 2).forEach((item, index) => {
-                    console.log(`🔍 Headline ${index + 1}:`, {
-                        symbol: item.symbol,
-                        headline: item.headline?.substring(0, 50) + "...",
-                        hasBody: !!item.body,
-                        hasAuthor: !!item.author,
-                        hasLocation: !!item.location,
-                        hasImage: !!item.image_url,
-                        timestamp: item.created_at || item.updated_at
-                    });
-                });
-                console.log("🔍 ================================");
+                // console.log("🔍 === HEADLINES REFRESH SAMPLE ===");
+                // headlines.slice(0, 2).forEach((item, index) => {
+                //     console.log(`🔍 Headline ${index + 1}:`, {
+                //         symbol: item.symbol,
+                //         headline: item.headline?.substring(0, 50) + "...",
+                //         hasBody: !!item.body,
+                //         hasAuthor: !!item.author,
+                //         hasLocation: !!item.location,
+                //         hasImage: !!item.image_url,
+                //         timestamp: item.created_at || item.updated_at
+                //     });
+                // });
+                // console.log("🔍 ================================");
             }
             
             // Filing display now handled in renderOracleNews() when UI updates
@@ -210,10 +210,10 @@ async function initializeOracleNews() {
     window.newsAPI.onDelta((newsItem) => {
         if (newsItem) {
             // Dump delta news object structure
-            console.log("🔍 === DELTA NEWS OBJECT ===");
-            console.log("🔍 Delta news item:", newsItem);
-            console.log("🔍 Available fields:", Object.keys(newsItem));
-            console.log("🔍 =========================");
+            // console.log("🔍 === DELTA NEWS OBJECT ===");
+            // console.log("🔍 Delta news item:", newsItem);
+            // console.log("🔍 Available fields:", Object.keys(newsItem));
+            // console.log("🔍 =========================");
             
             // Add to beginning for latest first
             allOracleNews.unshift(newsItem);
@@ -223,7 +223,7 @@ async function initializeOracleNews() {
                 allOracleNews = allOracleNews.slice(0, 1000);
             }
             
-            console.log(`📰 Active view delta: +1 (total: ${allOracleNews.length})`);
+            // console.log(`📰 Active view delta: +1 (total: ${allOracleNews.length})`);
             // Filing display now handled in renderOracleNews() when UI updates
         }
     });
@@ -233,15 +233,15 @@ async function initializeOracleNews() {
 // The active view displays filings from symbolData.Filings (attached by store)
 
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("⚡ DOMContentLoaded event fired!");
+    // console.log("⚡ DOMContentLoaded event fired!");
 
-    console.log("🟢 Notifying active-window-ready");
+    // console.log("🟢 Notifying active-window-ready");
     window.activeAPI.notifyActiveWindowReady();
 
     // Load settings globally
     try {
         window.settings = await window.settingsAPI.get();
-        console.log("✅ Settings loaded in active window:", window.settings);
+        // console.log("✅ Settings loaded in active window:", window.settings);
     } catch (e) {
         console.warn("⚠️ Failed to load settings in active window:", e);
         window.settings = {}; // fallback
@@ -250,7 +250,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load news settings for sentiment analysis and filtering
     try {
         newsSettings = await window.newsSettingsAPI.get();
-        console.log("✅ News settings loaded in active window:", newsSettings);
+        // console.log("✅ News settings loaded in active window:", newsSettings);
     } catch (e) {
         console.warn("⚠️ Failed to load news settings in active window:", e);
         newsSettings = {}; // fallback
@@ -260,11 +260,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.newsSettingsAPI.onUpdate((updatedSettings) => {
         if (updatedSettings) {
             newsSettings = updatedSettings;
-            console.log("📰 News settings updated in active window:", newsSettings);
+            // console.log("📰 News settings updated in active window:", newsSettings);
             
             // Re-render if lists changed (affects sentiment colors and filtering)
             if (updatedSettings.blockList || updatedSettings.bullishList || updatedSettings.bearishList) {
-                console.log("📰 News lists updated, re-rendering for sentiment changes");
+                // console.log("📰 News lists updated, re-rendering for sentiment changes");
                 renderOracleNews();
             }
         }
@@ -363,7 +363,7 @@ function updateUI(symbolData) {
 
     // Check if symbolData is missing or empty
     if (!symbolData || Object.keys(symbolData).length === 0) {
-        console.log("No symbol data found. Showing placeholder.");
+        // console.log("No symbol data found. Showing placeholder.");
         noActiveSymbolElement.classList.add("visible");
 
         tabs.forEach((el) => (el.style.display = "none"));
@@ -674,14 +674,14 @@ function getNewsTimestamp(newsItem) {
     if (newsItem.updated_at) return new Date(newsItem.updated_at).getTime();
     
     // Debug: log what fields are available
-    console.log("🔍 No timestamp found for news item:", {
-        symbol: newsItem.symbol,
-        headline: newsItem.headline?.substring(0, 50) + "...",
-        availableFields: Object.keys(newsItem),
-        created_at: newsItem.created_at,
-        received_at: newsItem.received_at,
-        updated_at: newsItem.updated_at
-    });
+    // console.log("🔍 No timestamp found for news item:", {
+    //     symbol: newsItem.symbol,
+    //     headline: newsItem.headline?.substring(0, 50) + "...",
+    //     availableFields: Object.keys(newsItem),
+    //     created_at: newsItem.created_at,
+    //     received_at: newsItem.received_at,
+    //     updated_at: newsItem.updated_at
+    // });
     
     return 0; // fallback
 }
@@ -745,16 +745,16 @@ function renderOracleNews(symbolData = null) {
     
     // Apply blocklist filtering to news
     const blockList = newsSettings?.blockList || [];
-    console.log(`📰 Filtering ${symbolNews.length} news items with block list:`, blockList);
+    // console.log(`📰 Filtering ${symbolNews.length} news items with block list:`, blockList);
     const filteredNews = symbolNews.filter((newsItem) => {
         const headline = sanitize(newsItem.headline || "");
         const isBlocked = blockList.some((blocked) => headline.includes(sanitize(blocked)));
         if (isBlocked) {
-            console.log(`🚫 News item blocked: "${headline}" (matched: "${blockList.find(blocked => headline.includes(sanitize(blocked)))}")`);
+            // console.log(`🚫 News item blocked: "${headline}" (matched: "${blockList.find(blocked => headline.includes(sanitize(blocked)))}")`);
         }
         return !isBlocked;
     });
-    console.log(`📰 After filtering: ${filteredNews.length} news items remaining`);
+    // console.log(`📰 After filtering: ${filteredNews.length} news items remaining`);
     
     // Add news items
     filteredNews.forEach(newsItem => {

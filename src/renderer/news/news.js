@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load settings globally for sentiment analysis
     try {
         settings = await window.settingsAPI.get();
-        console.log("✅ Settings loaded in news window:", settings);
+        // console.log("✅ Settings loaded in news window:", settings);
     } catch (e) {
         console.warn("⚠️ Failed to load settings in news window:", e);
         settings = {}; // fallback
@@ -22,8 +22,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const newsSettings = await window.newsSettingsAPI.get();
         maxNewsLength = newsSettings.listLength || 50;
         window.newsSettings = newsSettings; // Store globally for sentiment analysis
-        console.log(`📰 Max news length set to: ${maxNewsLength}`);
-        console.log(`📰 News settings loaded:`, newsSettings);
+        // console.log(`📰 Max news length set to: ${maxNewsLength}`);
+        // console.log(`📰 News settings loaded:`, newsSettings);
     } catch (e) {
         console.warn("Failed to load news settings:", e);
     }
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (updatedSettings) {
             if (updatedSettings.listLength !== undefined) {
                 maxNewsLength = updatedSettings.listLength;
-                console.log(`📰 News max length updated to: ${maxNewsLength}`);
+                // console.log(`📰 News max length updated to: ${maxNewsLength}`);
             }
             
             // Update global news settings for sentiment analysis
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             // Re-render if lists changed (affects sentiment colors)
             if (updatedSettings.blockList || updatedSettings.bullishList || updatedSettings.bearishList) {
-                console.log(`📰 News lists updated, re-rendering for sentiment changes`);
+                // console.log(`📰 News lists updated, re-rendering for sentiment changes`);
                 render();
             } else if (updatedSettings.listLength !== undefined) {
                 render(); // Re-render with new limit
@@ -52,18 +52,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1. HYDRATE - Get initial headlines and filings from Oracle
     try {
         const headlines = await window.newsAPI.getHeadlines();
-        console.log(`📰 News hydration response:`, headlines);
+        // console.log(`📰 News hydration response:`, headlines);
         if (Array.isArray(headlines)) {
             allNews = headlines;
-            console.log(`📰 Hydrated: ${allNews.length} headlines`);
-            if (headlines.length > 0) {
-                console.log(`📰 First headline:`, {
-                    symbol: headlines[0].symbol,
-                    headline: headlines[0].headline?.substring(0, 50) + "...",
-                    hasBody: !!headlines[0].body,
-                    timestamp: headlines[0].created_at || headlines[0].updated_at
-                });
-            }
+            // console.log(`📰 Hydrated: ${allNews.length} headlines`);
+            // if (headlines.length > 0) {
+            //     console.log(`📰 First headline:`, {
+            //         symbol: headlines[0].symbol,
+            //         headline: headlines[0].headline?.substring(0, 50) + "...",
+            //         hasBody: !!headlines[0].body,
+            //         timestamp: headlines[0].created_at || headlines[0].updated_at
+            //     });
+            // }
         } else {
             console.warn(`📰 News hydration failed: headlines is not an array:`, typeof headlines, headlines);
         }
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const filings = await window.filingAPI.getHeadlines();
         if (Array.isArray(filings)) {
             allFilings = filings;
-            console.log(`📁 Hydrated: ${allFilings.length} filings`);
+            // console.log(`📁 Hydrated: ${allFilings.length} filings`);
         }
     } catch (e) {
         console.warn("Filing hydration failed:", e);
@@ -88,10 +88,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 2. SUBSCRIBE - Listen for Oracle news and filing updates
     window.newsAPI.onHeadlines((headlines) => {
-        console.log(`📰 News headlines event received:`, headlines);
+        // console.log(`📰 News headlines event received:`, headlines);
         if (Array.isArray(headlines)) {
             allNews = headlines;
-            console.log(`📰 Full refresh: ${allNews.length} headlines`);
+            // console.log(`📰 Full refresh: ${allNews.length} headlines`);
             render();
         } else {
             console.warn(`📰 News headlines event failed: headlines is not an array:`, typeof headlines, headlines);
@@ -99,10 +99,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     window.newsAPI.onDelta((newsItem) => {
-        console.log(`📰 News delta event received:`, newsItem);
+        // console.log(`📰 News delta event received:`, newsItem);
         if (newsItem) {
             allNews.unshift(newsItem);
-            console.log(`📰 Delta: +1 (total: ${allNews.length})`);
+            // console.log(`📰 Delta: +1 (total: ${allNews.length})`);
             render();
         } else {
             console.warn(`📰 News delta event failed: newsItem is falsy:`, newsItem);
@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.filingAPI.onHeadlines((filings) => {
         if (Array.isArray(filings)) {
             allFilings = filings;
-            console.log(`📁 Full refresh: ${allFilings.length} filings`);
+            // console.log(`📁 Full refresh: ${allFilings.length} filings`);
             render();
         }
     });
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.filingAPI.onDelta((filingItem) => {
         if (filingItem) {
             allFilings.unshift(filingItem);
-            console.log(`📁 Delta: +1 (total: ${allFilings.length})`);
+            // console.log(`📁 Delta: +1 (total: ${allFilings.length})`);
             render();
         }
     });
@@ -167,25 +167,25 @@ function render() {
     
     // Add news items
     const blockList = window.newsSettings?.blockList || [];
-    console.log(`📰 Filtering ${allNews.length} news items with block list:`, blockList);
+    // console.log(`📰 Filtering ${allNews.length} news items with block list:`, blockList);
     const filteredNews = allNews.filter((newsItem) => {
         const headline = (newsItem.headline || "").toLowerCase();
         const isBlocked = blockList.some((blocked) => headline.includes(blocked.toLowerCase()));
-        if (isBlocked) {
-            console.log(`🚫 News item blocked: "${headline}" (matched: "${blockList.find(blocked => headline.includes(blocked.toLowerCase()))}")`);
-        }
+        // if (isBlocked) {
+        //     console.log(`🚫 News item blocked: "${headline}" (matched: "${blockList.find(blocked => headline.includes(blocked.toLowerCase()))}")`);
+        // }
         return !isBlocked;
     });
-    console.log(`📰 After filtering: ${filteredNews.length} news items remaining`);
+    // console.log(`📰 After filtering: ${filteredNews.length} news items remaining`);
     
     filteredNews.forEach(newsItem => {
         const timestamp = getTime(newsItem);
-        console.log(`📰 Adding news item:`, {
-            headline: newsItem.headline?.substring(0, 50) + "...",
-            symbol: newsItem.symbol,
-            timestamp: timestamp,
-            timestampDate: new Date(timestamp).toISOString()
-        });
+        // console.log(`📰 Adding news item:`, {
+        //     headline: newsItem.headline?.substring(0, 50) + "...",
+        //     symbol: newsItem.symbol,
+        //     timestamp: timestamp,
+        //     timestampDate: new Date(timestamp).toISOString()
+        // });
         allItems.push({
             type: 'news',
             data: newsItem,
@@ -224,7 +224,7 @@ function render() {
     // Log the rendering info
     const newsCount = limited.filter(item => item.type === 'news').length;
     const filingCount = limited.filter(item => item.type === 'filing').length;
-    console.log(`📰 Rendered ${newsCount} news items and ${filingCount} filing items (total: ${limited.length})`);
+    // console.log(`📰 Rendered ${newsCount} news items and ${filingCount} filing items (total: ${limited.length})`);
 }
 
 function renderNewsItem(newsItem, container) {
@@ -408,9 +408,9 @@ function startCollapseTimer() {
     
     // Check every 30 seconds for items that need to collapse
     collapseTimer = setInterval(() => {
-        console.log("📰 Collapse timer: checking for items to collapse");
+        // console.log("📰 Collapse timer: checking for items to collapse");
         render();
     }, 30000); // 30 seconds
     
-    console.log("📰 Collapse timer started: checking every 30 seconds");
+    // console.log("📰 Collapse timer started: checking every 30 seconds");
 }
