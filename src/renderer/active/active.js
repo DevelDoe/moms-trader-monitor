@@ -12,6 +12,37 @@ let allOracleFilings = [];
 let currentActiveSymbol = null;
 let newsSettings = {}; // Store news settings for sentiment analysis and filtering
 
+// Filing structure debug logging only
+function logFilingStructure(filings, context = "") {
+    if (!Array.isArray(filings) || filings.length === 0) {
+        console.log(`🔍 ${context} - No filings to log`);
+        return;
+    }
+    
+    console.log(`🔍 === FILING STRUCTURE ${context} ===`);
+    console.log(`🔍 Total filings: ${filings.length}`);
+    
+    filings.forEach((filing, index) => {
+        console.log(`🔍 Filing ${index + 1}:`, {
+            symbol: filing.symbol,
+            form_type: filing.form_type,
+            form_description: filing.form_description,
+            title: filing.title,
+            company_name: filing.company_name,
+            accession_number: filing.accession_number,
+            accession_with_dashes: filing.accession_with_dashes,
+            filing_date: filing.filing_date,
+            filing_url: filing.filing_url,
+            summary: filing.summary,
+            cik: filing.cik,
+            priority: filing.priority,
+            source: filing.source,
+            ALL_FIELDS: Object.keys(filing)
+        });
+    });
+    console.log(`🔍 ================================`);
+}
+
 // Mock test data for testing purposes only (not used in dev mode)
 function createMockNewsData() {
     const now = Date.now();
@@ -63,15 +94,15 @@ function createMockNewsData() {
 
 // Test function to load mock data (for testing purposes only)
 function loadMockNewsData() {
-    console.log("🧪 Loading mock news data for testing...");
+    // console.log("🧪 Loading mock news data for testing...");
     allOracleNews = createMockNewsData();
-    console.log(`🧪 Loaded ${allOracleNews.length} mock news items`);
+    // console.log(`🧪 Loaded ${allOracleNews.length} mock news items`);
     
     // Dump mock data structure
-    console.log("🔍 === MOCK NEWS OBJECT STRUCTURE ===");
-    console.log("🔍 First mock item:", allOracleNews[0]);
-    console.log("🔍 Available fields:", Object.keys(allOracleNews[0]));
-    console.log("🔍 ==================================");
+    // console.log("🔍 === MOCK NEWS OBJECT STRUCTURE ===");
+    // console.log("🔍 First mock item:", allOracleNews[0]);
+    // console.log("🔍 Available fields:", Object.keys(allOracleNews[0]));
+    // console.log("🔍 ==================================");
     
     renderOracleNews();
 }
@@ -92,15 +123,15 @@ function getNewsSentimentClass(newsItem) {
 
 // Initialize Oracle news integration
 async function initializeOracleNews() {
-    console.log("📰 Initializing Oracle news integration for active view...");
+    // console.log("📰 Initializing Oracle news integration for active view...");
     
     // Check if newsAPI is available
     if (!window.newsAPI) {
-        console.error("❌ newsAPI not available in active view");
+        // console.error("❌ newsAPI not available in active view");
         return;
     }
     
-    console.log("✅ newsAPI is available:", Object.keys(window.newsAPI));
+    // console.log("✅ newsAPI is available:", Object.keys(window.newsAPI));
     
     try {
         // 1. HYDRATE - Get initial headlines from Oracle
@@ -249,7 +280,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         // Listen for active ticker updates
         window.activeAPI.onActiveTickerUpdate(async (symbol) => {
-            console.log(`🔄 Active ticker updated: ${symbol}`);
+            // console.log(`🔄 Active ticker updated: ${symbol}`);
             const symbolData = await window.activeAPI.getSymbol(symbol);
 
             if (symbolData) {
@@ -347,8 +378,8 @@ function updateUI(symbolData) {
     noActiveSymbolElement.classList.remove("visible");
     tabs.forEach((el) => (el.style.display = ""));
 
-    console.log(`[active.js] Updating UI for symbol: ${symbolData.symbol}`);
-    console.log("symbolData:", symbolData);
+    // console.log(`[active.js] Updating UI for symbol: ${symbolData.symbol}`);
+    // console.log("symbolData:", symbolData);
 
     // Summary
     setText("symbol", symbolData.symbol);
@@ -696,7 +727,7 @@ function renderOracleNews(symbolData = null) {
     
     newsContainer.innerHTML = "";
     
-    console.log(`🔍 renderOracleNews called - Active symbol: ${currentActiveSymbol}, Total news: ${allOracleNews.length}, Symbol filings: ${symbolData?.Filings?.length || 0}`);
+    // console.log(`🔍 renderOracleNews called - Active symbol: ${currentActiveSymbol}, Total news: ${allOracleNews.length}, Symbol filings: ${symbolData?.Filings?.length || 0}`);
     
     if (!currentActiveSymbol || !symbolData) {
         newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no active symbol</p>';
@@ -737,20 +768,15 @@ function renderOracleNews(symbolData = null) {
     // Get filings from the symbol data itself (attached via store.attachFilingToSymbol)
     const symbolFilings = symbolData?.Filings || [];
     
-    // Debug: Log filing details to check for duplicates
-    console.log(`🔍 Symbol filings for ${currentActiveSymbol}:`, symbolFilings.map(f => ({
-        accession_number: f.accession_number,
-        form_type: f.form_type,
-        title: f.title?.substring(0, 50) + "...",
-        symbol: f.symbol
-    })));
+    // Log filing structure for debugging
+    logFilingStructure(symbolFilings, `FOR SYMBOL ${currentActiveSymbol}`);
     
     // Deduplicate filings by accession_number to prevent double rendering
     const uniqueFilings = symbolFilings.filter((filing, index, self) => {
         return index === self.findIndex(f => f.accession_number === filing.accession_number);
     });
     
-    console.log(`🔍 Deduplicated filings: ${symbolFilings.length} -> ${uniqueFilings.length}`);
+    // console.log(`🔍 Deduplicated filings: ${symbolFilings.length} -> ${uniqueFilings.length}`);
     
     // Add filing items
     uniqueFilings.forEach(filingItem => {
@@ -872,7 +898,7 @@ function renderOracleNews(symbolData = null) {
     // Log the rendering info
     const newsCount = sorted.filter(item => item.type === 'news').length;
     const filingCount = sorted.filter(item => item.type === 'filing').length;
-    console.log(`📰 Rendered ${newsCount} news items and ${filingCount} filing items for ${currentActiveSymbol} (total: ${sorted.length})`);
+    // console.log(`📰 Rendered ${newsCount} news items and ${filingCount} filing items for ${currentActiveSymbol} (total: ${sorted.length})`);
 }
 
 // renderOracleFilings function removed - filings now handled in renderOracleNews()
