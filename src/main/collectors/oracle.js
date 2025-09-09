@@ -11,8 +11,8 @@ const log = createLogger(__filename);
 // Debug flags for different features - can be toggled independently when DEBUG=true
 const DEBUG = process.env.DEBUG === "true";
 const XP_DEBUG = DEBUG && false;        // XP data logging
-const NEWS_DEBUG = DEBUG && false;      // News data logging  
-const FILING_DEBUG = DEBUG && false;    // Filing data logging
+const NEWS_DEBUG = false;      // News data logging - disabled after hydration fix
+const FILING_DEBUG = false;    // Filing data logging - disabled after hydration fix
 const SESSION_DEBUG = DEBUG && false;   // Session data logging
 const SYMBOL_DEBUG = DEBUG && false;    // Symbol data logging
 
@@ -282,6 +282,7 @@ const createWebSocket = () => {
                 lastCursor = getLastAckCursor() || 0;
 
                 // Request hydration (both headlines and filings) on successful registration
+                log.log("🔄 [ORACLE] Registration complete - requesting hydration...");
                 requestHydration();
                 return;
             }
@@ -432,20 +433,21 @@ const createWebSocket = () => {
         }
 
         // Handle Hydration Response (both headlines and filings)
-        if (msg.type === "hydration_response") {
+        // Check for various possible hydration message types
+        if (msg.type === "hydration_response" || msg.type === "news_list" || msg.type === "headlines_list" || msg.type === "full_news_list") {
             const payload = msg.payload || {};
             const headlines = payload.headlines || [];
             const filings = payload.filings || [];
             const metadata = payload.metadata || {};
 
+            log.log(`🔄 [ORACLE] HYDRATION STARTED: ${headlines.length} headlines, ${filings.length} filings`);
             if (NEWS_DEBUG || FILING_DEBUG) {
-                log.log(`🔄 Received hydration response: ${headlines.length} headlines, ${filings.length} filings`);
                 log.log(`📊 Metadata: headlines_count=${metadata.headlines_count}, filings_count=${metadata.filings_count}`);
             }
 
             // FRESH START: Clear all existing news and filings data before processing new data
             // This ensures we start clean on reconnects/rehydration
-            log.log("🧹 Starting fresh - clearing all existing news and filings data");
+            log.log("🧹 [ORACLE] Starting fresh - clearing all existing news and filings data");
             store.clearAllNews();
             store.clearAllFilings();
             
@@ -457,6 +459,8 @@ const createWebSocket = () => {
 
             // Handle headlines
             if (headlines.length > 0) {
+                log.log(`📰 [ORACLE] Processing ${headlines.length} headlines for symbol attachment`);
+                
                 // Store latest headlines data
                 latestNewsHeadlines = headlines;
                 
@@ -466,13 +470,16 @@ const createWebSocket = () => {
                 }
 
                 // Attach news to individual symbols
+                let attachmentCount = 0;
                 headlines.forEach((newsItem) => {
                     if (newsItem.symbols && Array.isArray(newsItem.symbols)) {
                         newsItem.symbols.forEach((symbol) => {
                             store.attachNewsToSymbol(newsItem, symbol);
+                            attachmentCount++;
                         });
                     }
                 });
+                log.log(`📰 [ORACLE] Attached news to ${attachmentCount} symbol instances`);
 
                 // Broadcast to all configured news target windows
                 let actualBroadcastCount = 0;
@@ -495,6 +502,8 @@ const createWebSocket = () => {
 
             // Handle filings
             if (filings.length > 0) {
+                log.log(`📁 [ORACLE] Processing ${filings.length} filings for symbol attachment`);
+                
                 // Store latest filings data
                 latestFilings = filings;
 
@@ -505,16 +514,20 @@ const createWebSocket = () => {
                 }
 
                 // Attach filings to individual symbols
+                let filingAttachmentCount = 0;
                 filings.forEach((filingItem) => {
                     if (filingItem.symbols && Array.isArray(filingItem.symbols)) {
                         filingItem.symbols.forEach((symbol) => {
                             store.attachFilingToSymbol(filingItem, symbol);
+                            filingAttachmentCount++;
                         });
                     } else if (filingItem.symbol) {
                         // Handle single symbol case
                         store.attachFilingToSymbol(filingItem, filingItem.symbol);
+                        filingAttachmentCount++;
                     }
                 });
+                log.log(`📁 [ORACLE] Attached filings to ${filingAttachmentCount} symbol instances`);
 
                 // Broadcast to all configured filing target windows
                 FILING_BROADCAST_TARGETS.forEach((windowName) => {
@@ -532,6 +545,11 @@ const createWebSocket = () => {
             // Update counts
             latestNewsCount = metadata.headlines_count || headlines.length;
             latestFilingCount = metadata.filings_count || filings.length;
+
+            log.log(`✅ [ORACLE] HYDRATION COMPLETE: ${headlines.length} headlines, ${filings.length} filings processed`);
+            
+            // Mark news hydration as complete so news buffs will be computed going forward
+            store.markNewsHydrationComplete();
 
             return;
         }
@@ -686,9 +704,24 @@ const createWebSocket = () => {
             return;
         }
 
-        // Debug: Log any unhandled message types (but not client_list)
+        // Log all message types to see what we're receiving
+        if (msg.type && msg.type !== "ping" && msg.type !== "pong") {
+            log.log(`📨 [ORACLE] Received message type: ${msg.type}`);
+            
+            // Log additional details for hydration-related messages
+            if (msg.type.includes("hydration") || msg.type.includes("news") || msg.type.includes("filing")) {
+                log.log(`📨 [ORACLE] Message details:`, {
+                    type: msg.type,
+                    hasPayload: !!msg.payload,
+                    payloadKeys: msg.payload ? Object.keys(msg.payload) : null,
+                    headlinesCount: msg.payload?.headlines?.length || 0,
+                    filingsCount: msg.payload?.filings?.length || 0
+                });
+            }
+        }
 
-        if (DEBUG) {
+        // Debug: Log any unhandled message types (but not client_list)
+        if (DEBUG && msg.type !== "client_list") {
             log.log(`🔍 DEBUG: Unhandled message type: ${msg.type}`);
         }
     });
@@ -723,6 +756,7 @@ function requestHydration() {
 
     try {
         ws.send(JSON.stringify(request));
+        log.log("🔄 [ORACLE] Requested hydration (headlines + filings) from CDSH");
         if (NEWS_DEBUG || FILING_DEBUG) {
             log.log("🔄 Requested hydration (headlines + filings) from CDSH");
         }

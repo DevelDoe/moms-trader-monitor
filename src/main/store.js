@@ -126,6 +126,7 @@ class Store extends EventEmitter {
         this.xpState = new Map();
         this.trackedTickers = [];
         this.hodTopList = [];
+        this._newsHydrationComplete = false; // Track when news hydration is done
 
         this.user = {
             id: null,
@@ -214,7 +215,7 @@ class Store extends EventEmitter {
                 totalXpGained: old.totalXpGained ?? 0,
                 firstXpTimestamp: old.firstXpTimestamp,
                 lastEvent: old.lastEvent,
-                buffs: old.buffs ?? computeBuffsForSymbol(s, buffs, getBlockList()),
+                buffs: old.buffs ?? this._computeBuffsForSymbol(s, false), // Skip news buffs during initial load
             };
             next.set(s.symbol, { ...s, ...sessionCarry });
         }
@@ -257,7 +258,7 @@ class Store extends EventEmitter {
                 totalXpGained: old.totalXpGained ?? 0,
                 firstXpTimestamp: old.firstXpTimestamp,
                 lastEvent: old.lastEvent,
-                buffs: old.buffs ?? computeBuffsForSymbol(s, buffs, getBlockList()),
+                buffs: old.buffs ?? this._computeBuffsForSymbol(s, false), // Skip news buffs during initial load
             };
 
             const nextVal = { ...s, ...sessionCarry };
@@ -458,10 +459,18 @@ class Store extends EventEmitter {
         ticker.News = ticker.News || [];
         if (!ticker.News.some((n) => n.id === newsItem.id)) {
             ticker.News.push(newsItem);
+            log.log(`📰 [STORE] Attached news to ${symbol}: "${newsItem.headline?.substring(0, 50)}..."`);
         }
 
         // Recompute all buffs for this symbol (including news sentiment)
+        log.log(`🔄 [STORE] Recomputing buffs for ${symbol} after news attachment`);
         this.recomputeBuffsForSymbol(symbol);
+    }
+
+    _computeBuffsForSymbol(symbolData, includeNews = true) {
+        // Skip news buff computation during initial loading to avoid flooding logs
+        const skipNewsIfNoData = !includeNews || !this._newsHydrationComplete;
+        return computeBuffsForSymbol(symbolData, buffs, getBlockList(), skipNewsIfNoData);
     }
 
     recomputeBuffsForSymbol(symbol) {
@@ -469,7 +478,12 @@ class Store extends EventEmitter {
         if (!ticker) return;
 
         // Recompute all buffs using the main buff system
-        const newBuffs = computeBuffsForSymbol(ticker, buffs, getBlockList());
+        const newBuffs = this._computeBuffsForSymbol(ticker, true);
+        
+        // Debug: Log if news buff was computed (only for news buffs to reduce noise)
+        if (newBuffs.news) {
+            log.log(`🎯 [STORE] ${symbol} got news buff: ${newBuffs.news.key} (${newBuffs.news.desc})`);
+        }
         
         // Update the ticker's buffs
         ticker.buffs = newBuffs;
@@ -484,6 +498,11 @@ class Store extends EventEmitter {
                 lastEvent: ticker.lastEvent,
             },
         ]);
+        
+        // Only log buff updates for symbols with news buffs to reduce noise
+        if (newBuffs.news) {
+            log.log(`📤 [STORE] Emitted buffs-updated for ${symbol} with ${Object.keys(newBuffs).length} buffs (including news buff)`);
+        }
     }
 
     attachFilingToSymbol(filingItem, symbol) {
@@ -518,6 +537,11 @@ class Store extends EventEmitter {
         
         log.log(`[clearAllNews] Cleared news from ${clearedCount} symbols`);
         this.emit("news-cleared");
+    }
+
+    markNewsHydrationComplete() {
+        this._newsHydrationComplete = true;
+        log.log("✅ [STORE] News hydration complete - news buffs will now be computed for all symbols");
     }
 
     clearAllFilings() {

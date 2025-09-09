@@ -8,13 +8,13 @@ function sanitize(str) {
 /**
  * Main entry point
  */
-function computeBuffsForSymbol(symbolData, buffList = [], blockList = []) {
+function computeBuffsForSymbol(symbolData, buffList = [], blockList = [], skipNewsIfNoData = false) {
     const buffs = {};
 
     const floatBuff = getFloatBuff(symbolData, buffList);
     if (floatBuff) buffs.float = floatBuff;
 
-    const newsBuff = getNewsBuff(symbolData, buffList, blockList);
+    const newsBuff = getNewsBuff(symbolData, buffList, blockList, skipNewsIfNoData);
     if (newsBuff) buffs.news = newsBuff;
 
     const ownershipBuff = getOwnershipBuff(symbolData, buffList);
@@ -90,19 +90,40 @@ function getFloatBuff(symbolData, buffList = []) {
           };
 }
 
-function getNewsBuff(symbolData, buffList = [], blockList = []) {
+// Counter for tracking news buff processing
+let newsBuffStats = {
+    noNewsCount: 0,
+    noHeadlineCount: 0,
+    blockedCount: 0,
+    processedCount: 0,
+    lastLogTime: 0
+};
+
+function getNewsBuff(symbolData, buffList = [], blockList = [], skipIfNoNews = false) {
     const news = symbolData.News || [];
 
-    if (!Array.isArray(news) || news.length === 0) return null;
+    if (!Array.isArray(news) || news.length === 0) {
+        if (skipIfNoNews) {
+            // During initial loading, don't count as "no news" since we know news hasn't been hydrated yet
+            return null;
+        }
+        newsBuffStats.noNewsCount++;
+        return null;
+    }
 
     // Get the most recent news item for sentiment analysis
     const latestNews = news[0];
-    if (!latestNews || !latestNews.headline) return null;
+    if (!latestNews || !latestNews.headline) {
+        newsBuffStats.noHeadlineCount++;
+        return null;
+    }
 
     const headline = latestNews.headline.toLowerCase();
+    newsBuffStats.processedCount++;
 
     // Check if blocked
     if (blockList.some((term) => headline.includes(term.toLowerCase()))) {
+        newsBuffStats.blockedCount++;
         return null;
     }
 
@@ -124,6 +145,14 @@ function getNewsBuff(symbolData, buffList = [], blockList = []) {
             multiplier: def.multiplier ?? 1.1,
             isBuff: def.isBuff ?? true,
         };
+    }
+
+    // Log stats every 30 seconds to avoid flooding
+    
+    const now = Date.now();
+    if (now - newsBuffStats.lastLogTime > 30000) { // 30 seconds
+        console.log(`[getNewsBuff] Stats: ${newsBuffStats.processedCount} processed, ${newsBuffStats.noNewsCount} no news, ${newsBuffStats.noHeadlineCount} no headline, ${newsBuffStats.blockedCount} blocked`);
+        newsBuffStats.lastLogTime = now;
     }
 
     if (isBullish) {
