@@ -53,18 +53,16 @@ function createActiveWindow(isDevelopment) {
         isWindowReady = true;
         window.show(); // Now show the window
         
-        // Ensure window is positioned correctly after showing
-        if (state.x && state.y) {
-            window.setPosition(state.x, state.y);
-            log.log(`📍 Repositioned activeWindow to:`, { x: state.x, y: state.y });
-        }
-        
-        // Save initial window bounds to ensure we have a baseline
-        const initialBounds = window.getBounds();
-        if (initialBounds.x !== state.x || initialBounds.y !== state.y || 
-            initialBounds.width !== state.width || initialBounds.height !== state.height) {
-            log.log(`💾 Saving initial activeWindow bounds:`, initialBounds);
-            setWindowBounds("activeWindow", initialBounds);
+        // Only reposition if this is a new window creation (no stored position)
+        // Don't force reposition on every load - let user's current position persist
+        if (!state.x || !state.y) {
+            // This is a new window, use default positioning
+            const currentBounds = window.getBounds();
+            log.log(`📍 New activeWindow created at:`, { x: currentBounds.x, y: currentBounds.y });
+            setWindowBounds("activeWindow", currentBounds);
+        } else {
+            // Window has stored position, but don't force reposition - let it stay where user placed it
+            log.log(`📍 activeWindow loaded with stored position:`, { x: state.x, y: state.y }, `but keeping current position`);
         }
     });
 
