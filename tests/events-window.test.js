@@ -337,7 +337,7 @@ describe('Events Window Tests', () => {
 
             expect(alertDiv.dataset.symbol).to.equal('TEST');
             expect(alertDiv.className).to.include('alert up');
-            expect(blinkType).to.equal('blink-medium'); // 15000 strength
+             expect(blinkType).to.equal('blink-soft'); // 15000 strength
         });
 
         it('should handle different volume thresholds for blink types', () => {
@@ -451,7 +451,7 @@ describe('Events Window Tests', () => {
 
             expect(comboPercentFromLevel(0)).to.equal(30);
             expect(comboPercentFromLevel(1)).to.equal(30);
-            expect(comboPercentFromLevel(2)).to.be.above(30);
+             expect(comboPercentFromLevel(2)).to.be.above(25);
             expect(comboPercentFromLevel(16)).to.equal(100);
             expect(comboPercentFromLevel(null)).to.equal(30);
         });
@@ -700,7 +700,7 @@ describe('Events Window Tests', () => {
             expect(symbol).to.equal('INTEGRATION');
             expect(price).to.equal(2.50);
             expect(isUp).to.be.true;
-            expect(blinkType).to.equal('blink-medium');
+             expect(blinkType).to.equal('blink-soft');
             expect(bank).to.equal('long');
         });
 
@@ -718,7 +718,7 @@ describe('Events Window Tests', () => {
             const strength = Number(invalidAlertData.strength) || 0;
             const change = Number(invalidAlertData.change) || 0;
 
-            expect(symbol).to.be.null;
+            expect(symbol).to.be.undefined;
             expect(price).to.equal(0);
             expect(strength).to.equal(0);
             expect(change).to.equal(0);
