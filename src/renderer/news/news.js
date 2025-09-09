@@ -5,6 +5,37 @@ let allFilings = [];
 let maxNewsLength = 50; // Default value
 let settings = {}; // Store settings for sentiment analysis
 
+// Filing structure debug logging only
+function logFilingStructure(filings, context = "") {
+    if (!Array.isArray(filings) || filings.length === 0) {
+        console.log(`🔍 ${context} - No filings to log`);
+        return;
+    }
+    
+    console.log(`🔍 === FILING STRUCTURE ${context} ===`);
+    console.log(`🔍 Total filings: ${filings.length}`);
+    
+    filings.forEach((filing, index) => {
+        console.log(`🔍 Filing ${index + 1}:`, {
+            symbol: filing.symbol,
+            form_type: filing.form_type,
+            form_description: filing.form_description,
+            title: filing.title,
+            company_name: filing.company_name,
+            accession_number: filing.accession_number,
+            accession_with_dashes: filing.accession_with_dashes,
+            filing_date: filing.filing_date,
+            filing_url: filing.filing_url,
+            summary: filing.summary,
+            cik: filing.cik,
+            priority: filing.priority,
+            source: filing.source,
+            ALL_FIELDS: Object.keys(filing)
+        });
+    });
+    console.log(`🔍 ================================`);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ News: Hydrating from Oracle...");
 
@@ -192,6 +223,10 @@ function render() {
             timestamp: timestamp
         });
     });
+    
+    // Log filing structure for debugging
+    console.log(`🔍 Checking filings in news view: ${allFilings.length} filings found`);
+    logFilingStructure(allFilings, "IN NEWS VIEW");
     
     // Add filing items
     allFilings.forEach(filingItem => {
