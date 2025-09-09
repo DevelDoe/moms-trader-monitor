@@ -188,7 +188,7 @@ function isNewsItemCollapsed(newsItem) {
     if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
-    const fifteenMinutesInMs = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const fifteenMinutesInMs = 4 * 60 * 1000; // 15 minutes in milliseconds
     
     return (now - ms) > fifteenMinutesInMs;
 }
@@ -357,6 +357,14 @@ function renderFilingItem(filingItem, container) {
         });
         
         // Collapsed view: Symbol + Form Type + Time
+        // Debug: Log right before template creation
+        console.log(`🔍 COLLAPSED TEMPLATE CREATION:`, {
+            form_type: filingItem.form_type,
+            form_description: filingItem.form_description,
+            when: when,
+            symbol: symbol
+        });
+        
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
                 symbol: symbol, 
