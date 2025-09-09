@@ -150,6 +150,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     window.filingAPI.onDelta((filingItem) => {
         if (filingItem) {
+            console.log(`🔍 FILING DELTA RECEIVED:`, {
+                symbol: filingItem.symbol,
+                form_type: filingItem.form_type,
+                form_description: filingItem.form_description,
+                title: filingItem.title,
+                ALL_FIELDS: Object.keys(filingItem)
+            });
             allFilings.unshift(filingItem);
             // console.log(`📁 Delta: +1 (total: ${allFilings.length})`);
             render();
