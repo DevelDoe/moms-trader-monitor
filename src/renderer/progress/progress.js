@@ -1,249 +1,238 @@
-// Configuration - using const for immutable values
+// Session-based buy/sell tracking configuration
 const CONFIG = {
-    WINDOW_SIZE: 50,
-    INTENSITY_THRESHOLD: 0.7,
-    UPDATE_INTERVAL: 100, // 100ms instead of every event (10x performance boost)
-    LOG_INTERVAL: 5 * 60 * 1000, // 5 minutes
-    SMOOTHING_FACTOR: 0.98,
-    DECAY_FACTOR: 0.95,
-    MIN_STRENGTH: 1000,
-    MAX_STRENGTH: 500000,
-    MIN_IMBALANCE: 10,
-    GLOW_THRESHOLD: 25,
-    HEARTBEAT_THRESHOLD: 80,
-    ANIMATION_THROTTLE: 50 // 50ms for smooth animations
+    UPDATE_INTERVAL: 1000, // Update every second
+    SESSION_TRANSITION_BUFFER: 5 * 60 * 1000, // 5 minutes buffer for session transitions
+    MIN_VOLUME_THRESHOLD: 100, // Minimum volume to count as significant trade
+    HOT_MARKET_THRESHOLD: 0.40, // >35% more buying = hot market (bullish)
+    WARM_MARKET_THRESHOLD: 0.20, // >20% more buying = warm market
+    COOL_MARKET_THRESHOLD: 0.20, // >20% more selling = cool market
+    COLD_MARKET_THRESHOLD: 0.40 // >35% more selling = cold market (bearish)
 };
 
-// State management - single object for better memory layout
-const state = {
-    tradeRate: 0,
-    tradeRateRaw: 0,
-    dynamicWindowSize: 50,
-    currentVolumeBucket: 0,
-    flowHistory: [],
-    hpTotal: 0,
-    dpTotal: 0,
-    lastDirection: null,
-    pendingUpdate: false,
-    lastUpdateTime: 0
+// Trading session definitions (in 24-hour format)
+const SESSIONS = {
+    PRE: { name: 'pre', start: 4, end: 7, color: '#4A90E2' },
+    NEWS: { name: 'news', start: 7, end: 9.5, color: '#F5A623' },
+    OPEN: { name: 'open', start: 9.5, end: 15, color: '#7ED321' },
+    POWER: { name: 'power', start: 15, end: 16, color: '#D0021B' },
+    POST: { name: 'post', start: 16, end: 20, color: '#9013FE' }
 };
 
-// DOM element cache - avoid repeated DOM queries
+// Session data tracking
+const sessionData = {
+    current: null,
+    buyVolume: 0,
+    sellVolume: 0,
+    totalTrades: 0,
+    lastUpdate: Date.now()
+};
+
+// DOM element cache
 const elements = {
-    hp: null,
-    dp: null,
-    flow: null
+    buyBar: null,
+    sellBar: null,
+    container: null,
+    sessionInfo: null,
+    buyInfo: null,
+    sellInfo: null,
+    marketTemp: null,
+    heroesCount: null
 };
 
-// Performance optimization: Cache for width changes
-const widthCache = {
-    hp: 50,
-    dp: 50
-};
-
-// Initialize DOM elements once
-function initializeElements() {
-    elements.hp = document.getElementById("flow-hp");
-    elements.dp = document.getElementById("flow-dp");
-    elements.flow = document.querySelector(".sentiment-flow");
+// Get current trading session based on New York time
+function getCurrentSession() {
+    const now = new Date();
+    const nyTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const currentHour = nyTime.getHours() + (nyTime.getMinutes() / 60);
     
-    if (!elements.hp || !elements.dp || !elements.flow) {
+    console.log(`[progress] Current NY time: ${nyTime.toLocaleTimeString()}, Hour: ${currentHour.toFixed(2)}`);
+    
+    for (const [key, session] of Object.entries(SESSIONS)) {
+        if (currentHour >= session.start && currentHour < session.end) {
+            console.log(`[progress] Active session: ${session.name} (${session.start}:00 - ${session.end}:00)`);
+            return { key, ...session };
+        }
+    }
+    
+    // Default to POST session if outside trading hours
+    console.log(`[progress] Outside trading hours, defaulting to POST session`);
+    return { key: 'POST', ...SESSIONS.POST };
+}
+
+// Initialize DOM elements
+function initializeElements() {
+    elements.buyBar = document.getElementById("flow-hp");
+    elements.sellBar = document.getElementById("flow-dp");
+    elements.container = document.querySelector(".sentiment-flow");
+    elements.sessionInfo = document.getElementById("session-info");
+    elements.buyInfo = document.getElementById("buy-info");
+    elements.sellInfo = document.getElementById("sell-info");
+    elements.marketTemp = document.getElementById("market-temp");
+    elements.heroesCount = document.getElementById("heroes-count");
+    
+    if (!elements.buyBar || !elements.sellBar || !elements.container) {
         console.warn("[progress] Required DOM elements not found");
         return false;
     }
     
-    // Set initial widths for balanced start
-    elements.hp.style.width = '50%';
-    elements.dp.style.width = '50%';
+    // Set initial balanced state
+    updateDisplay(50, 50, 'closed', 0, 0);
     
     return true;
 }
 
-// Optimized strength accumulation
-function accumulateStrength(event) {
-    if (event.strength) {
-        state.currentVolumeBucket += event.strength;
-    }
-}
 
-// High-performance event processing with early returns
-function processMarketFlow(event) {
+// Process market events for buy/sell tracking
+function processMarketEvent(event) {
     // Early validation
     if (!event.hp && !event.dp) return;
     
-    const eventStrength = event.strength || event.one_min_volume || CONFIG.MIN_STRENGTH;
-    if (eventStrength < CONFIG.MIN_STRENGTH) return;
+    const volume = event.strength || event.one_min_volume || 0;
+    if (volume < CONFIG.MIN_VOLUME_THRESHOLD) return;
 
-    // Update trade rate
-    state.tradeRateRaw++;
-
-    // Normalize strength efficiently
-    const normalizedStrength = Math.min(eventStrength / CONFIG.MAX_STRENGTH, 1);
-    
-    // Calculate changes
-    const hpChange = event.hp > 0 ? event.hp * normalizedStrength : 0;
-    const dpChange = event.dp > 0 ? event.dp * normalizedStrength : 0;
-
-    // Update flow history with size limit
-    state.flowHistory.unshift({ hp: event.hp, dp: event.dp });
-    if (state.flowHistory.length > state.dynamicWindowSize) {
-        state.flowHistory.pop();
+    // Check if we need to reset for new session
+    const currentSession = getCurrentSession();
+    if (sessionData.current !== currentSession.key) {
+        resetSessionData(currentSession);
     }
 
-    // Update totals with decay
-    state.hpTotal = state.hpTotal * CONFIG.DECAY_FACTOR + hpChange;
-    state.dpTotal = state.dpTotal * CONFIG.DECAY_FACTOR + dpChange;
-
-    // Throttled visual update for performance
-    scheduleVisualUpdate();
+    // Determine if this is a buy or sell based on hp/dp values
+    // hp > dp = buying pressure, dp > hp = selling pressure
+    const buyPressure = event.hp || 0;
+    const sellPressure = event.dp || 0;
+    
+    if (buyPressure > sellPressure) {
+        sessionData.buyVolume += volume;
+    } else if (sellPressure > buyPressure) {
+        sessionData.sellVolume += volume;
+    }
+    
+    sessionData.totalTrades++;
+    sessionData.lastUpdate = Date.now();
+    
+    // Update display
+    updateSessionDisplay();
 }
 
-// High-performance visual update with throttling
-function scheduleVisualUpdate() {
-    if (state.pendingUpdate) return;
+// Reset session data for new session
+function resetSessionData(newSession) {
+    console.log(`[progress] Starting new session: ${newSession.name}`);
+    sessionData.current = newSession.key;
+    sessionData.buyVolume = 0;
+    sessionData.sellVolume = 0;
+    sessionData.totalTrades = 0;
+    sessionData.lastUpdate = Date.now();
+}
+
+// Update session display with buy/sell data
+function updateSessionDisplay() {
+    const currentSession = getCurrentSession();
+    const totalVolume = sessionData.buyVolume + sessionData.sellVolume;
     
-    const now = performance.now();
-    if (now - state.lastUpdateTime < CONFIG.UPDATE_INTERVAL) {
-        state.pendingUpdate = true;
-        requestAnimationFrame(() => {
-            updateFlowVisual();
-            state.pendingUpdate = false;
-            state.lastUpdateTime = performance.now();
-        });
+    if (totalVolume === 0) {
+        // No data yet, show balanced
+        updateDisplay(50, 50, currentSession.name, 0, 0);
         return;
     }
     
-    updateFlowVisual();
-    state.lastUpdateTime = now;
-}
-
-// Optimized visual update using transforms instead of width
-function updateFlowVisual() {
-    if (!elements.flow) return;
+    const buyPercent = (sessionData.buyVolume / totalVolume) * 100;
+    const sellPercent = (sessionData.sellVolume / totalVolume) * 100;
     
-    const total = state.hpTotal + state.dpTotal;
-    if (total <= 0) return;
+    // Determine market temperature based on buy/sell direction
+    const buySellDiff = buyPercent - sellPercent;
+    let marketTemp = 'balanced';
+    let tempColor = '#FFFFFF';
     
-    const hpPercent = (state.hpTotal / total) * 100;
-    const dpPercent = (state.dpTotal / total) * 100;
-    const imbalance = Math.abs(hpPercent - dpPercent);
-    const volumeMomentum = total;
-
-    // Use width changes for proper horizontal layout
-    updateBarWidths(hpPercent, dpPercent);
-
-    // Throttled CSS custom property updates
-    if (Math.abs(imbalance - widthCache.lastImbalance || 0) > 5) {
-        const flowVelocity = imbalance / 100;
-        const swooshSpeed = Math.max(1, 3 - flowVelocity * 1.5);
-        document.documentElement.style.setProperty("--swoosh-speed", `${swooshSpeed}s`);
-        widthCache.lastImbalance = imbalance;
-    }
-
-    // Batch class updates to reduce reflows
-    batchClassUpdates(imbalance, volumeMomentum, hpPercent, dpPercent);
-}
-
-// High-performance width updates with caching
-function updateBarWidths(hpPercent, dpPercent) {
-    // Only update if change is significant (>1%)
-    if (Math.abs(hpPercent - widthCache.hp) > 1) {
-        widthCache.hp = hpPercent;
-        elements.hp.style.width = `${hpPercent}%`;
+    if (buySellDiff > CONFIG.HOT_MARKET_THRESHOLD * 100) {
+        marketTemp = 'hot ';
+        tempColor = '#FF4444';
+    } else if (buySellDiff > CONFIG.WARM_MARKET_THRESHOLD * 100) {
+        marketTemp = 'warm ';
+        tempColor = '#FF8844';
+    } else if (buySellDiff < -CONFIG.COLD_MARKET_THRESHOLD * 100) {
+        marketTemp = 'cold ';
+        tempColor = '#4444FF';
+    } else if (buySellDiff < -CONFIG.COOL_MARKET_THRESHOLD * 100) {
+        marketTemp = 'cool';
+        tempColor = '#4488FF';
     }
     
-    if (Math.abs(dpPercent - widthCache.dp) > 1) {
-        widthCache.dp = dpPercent;
-        elements.dp.style.width = `${dpPercent}%`;
-    }
-}
-
-// Batch class updates to reduce reflows
-function batchClassUpdates(imbalance, volumeMomentum, hpPercent, dpPercent) {
-    const updates = [];
+    // Format volume for display
+    const formatVolume = (vol) => {
+        if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
+        if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
+        return vol.toString();
+    };
     
-    // Glow effect
-    const shouldGlow = imbalance > CONFIG.GLOW_THRESHOLD;
-    if (elements.flow.classList.contains('glow') !== shouldGlow) {
-        updates.push(() => elements.flow.classList.toggle('glow', shouldGlow));
+    updateDisplay(buyPercent, sellPercent, currentSession.name, totalVolume, tempColor);
+    
+    // Update banner elements
+    if (elements.sessionInfo) {
+        elements.sessionInfo.textContent = currentSession.name;
     }
     
-    // Directional flash logic (throttled)
-    const currentDirection = hpPercent > dpPercent ? "hp" : "dp";
-    if (currentDirection !== state.lastDirection && imbalance > CONFIG.MIN_IMBALANCE) {
-        const flashClass = currentDirection === "hp" ? "flash-green" : "flash-red";
-        updates.push(() => {
-            elements.flow.classList.remove("flash-green", "flash-red");
-            elements.flow.classList.add(flashClass);
-            setTimeout(() => elements.flow.classList.remove(flashClass), 150);
-        });
-        state.lastDirection = currentDirection;
+    if (elements.buyInfo) {        elements.buyInfo.textContent = formatVolume(sessionData.buyVolume);
     }
     
-    // Heartbeat effect (throttled)
-    if (volumeMomentum > CONFIG.HEARTBEAT_THRESHOLD && !elements.flow.classList.contains('heartbeat')) {
-        updates.push(() => {
-            elements.flow.classList.add("heartbeat");
-            setTimeout(() => elements.flow.classList.remove("heartbeat"), 1000);
-        });
+    if (elements.sellInfo) {
+        elements.sellInfo.textContent = formatVolume(sessionData.sellVolume);
     }
     
-    // Body class toggles (throttled)
-    const shouldStrongHp = hpPercent > CONFIG.INTENSITY_THRESHOLD * 100;
-    const shouldStrongDp = dpPercent > CONFIG.INTENSITY_THRESHOLD * 100;
-    
-    if (document.body.classList.contains('strong-hp') !== shouldStrongHp) {
-        updates.push(() => document.body.classList.toggle('strong-hp', shouldStrongHp));
-    }
-    if (document.body.classList.contains('strong-dp') !== shouldStrongDp) {
-        updates.push(() => document.body.classList.toggle('strong-dp', shouldStrongDp));
-    }
-    
-    // Execute all updates in one batch
-    if (updates.length > 0) {
-        requestAnimationFrame(() => {
-            updates.forEach(update => update());
-        });
+    if (elements.marketTemp) {
+        elements.marketTemp.textContent = marketTemp;
+        elements.marketTemp.style.color = tempColor;
     }
 }
 
-// Optimized trade rate update
-function updateTradeRate() {
-    const minSize = 0;
-    const maxSize = 400;
-
-    // Smoothing calculation
-    state.tradeRate = state.tradeRate * CONFIG.SMOOTHING_FACTOR + 
-                     state.tradeRateRaw * (1 - CONFIG.SMOOTHING_FACTOR);
-
-    // Dynamic window size calculation
-    const normalizedRate = Math.min(state.tradeRate, 2) / 2;
-    state.dynamicWindowSize = Math.floor(minSize + normalizedRate * (maxSize - minSize));
-
-    // Decay when idle
-    if (state.tradeRateRaw === 0) {
-        state.tradeRate *= CONFIG.DECAY_FACTOR;
-    }
-
-    state.tradeRateRaw = 0;
+// Update the visual display
+function updateDisplay(buyPercent, sellPercent, sessionName, totalVolume, tempColor) {
+    if (!elements.buyBar || !elements.sellBar) return;
+    
+    // Update bar widths
+    elements.buyBar.style.width = `${buyPercent}%`;
+    elements.sellBar.style.width = `${sellPercent}%`;
+    
+    // Add visual effects based on market temperature
+    updateVisualEffects(buyPercent, sellPercent, totalVolume);
 }
 
-// Efficient logging with debouncing
-let logTimeout = null;
-function scheduleLogging() {
-    if (logTimeout) clearTimeout(logTimeout);
+// Update visual effects based on market conditions
+function updateVisualEffects(buyPercent, sellPercent, totalVolume) {
+    if (!elements.container) return;
     
-    logTimeout = setTimeout(() => {
-        const now = new Date().toISOString();
-        if (window.progressAPI && window.progressAPI.log) {
-            window.progressAPI.log(now, state.currentVolumeBucket);
+    const buySellDiff = buyPercent - sellPercent;
+    const imbalance = Math.abs(buySellDiff);
+    const hasVolume = totalVolume > 0;
+    
+    // Remove all effect classes
+    elements.container.classList.remove('glow', 'heartbeat', 'flash-green', 'flash-red', 'cold-market', 'warm-market', 'cool-market');
+    
+    // Add appropriate effects based on market temperature
+    if (hasVolume) {
+        if (buySellDiff > CONFIG.HOT_MARKET_THRESHOLD * 100) {
+            // Hot market - intense effects
+            elements.container.classList.add('glow', 'heartbeat');
+        } else if (buySellDiff > CONFIG.WARM_MARKET_THRESHOLD * 100) {
+            // Warm market - subtle glow
+            elements.container.classList.add('warm-market');
+        } else if (buySellDiff < -CONFIG.COLD_MARKET_THRESHOLD * 100) {
+            // Cold market - cold effects
+            elements.container.classList.add('cold-market');
+        } else if (buySellDiff < -CONFIG.COOL_MARKET_THRESHOLD * 100) {
+            // Cool market - subtle cool effects
+            elements.container.classList.add('cool-market');
         }
-        state.currentVolumeBucket = 0;
-        logTimeout = null;
-    }, CONFIG.LOG_INTERVAL);
+    }
+    
+    // Flash effect for significant moves
+    if (imbalance > 20 && hasVolume) {
+        const flashClass = buyPercent > sellPercent ? 'flash-green' : 'flash-red';
+        elements.container.classList.add(flashClass);
+        setTimeout(() => elements.container.classList.remove(flashClass), 300);
+    }
 }
 
-// Main event handler with array normalization
+// Main event handler for market alerts
 function handleAlerts(events) {
     // Normalize to array efficiently
     const eventArray = Array.isArray(events) ? events : [events];
@@ -251,9 +240,21 @@ function handleAlerts(events) {
     // Process events in batch
     for (let i = 0; i < eventArray.length; i++) {
         const event = eventArray[i];
-        accumulateStrength(event);
-        processMarketFlow(event);
+        processMarketEvent(event);
     }
+}
+
+// Periodic session check and display update
+function checkSessionAndUpdate() {
+    const currentSession = getCurrentSession();
+    
+    // Check if session changed
+    if (sessionData.current !== currentSession.key) {
+        resetSessionData(currentSession);
+    }
+    
+    // Update display even if no new events
+    updateSessionDisplay();
 }
 
 // Initialize the application
@@ -263,23 +264,35 @@ function initialize() {
         return;
     }
 
+    // Initialize current session
+    const currentSession = getCurrentSession();
+    resetSessionData(currentSession);
+
     // Set up event listeners
     if (window.eventsAPI && window.eventsAPI.onAlert) {
         window.eventsAPI.onAlert(handleAlerts);
     }
 
-    // Set up intervals
-    const updateInterval = setInterval(updateTradeRate, CONFIG.UPDATE_INTERVAL);
-    const logInterval = setInterval(scheduleLogging, CONFIG.LOG_INTERVAL);
+    // Set up XP Active Stocks count listener
+    if (window.progressAPI && window.progressAPI.onXpActiveStocksCount) {
+        window.progressAPI.onXpActiveStocksCount((event, data) => {
+            if (elements.heroesCount) {
+                elements.heroesCount.textContent = data.count;
+            }
+        });
+    }
 
-    // Initialize visual state
-    updateFlowVisual();
+    // Set up periodic updates
+    const updateInterval = setInterval(checkSessionAndUpdate, CONFIG.UPDATE_INTERVAL);
+
+    // Initial display update
+    updateSessionDisplay();
+
+    console.log(`[progress] Initialized for session: ${currentSession.name}`);
 
     // Cleanup function
     return () => {
         clearInterval(updateInterval);
-        clearInterval(logInterval);
-        if (logTimeout) clearTimeout(logTimeout);
     };
 }
 
@@ -292,5 +305,11 @@ if (document.readyState === 'loading') {
 
 // Export for testing if needed
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { initialize, processMarketFlow, updateFlowVisual };
+    module.exports = { 
+        initialize, 
+        processMarketEvent, 
+        updateSessionDisplay, 
+        getCurrentSession,
+        SESSIONS 
+    };
 }

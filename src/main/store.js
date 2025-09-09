@@ -1,9 +1,23 @@
 const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
-const { fetchHistoricalNews, subscribeToSymbolNews } = require("./collectors/news");
+// const { fetchHistoricalNews, subscribeToSymbolNews } = require("../../dump/news"); // Removed - news now handled by oracle.js
 const { computeBuffsForSymbol, calculateVolumeImpact } = require("./utils/buffLogic");
 const { DateTime } = require("luxon");
+
+// Import news store functions
+let getBlockList, getBullishList, getBearishList;
+try {
+    const newsStore = require("./electronStores");
+    getBlockList = newsStore.getBlockList;
+    getBullishList = newsStore.getBullishList;
+    getBearishList = newsStore.getBearishList;
+} catch (err) {
+    log.warn("⚠️ Could not import news store functions:", err.message);
+    getBlockList = () => [];
+    getBullishList = () => [];
+    getBearishList = () => [];
+}
 
 const path = require("path");
 const fs = require("fs");
@@ -19,25 +33,8 @@ const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev
 const BUFFS_FILE = path.join(__dirname, "../data/buffs.json");
 
 let buffs = [];
-let blockList = [];
-let bullishList = [];
-let bearishList = [];
 
 function loadSettingsAndBuffs() {
-    try {
-        const settingsRaw = fs.readFileSync(SETTINGS_FILE, "utf-8");
-        const settings = JSON.parse(settingsRaw);
-
-        blockList = settings.news?.blockList || [];
-        bullishList = settings.news?.bullishList || [];
-        bearishList = settings.news?.bearishList || [];
-    } catch (err) {
-        log.warn("⚠️ Failed to load settings:", err.message);
-        blockList = [];
-        bullishList = [];
-        bearishList = [];
-    }
-
     try {
         const buffsRaw = fs.readFileSync(BUFFS_FILE, "utf-8");
         buffs = JSON.parse(buffsRaw);
@@ -47,65 +44,6 @@ function loadSettingsAndBuffs() {
     }
 }
 
-function getNewsSentimentBuff(headline, buffList, bullishList, bearishList, blockList = []) {
-    const lower = headline.toLowerCase();
-
-    // Blocked?
-    if (blockList.some((term) => lower.includes(term.toLowerCase()))) {
-        return null;
-    }
-
-    const isBullish = bullishList.some((term) => lower.includes(term.toLowerCase()));
-    const isBearish = bearishList.some((term) => lower.includes(term.toLowerCase()));
-
-    if (isBullish && isBearish) {
-        // Cancel out — return neutral
-        return (
-            buffList.find((b) => b.key === "hasNews") || {
-                key: "hasNews",
-                icon: "😼",
-                desc: "Catalyst in play — recent news may affect momentum",
-                score: 200,
-                isBuff: true,
-            }
-        );
-    }
-
-    if (isBullish) {
-        return (
-            buffList.find((b) => b.key === "hasBullishNews") || {
-                key: "hasBullishNews",
-                icon: "😺",
-                desc: "Bullish news - may affect momentum",
-                score: 300,
-                isBuff: true,
-            }
-        );
-    }
-
-    if (isBearish) {
-        return (
-            buffList.find((b) => b.key === "hasBearishNews") || {
-                key: "hasBearishNews",
-                icon: "🙀",
-                desc: "Bearish news - may affect momentum",
-                score: -200,
-                isBuff: false,
-            }
-        );
-    }
-
-    // No sentiment, but still relevant
-    return (
-        buffList.find((b) => b.key === "hasNews") || {
-            key: "hasNews",
-            icon: "😼",
-            desc: "Catalyst in play — recent news may affect momentum",
-            score: 200,
-            isBuff: true,
-        }
-    );
-}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -185,9 +123,9 @@ class Store extends EventEmitter {
         loadSettingsAndBuffs();
 
         this.symbols = new Map();
-        this.newsList = [];
         this.xpState = new Map();
         this.trackedTickers = [];
+        this.hodTopList = [];
 
         this.user = {
             id: null,
@@ -205,7 +143,6 @@ class Store extends EventEmitter {
         if (lastClear !== today) {
             this._needsDailyReset = true;
             this.xpState.clear();
-            this.newsList = [];
 
             log.log("🧨 Full store reset at boot (new day)");
 
@@ -252,7 +189,7 @@ class Store extends EventEmitter {
 
     nuke() {
         this.xpState.clear();
-        this.newsList = [];
+        this.hodTopList = [];
 
         log.warn("🔥 Manual nuke: Store state cleared");
 
@@ -277,24 +214,24 @@ class Store extends EventEmitter {
                 totalXpGained: old.totalXpGained ?? 0,
                 firstXpTimestamp: old.firstXpTimestamp,
                 lastEvent: old.lastEvent,
-                buffs: old.buffs ?? computeBuffsForSymbol(s, buffs, blockList),
+                buffs: old.buffs ?? computeBuffsForSymbol(s, buffs, getBlockList()),
             };
             next.set(s.symbol, { ...s, ...sessionCarry });
         }
 
         this.symbols = next;
 
-        // ⬇️ Match old behavior
-        if (!isDevelopment) {
-            const keys = Array.from(this.symbols.keys());
-            subscribeToSymbolNews(keys);
-            (async () => {
-                for (const symbol of keys) {
-                    await fetchHistoricalNews(symbol);
-                    await sleep(200);
-                }
-            })();
-        }
+        // ⬇️ News now handled by oracle.js - no longer subscribing to Alpaca news here
+        // if (!isDevelopment) {
+        //     const keys = Array.from(this.symbols.keys());
+        //     subscribeToSymbolNews(keys);
+        //     (async () => {
+        //         for (const symbol of keys) {
+        //             await fetchHistoricalNews(symbol);
+        //             await sleep(200);
+        //         }
+        //     })();
+        // }
 
         this.emit("lists-update");
     }
@@ -320,7 +257,7 @@ class Store extends EventEmitter {
                 totalXpGained: old.totalXpGained ?? 0,
                 firstXpTimestamp: old.firstXpTimestamp,
                 lastEvent: old.lastEvent,
-                buffs: old.buffs ?? computeBuffsForSymbol(s, buffs, blockList),
+                buffs: old.buffs ?? computeBuffsForSymbol(s, buffs, getBlockList()),
             };
 
             const nextVal = { ...s, ...sessionCarry };
@@ -331,13 +268,14 @@ class Store extends EventEmitter {
         }
 
         if (newlyAdded.length) {
-            subscribeToSymbolNews(newlyAdded);
-            (async () => {
-                for (const sym of newlyAdded) {
-                    await fetchHistoricalNews(sym);
-                    await sleep(200);
-                }
-            })();
+            // News now handled by oracle.js - no longer subscribing to Alpaca news here
+            // subscribeToSymbolNews(newlyAdded);
+            // (async () => {
+            //     for (const sym of newlyAdded) {
+            //         await fetchHistoricalNews(sym);
+            //         await sleep(200);
+            //     }
+            // })();
         }
 
         if (changed) this.emit("lists-update");
@@ -509,113 +447,108 @@ class Store extends EventEmitter {
         this.symbols.set(symbol, ticker);
     }
 
-    addNews(newsItems, symbol) {
-        // log.log(`[addNews] called for ${symbol}`);
-
-        const existingIds = new Set(this.newsList.map((n) => n.id));
-        const existingHeadlines = new Set(this.newsList.map((n) => n.headline));
-
-        const filteredNews = newsItems.filter((news) => {
-            if (existingIds.has(news.id)) return false;
-            if (existingHeadlines.has(news.headline)) return false;
-
-            // ⛔ Block multi-symbol news
-            if (news.symbols.length > 1) {
-                // log.log(`[addNews] Skipping multi-symbol headline: "${news.headline}"`);
-                return false;
-            }
-
-            // ⛔ Block by blockList
-            const sanitized = news.headline.toLowerCase().trim();
-            const isBlocked = blockList.some((word) => sanitized.includes(word.toLowerCase().trim()));
-            if (isBlocked) {
-                // log.log(`[addNews] Blocked by blockList: "${news.headline}"`);
-                return false;
-            }
-
-            return true;
-        });
-
-        if (filteredNews.length === 0) {
-            // log.log("[addNews] No new news items to process.");
+    attachNewsToSymbol(newsItem, symbol) {
+        const ticker = this.symbols.get(symbol);
+        if (!ticker) {
+            // log.log(`[attachNewsToSymbol] Symbol '${symbol}' not found in store`);
             return;
         }
 
-        const timestampedNews = filteredNews.map((news) => ({
-            ...news,
-            storedAt: Date.now(),
-            symbols: Array.isArray(news.symbols) ? news.symbols : [],
-        }));
+        // Attach news to symbol
+        ticker.News = ticker.News || [];
+        if (!ticker.News.some((n) => n.id === newsItem.id)) {
+            ticker.News.push(newsItem);
+        }
 
-        this.newsList.push(...timestampedNews);
-
-        timestampedNews.forEach((newsItem) => {
-            // 🎯 Attach sentiment buff and link news to symbol if it's tracked
-            const newsBuff = getNewsSentimentBuff(newsItem.headline, buffs, bullishList, bearishList, blockList);
-
-            newsItem.symbols.forEach((sym) => {
-                const ticker = this.symbols.get(sym);
-                if (!ticker) {
-                    log.log(`[addNews] Skipping symbol '${sym}' — not found in store`);
-                    return;
-                }
-
-                // Attach news
-                ticker.News = ticker.News || [];
-                if (!ticker.News.some((n) => n.id === newsItem.id)) {
-                    ticker.News.push(newsItem);
-                }
-
-                // Add sentiment buff
-                ticker.buffs = ticker.buffs || {};
-                ticker.buffs = ticker.buffs || {};
-
-                // Remove any existing opposing news buff first
-                if (newsBuff.key === "hasBullishNews") {
-                    delete ticker.buffs["hasBearishNews"];
-                } else if (newsBuff.key === "hasBearishNews") {
-                    delete ticker.buffs["hasBullishNews"];
-                }
-
-                // Apply only if not already both
-                const hasBullish = "hasBullishNews" in ticker.buffs;
-                const hasBearish = "hasBearishNews" in ticker.buffs;
-
-                if (!(hasBullish && hasBearish)) {
-                    ticker.buffs[newsBuff.key] = newsBuff;
-                }
-
-                this.emit("buffs-updated", [
-                    {
-                        symbol: sym,
-                        buffs: ticker.buffs,
-                        highestPrice: ticker.highestPrice,
-                        lastEvent: ticker.lastEvent,
-                    },
-                ]);
-                // log.log(`[buffs] ${newsBuff.icon} ${newsBuff.key} added for: ${sym}`);
-            });
-        });
-
-        this.emit("newsUpdated", { newsItems: timestampedNews });
-        this.emit("lists-update");
+        // Recompute all buffs for this symbol (including news sentiment)
+        this.recomputeBuffsForSymbol(symbol);
     }
 
-    getAllNews() {
-        // log.log("[getAllNews] called");
-        return this.newsList;
+    recomputeBuffsForSymbol(symbol) {
+        const ticker = this.symbols.get(symbol);
+        if (!ticker) return;
+
+        // Recompute all buffs using the main buff system
+        const newBuffs = computeBuffsForSymbol(ticker, buffs, getBlockList());
+        
+        // Update the ticker's buffs
+        ticker.buffs = newBuffs;
+        this.symbols.set(symbol, ticker);
+
+        // Emit buff update
+        this.emit("buffs-updated", [
+            {
+                symbol: symbol,
+                buffs: ticker.buffs,
+                highestPrice: ticker.highestPrice,
+                lastEvent: ticker.lastEvent,
+            },
+        ]);
+    }
+
+    attachFilingToSymbol(filingItem, symbol) {
+        const ticker = this.symbols.get(symbol);
+        if (!ticker) {
+            // log.log(`[attachFilingToSymbol] Symbol '${symbol}' not found in store`);
+            return;
+        }
+
+        // Attach filing to symbol
+        ticker.Filings = ticker.Filings || [];
+        if (!ticker.Filings.some((f) => f.id === filingItem.id)) {
+            ticker.Filings.push(filingItem);
+        }
+
+        // Recompute all buffs for this symbol (including filing buff)
+        this.recomputeBuffsForSymbol(symbol);
+    }
+
+    clearAllNews() {
+        log.log("[clearAllNews] Clearing all news data from all symbols");
+        let clearedCount = 0;
+        
+        for (const [symbol, ticker] of this.symbols) {
+            if (ticker.News && ticker.News.length > 0) {
+                ticker.News = [];
+                clearedCount++;
+                // Recompute buffs since news affects sentiment
+                this.recomputeBuffsForSymbol(symbol);
+            }
+        }
+        
+        log.log(`[clearAllNews] Cleared news from ${clearedCount} symbols`);
+        this.emit("news-cleared");
+    }
+
+    clearAllFilings() {
+        log.log("[clearAllFilings] Clearing all filing data from all symbols");
+        let clearedCount = 0;
+        
+        for (const [symbol, ticker] of this.symbols) {
+            if (ticker.Filings && ticker.Filings.length > 0) {
+                ticker.Filings = [];
+                clearedCount++;
+                // Recompute buffs since filings affect sentiment
+                this.recomputeBuffsForSymbol(symbol);
+            }
+        }
+        
+        log.log(`[clearAllFilings] Cleared filings from ${clearedCount} symbols`);
+        this.emit("filings-cleared");
     }
 
     fetchNews() {
-        const symbols = Array.from(this.symbols.keys());
-        subscribeToSymbolNews(symbols);
-        log.log(`[subscribeToNews] Subscribed to news for ${symbols.length} symbols.`);
-        (async () => {
-            for (const symbol of this.symbols.keys()) {
-                await fetchHistoricalNews(symbol);
-                await sleep(200); // ⏳ Add 500ms delay between requests
-            }
-        })();
+        // News now handled by oracle.js - no longer subscribing to Alpaca news here
+        log.log(`[fetchNews] News fetching now handled by oracle.js`);
+        // const symbols = Array.from(this.symbols.keys());
+        // subscribeToSymbolNews(symbols);
+        // log.log(`[subscribeToNews] Subscribed to news for ${symbols.length} symbols.`);
+        // (async () => {
+        //     for (const symbol of this.symbols.keys()) {
+        //         await fetchHistoricalNews(symbol);
+        //         await sleep(200); // ⏳ Add 500ms delay between requests
+        //     }
+        // })();
     }
 
     getAllSymbols() {
@@ -694,6 +627,78 @@ class Store extends EventEmitter {
 
     getTrophyData() {
         return this.trophyData || [];
+    }
+
+    updateHodTopList(hodList) {
+        if (!Array.isArray(hodList)) {
+            log.warn("[updateHodTopList] Invalid HOD list data received");
+            return;
+        }
+
+        this.hodTopList = hodList;
+        // log.log(`[updateHodTopList] Updated HOD list with ${hodList.length} symbols`);
+        
+        // Emit event for any listeners
+        this.emit("hod-list-updated", hodList);
+    }
+
+    updateHodPrice(priceData) {
+        if (!priceData || (!priceData.symbol && !priceData.name)) {
+            log.warn("[updateHodPrice] Invalid price data received");
+            return;
+        }
+
+        const symbol = (priceData.symbol || priceData.name || '').toUpperCase();
+        if (!symbol) {
+            log.warn("[updateHodPrice] No valid symbol in price data");
+            return;
+        }
+
+        // Find the symbol in the HOD list and update its price
+        const hodItem = this.hodTopList.find(item => 
+            (item.symbol || item.name || '').toUpperCase() === symbol
+        );
+
+        if (hodItem) {
+            // Update price and related fields
+            if (Number.isFinite(priceData.price)) {
+                hodItem.price = priceData.price;
+            }
+            
+            // Update session high if provided and higher than current
+            if (Number.isFinite(priceData.session_high) && priceData.session_high > (hodItem.session_high || 0)) {
+                hodItem.session_high = priceData.session_high;
+            }
+            
+            // Update percentage below high if provided
+            if (Number.isFinite(priceData.pct_below_high)) {
+                hodItem.pct_below_high = priceData.pct_below_high;
+            } else if (Number.isFinite(hodItem.session_high) && hodItem.session_high > 0) {
+                // Calculate percentage below high if not provided
+                hodItem.pct_below_high = ((hodItem.session_high - hodItem.price) / hodItem.session_high) * 100;
+            }
+            
+            // Update at_high flag if provided
+            if (typeof priceData.at_high === 'boolean') {
+                hodItem.at_high = priceData.at_high;
+            }
+            
+            // Update last_updated timestamp if provided
+            if (Number.isFinite(priceData.last_updated)) {
+                hodItem.last_updated = priceData.last_updated;
+            }
+
+            // log.log(`[updateHodPrice] Updated ${symbol} price to $${priceData.price} (${hodItem.pct_below_high?.toFixed(2)}% below high)`);
+            
+            // Emit event for any listeners
+            this.emit("hod-price-updated", priceData);
+        } else {
+            // log.log(`[updateHodPrice] Price update for ${symbol} - not in current HOD list`);
+        }
+    }
+
+    getHodTopList() {
+        return this.hodTopList.slice(); // Return a copy
     }
 }
 

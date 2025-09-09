@@ -6,7 +6,6 @@ let bullishList = [];
 let bearishList = [];
 let lastJFlashTime = 0;
 let trackedTickers = [];
-let showTrackedOnly = false;
 
 let lastActivePush = 0;
 const ACTIVE_PUSH_COOLDOWN = 8000; // ms
@@ -42,13 +41,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Page Loaded. Initializing...");
 
     await loadSettings(); // blockList + showTrackedOnly
-    await fetchNews(); // initial headlines
+    // Don't fetch initial news - only listen for deltas
 
     window.storeAPI.onTrackedUpdate((list) => {
         console.log("trackedTickers", list);
         trackedTickers = (Array.isArray(list) ? list : []).map((s) => String(s).toUpperCase());
         console.log("trackedTickers", trackedTickers);
-        fetchNews(); // re-filter with latest tracked list
+        // Don't re-filter - only listen for new deltas
     });
 
     // Listen for Oracle active stocks updates
@@ -73,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("⚠️ Active stocks update received but no symbols data");
         }
         
-        fetchNews(); // re-filter with new active stocks
+        // Don't re-filter - only listen for new deltas
     });
 
     // Get initial Oracle data
@@ -81,10 +80,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         activeStocksData = await window.xpAPI.getActiveStocks();
         console.log("📊 Initial Oracle active stocks data:", activeStocksData);
         
-        // If we got data, re-filter news to apply any active stocks filtering
+        // Don't re-filter - only listen for new deltas
         if (activeStocksData?.symbols && activeStocksData.symbols.length > 0) {
-            console.log("✅ Got initial active stocks, re-filtering news...");
-            fetchNews();
+            console.log("✅ Got initial active stocks data");
         } else {
             console.log("⚠️ No initial active stocks data available yet");
         }
@@ -105,7 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (lastActiveSession) {
                     activeStocksData = { symbols: lastActiveSession.symbols };
                     console.log(`🌙 Using last session data (${lastActiveSession.session_name}) for overnight continuity: ${lastActiveSession.symbols.length} symbols`);
-                    fetchNews(); // Re-filter with fallback data
+                    // Don't re-filter - only listen for new deltas
                 }
             }
         } catch (fallbackError) {
@@ -116,25 +114,79 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     window.settingsAPI.onUpdate(async (updated) => {
         window.settings = structuredClone(updated || {});
-        
-
-        
-        const prev = showTrackedOnly;
-        blockList = window.settings?.news?.blockList || [];
-        showTrackedOnly = !!window.settings?.news?.showTrackedTickers;
-        if (prev !== showTrackedOnly) fetchNews(); // only re-filter if toggle changed
     });
 
-    // news pushed from main — just refresh headlines
-    window.newsAPI.onUpdate(() => {
-        console.log("🔄 Received news update. Fetching fresh news...");
-        fetchNews();
+    // Subscribe to news settings changes
+    window.newsSettingsAPI.onUpdate((updatedNewsSettings) => {
+        if (updatedNewsSettings) {
+            blockList = (updatedNewsSettings.blockList || []).map((w) => w.toLowerCase().trim());
+            bullishList = (updatedNewsSettings.bullishList || []).map((w) => w.toLowerCase().trim());
+            bearishList = (updatedNewsSettings.bearishList || []).map((w) => w.toLowerCase().trim());
+            console.log("✅ News settings updated in infobar:", updatedNewsSettings);
+        }
+    });
+
+    // Don't listen for full headlines - only deltas
+
+    // Listen for new news deltas
+    window.newsAPI.onDelta((newsItem) => {
+        if (newsItem) {
+            console.log("📰 New news delta received:", newsItem.headline);
+            const sanitized = newsItem.headline.toLowerCase().trim();
+            const isBlocked = blockList.some((word) => sanitized.includes(word));
+            const isDuplicate = displayedNewsKeys.has(newsItem.id);
+
+            // Skip blocked or duplicate news
+            if (isBlocked || isDuplicate) return;
+
+            const type = getSentimentClass(newsItem.headline);
+            let truncated = newsItem.headline;
+            if (truncated.length > 240) truncated = truncated.slice(0, 239).trimEnd() + "…";
+
+            // Extract symbols from newsItem
+            const symbols = [];
+            if (newsItem.symbol) {
+                symbols.push(newsItem.symbol);
+            } else if (newsItem.symbols && Array.isArray(newsItem.symbols)) {
+                symbols.push(...newsItem.symbols);
+            }
+
+            queueNewsItem(truncated, newsItem.id, type, symbols);
+        }
+    });
+
+    // Listen for new filing deltas
+    window.filingAPI.onDelta((filingItem) => {
+        if (filingItem) {
+            console.log("📁 New filing delta received:", filingItem.form_type, filingItem.title);
+            const isDuplicate = displayedNewsKeys.has(filingItem.id || filingItem.accession_number);
+
+            // Skip duplicate filings
+            if (isDuplicate) return;
+
+            const type = "filing"; // Filings are always neutral
+            const symbol = filingItem.symbol || filingItem.symbols?.[0] || "Unknown";
+            const formType = filingItem.form_type || "filing";
+            const description = filingItem.form_description || "document";
+            let truncated = `${symbol} has filed a ${formType} ${description}`;
+            if (truncated.length > 240) truncated = truncated.slice(0, 239).trimEnd() + "…";
+
+            // Extract symbols from filingItem
+            const symbols = [];
+            if (filingItem.symbol) {
+                symbols.push(filingItem.symbol);
+            } else if (filingItem.symbols && Array.isArray(filingItem.symbols)) {
+                symbols.push(...filingItem.symbols);
+            }
+
+            queueNewsItem(truncated, filingItem.id || filingItem.accession_number, type, symbols);
+        }
     });
 
     window.infobarAPI.onForceRefresh?.(() => {
         console.log("🔁 Refreshing infobar from main process trigger...");
         displayedNewsKeys.clear();
-        fetchNews();
+        // Don't fetch news - only listen for deltas
     });
 });
 
@@ -152,9 +204,19 @@ async function loadSettings() {
 
 
 
-        blockList = (window.settings.news?.blockList || []).map((w) => w.toLowerCase().trim());
-        bullishList = (window.settings.news?.bullishList || []).map((w) => w.toLowerCase().trim());
-        bearishList = (window.settings.news?.bearishList || []).map((w) => w.toLowerCase().trim());
+        // Load news settings from news store
+        try {
+            const newsSettings = await window.newsSettingsAPI.get();
+            blockList = (newsSettings.blockList || []).map((w) => w.toLowerCase().trim());
+            bullishList = (newsSettings.bullishList || []).map((w) => w.toLowerCase().trim());
+            bearishList = (newsSettings.bearishList || []).map((w) => w.toLowerCase().trim());
+            console.log("✅ Loaded news settings from news store:", newsSettings);
+        } catch (newsError) {
+            console.warn("⚠️ Failed to load news settings, using empty lists:", newsError);
+            blockList = [];
+            bullishList = [];
+            bearishList = [];
+        }
 
         console.log("✅ Loaded settings:", window.settings);
     } catch (error) {
@@ -173,54 +235,8 @@ function getNewsAlertVolume() {
 
 
 
-async function fetchNews() {
-    try {
-        console.log("📢 Fetching news...");
-
-        const newsData = await window.newsAPI.get();
-        if (!Array.isArray(newsData)) {
-            console.error("⚠️ Expected an array but got:", newsData);
-            return;
-        }
-
-        newsData.forEach((newsItem) => {
-            const sanitized = newsItem.headline.toLowerCase().trim();
-            const isBlocked = blockList.some((word) => sanitized.includes(word));
-            const isDuplicate = displayedNewsKeys.has(newsItem.id);
-            const isMultiSymbol = newsItem.symbols.length > 1;
-
-            // Skip blocked, duplicate, or multi-symbol
-            if (isBlocked || isDuplicate || isMultiSymbol) return;
-
-            // If showing only tracked tickers
-            if (window.settings.news?.showTrackedTickers) {
-                const symbol = newsItem.symbols?.[0]?.toUpperCase();
-                if (!symbol) return;
-                
-                // First check if symbol is in tracked tickers
-                if (trackedTickers.includes(symbol)) return;
-                
-                // If not in tracked tickers, check if it's in Oracle active stocks
-                if (activeStocksData?.symbols && activeStocksData.symbols.length > 0) {
-                    const isActiveStock = activeStocksData.symbols.some(active => active.symbol === symbol);
-                    if (isActiveStock) return;
-                }
-                
-                // If we get here, the symbol is not in tracked tickers or active stocks
-                return;
-            }
-
-            const type = getSentimentClass(newsItem.headline);
-            let truncated = newsItem.headline;
-            if (truncated.length > 240) truncated = truncated.slice(0, 239).trimEnd() + "…";
-
-            const syms = Array.isArray(newsItem.symbols) ? newsItem.symbols : [];
-            queueNewsItem(truncated, newsItem.id, type, syms);
-        });
-    } catch (error) {
-        console.error("❌ Failed to fetch news:", error);
-    }
-}
+// fetchNews() function removed - infobar only listens to delta updates from Oracle
+// This ensures we only show real-time news alerts, not historical data
 
 // Determine sentiment (Bullish, Bearish, or Neutral)
 function getSentimentClass(headline) {
@@ -292,17 +308,19 @@ function showNewsItem(containerSelector, icon, desc, onDismiss, type = "neutral"
     iconSpan.textContent = icon;
     li.appendChild(iconSpan);
 
-    // symbols badges
+    // symbols using the Symbol component
     if (Array.isArray(symbols) && symbols.length) {
         const symWrap = document.createElement("span");
         symWrap.className = "symbols";
         for (const s of symbols) {
             const sym = String(s).toUpperCase();
             if (!sym) continue;
-            const badge = document.createElement("span");
-            badge.className = `badge ${hueClass(assignHue(sym))}`;
-            badge.textContent = sym;
-            symWrap.appendChild(badge);
+            const symbolHtml = window.components.Symbol({ 
+                symbol: sym, 
+                size: "small",
+                onClick: true
+            });
+            symWrap.innerHTML += symbolHtml;
         }
         li.appendChild(symWrap);
     }
@@ -337,7 +355,7 @@ function showNewsItem(containerSelector, icon, desc, onDismiss, type = "neutral"
 function queueNewsItem(desc, id = null, type = "neutral", symbols = []) {
     if (id && displayedNewsKeys.has(id)) return;
 
-    const icon = type === "bullish" ? "😺" : type === "bearish" ? "🙀" : "😼";
+    const icon = type === "bullish" ? "😺" : type === "bearish" ? "🙀" : type === "filing" ? "📁" : "😼";
     newsQueue.push({ icon, desc, type, symbols });
     if (id) displayedNewsKeys.add(id);
     if (!isNewsDisplaying) processNextNews();
@@ -412,18 +430,7 @@ const bonusItems = [
     { icon: "🚨", desc: "High dilution risk: Net loss + Registered S-3" },
 ];
 
-function assignHue(symbol) {
-    if (!symbol) return 210;
-    const key = String(symbol).trim().toUpperCase();
-    let sum = 0;
-    for (let i = 0; i < key.length; i++) sum += key.charCodeAt(i);
-    return (sum * 37) % 360;
-}
-function hueClass(h) {
-    const n = ((Number(h) % 360) + 360) % 360;
-    const bucket = (Math.round(n / 30) * 30) % 360; // 0,30,...330
-    return `badge-h${bucket}`;
-}
+// Removed assignHue and hueClass functions - now using Symbol component
 
 // Show regular ticker
 initTicker(".bonus-list", bonusItems);

@@ -3,16 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self';
-        style-src 'self';
-        img-src 'self' data:;
-        font-src 'self';
-        connect-src 'self' https://scribe.arcanemonitor.com wss:;
-        base-uri 'none';
-        form-action 'none';
-      ">        <title>News</title>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">        <title>News</title>
         <link rel="stylesheet" href="../styles.css" />
         
         <link rel="stylesheet" href="./news.css" />
@@ -20,9 +11,7 @@
     </head>
     <body class="draggable">
         <h2>📜 Spells of Enchantments (news)</h2>
-        <div id="news-wrapper">
-            <ul id="news-list">
-            </ul>
+        <div id="news-container">
         </div>
         <footer></footer>
         <script src="./news.js"></script>

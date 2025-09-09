@@ -155,6 +155,7 @@ let _xpShowNet = xpSettingsStore.get("showNet", true); // Default to visible
 let _xpShowPrice = xpSettingsStore.get("showPrice", true); // Default to visible
 let _xpShowTotalVolume = xpSettingsStore.get("showTotalVolume", true); // Default to visible
 let _xpShowLevel = xpSettingsStore.get("showLevel", true); // Default to visible
+let _xpShowSessionChange = xpSettingsStore.get("showSessionChange", true); // Default to visible
 
 function getXpListLength() {
     return _xpListLength;
@@ -167,7 +168,7 @@ function setXpListLength(length) {
     _xpListLength = newLength;
     xpSettingsStore.set("listLength", _xpListLength);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -192,7 +193,7 @@ function setXpShowHeaders(show) {
     _xpShowHeaders = newShow;
     xpSettingsStore.set("showHeaders", _xpShowHeaders);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -217,7 +218,7 @@ function setXpShowUpXp(show) {
     _xpShowUpXp = newShow;
     xpSettingsStore.set("showUpXp", _xpShowUpXp);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -242,7 +243,7 @@ function setXpShowDownXp(show) {
     _xpShowDownXp = newShow;
     xpSettingsStore.set("showDownXp", _xpShowDownXp);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -267,7 +268,7 @@ function setXpShowRatio(show) {
     _xpShowRatio = newShow;
     xpSettingsStore.set("showRatio", _xpShowRatio);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -292,7 +293,7 @@ function setXpShowTotal(show) {
     _xpShowTotal = newShow;
     xpSettingsStore.set("showTotal", _xpShowTotal);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -317,7 +318,7 @@ function setXpShowNet(show) {
     _xpShowNet = newShow;
     xpSettingsStore.set("showNet", _xpShowNet);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -342,7 +343,7 @@ function setXpShowPrice(show) {
     _xpShowPrice = newShow;
     xpSettingsStore.set("showPrice", _xpShowPrice);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -367,7 +368,7 @@ function setXpShowTotalVolume(show) {
     _xpShowTotalVolume = newShow;
     xpSettingsStore.set("showTotalVolume", _xpShowTotalVolume);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -392,7 +393,32 @@ function setXpShowLevel(show) {
     _xpShowLevel = newShow;
     xpSettingsStore.set("showLevel", _xpShowLevel);
     
-    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel };
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
+    xpSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-settings:change", payload);
+        } catch (err) {
+            log.log("[xp-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getXpShowSessionChange() {
+    return _xpShowSessionChange;
+}
+
+function setXpShowSessionChange(show) {
+    const newShow = Boolean(show);
+    if (newShow === _xpShowSessionChange) return false;
+    
+    _xpShowSessionChange = newShow;
+    xpSettingsStore.set("showSessionChange", _xpShowSessionChange);
+    
+    const payload = { listLength: _xpListLength, showHeaders: _xpShowHeaders, showUpXp: _xpShowUpXp, showDownXp: _xpShowDownXp, showRatio: _xpShowRatio, showTotal: _xpShowTotal, showNet: _xpShowNet, showPrice: _xpShowPrice, showTotalVolume: _xpShowTotalVolume, showLevel: _xpShowLevel, showSessionChange: _xpShowSessionChange };
     xpSettingsBus.emit("change", payload);
     
     const targets = webContents.getAllWebContents();
@@ -422,10 +448,11 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
             showNet: getXpShowNet(),
             showPrice: getXpShowPrice(),
             showTotalVolume: getXpShowTotalVolume(),
-            showLevel: getXpShowLevel()
+            showLevel: getXpShowLevel(),
+            showSessionChange: getXpShowSessionChange()
         };
     });
-    ipcMain.handle("xp-settings:set", (_e, { listLength, showHeaders, showUpXp, showDownXp, showRatio, showTotal, showNet, showPrice, showTotalVolume, showLevel }) => {
+    ipcMain.handle("xp-settings:set", (_e, { listLength, showHeaders, showUpXp, showDownXp, showRatio, showTotal, showNet, showPrice, showTotalVolume, showLevel, showSessionChange }) => {
         let changed = false;
         if (listLength !== undefined) {
             changed = setXpListLength(listLength) || changed;
@@ -457,6 +484,9 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
         if (showLevel !== undefined) {
             changed = setXpShowLevel(showLevel) || changed;
         }
+        if (showSessionChange !== undefined) {
+            changed = setXpShowSessionChange(showSessionChange) || changed;
+        }
         return changed;
     });
 
@@ -474,7 +504,8 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
             showNet: getXpShowNet(),
             showPrice: getXpShowPrice(),
             showTotalVolume: getXpShowTotalVolume(),
-            showLevel: getXpShowLevel()
+            showLevel: getXpShowLevel(),
+            showSessionChange: getXpShowSessionChange()
         }); // prime immediately
         xpSettingsBus.on("change", push);
         wc.once("destroyed", () => {
@@ -817,6 +848,243 @@ if (app && ipcMain && typeof app.on === "function" && !app.__top3_ipc_registered
         wc.once("destroyed", () => {
             log.log("[top3] unsubscribe WC", wc.id);
             top3Bus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// News Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const newsSettingsStore = createStore("news-settings-store", "news.");
+const newsSettingsBus = new EventEmitter();
+
+// Default values
+const DEFAULT_BLOCK_LIST = [
+    "nasdaq surges",
+    "Shares halted",
+    "shares resume",
+    "stocks moving in",
+    "earnings scheduled",
+    "Says experts",
+    "us stocks",
+    "futures waver",
+    "shares are trading",
+    "trading halt",
+    "crude oil moves lower",
+    "Market-moving news",
+];
+
+const DEFAULT_BULLISH_LIST = [
+    "FDA Approves",
+    "Clinical Trials",
+    "Noteworthy Insider Activity",
+    "equity purchase facility"
+];
+
+const DEFAULT_BEARISH_LIST = [
+    "Sell Alert",
+    "Stock Downgrade",
+    "Downgrades to Sell"
+];
+
+let _newsListLength = newsSettingsStore.get("listLength", 50);
+let _blockList = newsSettingsStore.get("blockList", DEFAULT_BLOCK_LIST);
+let _bullishList = newsSettingsStore.get("bullishList", DEFAULT_BULLISH_LIST);
+let _bearishList = newsSettingsStore.get("bearishList", DEFAULT_BEARISH_LIST);
+
+function getNewsListLength() {
+    return _newsListLength;
+}
+
+function setNewsListLength(length) {
+    const newLength = Math.max(1, Number(length) || 50);
+    if (newLength === _newsListLength) return false;
+    
+    _newsListLength = newLength;
+    newsSettingsStore.set("listLength", _newsListLength);
+    
+    const payload = { 
+        listLength: _newsListLength,
+        blockList: _blockList,
+        bullishList: _bullishList,
+        bearishList: _bearishList
+    };
+    newsSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("news-settings:change", payload);
+        } catch (err) {
+            log.log("[news-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getBlockList() {
+    return _blockList;
+}
+
+function setBlockList(list) {
+    const newList = Array.isArray(list) ? list : [];
+    if (JSON.stringify(newList) === JSON.stringify(_blockList)) return false;
+    
+    _blockList = newList;
+    newsSettingsStore.set("blockList", _blockList);
+    
+    const payload = { 
+        listLength: _newsListLength,
+        blockList: _blockList,
+        bullishList: _bullishList,
+        bearishList: _bearishList
+    };
+    newsSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("news-settings:change", payload);
+        } catch (err) {
+            log.log("[news-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getBullishList() {
+    return _bullishList;
+}
+
+function setBullishList(list) {
+    const newList = Array.isArray(list) ? list : [];
+    if (JSON.stringify(newList) === JSON.stringify(_bullishList)) return false;
+    
+    _bullishList = newList;
+    newsSettingsStore.set("bullishList", _bullishList);
+    
+    const payload = { 
+        listLength: _newsListLength,
+        blockList: _blockList,
+        bullishList: _bullishList,
+        bearishList: _bearishList
+    };
+    newsSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("news-settings:change", payload);
+        } catch (err) {
+            log.log("[news-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getBearishList() {
+    return _bearishList;
+}
+
+function setBearishList(list) {
+    const newList = Array.isArray(list) ? list : [];
+    if (JSON.stringify(newList) === JSON.stringify(_bearishList)) return false;
+    
+    _bearishList = newList;
+    newsSettingsStore.set("bearishList", _bearishList);
+    
+    const payload = { 
+        listLength: _newsListLength,
+        blockList: _blockList,
+        bullishList: _bullishList,
+        bearishList: _bearishList
+    };
+    newsSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("news-settings:change", payload);
+        } catch (err) {
+            log.log("[news-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__news_settings_ipc_registered__) {
+    app.__news_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("news-settings:get");
+    ipcMain.removeHandler("news-settings:set");
+    ipcMain.removeHandler("news-settings:getBlockList");
+    ipcMain.removeHandler("news-settings:setBlockList");
+    ipcMain.removeHandler("news-settings:getBullishList");
+    ipcMain.removeHandler("news-settings:setBullishList");
+    ipcMain.removeHandler("news-settings:getBearishList");
+    ipcMain.removeHandler("news-settings:setBearishList");
+    
+    ipcMain.handle("news-settings:get", () => {
+        return { 
+            listLength: getNewsListLength(),
+            blockList: getBlockList(),
+            bullishList: getBullishList(),
+            bearishList: getBearishList()
+        };
+    });
+    ipcMain.handle("news-settings:set", (_e, { listLength, blockList, bullishList, bearishList }) => {
+        let changed = false;
+        if (listLength !== undefined) {
+            changed = setNewsListLength(listLength) || changed;
+        }
+        if (blockList !== undefined) {
+            changed = setBlockList(blockList) || changed;
+        }
+        if (bullishList !== undefined) {
+            changed = setBullishList(bullishList) || changed;
+        }
+        if (bearishList !== undefined) {
+            changed = setBearishList(bearishList) || changed;
+        }
+        return changed;
+    });
+    
+    ipcMain.handle("news-settings:getBlockList", () => {
+        return getBlockList();
+    });
+    ipcMain.handle("news-settings:setBlockList", (_e, blockList) => {
+        return setBlockList(blockList);
+    });
+    
+    ipcMain.handle("news-settings:getBullishList", () => {
+        return getBullishList();
+    });
+    ipcMain.handle("news-settings:setBullishList", (_e, bullishList) => {
+        return setBullishList(bullishList);
+    });
+    
+    ipcMain.handle("news-settings:getBearishList", () => {
+        return getBearishList();
+    });
+    ipcMain.handle("news-settings:setBearishList", (_e, bearishList) => {
+        return setBearishList(bearishList);
+    });
+
+    ipcMain.removeAllListeners("news-settings:subscribe");
+    ipcMain.on("news-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("news-settings:change", data);
+        push({ 
+            listLength: getNewsListLength(),
+            blockList: getBlockList(),
+            bullishList: getBullishList(),
+            bearishList: getBearishList()
+        }); // prime immediately
+        newsSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[news-settings] unsubscribe WC", wc.id);
+            newsSettingsBus.removeListener("change", push);
         });
     });
 }
@@ -1284,6 +1552,10 @@ module.exports = {
     getStatsListLength,
     setStatsListLength,
     
+    // News settings exports
+    getNewsListLength,
+    setNewsListLength,
+    
     // Window settings exports
     getAllWindowStates,
     getWindowState,
@@ -1294,6 +1566,14 @@ module.exports = {
     resetAllWindowsToDefault,
     recalculateAllPositions,
     clearAllWindowSettings,
+    
+    // News store functions
+    getBlockList,
+    setBlockList,
+    getBullishList,
+    setBullishList,
+    getBearishList,
+    setBearishList,
     
     // For testing - expose IPC handlers and stores
     ipcMain: app && ipcMain ? ipcMain : undefined,

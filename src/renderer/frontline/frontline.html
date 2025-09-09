@@ -11,14 +11,18 @@
     </head>
     <body>
         <div class="drag-area"></div>
-        <h2>⚔️ The Frontline of Shifting Fortunes (peak)</h2>
-        <div id="frontline-window" class="frontline-window">
-            <div id="frontline"></div>
-            <!-- Content will be injected here -->
+        <header class="app-header">
+            <h1>⚔️ The Frontline of Shifting Fortunes (peak)</h1>
+        </header>
+        
+        <main class="frontline-container">
+            <div id="frontline" class="heroes-list">
+                <!-- Hero cards will be dynamically inserted here -->
+            </div>
+        </main>
            
-            <script src="./frontline.js"></script>
-            <script src="./stateManager.js"></script>
-            <script src="./helpers.js"></script>
-        </div>
+        <script src="./frontline.js"></script>
+        <script src="./stateManager.js"></script>
+        <script src="./helpers.js"></script>
     </body>
 </html>

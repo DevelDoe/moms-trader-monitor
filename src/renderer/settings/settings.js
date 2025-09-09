@@ -535,6 +535,7 @@ function initializeGeneralSection() {
             console.log("✅ HOD settings updated from other window:", updated);
         }
     });
+
 }
 
 function initializeAdminSection() {
@@ -856,72 +857,156 @@ function initializeTopSection() {
 
 function initializeNewsSection() {
     if (!window.settings.news) {
-        window.settings.news = { blockList: [], bullish: [], bearishList: [], allowMultiSymbols: true };
+        window.settings.news = { filteredTickers: [] };
     }
 
     console.log("🔍 Checking loaded news settings:", window.settings.news);
 
-    const showTrackedTickersToggle = document.getElementById("show-tracked-tickers");
-    const allowMultiSymbolsToggle = document.getElementById("allow-multi-symbols");
+    // ✅ News Settings (Max Length)
+    const newsListLengthInput = document.getElementById("news-list-length");
+    
+    if (newsListLengthInput) {
+        // Load initial news settings
+        async function loadNewsSettings() {
+            try {
+                const newsSettings = await window.newsSettingsAPI.get();
+                newsListLengthInput.value = newsSettings.listLength || 50;
+                
+                // Update the lists from news store
+                updateLists(newsSettings);
+                
+                console.log("✅ Loaded News settings:", newsSettings);
+            } catch (error) {
+                console.error("❌ Failed to load News settings:", error);
+                newsListLengthInput.value = 50; // fallback
+            }
+        }
 
-    if (!showTrackedTickersToggle || !allowMultiSymbolsToggle) {
-        console.error("❌ 'Show Only Tracked Tickers' or 'Allow Multi-Symbol Headlines' toggle not found!");
-        return;
+        // Save news settings
+        async function saveNewsSettings() {
+            try {
+                const newLength = parseInt(newsListLengthInput.value, 10) || 50;
+                const clampedLength = Math.max(1, Math.min(200, newLength));
+                
+                if (clampedLength !== newLength) {
+                    newsListLengthInput.value = clampedLength;
+                }
+                
+                await window.newsSettingsAPI.set({ listLength: clampedLength });
+                console.log("✅ Saved News list length:", clampedLength);
+            } catch (error) {
+                console.error("❌ Failed to save News settings:", error);
+            }
+        }
+
+        // Load initial settings
+        loadNewsSettings();
+
+        // Listen for changes
+        newsListLengthInput.addEventListener("input", saveNewsSettings);
+
+        // Listen for updates from other windows
+        window.newsSettingsAPI.onUpdate((updatedSettings) => {
+            if (updatedSettings) {
+                if (updatedSettings.listLength !== undefined) {
+                    newsListLengthInput.value = updatedSettings.listLength;
+                }
+                
+                // Update the lists if they're included in the update
+                if (updatedSettings.blockList || updatedSettings.bullishList || updatedSettings.bearishList) {
+                    updateLists(updatedSettings);
+                }
+                
+                console.log("✅ News settings updated from other window:", updatedSettings);
+            }
+        });
+    } else {
+        console.warn("❌ News list length input not found in News section");
     }
 
-    // ✅ Load saved settings
-    showTrackedTickersToggle.checked = window.settings.news.showTrackedTickers ?? false;
-    allowMultiSymbolsToggle.checked = window.settings.news.allowMultiSymbols ?? true;
-
-    // ✅ Save setting on toggle (using direct API update)
-    showTrackedTickersToggle.addEventListener("change", async () => {
-        try {
-            const latestSettings = await window.settingsAPI.get();
-            if (!latestSettings || !latestSettings.news) {
-                console.error("❌ Failed to fetch latest settings. Skipping update.");
-                return;
-            }
-
-            const newSettings = {
-                ...latestSettings, // Preserve all settings
-                news: {
-                    ...latestSettings.news, // Preserve other news settings
-                    showTrackedTickers: showTrackedTickersToggle.checked,
-                },
-            };
-
-            await window.settingsAPI.update(newSettings);
-            console.log("✅ Updated 'Show Only Tracked Tickers' setting:", showTrackedTickersToggle.checked);
-        } catch (error) {
-            console.error("❌ Error updating 'Show Only Tracked Tickers' setting:", error);
-        }
-    });
-
-    allowMultiSymbolsToggle.addEventListener("change", async () => {
-        try {
-            const latestSettings = await window.settingsAPI.get();
-            if (!latestSettings || !latestSettings.news) {
-                console.error("❌ Failed to fetch latest settings. Skipping update.");
-                return;
-            }
-
-            const newSettings = {
-                ...latestSettings, // Preserve all settings
-                news: {
-                    ...latestSettings.news, // Preserve other news settings
-                    allowMultiSymbols: allowMultiSymbolsToggle.checked,
-                },
-            };
-
-            await window.settingsAPI.update(newSettings);
-            console.log("✅ Updated 'Allow Multi-Symbol Headlines' setting:", allowMultiSymbolsToggle.checked);
-        } catch (error) {
-            console.error("❌ Error updating 'Allow Multi-Symbol Headlines' setting:", error);
-        }
-    });
 
     // ✅ Initialize keyword management
     setupKeywordManagement();
+    
+    // ✅ Initialize search functionality
+    setupListSearch();
+}
+
+// Global function to render a list - accessible from updateLists
+function renderList(element, items, listType) {
+    if (!Array.isArray(items)) {
+        console.error(`❌ Expected an array but got:`, items);
+        items = []; // Fallback to an empty array
+    }
+
+    if (!element) {
+        console.error(`❌ Element not found for list type: ${listType}`);
+        return;
+    }
+
+    element.innerHTML = "";
+
+    items.forEach((keyword) => {
+        const li = document.createElement("li");
+        li.textContent = keyword;
+
+        // ✅ Remove button for each keyword
+        const removeBtn = document.createElement("button");
+        removeBtn.textContent = "X";
+        removeBtn.addEventListener("click", async () => {
+            try {
+                const latestNewsSettings = await window.newsSettingsAPI.get();
+                if (!latestNewsSettings) {
+                    console.error("❌ Failed to fetch latest news settings. Skipping update.");
+                    return;
+                }
+
+                // ✅ Remove the keyword by filtering (prevents index issues)
+                const currentList = latestNewsSettings[listType] || [];
+                const updatedList = currentList.filter((item) => item !== keyword);
+
+                // Update the specific list using the news store API
+                if (listType === 'blockList') {
+                    await window.newsSettingsAPI.setBlockList(updatedList);
+                } else if (listType === 'bullishList') {
+                    await window.newsSettingsAPI.setBullishList(updatedList);
+                } else if (listType === 'bearishList') {
+                    await window.newsSettingsAPI.setBearishList(updatedList);
+                }
+
+                console.log(`✅ Removed keyword "${keyword}" from ${listType}`);
+            } catch (error) {
+                console.error(`❌ Error removing keyword "${keyword}":`, error);
+            }
+        });
+
+        li.appendChild(removeBtn);
+        element.appendChild(li);
+    });
+}
+
+// Global function to update lists - accessible from both news section and keyword management
+function updateLists(updatedSettings) {
+    const blockListEl = document.getElementById("block-list");
+    const bullishEl = document.getElementById("bullish-list");
+    const bearishEl = document.getElementById("bearish-list");
+    
+    if (!blockListEl || !bullishEl || !bearishEl) {
+        console.warn("⚠️ List elements not found, skipping update");
+        return;
+    }
+    
+    // 🔄 Use the latest settings (avoid stale data)
+    const settings = updatedSettings || window.settings || {};
+
+    // Provide default empty arrays if lists are undefined
+    const blockList = settings.blockList || [];
+    const bullishList = settings.bullishList || [];
+    const bearishList = settings.bearishList || [];
+
+    renderList(blockListEl, blockList, "blockList");
+    renderList(bullishEl, bullishList, "bullishList");
+    renderList(bearishEl, bearishList, "bearishList");
 }
 
 function setupKeywordManagement() {
@@ -933,99 +1018,33 @@ function setupKeywordManagement() {
     const bullishEl = document.getElementById("bullish-list");
     const bearishEl = document.getElementById("bearish-list");
 
-    function updateLists(updatedSettings) {
-        // 🔄 Use the latest settings (avoid stale data)
-        const settings = updatedSettings || window.settings;
-
-        renderList(blockListEl, settings.news.blockList, "blockList");
-        renderList(bullishEl, settings.news.bullishList, "bullishList");
-        renderList(bearishEl, settings.news.bearishList, "bearishList");
-    }
-
-    function renderList(element, items, listType) {
-        if (!Array.isArray(items)) {
-            console.error(`❌ Expected an array but got:`, items);
-            items = []; // Fallback to an empty array
-        }
-
-        element.innerHTML = ""; // Clear previous UI
-        items.forEach((keyword) => {
-            const li = document.createElement("li");
-            li.textContent = keyword;
-
-            // ✅ Remove button for each keyword
-            const removeBtn = document.createElement("button");
-            removeBtn.textContent = "X";
-            removeBtn.addEventListener("click", async () => {
-                try {
-                    const latestSettings = await window.settingsAPI.get();
-                    if (!latestSettings || !latestSettings.news) {
-                        console.error("❌ Failed to fetch latest settings. Skipping update.");
-                        return;
-                    }
-
-                    // ✅ Remove the keyword by filtering (prevents index issues)
-                    const updatedList = latestSettings.news[listType].filter((item) => item !== keyword);
-
-                    // ✅ Preserve all other settings while updating only the target list
-                    const updatedSettings = {
-                        ...latestSettings,
-                        news: {
-                            ...latestSettings.news,
-                            [listType]: updatedList,
-                        },
-                    };
-
-                    await window.settingsAPI.update(updatedSettings);
-
-                    // ✅ Keep local state updated
-                    window.settings = updatedSettings;
-
-                    // ✅ Update UI with the latest settings
-                    updateLists(updatedSettings);
-
-                    console.log(`✅ Removed keyword "${keyword}" from ${listType}`);
-                } catch (error) {
-                    console.error(`❌ Error removing keyword "${keyword}":`, error);
-                }
-            });
-
-            li.appendChild(removeBtn);
-            element.appendChild(li);
-        });
-    }
-
     // ✅ Add new keyword to the selected list
     addKeywordBtn.addEventListener("click", async () => {
         const keyword = keywordInput.value.trim();
         if (!keyword) return;
 
         try {
-            const latestSettings = await window.settingsAPI.get();
-            if (!latestSettings || !latestSettings.news) {
-                console.error("❌ Failed to fetch latest settings. Skipping update.");
+            const latestNewsSettings = await window.newsSettingsAPI.get();
+            if (!latestNewsSettings) {
+                console.error("❌ Failed to fetch latest news settings. Skipping update.");
                 return;
             }
 
             const listType = keywordType.value;
+            const currentList = latestNewsSettings[listType] || [];
 
-            if (!latestSettings.news[listType].includes(keyword)) {
-                // ✅ Add keyword and preserve other settings
-                const updatedSettings = {
-                    ...latestSettings,
-                    news: {
-                        ...latestSettings.news,
-                        [listType]: [...latestSettings.news[listType], keyword],
-                    },
-                };
-
-                await window.settingsAPI.update(updatedSettings);
-
-                // ✅ Keep local state updated
-                window.settings = updatedSettings;
-
-                // ✅ Update UI with the latest settings
-                updateLists(updatedSettings);
+            if (!currentList.includes(keyword)) {
+                // ✅ Add keyword to the list
+                const updatedList = [...currentList, keyword];
+                
+                // Update the specific list using the news store API
+                if (listType === 'blockList') {
+                    await window.newsSettingsAPI.setBlockList(updatedList);
+                } else if (listType === 'bullishList') {
+                    await window.newsSettingsAPI.setBullishList(updatedList);
+                } else if (listType === 'bearishList') {
+                    await window.newsSettingsAPI.setBearishList(updatedList);
+                }
 
                 console.log(`✅ Added keyword "${keyword}" to ${listType}`);
             }
@@ -1035,9 +1054,6 @@ function setupKeywordManagement() {
 
         keywordInput.value = ""; // Clear input field
     });
-
-    // ✅ Initialize UI with the latest data
-    updateLists();
 }
 
 function initializeXpSettingsSection() {
@@ -1054,6 +1070,7 @@ function initializeXpSettingsSection() {
     const xpShowPriceBtn = document.getElementById("xp-show-price");
     const xpShowTotalVolumeBtn = document.getElementById("xp-show-total-volume");
     const xpShowLevelBtn = document.getElementById("xp-show-level");
+    const xpShowSessionChangeBtn = document.getElementById("xp-show-session-change");
     
     if (!xpListLengthInput) {
         console.error("❌ XP list length input not found!");
@@ -1110,6 +1127,11 @@ function initializeXpSettingsSection() {
         return;
     }
 
+    if (!xpShowSessionChangeBtn) {
+        console.error("❌ XP show session change button not found!");
+        return;
+    }
+
     // Load initial value from electron store
     async function loadXpSettings() {
         try {
@@ -1124,6 +1146,7 @@ function initializeXpSettingsSection() {
             updateButtonState(xpShowPriceBtn, xpSettings.showPrice !== false);
             updateButtonState(xpShowTotalVolumeBtn, xpSettings.showTotalVolume !== false);
             updateButtonState(xpShowLevelBtn, xpSettings.showLevel !== false);
+            updateButtonState(xpShowSessionChangeBtn, xpSettings.showSessionChange !== false);
             console.log("✅ Loaded XP settings:", xpSettings);
         } catch (error) {
             console.error("❌ Failed to load XP settings:", error);
@@ -1137,6 +1160,7 @@ function initializeXpSettingsSection() {
             updateButtonState(xpShowPriceBtn, true); // fallback
             updateButtonState(xpShowTotalVolumeBtn, true); // fallback
             updateButtonState(xpShowLevelBtn, true); // fallback
+            updateButtonState(xpShowSessionChangeBtn, true); // fallback
         }
     }
 
@@ -1162,8 +1186,16 @@ function initializeXpSettingsSection() {
                 xpListLengthInput.value = clampedLength;
             }
             
+            // Get current settings to preserve all existing values
+            const currentSettings = await window.xpSettingsAPI.get();
             const currentShowHeaders = xpShowHeadersToggle.checked;
-            await window.xpSettingsAPI.set({ listLength: clampedLength, showHeaders: currentShowHeaders });
+            
+            // Update only the list length and headers, preserve all other settings
+            await window.xpSettingsAPI.set({ 
+                ...currentSettings,
+                listLength: clampedLength, 
+                showHeaders: currentShowHeaders 
+            });
             console.log("✅ Saved XP list length:", clampedLength);
         } catch (error) {
             console.error("❌ Failed to save XP settings:", error);
@@ -1278,6 +1310,18 @@ function initializeXpSettingsSection() {
         }
     }
 
+    // Save XP show session change setting
+    async function saveXpShowSessionChange() {
+        try {
+            const showSessionChange = xpShowSessionChangeBtn.classList.contains('active');
+            const currentLength = parseInt(xpListLengthInput.value, 10) || 25;
+            await window.xpSettingsAPI.set({ showSessionChange, listLength: currentLength });
+            console.log("✅ Saved XP show session change:", showSessionChange);
+        } catch (error) {
+            console.error("❌ Failed to save XP show session change setting:", error);
+        }
+    }
+
     // Save HOD settings
     async function saveHodSettings() {
         try {
@@ -1353,6 +1397,12 @@ function initializeXpSettingsSection() {
         await saveXpShowLevel();
     }
 
+    async function toggleXpShowSessionChange() {
+        const isActive = xpShowSessionChangeBtn.classList.contains('active');
+        updateButtonState(xpShowSessionChangeBtn, !isActive);
+        await saveXpShowSessionChange();
+    }
+
     // Load initial settings
     loadXpSettings();
     loadHodSettings();
@@ -1368,7 +1418,9 @@ function initializeXpSettingsSection() {
     xpShowPriceBtn.addEventListener("click", toggleXpShowPrice);
     xpShowTotalVolumeBtn.addEventListener("click", toggleXpShowTotalVolume);
     xpShowLevelBtn.addEventListener("click", toggleXpShowLevel);
+    xpShowSessionChangeBtn.addEventListener("click", toggleXpShowSessionChange);
     hodListLengthInput.addEventListener("input", saveHodSettings);
+    
 
     // Listen for updates from other windows
     window.xpSettingsAPI.onUpdate((updatedSettings) => {
@@ -1412,6 +1464,10 @@ function initializeXpSettingsSection() {
             if (updatedSettings.showLevel !== undefined) {
                 updateButtonState(xpShowLevelBtn, updatedSettings.showLevel);
                 console.log("✅ XP show level updated from other window:", updatedSettings.showLevel);
+            }
+            if (updatedSettings.showSessionChange !== undefined) {
+                updateButtonState(xpShowSessionChangeBtn, updatedSettings.showSessionChange);
+                console.log("✅ XP show session change updated from other window:", updatedSettings.showSessionChange);
             }
         }
     });
@@ -1476,4 +1532,63 @@ function initializeStatsSettingsSection() {
             console.log("✅ Stats settings updated from other window:", updatedSettings);
         }
     });
+}
+
+// Setup search functionality for each list
+function setupListSearch() {
+    const searchInputs = {
+        'block-search': 'block-list',
+        'bullish-search': 'bullish-list', 
+        'bearish-search': 'bearish-list'
+    };
+
+    Object.entries(searchInputs).forEach(([searchId, listId]) => {
+        const searchInput = document.getElementById(searchId);
+        const listElement = document.getElementById(listId);
+        
+        if (searchInput && listElement) {
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase().trim();
+                filterListItems(listElement, searchTerm);
+            });
+        }
+    });
+}
+
+// Filter list items based on search term
+function filterListItems(listElement, searchTerm) {
+    const items = listElement.querySelectorAll('li');
+    
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        const matches = searchTerm === '' || text.includes(searchTerm);
+        
+        if (matches) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Show/hide empty state
+    const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
+    const emptyState = listElement.querySelector('.empty-state');
+    
+    if (visibleItems.length === 0 && searchTerm !== '') {
+        if (!emptyState) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'empty-state';
+            emptyDiv.textContent = 'No matching keywords found';
+            emptyDiv.style.cssText = `
+                color: #888;
+                font-style: italic;
+                text-align: center;
+                padding: 20px;
+                font-size: 14px;
+            `;
+            listElement.appendChild(emptyDiv);
+        }
+    } else if (emptyState) {
+        emptyState.remove();
+    }
 }

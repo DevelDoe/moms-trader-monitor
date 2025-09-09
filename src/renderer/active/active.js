@@ -6,10 +6,80 @@ const symbolColors = {};
 
 const { isDev } = window.appFlags;
 
+// Oracle news and filing data management
+let allOracleNews = [];
+let allOracleFilings = [];
+let currentActiveSymbol = null;
+let newsSettings = {}; // Store news settings for sentiment analysis and filtering
+
+// Mock test data for testing purposes only (not used in dev mode)
+function createMockNewsData() {
+    const now = Date.now();
+    const fifteenMinutesAgo = now - (15 * 60 * 1000);
+    const oneHourAgo = now - (60 * 60 * 1000);
+    
+    return [
+        {
+            symbol: "AAPL",
+            headline: "Apple Reports Record Q4 Revenue Despite Supply Chain Challenges",
+            body: "Apple Inc. reported record fourth-quarter revenue of $94.8 billion, up 8% year-over-year, despite ongoing supply chain disruptions. The company's services segment showed particularly strong growth, with revenue increasing 16% to $19.2 billion. CEO Tim Cook highlighted the company's resilience in navigating global supply challenges while maintaining strong customer demand for its products.",
+            author: "John Doe",
+            location: "Cupertino, CA",
+            time: new Date(now).toISOString(),
+            image: "https://via.placeholder.com/400x200/007ACC/FFFFFF?text=Apple+News",
+            url: "https://example.com/apple-q4-revenue",
+            source: "Reuters",
+            category: "Earnings",
+            sentiment: "positive"
+        },
+        {
+            symbol: "AAPL",
+            headline: "Apple Announces New iPhone 15 Pro with Advanced Camera System",
+            body: "Apple has unveiled the iPhone 15 Pro featuring a revolutionary camera system with 48MP main sensor and advanced computational photography. The new device also includes the A17 Pro chip, titanium construction, and USB-C connectivity.",
+            author: "Jane Smith",
+            location: "San Francisco, CA",
+            time: new Date(fifteenMinutesAgo).toISOString(),
+            image: "https://via.placeholder.com/400x200/FF6B6B/FFFFFF?text=iPhone+15+Pro",
+            url: "https://example.com/iphone-15-pro",
+            source: "TechCrunch",
+            category: "Product Launch",
+            sentiment: "positive"
+        },
+        {
+            symbol: "AAPL",
+            headline: "Apple Stock Surges 5% on Strong Services Growth",
+            body: "Apple shares jumped 5% in after-hours trading following the company's announcement of record services revenue. The App Store, iCloud, and Apple Music all showed double-digit growth.",
+            author: "Mike Johnson",
+            location: "New York, NY",
+            time: new Date(oneHourAgo).toISOString(),
+            image: "https://via.placeholder.com/400x200/4ECDC4/FFFFFF?text=Stock+Surge",
+            url: "https://example.com/apple-stock-surge",
+            source: "Bloomberg",
+            category: "Market",
+            sentiment: "positive"
+        }
+    ];
+}
+
+// Test function to load mock data (for testing purposes only)
+function loadMockNewsData() {
+    console.log("🧪 Loading mock news data for testing...");
+    allOracleNews = createMockNewsData();
+    console.log(`🧪 Loaded ${allOracleNews.length} mock news items`);
+    
+    // Dump mock data structure
+    console.log("🔍 === MOCK NEWS OBJECT STRUCTURE ===");
+    console.log("🔍 First mock item:", allOracleNews[0]);
+    console.log("🔍 Available fields:", Object.keys(allOracleNews[0]));
+    console.log("🔍 ==================================");
+    
+    renderOracleNews();
+}
+
 function getNewsSentimentClass(newsItem) {
     const lowerHeadline = (newsItem.headline || "").toLowerCase();
-    const bullishList = window.settings?.news?.bullishList || [];
-    const bearishList = window.settings?.news?.bearishList || [];
+    const bullishList = newsSettings?.bullishList || [];
+    const bearishList = newsSettings?.bearishList || [];
 
     if (bullishList.some((term) => lowerHeadline.includes(term.toLowerCase()))) {
         return "bullish";
@@ -19,6 +89,117 @@ function getNewsSentimentClass(newsItem) {
     }
     return "neutral";
 }
+
+// Initialize Oracle news integration
+async function initializeOracleNews() {
+    console.log("📰 Initializing Oracle news integration for active view...");
+    
+    // Check if newsAPI is available
+    if (!window.newsAPI) {
+        console.error("❌ newsAPI not available in active view");
+        return;
+    }
+    
+    console.log("✅ newsAPI is available:", Object.keys(window.newsAPI));
+    
+    try {
+        // 1. HYDRATE - Get initial headlines from Oracle
+        console.log("📰 Requesting headlines from Oracle...");
+        const headlines = await window.newsAPI.getHeadlines();
+        console.log("📰 Received headlines response:", headlines);
+        
+        if (Array.isArray(headlines)) {
+            allOracleNews = headlines;
+            console.log(`📰 Active view hydrated: ${allOracleNews.length} headlines`);
+            
+            // Dump first news object structure for analysis
+            if (headlines.length > 0) {
+                console.log("🔍 === RAW NEWS OBJECT STRUCTURE FROM ACTIVE VIEW ===");
+                console.log("🔍 First news item:", JSON.stringify(headlines[0], null, 2));
+                console.log("🔍 Available fields:", Object.keys(headlines[0]));
+                console.log("🔍 Sample of first 3 news items:");
+                headlines.slice(0, 3).forEach((item, index) => {
+                    console.log(`🔍 News item ${index + 1}:`, {
+                        symbol: item.symbol,
+                        headline: item.headline?.substring(0, 50) + "...",
+                        hasBody: !!item.body,
+                        hasAuthor: !!item.author,
+                        hasLocation: !!item.location,
+                        hasImage: !!item.image,
+                        hasImageCaption: !!item.image_caption,
+                        hasSummary: !!item.summary,
+                        hasContent: !!item.content,
+                        hasAlpacaData: !!item.alpaca_data,
+                        timestamp: item.created_at ?? item.received_at ?? item.updated_at,
+                        url: item.url,
+                        source: item.source,
+                        priority: item.priority,
+                        allFields: Object.keys(item),
+                        alpacaDataParsed: item.alpaca_data ? JSON.parse(item.alpaca_data) : null
+                    });
+                });
+                console.log("🔍 ==============================================");
+            }
+            
+            // Filing display now handled in renderOracleNews() when UI updates
+        } else {
+            console.warn("⚠️ Headlines response is not an array:", headlines);
+        }
+    } catch (e) {
+        console.warn("⚠️ Oracle news hydration failed:", e);
+    }
+
+    // 2. SUBSCRIBE - Listen for Oracle news updates
+    window.newsAPI.onHeadlines((headlines) => {
+        if (Array.isArray(headlines)) {
+            allOracleNews = headlines;
+            console.log(`📰 Active view full refresh: ${allOracleNews.length} headlines`);
+            
+            // Dump sample of headlines for debugging
+            if (headlines.length > 0) {
+                console.log("🔍 === HEADLINES REFRESH SAMPLE ===");
+                headlines.slice(0, 2).forEach((item, index) => {
+                    console.log(`🔍 Headline ${index + 1}:`, {
+                        symbol: item.symbol,
+                        headline: item.headline?.substring(0, 50) + "...",
+                        hasBody: !!item.body,
+                        hasAuthor: !!item.author,
+                        hasLocation: !!item.location,
+                        hasImage: !!item.image_url,
+                        timestamp: item.created_at || item.updated_at
+                    });
+                });
+                console.log("🔍 ================================");
+            }
+            
+            // Filing display now handled in renderOracleNews() when UI updates
+        }
+    });
+
+    window.newsAPI.onDelta((newsItem) => {
+        if (newsItem) {
+            // Dump delta news object structure
+            console.log("🔍 === DELTA NEWS OBJECT ===");
+            console.log("🔍 Delta news item:", newsItem);
+            console.log("🔍 Available fields:", Object.keys(newsItem));
+            console.log("🔍 =========================");
+            
+            // Add to beginning for latest first
+            allOracleNews.unshift(newsItem);
+            
+            // Keep only last 1000 headlines to prevent memory bloat
+            if (allOracleNews.length > 1000) {
+                allOracleNews = allOracleNews.slice(0, 1000);
+            }
+            
+            console.log(`📰 Active view delta: +1 (total: ${allOracleNews.length})`);
+            // Filing display now handled in renderOracleNews() when UI updates
+        }
+    });
+}
+
+// Filing integration not needed - filings come from store.attachFilingToSymbol()
+// The active view displays filings from symbolData.Filings (attached by store)
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ DOMContentLoaded event fired!");
@@ -34,6 +215,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.warn("⚠️ Failed to load settings in active window:", e);
         window.settings = {}; // fallback
     }
+
+    // Load news settings for sentiment analysis and filtering
+    try {
+        newsSettings = await window.newsSettingsAPI.get();
+        console.log("✅ News settings loaded in active window:", newsSettings);
+    } catch (e) {
+        console.warn("⚠️ Failed to load news settings in active window:", e);
+        newsSettings = {}; // fallback
+    }
+
+    // Subscribe to news settings changes
+    window.newsSettingsAPI.onUpdate((updatedSettings) => {
+        if (updatedSettings) {
+            newsSettings = updatedSettings;
+            console.log("📰 News settings updated in active window:", newsSettings);
+            
+            // Re-render if lists changed (affects sentiment colors and filtering)
+            if (updatedSettings.blockList || updatedSettings.bullishList || updatedSettings.bearishList) {
+                console.log("📰 News lists updated, re-rendering for sentiment changes");
+                renderOracleNews();
+            }
+        }
+    });
+
+    // Initialize Oracle news integration
+    
+    await initializeOracleNews();
 
     // Initialize UI with no symbol data
     updateUI(null); // Show "No active symbol" placeholder
@@ -128,6 +336,10 @@ function updateUI(symbolData) {
         noActiveSymbolElement.classList.add("visible");
 
         tabs.forEach((el) => (el.style.display = "none"));
+        
+        // Clear active symbol and render empty news and filings
+        currentActiveSymbol = null;
+        renderOracleNews(null);
         return;
     }
 
@@ -264,78 +476,13 @@ function updateUI(symbolData) {
         };
     }
 
-    // News
-    const newsContainer = document.getElementById("news-container");
-    newsContainer.innerHTML = ""; // Clear previous content
-
-    const blockList = window.settings?.news?.blockList || [];
-    // Log what would be blocked
-    (symbolData.News || []).forEach((newsItem) => {
-        const headline = sanitize(newsItem.headline || "");
-        const match = blockList.find((b) => headline.includes(sanitize(b)));
-        if (match) {
-            console.log(`🚫 Blocked by "${match}":`, newsItem.headline);
-        }
-    });
-
-    const filteredNews = (Array.isArray(symbolData.News) ? symbolData.News : []).filter((newsItem) => {
-        const headline = sanitize(newsItem.headline || "");
-        const isBlocked = blockList.some((blocked) => headline.includes(sanitize(blocked)));
-        const isMultiSymbol = Array.isArray(newsItem.symbols) && newsItem.symbols.length > 1;
-        return !isBlocked && !isMultiSymbol;
-    });
-
-    if (filteredNews.length === 0) {
-        newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no recent news available</p>';
-    } else {
-        const sortedNews = [...filteredNews].sort((a, b) => {
-            const ta = parseTs(a.updated_at ?? a.created_at);
-            const tb = parseTs(b.updated_at ?? b.created_at);
-            return tb - ta; // newest first
-        });
-
-        sortedNews.forEach((newsItem) => {
-            const sentimentClass = getNewsSentimentClass(newsItem);
-            const ts = newsItem.updated_at ?? newsItem.created_at;
-            const when = ts ? formatNewsTime(ts) : "";
-
-            const itemDiv = document.createElement("div");
-            itemDiv.className = `news-item ${sentimentClass}`;
-            itemDiv.innerHTML = `
-            <h5>${newsItem.headline || "Untitled"}</h5>
-            ${when ? `<div class="news-time">${when}</div>` : ""}
-          `;
-            newsContainer.appendChild(itemDiv);
-        });
-    }
+    // Update current active symbol for news and filing filtering
+    currentActiveSymbol = symbolData.symbol;
+    
+    // Render Oracle news and filings (filtered by active symbol)
+    renderOracleNews(symbolData);
 
     /* --- helpers --- */
-    function parseTs(t) {
-        if (t == null) return NaN;
-        if (typeof t === "number") return t < 1e12 ? t * 1000 : t; // secs → ms
-        const n = Number(t);
-        if (!Number.isNaN(n)) return parseTs(n);
-        const d = new Date(t).getTime();
-        return Number.isNaN(d) ? NaN : d;
-    }
-
-    function formatNewsTime(ts) {
-        const ms = parseTs(ts);
-        if (Number.isNaN(ms)) return "";
-        const d = new Date(ms);
-        const now = new Date();
-
-        const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
-
-        return sameDay
-            ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            : d.toLocaleString([], {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-              });
-    }
 
     renderOwnershipChart(symbolData, "ownershipChart-summary");
     renderOwnershipChart(symbolData, "ownershipChart-stats");
@@ -485,7 +632,307 @@ function formatLargeNumber(value) {
 function formatDate(dateStr) {
     if (!dateStr) return "N/A";
     const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric"     });
+}
+
+// Helper function to extract timestamp from different news formats
+function getNewsTimestamp(newsItem) {
+    // Try different timestamp fields in order of preference
+    if (newsItem.created_at) return new Date(newsItem.created_at).getTime();
+    if (newsItem.received_at) return new Date(newsItem.received_at).getTime();
+    if (newsItem.updated_at) return new Date(newsItem.updated_at).getTime();
+    
+    // Debug: log what fields are available
+    console.log("🔍 No timestamp found for news item:", {
+        symbol: newsItem.symbol,
+        headline: newsItem.headline?.substring(0, 50) + "...",
+        availableFields: Object.keys(newsItem),
+        created_at: newsItem.created_at,
+        received_at: newsItem.received_at,
+        updated_at: newsItem.updated_at
+    });
+    
+    return 0; // fallback
+}
+
+// Helper function to format news timestamps
+function formatNewsTime(ts) {
+    const ms = parseTs(ts);
+    if (Number.isNaN(ms)) return "";
+    const d = new Date(ms);
+    const now = new Date();
+
+    const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+
+    return sameDay
+        ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : d.toLocaleString([], {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+          });
+}
+
+// Helper function to parse timestamps
+function parseTs(t) {
+    if (t == null) return NaN;
+    if (typeof t === "number") return t < 1e12 ? t * 1000 : t; // secs → ms
+    const n = Number(t);
+    if (!Number.isNaN(n)) return parseTs(n);
+    const d = new Date(t).getTime();
+    return Number.isNaN(d) ? NaN : d;
+}
+
+// Render Oracle news and filings for the active symbol (summary page only)
+function renderOracleNews(symbolData = null) {
+    // Find the news container in the summary page
+    const newsContainer = document.querySelector("#news-container");
+    
+    if (!newsContainer) {
+        console.warn("⚠️ News container not found in summary page");
+        return;
+    }
+    
+    newsContainer.innerHTML = "";
+    
+    console.log(`🔍 renderOracleNews called - Active symbol: ${currentActiveSymbol}, Total news: ${allOracleNews.length}, Symbol filings: ${symbolData?.Filings?.length || 0}`);
+    
+    if (!currentActiveSymbol || !symbolData) {
+        newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no active symbol</p>';
+        return;
+    }
+    
+    // Combine news and filings into one timeline
+    const allItems = [];
+    
+    // Filter news for the current active symbol
+    const symbolNews = allOracleNews.filter((newsItem) => {
+        const newsSymbol = newsItem.symbol || newsItem.symbols?.[0];
+        return newsSymbol && newsSymbol.toUpperCase() === currentActiveSymbol.toUpperCase();
+    });
+    
+    // Apply blocklist filtering to news
+    const blockList = newsSettings?.blockList || [];
+    console.log(`📰 Filtering ${symbolNews.length} news items with block list:`, blockList);
+    const filteredNews = symbolNews.filter((newsItem) => {
+        const headline = sanitize(newsItem.headline || "");
+        const isBlocked = blockList.some((blocked) => headline.includes(sanitize(blocked)));
+        if (isBlocked) {
+            console.log(`🚫 News item blocked: "${headline}" (matched: "${blockList.find(blocked => headline.includes(sanitize(blocked)))}")`);
+        }
+        return !isBlocked;
+    });
+    console.log(`📰 After filtering: ${filteredNews.length} news items remaining`);
+    
+    // Add news items
+    filteredNews.forEach(newsItem => {
+        allItems.push({
+            type: 'news',
+            data: newsItem,
+            timestamp: getNewsTimestamp(newsItem)
+        });
+    });
+    
+    // Get filings from the symbol data itself (attached via store.attachFilingToSymbol)
+    const symbolFilings = symbolData?.Filings || [];
+    
+    // Debug: Log filing details to check for duplicates
+    console.log(`🔍 Symbol filings for ${currentActiveSymbol}:`, symbolFilings.map(f => ({
+        id: f.id,
+        form_type: f.form_type,
+        title: f.title?.substring(0, 50) + "...",
+        symbol: f.symbol
+    })));
+    
+    // Deduplicate filings by ID to prevent double rendering
+    const uniqueFilings = symbolFilings.filter((filing, index, self) => 
+        index === self.findIndex(f => f.id === filing.id)
+    );
+    
+    console.log(`🔍 Deduplicated filings: ${symbolFilings.length} -> ${uniqueFilings.length}`);
+    
+    // Add filing items
+    uniqueFilings.forEach(filingItem => {
+        allItems.push({
+            type: 'filing',
+            data: filingItem,
+            timestamp: getFilingTimestamp(filingItem)
+        });
+    });
+    
+    // Sort by timestamp (newest first)
+    const sorted = allItems.sort((a, b) => b.timestamp - a.timestamp);
+    
+    if (sorted.length === 0) {
+        newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no recent news or filings available</p>';
+        return;
+    }
+    
+    sorted.forEach((item) => {
+        if (item.type === 'news') {
+            const newsItem = item.data;
+        const sentimentClass = getNewsSentimentClass(newsItem);
+        const isCollapsed = isNewsItemCollapsed(newsItem);
+        const ts = getNewsTimestamp(newsItem);
+        const when = ts ? formatNewsTime(new Date(ts)) : "";
+        
+        const itemDiv = document.createElement("div");
+        itemDiv.className = `news-item ${sentimentClass}${isCollapsed ? ' collapsed' : ''}`;
+        
+        if (isCollapsed) {
+            // Collapsed view: Headline + Time (no symbol since it's always for active symbol)
+            itemDiv.innerHTML = `
+                <h5>${newsItem.headline || "Untitled"}</h5>
+                ${when ? `<div class="news-time">${when}</div>` : ""}
+            `;
+        } else {
+            // Large 15-minute view: Image + Headline + Body + Author + Location + Time
+            itemDiv.innerHTML = `
+                ${newsItem.image_url ? `
+                    <div class="news-image-container">
+                        <img src="${newsItem.image_url}" alt="News image" class="news-image" />
+                        ${newsItem.image_caption ? `<div class="news-image-caption">${newsItem.image_caption}</div>` : ''}
+                    </div>
+                ` : ''}
+                <div class="news-content">
+                    <h3 class="news-headline-large">${newsItem.headline || "Untitled"}</h3>
+                    ${newsItem.author || newsItem.location || when ? `
+                        <div class="news-meta">
+                            ${newsItem.author || when ? `
+                                <div class="news-author-time">
+                                 ${when ? `<div class="news-time">${when}</div>` : ''}
+                                    ${newsItem.author ? `<div class="news-author">${newsItem.author}</div>` : ''}
+                                   
+                                </div>
+                            ` : ''}
+                            ${newsItem.location ? `<div class="news-location">${newsItem.location}</div>` : ''}
+                        </div>
+                    ` : ''}
+                    ${newsItem.body || newsItem.summary ? `
+                        <div class="news-body">${newsItem.body || newsItem.summary}</div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        newsContainer.appendChild(itemDiv);
+        } else if (item.type === 'filing') {
+            const filingItem = item.data;
+            const isCollapsed = isFilingItemCollapsed(filingItem);
+            const ts = getFilingTimestamp(filingItem);
+            const when = ts ? formatFilingTime(new Date(ts)) : "";
+            
+            const itemDiv = document.createElement("div");
+            itemDiv.className = `filing-item${isCollapsed ? ' collapsed' : ''}`;
+            
+            // Make the entire filing item clickable if there's a URL
+            if (filingItem.filing_url) {
+                itemDiv.style.cursor = "pointer";
+                itemDiv.addEventListener("click", () => {
+                    window.open(filingItem.filing_url, "_blank", "noopener,noreferrer");
+                });
+            }
+
+            if (isCollapsed) {
+                // Collapsed view: Form Type + Title + Time
+                itemDiv.innerHTML = `
+                    <h5>${filingItem.symbol || filingItem.symbols?.[0] || "Unknown"} has filed a ${filingItem.form_type || "filing"} ${filingItem.form_description || "document"}</h5>
+                    ${when ? `<div class="filing-time">${when}</div>` : ""}
+                   
+                `;
+            } else {
+                // Large 15-minute view: Form Type + Title + Company + Time + URL
+                itemDiv.innerHTML = `
+                    <div class="filing-content">
+                        <h3 class="filing-title-large">${filingItem.symbol || filingItem.symbols?.[0] || "Unknown"} has filed a ${filingItem.form_type || "filing"} ${filingItem.form_description || "document"}</h3>
+                        ${filingItem.company_name || when ? `
+                            <div class="filing-meta">
+                                ${when ? `<div class="filing-time">${when}</div>` : ''}
+                                ${filingItem.company_name ? `<div class="filing-company">${filingItem.company_name}</div>` : ''}
+                            </div>
+                        ` : ''}
+                        ${filingItem.filing_url ? `
+                            <div class="filing-url">
+                                <span class="filing-link-text">Click anywhere to view on SEC.gov</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            newsContainer.appendChild(itemDiv);
+        }
+    });
+    
+    // Log the rendering info
+    const newsCount = sorted.filter(item => item.type === 'news').length;
+    const filingCount = sorted.filter(item => item.type === 'filing').length;
+    console.log(`📰 Rendered ${newsCount} news items and ${filingCount} filing items for ${currentActiveSymbol} (total: ${sorted.length})`);
+}
+
+// renderOracleFilings function removed - filings now handled in renderOracleNews()
+
+// Helper function to extract timestamp from filing objects
+function getFilingTimestamp(filingItem) {
+    // Try different timestamp fields in order of preference
+    if (filingItem.filing_date) return new Date(filingItem.filing_date).getTime();
+    if (filingItem.received_at) return new Date(filingItem.received_at).getTime();
+    if (filingItem.timestamp) return new Date(filingItem.timestamp).getTime();
+    
+    // Debug: log what fields are available
+    console.log("🔍 No timestamp found for filing item:", {
+        symbol: filingItem.symbol,
+        form_type: filingItem.form_type,
+        title: filingItem.title?.substring(0, 50) + "...",
+        availableFields: Object.keys(filingItem),
+        filing_date: filingItem.filing_date,
+        received_at: filingItem.received_at,
+        timestamp: filingItem.timestamp
+    });
+    
+    return 0; // fallback
+}
+
+// Helper function to format filing timestamps
+function formatFilingTime(ts) {
+    const ms = parseTs(ts);
+    if (Number.isNaN(ms)) return "";
+    const d = new Date(ms);
+    const now = new Date();
+
+    const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+
+    return sameDay
+        ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : d.toLocaleString([], {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+          });
+}
+
+// Check if filing item is older than 15 minutes (should be collapsed)
+function isFilingItemCollapsed(filingItem) {
+    const ms = getFilingTimestamp(filingItem);
+    if (!ms || Number.isNaN(ms)) return true; // If no timestamp, treat as collapsed
+    
+    const now = Date.now();
+    const fifteenMinutesInMs = 15 * 60 * 1000; // 15 minutes in milliseconds
+    
+    return (now - ms) > fifteenMinutesInMs;
+}
+
+// Check if news item is older than 15 minutes (should be collapsed)
+function isNewsItemCollapsed(newsItem) {
+    const ms = getNewsTimestamp(newsItem);
+    if (!ms || Number.isNaN(ms)) return true; // If no timestamp, treat as collapsed
+    
+    const now = Date.now();
+    const fifteenMinutesInMs = 15 * 60 * 1000; // 15 minutes in milliseconds
+    
+    return (now - ms) > fifteenMinutesInMs;
 }
 
 /**

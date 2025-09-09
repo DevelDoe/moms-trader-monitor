@@ -191,6 +191,7 @@
                         <button type="button" id="xp-show-price" class="column-btn active" data-column="price">Price</button>
                         <button type="button" id="xp-show-total-volume" class="column-btn active" data-column="total-volume">Volume</button>
                         <button type="button" id="xp-show-level" class="column-btn active" data-column="level">Level</button>
+                        <button type="button" id="xp-show-session-change" class="column-btn active" data-column="session-change">Change</button>
                     </div>
                 </section>
 
@@ -328,29 +329,20 @@
                 <div class="filter-section">
                     <label> Max Heroes Entries: <input type="number" id="heroes-length" min="1" step="1" /> </label>
                 </div>
+
             </div>
 
             <div id="news" class="tabcontent">
-                <h2>News</h2>
+                <h2>NEWS</h2>
 
-                <!-- ✅ Toggle "Show Only Tracked Tickers" -->
-                <label class="switch">
-                    <input type="checkbox" id="show-tracked-tickers" />
-                    <span class="slider round"></span>
-                </label>
-                <span>Show Only Active Tickers</span>
-
-                <!-- ✅ Toggle "Allow Multi-Symbol Headlines" -->
-                <label class="switch">
-                    <input type="checkbox" id="allow-multi-symbols" />
-                    <span class="slider round"></span>
-                </label>
-                <span>Allow Multi-Symbol Headlines</span>
+                <div class="filter-section">
+                    <label>Max News Entries: <input type="number" id="news-list-length" min="1" max="200" step="1" value="20" /></label>
+                </div>
 
                 <!-- ✅ Keyword Management Section -->
                 <h3>Keyword Filters</h3>
 
-                <div class="keyword-controls">
+                <div class="keyword-input-section">
                     <select id="keyword-type">
                         <option value="blockList">Block List</option>
                         <option value="bullishList">Bullish List</option>
@@ -358,22 +350,48 @@
                     </select>
 
                     <input type="text" id="keyword-input" placeholder="Enter keyword..." />
-                    <button id="add-keyword">Add</button>
+                    <button id="add-keyword" class="add-keyword-btn">Add</button>
                 </div>
 
-                <!-- ✅ Display Lists -->
-                <div class="keyword-lists">
-                    <div>
-                        <h4>Block List</h4>
-                        <ul id="block-list"></ul>
+                <!-- ✅ Individual List Sections -->
+                <div class="keyword-lists-container">
+                    <!-- Block List Section -->
+                    <div class="keyword-list-section">
+                        <div class="list-header">
+                            <h4>Block List</h4>
+                            <div class="list-search">
+                                <input type="text" id="block-search" placeholder="Search block list..." class="list-search-input" />
+                            </div>
+                        </div>
+                        <div class="list-content">
+                            <ul id="block-list"></ul>
+                        </div>
                     </div>
-                    <div>
-                        <h4>Bullish List</h4>
-                        <ul id="bullish-list"></ul>
+
+                    <!-- Bullish List Section -->
+                    <div class="keyword-list-section">
+                        <div class="list-header">
+                            <h4>Bullish List</h4>
+                            <div class="list-search">
+                                <input type="text" id="bullish-search" placeholder="Search bullish list..." class="list-search-input" />
+                            </div>
+                        </div>
+                        <div class="list-content">
+                            <ul id="bullish-list"></ul>
+                        </div>
                     </div>
-                    <div>
-                        <h4>Bearish List</h4>
-                        <ul id="bearish-list"></ul>
+
+                    <!-- Bearish List Section -->
+                    <div class="keyword-list-section">
+                        <div class="list-header">
+                            <h4>Bearish List</h4>
+                            <div class="list-search">
+                                <input type="text" id="bearish-search" placeholder="Search bearish list..." class="list-search-input" />
+                            </div>
+                        </div>
+                        <div class="list-content">
+                            <ul id="bearish-list"></ul>
+                        </div>
                     </div>
                 </div>
             </div>

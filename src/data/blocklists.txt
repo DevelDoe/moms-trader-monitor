@@ -99,4 +99,3 @@
       "Misses",
       "Non-Binding"
     ],
-    "allowMultiSymbols": false

@@ -8,25 +8,19 @@ process.on("uncaughtException", (err) => {
     log.error("❌ Uncaught Exception:", err.message);
     log.error(err.stack);
 
-    if (isUpdating) return; // 🚫 Prevent relaunch if an update is installing
-
-    log.warn("Attempting graceful app restart in 5 seconds...");
-    setTimeout(() => {
-        app.relaunch({ args: process.argv.slice(1).concat(["--scheduled-restart"]) });
-        app.exit(1);
-    }, 5000);
+    // 🚫 Disabled auto-restart to prevent feedback loops
+    // Let the app crash so we can debug the issue
+    log.error("💀 App will exit to allow debugging of the crash");
+    process.exit(1);
 });
 
 process.on("unhandledRejection", (reason) => {
     log.error("❌ Unhandled Promise Rejection:", reason);
 
-    if (isUpdating) return;
-
-    log.warn("Attempting graceful app restart in 5 seconds...");
-    setTimeout(() => {
-        app.relaunch({ args: process.argv.slice(1).concat(["--scheduled-restart"]) });
-        app.exit(1);
-    }, 5000);
+    // 🚫 Disabled auto-restart to prevent feedback loops
+    // Let the app crash so we can debug the issue
+    log.error("💀 App will exit to allow debugging of the crash");
+    process.exit(1);
 });
 
 const isDevelopment = process.env.NODE_ENV === "development";
@@ -104,10 +98,10 @@ const { DateTime } = require("luxon");
 
 // const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
 const { hydrateAndApplySymbols } = require("./collectors/arcane_api");
-const { startMockNews } = require("./collectors/news");
+// const { startMockNews } = require("./collectors/news"); // Removed - news now handled by oracle.js
 const { getLastAckCursor, setLastAckCursor, setTop3, getTop3 } = require("./electronStores");
 const { chronos } = require("./collectors/chronos");
-const { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate } = require("./collectors/oracle");
+const { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate, getNewsHeadlines, getNewsCount, getFilingHeadlines, getFilingCount } = require("./collectors/oracle");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -748,6 +742,10 @@ tickerStore.on("hero-updated", (payload = []) => {
     broadcast("hero-updated", payload);
 });
 
+tickerStore.on("buffs-updated", (payload = []) => {
+    broadcast("hero-updated", payload); // Use same event name for compatibility
+});
+
 tickerStore.on("store-nuke", () => {
     log.log("💣 Nuke triggered by store");
     BrowserWindow.getAllWindows().forEach((win) => {
@@ -783,6 +781,14 @@ ipcMain.handle("set-last-ack-cursor", (_evt, cursor) => setLastAckCursor(cursor)
 ipcMain.handle("get-xp-active-stocks", () => getXpActiveStocks());
 ipcMain.handle("get-xp-session-history", () => getXpSessionHistory());
 ipcMain.handle("get-xp-session-update", () => getXpSessionUpdate());
+
+// Oracle News handlers
+ipcMain.handle("get-news-headlines", () => getNewsHeadlines());
+ipcMain.handle("get-news-count", () => getNewsCount());
+
+// Oracle Filing handlers
+ipcMain.handle("get-filing-headlines", () => getFilingHeadlines());
+ipcMain.handle("get-filing-count", () => getFilingCount());
 
 // Events
 ipcMain.on("activate-events", () => {
@@ -1068,6 +1074,11 @@ ipcMain.handle("update-trophy-data", (event, trophyData) => {
 
 ipcMain.handle("get-trophy-data", () => {
     return tickerStore.getTrophyData();
+});
+
+// HOD List handlers
+ipcMain.handle("get-hod-top-list", () => {
+    return tickerStore.getHodTopList();
 });
 
 // Forward trophy updates to all windows

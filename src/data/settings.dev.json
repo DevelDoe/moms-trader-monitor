@@ -11,8 +11,21 @@
     "frontlineListLength": 10,
     "heroesListLength": 3
   },
+  "scanner": {
+    "minPrice": 0,
+    "maxPrice": 0,
+    "direction": null,
+    "minChangePercent": 0,
+    "minVolume": 0,
+    "maxAlerts": 35,
+    "scannerVolume": 0
+  },
+  "traderview": {
+    "visibility": false,
+    "enableHeroes": false,
+    "autoClose": true
+  },
   "news": {
-    "showTrackedTickers": true,
     "filteredTickers": [],
     "blockList": [
       "nasdaq surges",
@@ -40,24 +53,11 @@
       "Stock Downgrade",
       "Downgrades to Sell"
     ],
+    "showTrackedTickers": false,
     "allowMultiSymbols": false
   },
-  "scanner": {
-    "minPrice": 0,
-    "maxPrice": 0,
-    "direction": null,
-    "minChangePercent": 0,
-    "minVolume": 0,
-    "maxAlerts": 35,
-    "scannerVolume": 0
-  },
-  "traderview": {
-    "visibility": false,
-    "enableHeroes": false,
-    "autoClose": true
-  },
   "events": {
-    "comboVolume": 0.4,
-    "newsAlertVolume": 0.7
+    "comboVolume": 0.25,
+    "newsAlertVolume": 0.45
   }
 }

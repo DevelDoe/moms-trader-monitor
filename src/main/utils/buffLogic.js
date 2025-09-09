@@ -38,6 +38,9 @@ function computeBuffsForSymbol(symbolData, buffList = [], blockList = []) {
     const dilutionBuff = getDilutionRiskBuff(symbolData);
     if (dilutionBuff) buffs.dilutionRisk = dilutionBuff;
 
+    const filingBuff = getFilingBuff(symbolData);
+    if (filingBuff) buffs.hasFiling = filingBuff;
+
     return buffs;
 }
 
@@ -92,19 +95,68 @@ function getNewsBuff(symbolData, buffList = [], blockList = []) {
 
     if (!Array.isArray(news) || news.length === 0) return null;
 
-    const hasGoodNews = news.some((item) => {
-        const headline = sanitize(item.headline || "");
-        return !blockList.some((b) => headline.includes(sanitize(b)));
-    });
+    // Get the most recent news item for sentiment analysis
+    const latestNews = news[0];
+    if (!latestNews || !latestNews.headline) return null;
 
-    if (!hasGoodNews) return null;
+    const headline = latestNews.headline.toLowerCase();
 
+    // Check if blocked
+    if (blockList.some((term) => headline.includes(term.toLowerCase()))) {
+        return null;
+    }
+
+    // Get bullish/bearish lists from buffList (they should be configured there)
+    const bullishList = buffList.find(b => b.key === "bullishTerms")?.terms || [];
+    const bearishList = buffList.find(b => b.key === "bearishTerms")?.terms || [];
+
+    const isBullish = bullishList.some((term) => headline.includes(term.toLowerCase()));
+    const isBearish = bearishList.some((term) => headline.includes(term.toLowerCase()));
+
+    if (isBullish && isBearish) {
+        // Cancel out — return neutral
+        const def = buffList.find((b) => b.key === "hasNews") || {};
+        return {
+            key: "hasNews",
+            icon: def.icon || "😼",
+            desc: def.desc || "Catalyst in play — recent news may affect momentum",
+            score: def.score ?? 200,
+            multiplier: def.multiplier ?? 1.1,
+            isBuff: def.isBuff ?? true,
+        };
+    }
+
+    if (isBullish) {
+        const def = buffList.find((b) => b.key === "hasBullishNews") || {};
+        return {
+            key: "hasBullishNews",
+            icon: def.icon || "😺",
+            desc: def.desc || "Bullish news - may affect momentum",
+            score: def.score ?? 300,
+            multiplier: def.multiplier ?? 1.1,
+            isBuff: def.isBuff ?? true,
+        };
+    }
+
+    if (isBearish) {
+        const def = buffList.find((b) => b.key === "hasBearishNews") || {};
+        return {
+            key: "hasBearishNews",
+            icon: def.icon || "🙀",
+            desc: def.desc || "Bearish news - may affect momentum",
+            score: def.score ?? -200,
+            multiplier: def.multiplier ?? 1.1,
+            isBuff: def.isBuff ?? false,
+        };
+    }
+
+    // No sentiment, but still relevant
     const def = buffList.find((b) => b.key === "hasNews") || {};
     return {
         key: "hasNews",
         icon: def.icon || "😼",
-        desc: def.desc || "News catalyst",
-        score: def.score ?? 100,
+        desc: def.desc || "Catalyst in play — recent news may affect momentum",
+        score: def.score ?? 200,
         multiplier: def.multiplier ?? 1.1,
         isBuff: def.isBuff ?? true,
     };
@@ -284,6 +336,23 @@ function getDilutionRiskBuff(symbolData, buffList = []) {
     }
 
     return null;
+}
+
+function getFilingBuff(symbolData, buffList = []) {
+    
+    const filings = symbolData.Filings || [];
+
+    if (!Array.isArray(filings) || filings.length === 0) return null;
+
+    const def = buffList.find((b) => b.key === "hasFiling") || {};
+    return {
+        key: "hasFiling",
+        icon: def.icon || "📁",
+        desc: def.desc || "Recent SEC filing",
+        score: def.score ?? 150,
+        multiplier: def.multiplier ?? 1.1,
+        isBuff: def.isBuff ?? true,
+    };
 }
 
 function calculateVolumeImpact(volume = 0, price = 1, buffList = []) {

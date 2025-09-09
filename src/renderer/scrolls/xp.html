@@ -4,33 +4,14 @@
         <meta charset="UTF-8" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
         <link rel="stylesheet" href="../flat.css" />
+        <link rel="stylesheet" href="../components/symbol/symbol.css" />
         <title>Hall of legends (xp)</title>
         <style>
             body {
                 padding: 10px;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
-            .symbol {
-                white-space: nowrap;
-                color: antiquewhite !important;
-                font-weight: 400;
-                font-size: 16px;
-                padding: 2px 4px;
-                border-radius: 1px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                width: 75px;
-                display: inline-block;
-                text-align: left;
-                vertical-align: bottom;
-            }
-            .symbol:hover {
-                opacity: 0.8;
-                transform: scale(1.05);
-            }
-            .symbol-clicked {
-                opacity: 0.6;
-            }
+            /* Symbol styles now handled by component CSS */
             table {
                 width: 100%;
                 border-collapse: collapse;

@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// HOD Toplist — Oracle top list, simple, reliable (subscribe-first)
+// HOD Toplist — Complete list from backend, simple, reliable (subscribe-first)
 // ──────────────────────────────────────────────────────────────────────────────
 
 /* 0) Helpers */
@@ -45,22 +45,11 @@ const MOVE_FLASH_MS = 1000;
 window.MIN_AUDIO_INTERVAL_MS ??= 80;
 window.lastAudioTime ??= 0;
 
-const HOD_EVICT_MS = 60_000; // evict a row N ms after it hit HOD
-const HOD_SYMBOL_LENGTH_DEFAULT = 10; // default rows to show
-const PRICE_MOVE_EPS = 0; // any price change counts as movement
+// HOD_EVICT_MS handled by backend
+const HOD_SYMBOL_LENGTH_DEFAULT = 50; // default rows to show
 
 // --- Stability knobs ---
-const EMA_ALPHA = 0.6; // 0..1, higher = snappier (was 0.35)
-const RANK_HYSTERESIS = 0.002; // need 0.2pp advantage to swap (was 0.01)
 const RENDER_THROTTLE_MS = 100; // min ms between paints (was 200)
-
-// Performance tuning: enable turbo mode for maximum responsiveness
-const TURBO_MODE = true; // Set to false to restore original conservative behavior
-const TURBO_RENDER_MS = TURBO_MODE ? 50 : RENDER_THROTTLE_MS; // 20 FPS in turbo mode
-const TURBO_HYSTERESIS = TURBO_MODE ? RANK_HYSTERESIS * 0.5 : RANK_HYSTERESIS; // More aggressive in turbo
-
-// Let brand-new HODs bypass hysteresis briefly
-const HOT_HOD_MS = 1500; // ms after HOD to allow instant bubble-up
 
 /* 2) HOD math */
 function hodThresholdUSDFromPrice(price) {
@@ -147,31 +136,25 @@ function shouldPlayTick(sym) {
 
 function setupAudio() {
     if (magicBase && ticksBase) return;
-    console.log("[HOD] Setting up audio...");
     magicBase = new Audio("./magic.mp3");
     ticksBase = new Audio("./ticks.mp3");
     [magicBase, ticksBase].forEach((a) => {
         a.preload = "auto";
-        a.addEventListener("error", () => console.warn("[HOD] audio failed:", a.src));
-        a.addEventListener("canplaythrough", () => console.log("[HOD] audio loaded:", a.src));
+        a.addEventListener("error", () => {});
+        a.addEventListener("canplaythrough", () => {});
     });
     audioReady = true;
-    console.log("[HOD] Audio setup complete");
 
-    // warm-up muted; if blocked, unlock on first gesture
+    // Optimized warm-up without setTimeout
     try {
         const warm = ticksBase.cloneNode();
         warm.muted = true;
         warm.currentTime = 0;
         warm.play()
-            .then(() =>
-                setTimeout(() => {
-                    try {
-                        warm.pause();
-                        warm.remove();
-                    } catch {}
-                }, 50)
-            )
+            .then(() => {
+                warm.pause();
+                warm.remove();
+            })
             .catch(() => {
                 audioReady = false;
                 const unlock = () => {
@@ -185,35 +168,24 @@ function setupAudio() {
 
 function getChimeVol(settings) {
     const v = Number(settings?.chimeVolume);
-    const result = Number.isFinite(v) ? v : HOD_CHIME_VOL_DEFAULT;
-    console.log(`[HOD] Chime volume: settings=${JSON.stringify(settings)}, raw=${v}, result=${result}`);
-    return result;
+    return Number.isFinite(v) ? v : HOD_CHIME_VOL_DEFAULT;
 }
 function getTickVol(settings) {
     const v = Number(settings?.tickVolume);
     return Number.isFinite(v) ? v : TICK_VOL_DEFAULT;
 }
 function play(base, vol) {
-    if (!audioReady) {
-        console.warn("[HOD] Audio not ready, skipping play");
-        return;
-    }
+    if (!audioReady) return;
     const now = Date.now();
-    if (now - (window.lastAudioTime || 0) < window.MIN_AUDIO_INTERVAL_MS) {
-        console.log("[HOD] Audio interval too short, skipping play");
-        return;
-    }
+    if (now - (window.lastAudioTime || 0) < window.MIN_AUDIO_INTERVAL_MS) return;
     const a = base.cloneNode();
     if (!a.src) a.src = base.src;
     a.volume = clamp(vol, 0, 1);
     a.currentTime = 0;
-    console.log(`[HOD] Playing audio: volume=${vol}, src=${a.src}`);
-    a.play().catch((error) => {
-        console.error("[HOD] Failed to play audio:", error);
-    });
+    a.play().catch(() => {});
     window.lastAudioTime = now;
 }
-function simulateFirstGesture(delayMs = 800) {
+function simulateFirstGesture(delayMs = 400) {
     setupAudio();
     setTimeout(() => {
         try {
@@ -233,190 +205,163 @@ function simulateFirstGesture(delayMs = 800) {
 
 /* 4) View state (small, KISS) */
 const state = {
-    tickers: new Map(), // sym -> row
-    oracleActiveStocks: null, // Oracle's top list instead of tracked
+    hodTopList: [], // Complete HOD list from backend
+    previousHodList: [], // Previous HOD list for comparison
     settings: {}, // volumes only
     hodSettings: { listLength: HOD_SYMBOL_LENGTH_DEFAULT }, // HOD-specific settings
     renderKey: "",
-    rafPending: false,
-    prevOrder: [], // last displayed order of symbols
     lastRenderAt: 0,
-    renderTimer: null,
 };
 
 function getHodListLength() {
-    return state.settings?.symbolLength || HOD_SYMBOL_LENGTH_DEFAULT;
+    return state.hodSettings?.listLength || HOD_SYMBOL_LENGTH_DEFAULT;
 }
-const isTracked = (sym) => {
-    // Use oracle active stocks list instead of manually tracked list
-    if (!state.oracleActiveStocks?.symbols) return false;
-    return state.oracleActiveStocks.symbols.some(s => up(s.symbol) === up(sym));
-};
 
-function markDirty() {
+// Calculate rank changes between current and previous HOD list
+function calculateRankChanges(currentList, previousList) {
+    const changes = new Map();
+    
+    // Create maps for quick lookup
+    const currentRanks = new Map();
+    const previousRanks = new Map();
+    
+    currentList.forEach((item, index) => {
+        const symbol = up(item.symbol || item.name || '');
+        if (symbol) currentRanks.set(symbol, index);
+    });
+    
+    previousList.forEach((item, index) => {
+        const symbol = up(item.symbol || item.name || '');
+        if (symbol) previousRanks.set(symbol, index);
+    });
+    
+    // Calculate changes
+    currentRanks.forEach((currentRank, symbol) => {
+        const previousRank = previousRanks.get(symbol);
+        if (previousRank !== undefined) {
+            const change = previousRank - currentRank; // Positive = moved up, Negative = moved down
+            changes.set(symbol, change);
+        } else {
+            changes.set(symbol, 'new'); // New symbol in list
+        }
+    });
+    
+    return changes;
+}
+
+function markDirty(forceRender = false) {
     const now = Date.now();
     const since = now - (state.lastRenderAt || 0);
-
-    // already scheduled
-    if (state.renderTimer) return;
-
-    // More aggressive rendering: reduce delay for immediate updates
-    const throttleMs = TURBO_MODE ? TURBO_RENDER_MS : RENDER_THROTTLE_MS;
-    if (since >= throttleMs) {
-        state.renderTimer = setTimeout(() => {
-            state.renderTimer = null;
-            state.lastRenderAt = Date.now();
-            render();
-        }, 0);
-    } else {
-        // Reduce the delay to make it more responsive
-        const delay = Math.max(0, throttleMs - since - 50); // 50ms faster
-        state.renderTimer = setTimeout(() => {
-            state.renderTimer = null;
-            state.lastRenderAt = Date.now();
-            render();
-        }, delay);
+    
+    // Simple throttling - only render every 1000ms max to prevent chaos
+    // But allow forced renders for price updates
+    if (forceRender || since >= 1000) {
+        state.lastRenderAt = now;
+        render();
     }
 }
+
 
 /* 5) Render */
 function render() {
     const container = document.getElementById("hod-scroll");
     if (!container) return;
 
-    // tracked-only rows
-    const items = [];
-    for (const [, t] of state.tickers) {
-        if (!isTracked(t.hero)) continue;
-        if (!Number.isFinite(t.price) || !Number.isFinite(t.sessionHigh) || t.price <= 0 || t.sessionHigh <= 0) continue;
-        items.push(t);
-    }
-
-    // 1) Ideal order: first by Oracle ranking, then by HOD proximity, then recency
-    const getOracleRank = (sym) => {
-        if (!state.oracleActiveStocks?.symbols) return Infinity;
-        const index = state.oracleActiveStocks.symbols.findIndex(s => up(s.symbol) === up(sym));
-        return index >= 0 ? index : Infinity;
-    };
+    const renderTime = new Date().toLocaleTimeString();
+    console.log(`🎯 HOD render called at ${renderTime} with ${state.hodTopList.length} symbols`);
     
-    const metric = (t) => {
-        if (Number.isFinite(t.pctSmooth)) return t.pctSmooth;
-        if (Number.isFinite(t.pctBelowHigh)) return t.pctBelowHigh;
-        return 1; // worst
-    };
-    
-    items.sort((a, b) => {
-        // Primary: Oracle ranking (lower is better)
-        const aRank = getOracleRank(a.hero);
-        const bRank = getOracleRank(b.hero);
-        if (aRank !== bRank) return aRank - bRank;
+    // Debug: Log first few items to see current prices
+    if (state.hodTopList.length > 0) {
+        console.log("🎯 HOD render - first 3 items:", state.hodTopList.slice(0, 3).map(item => ({
+            symbol: item.symbol || item.name,
+            price: item.price,
+            session_high: item.session_high,
+            pct_below_high: item.pct_below_high
+        })));
         
-        // Secondary: HOD proximity (lower is better) - more aggressive
-        const aMetric = metric(a);
-        const bMetric = metric(b);
-        if (Math.abs(aMetric - bMetric) > 0.001) return aMetric - bMetric; // smaller threshold for immediate sorting
-        
-        // Tertiary: recency (newer is better)
-        return (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0);
-    });
-    const ideal = items.slice(0, getHodListLength());
-
-    // 2) Stabilize: start from previous order, insert newcomers, then only allow a one-pass bubble-up
-    //    if improvement exceeds RANK_HYSTERESIS
-    const bySym = new Map(ideal.map((t) => [t.hero, t]));
-    let stable = (state.prevOrder || []).filter((s) => bySym.has(s));
-    if (!stable.length) stable = ideal.map((t) => t.hero);
-
-    const isHot = (sym) => {
-        const t = bySym.get(sym);
-        return t?.hodAt && Date.now() - t.hodAt < HOT_HOD_MS;
-    };
-
-    // append newcomers (preserve ideal relative order)
-    for (const t of ideal) {
-        if (!stable.includes(t.hero)) stable.push(t.hero);
-    }
-
-    // More aggressive bubble-up: allow multiple passes for hot symbols and reduce hysteresis
-    let swapped = true;
-    let passCount = 0;
-    const maxPasses = 3; // Allow up to 3 passes for better positioning
-    
-    while (swapped && passCount < maxPasses) {
-        swapped = false;
-        passCount++;
-        
-        for (let i = 1; i < stable.length; i++) {
-            const aSym = stable[i - 1],
-                bSym = stable[i];
-            const a = bySym.get(aSym),
-                b = bySym.get(bSym);
-            if (!a || !b) continue;
-            const aM = metric(a),
-                bM = metric(b);
-
-            // More aggressive swapping: lower threshold for hot symbols, allow multiple passes
-            const baseHysteresis = TURBO_MODE ? TURBO_HYSTERESIS : RANK_HYSTERESIS;
-            const hysteresis = isHot(bSym) ? baseHysteresis * 0.5 : baseHysteresis;
-            if (aM - bM > hysteresis) {
-                stable[i - 1] = bSym;
-                stable[i] = aSym;
-                swapped = true;
-            }
+        // Debug: Find DNTH in the list to see its position and data
+        const dnthItem = state.hodTopList.find(item => up(item.symbol || item.name) === 'DNTH');
+        if (dnthItem) {
+            const dnthIndex = state.hodTopList.findIndex(item => up(item.symbol || item.name) === 'DNTH');
+            console.log(`🎯 DNTH found at position ${dnthIndex + 1}:`, {
+                symbol: dnthItem.symbol || dnthItem.name,
+                price: dnthItem.price,
+                session_high: dnthItem.session_high,
+                pct_below_high: dnthItem.pct_below_high
+            });
+        } else {
+            console.log("🎯 DNTH not found in HOD list");
         }
     }
 
-    // build display array in the stabilized order
-    const display = stable.map((s) => bySym.get(s)).filter(Boolean);
+    // Use the complete list from backend - already sorted and filtered
+    const display = state.hodTopList.slice(0, getHodListLength());
+
+    // Safety check - don't render if no valid data
+    if (display.length === 0) {
+        container.innerHTML = '<div class="xp-line">No active symbols</div>';
+        return;
+    }
 
     // need timestamp before checking windows
     const now = Date.now();
     const needMovePaint = display.some((t) => now - (t.lastMoveAt || 0) < MOVE_FLASH_MS);
 
-    // keep order-only key, but don't bail if we must show the pulse
-    const key = display.map((t) => t.hero).join("|") || "∅";
-    if (state.renderKey && key === state.renderKey && !needMovePaint) return;
-    state.renderKey = key;
-
+    // Simple innerHTML update - much faster
     container.innerHTML = display
-        .map((t, idx) => {
-            const diffUSD = Math.max(0, (t.sessionHigh ?? 0) - (t.price ?? 0));
-            const thr = hodThresholdUSDFromPrice((t.price ?? t.sessionHigh) || 0);
-
+        .map((t, index) => {
+            const symbol = t.symbol || t.name || "Unknown";
+            const price = t.price || 0;
+            const sessionHigh = t.session_high || t.sessionHigh || price;
+            const pctBelowHigh = t.pct_below_high || t.pctBelowHigh || 0;
+            
+            const diffUSD = Math.max(0, sessionHigh - price);
+            const thr = hodThresholdUSDFromPrice(price || sessionHigh || 0);
             const atHigh = diffUSD <= AT_HIGH_EPS;
             const within = diffUSD > AT_HIGH_EPS && diffUSD <= thr;
-            const closeness = within ? clamp(1 - diffUSD / thr, 0, 1) : 0;
-
             const blinkClass = within ? "blinking" : "";
-            const blinkSpeed = (1.0 - 0.75 * closeness).toFixed(2);
-            const blinkStyle = within ? `animation-duration:${blinkSpeed}s;` : "";
-
             const isMoving = now - (t.lastMoveAt || 0) < MOVE_FLASH_MS;
-            const elapsedMove = isMoving ? now - t.lastMoveAt : 0;
-            const rowFlashVars = isMoving ? `--move-dur:${MOVE_FLASH_MS}ms; --move-delay:${-elapsedMove}ms;` : "";
-
-            // pick direction class if we know it; otherwise no extra class
             const dirClass = isMoving ? (t.lastPriceDir > 0 ? "moving-up" : t.lastPriceDir < 0 ? "moving-down" : "") : "";
+            
+            // Get rank change indicator and animation class
+            const rankChange = calculateRankChanges(state.hodTopList, state.previousHodList).get(up(symbol));
+            let rankIndicator = '';
+            let animationClass = '';
+            let rankClass = '';
+            
+            if (rankChange === 'new') {
+                rankIndicator = '<span class="rank-indicator new" title="New in list">🆕</span>';
+                animationClass = 'new-position';
+                rankClass = 'changed';
+            } else if (rankChange > 0) {
+                rankIndicator = `<span class="rank-indicator up" title="Moved up ${rankChange} positions">↑${rankChange}</span>`;
+                animationClass = 'moving-up';
+                rankClass = 'changed';
+            } else if (rankChange < 0) {
+                rankIndicator = `<span class="rank-indicator down" title="Moved down ${Math.abs(rankChange)} positions">↓${Math.abs(rankChange)}</span>`;
+                animationClass = 'moving-down';
+                rankClass = 'changed';
+            } else if (rankChange === 0) {
+                rankIndicator = '<span class="rank-indicator same" title="No change">•</span>';
+            }
 
             return `
-  <div class="xp-line ellipsis ${isMoving ? "moving" : ""} ${dirClass}" style="${rowFlashVars}" data-ath="${atHigh ? 1 : 0}">
-    <strong class="symbol" style="background:${getSymbolColor(t.hero)};">${t.hero}</strong>
-
+  <div class="xp-line ellipsis ${isMoving ? "moving" : ""} ${dirClass} ${animationClass}" data-ath="${atHigh ? 1 : 0}">
+    <span class="rank ${rankClass}">${index + 1}</span>
+    ${rankIndicator}
+    <strong class="symbol" style="background:${getSymbolColor(symbol)};">${symbol}</strong>
     <span class="prices">
-      
-      <span class="price now ${blinkClass}" style="${blinkStyle} color:${silverTone(t.pctBelowHigh)};">
-        ${formatPrice(t.price)}
+      <span class="price now ${blinkClass}" style="color:${silverTone(pctBelowHigh)};">
+        ${formatPrice(price)}
       </span>
       <span class="dot"> </span>
       <span class="price high" style="color:${GOLD_HEX};">
-        ${formatPrice(t.sessionHigh)}
+        ${formatPrice(sessionHigh)}
       </span>
     </span>
   </div>`;
         })
         .join("");
-
-    state.prevOrder = display.slice(0, getHodListLength()).map((t) => t.hero);
 
     // one delegated click handler
     if (!container.__boundClick) {
@@ -424,54 +369,44 @@ function render() {
         container.addEventListener("click", async (e) => {
             const el = e.target.closest(".symbol");
             if (!el) return;
-            const hero = el.textContent.trim().replace("$", "");
+            const symbol = el.textContent.trim().replace("$", "");
             try {
-                await navigator.clipboard.writeText(hero);
-                window.activeAPI?.setActiveTicker?.(hero);
+                await navigator.clipboard.writeText(symbol);
+                window.activeAPI?.setActiveTicker?.(symbol);
             } catch {}
             e.stopPropagation();
         });
     }
 }
 
-/* 6) Housekeeping */
-function pruneReachedHod() {
-    const now = Date.now();
-    let removed = false;
-    for (const [sym, t] of state.tickers) {
-        if (t?.hodAt && now - t.hodAt >= HOD_EVICT_MS) {
-            state.tickers.delete(sym);
-            removed = true;
-        }
-    }
-    if (removed) markDirty();
-}
 
-setInterval(pruneReachedHod, 5_000);
+/* 6) Housekeeping - handled by backend */
 
 /* 7) Boot */
 document.addEventListener("DOMContentLoaded", async () => {
+    console.log("🎯 HOD window loaded, waiting for APIs...");
+    
     // Wait for bridges
     while (!(window.settingsAPI && window.xpAPI && window.eventsAPI && window.electronAPI && window.hodSettingsAPI)) {
         await new Promise((r) => setTimeout(r, 200));
     }
+    
+    console.log("🎯 HOD window APIs ready, initializing...");
 
     // Load HOD settings from electron store
     try {
-        state.settings = await window.hodSettingsAPI.get();
-        console.log(`[HOD] Initial HOD settings loaded:`, state.settings);
+        const hodSettings = await window.hodSettingsAPI.get();
+        state.hodSettings = hodSettings || { listLength: HOD_SYMBOL_LENGTH_DEFAULT };
     } catch (error) {
-        console.error(`[HOD] Failed to load initial HOD settings:`, error);
-        state.settings = { chimeVolume: HOD_CHIME_VOL_DEFAULT, tickVolume: TICK_VOL_DEFAULT };
+        state.hodSettings = { listLength: HOD_SYMBOL_LENGTH_DEFAULT };
     }
     
     // Subscribe to HOD settings updates
     window.hodSettingsAPI.onUpdate(async (updated) => {
-        console.log(`[HOD] HOD settings updated:`, updated);
-        state.settings = updated || { chimeVolume: HOD_CHIME_VOL_DEFAULT, tickVolume: TICK_VOL_DEFAULT };
+        state.hodSettings = updated || { listLength: HOD_SYMBOL_LENGTH_DEFAULT };
         
         // Trigger re-render if symbol length changed
-        if (updated?.symbolLength !== undefined) {
+        if (updated?.listLength !== undefined) {
             markDirty();
         }
     });
@@ -487,123 +422,170 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupAudio();
     if (!sessionStorage.getItem("hod:simulatedOnce")) {
         sessionStorage.setItem("hod:simulatedOnce", "1");
-        simulateFirstGesture(1000);
+        simulateFirstGesture(200);
     }
 
-    // Subscribe to Oracle's active stocks list
-    const unsubscribeOracle = window.xpAPI.onActiveStocksUpdate((data) => {
-        state.oracleActiveStocks = data;
-        console.log("[HOD] Oracle active stocks update received:", data?.symbols?.length || 0, "symbols");
-        
-        // Hard prune anything not in oracle list
-        if (state.oracleActiveStocks?.symbols?.length) {
-            const allow = new Set(state.oracleActiveStocks.symbols.map(s => up(s.symbol)));
-            let removed = false;
-            for (const sym of Array.from(state.tickers.keys())) {
-                if (!allow.has(sym)) {
-                    state.tickers.delete(sym);
-                    removed = true;
-                }
-            }
-            if (removed) markDirty();
-            state.prevOrder = (state.prevOrder || []).filter((s) => allow.has(s)).slice(0, getHodListLength());
-        }
-        markDirty();
-    });
-
-    // Optional: one-time snapshot (safe even if event fires first)
+    // Get initial HOD list from tickerStore
     try {
-        const snap = await window.xpAPI.getActiveStocks();
-        if (snap?.symbols?.length) {
-            state.oracleActiveStocks = snap;
-            console.log("[HOD] Initial Oracle data loaded:", snap.symbols.length, "symbols");
+        const initialHodList = await window.scrollHodAPI.getHodTopList();
+        if (initialHodList && Array.isArray(initialHodList) && initialHodList.length > 0) {
+            state.hodTopList = initialHodList;
+            // Force immediate render for initial data load (bypass throttling)
+            state.lastRenderAt = 0; // Reset throttling
             markDirty();
         }
     } catch (error) {
-        console.warn("[HOD] Failed to get initial Oracle data:", error);
+        console.warn("⚠️ Failed to load initial HOD list from tickerStore:", error);
     }
 
-    // Oracle-filtered alert handling
-    window.eventsAPI.onAlert((p = {}) => {
-        const sym = up(p.hero);
-        if (!sym || !isTracked(sym)) return;
-
-        const t = state.tickers.get(sym) || { hero: sym };
-        const prevPrice = t.price;
-        const prevHigh = t.sessionHigh;
-
-        if (Number.isFinite(p.price)) t.price = p.price;
-        if (Number.isFinite(p.sessionHigh)) t.sessionHigh = p.sessionHigh;
-        if (Number.isFinite(p.pctBelowHigh)) t.pctBelowHigh = p.pctBelowHigh;
-
-        const rawPct = Number.isFinite(p.pctBelowHigh) ? p.pctBelowHigh : t.pctBelowHigh;
-        if (Number.isFinite(rawPct)) {
-            t.pctSmooth = Number.isFinite(t.pctSmooth) ? t.pctSmooth * (1 - EMA_ALPHA) + rawPct * EMA_ALPHA : rawPct;
+    // Subscribe to HOD top list updates from backend
+    const unsubscribeHodList = window.scrollHodAPI.onHodTopListUpdate((data) => {
+        console.log("🎯 HOD window received real-time update:", data?.length || 0, "symbols");
+        console.log("🎯 HOD window received data type:", typeof data);
+        console.log("🎯 HOD window received data:", data);
+        
+        if (!data || !Array.isArray(data)) {
+            console.warn("⚠️ HOD window received invalid data:", data);
+            return; // Ignore invalid data
         }
-
-        t.lastUpdate = Date.now();
-
-        // movement (price OR new highs)
-        let moved = false;
-        if (Number.isFinite(p.price)) moved ||= Number.isFinite(prevPrice) ? Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS : true;
-        if (Number.isFinite(p.sessionHigh)) moved ||= Number.isFinite(prevHigh) ? p.sessionHigh > prevHigh : true;
-        if (moved) t.lastMoveAt = t.lastUpdate;
-
-        if (Number.isFinite(p.price) && Number.isFinite(prevPrice) && Math.abs(p.price - prevPrice) > PRICE_MOVE_EPS) {
-            t.lastPriceDir = p.price > prevPrice ? 1 : -1; // up = 1, down = -1
-            t.lastPriceChangeAt = Date.now();
-            
-            // Force immediate re-render on significant price changes for better responsiveness
-            if (Math.abs(p.price - prevPrice) / prevPrice > 0.005) { // 0.5% change
-                setTimeout(() => markDirty(), 0); // Immediate update
-            }
-        }
-
-        // window + audio
-        const diffUSD = Number.isFinite(p.centsBelowHigh)
-            ? Math.max(0, p.centsBelowHigh / 100)
-            : Number.isFinite(t.sessionHigh) && Number.isFinite(t.price)
-            ? Math.max(0, t.sessionHigh - t.price)
-            : Infinity;
-
-        const priceRef = Number.isFinite(t.price) && t.price > 0 ? t.price : t.sessionHigh || 0;
-        const thrUSD = hodThresholdUSDFromPrice(priceRef);
-        t.diffUSD = diffUSD;
-        t.thrUSD = thrUSD;
-
-        const isHOD = p.isHighOfDay === true || (isFinite(diffUSD) && diffUSD <= AT_HIGH_EPS);
-        const inWindow = isFinite(diffUSD) && isFinite(thrUSD) && diffUSD > AT_HIGH_EPS && diffUSD <= thrUSD;
-
-        const isUptick = Number.isFinite(p.hp) && p.hp > 0;
-
-        if (isHOD) {
-            if (shouldPlayHodChime(sym)) {
-                play(magicBase, getChimeVol(state.settings));
-            }
-            t.hodAt = Date.now();
-        } else {
-            // Volume ramps from 0 at the edge (diff == thr) to full at HOD (diff -> 0).
-            const dist = Number.isFinite(t.diffUSD) ? t.diffUSD : Infinity;
-            const thr = Number.isFinite(t.thrUSD) ? t.thrUSD : 0;
-            const prox = thr > 0 ? clamp(1 - dist / thr, 0, 1) : 0; // 0..1
-
-            if (isUptick && prox > 0 && shouldPlayTick(sym)) {
-                const user = clamp(getTickVol(state.settings), 0, 1);
-                // psychoacoustic easing + audible floor at the window edge
-                const eased = Math.pow(prox, TICK_VOL_EASE); // 0..1
-                const shaped = TICK_VOL_FLOOR + (1 - TICK_VOL_FLOOR) * eased; // floor..1
-                const vol = clamp(user * shaped, 0, 1);
-                play(ticksBase, vol);
-            }
-        }
-
-        state.tickers.set(sym, t);
+        
+        // Log first few items to see the data
+        console.log("🎯 HOD update data sample:", data.slice(0, 3));
+        
+        // Store previous list for comparison
+        state.previousHodList = [...state.hodTopList];
+        state.hodTopList = data;
+        console.log("🎯 HOD window updated state.hodTopList to:", state.hodTopList.length, "symbols");
+        
+        // Force immediate render for HOD list updates (bypass throttling)
+        state.lastRenderAt = 0;
         markDirty();
     });
 
-    // Nuke resets rows only; oracle data comes from subscription
+    // Subscribe to HOD price updates from backend
+    const unsubscribeHodPriceUpdate = window.scrollHodAPI.onHodPriceUpdate((priceData) => {
+        console.log("💰 HOD window received price update:", priceData);
+        console.log("💰 Current HOD list length:", state.hodTopList.length);
+        console.log("💰 Current HOD list symbols:", state.hodTopList.map(item => up(item.symbol || item.name)).slice(0, 5));
+        
+        if (!priceData || !priceData.symbol && !priceData.name) {
+            console.warn("⚠️ HOD window received invalid price data:", priceData);
+            return; // Ignore invalid data
+        }
+        
+        const symbol = up(priceData.symbol || priceData.name);
+        if (!symbol) {
+            console.warn("⚠️ HOD window received price update with no valid symbol:", priceData);
+            return;
+        }
+        
+        console.log(`💰 Looking for symbol: ${symbol} in HOD list`);
+        
+        // Find the symbol in our current HOD list and update its price
+        const hodItem = state.hodTopList.find(item => up(item.symbol || item.name) === symbol);
+        if (hodItem) {
+            console.log(`💰 Found ${symbol} in HOD list. Current price: $${hodItem.price}, New price: $${priceData.price}`);
+            
+            // Update price and related fields
+            if (Number.isFinite(priceData.price)) {
+                const oldPrice = hodItem.price;
+                hodItem.price = priceData.price;
+                hodItem.lastMoveAt = Date.now();
+                
+                // Update session high if provided and higher than current
+                if (Number.isFinite(priceData.session_high) && priceData.session_high > (hodItem.session_high || 0)) {
+                    hodItem.session_high = priceData.session_high;
+                }
+                
+                // Update percentage below high if provided
+                if (Number.isFinite(priceData.pct_below_high)) {
+                    hodItem.pct_below_high = priceData.pct_below_high;
+                } else if (Number.isFinite(hodItem.session_high) && hodItem.session_high > 0) {
+                    // Calculate percentage below high if not provided
+                    hodItem.pct_below_high = ((hodItem.session_high - hodItem.price) / hodItem.session_high) * 100;
+                }
+                
+                // Update at_high flag if provided
+                if (typeof priceData.at_high === 'boolean') {
+                    hodItem.at_high = priceData.at_high;
+                }
+                
+                // Update last_updated timestamp if provided
+                if (Number.isFinite(priceData.last_updated)) {
+                    hodItem.last_updated = priceData.last_updated;
+                }
+                
+                console.log(`💰 Updated ${symbol} price from $${oldPrice} to $${priceData.price} (${hodItem.pct_below_high?.toFixed(2)}% below high)`);
+                console.log(`💰 Triggering FORCED render for price update...`);
+                
+                // Force immediate render for price updates (bypass throttling)
+                markDirty(true);
+            } else {
+                console.warn(`💰 Invalid price data for ${symbol}:`, priceData.price);
+            }
+        } else {
+            console.log(`💰 Price update for ${symbol} - not in current HOD list`);
+            console.log(`💰 Available symbols:`, state.hodTopList.map(item => up(item.symbol || item.name)).join(', '));
+        }
+    });
+
+    // Cleanup function to unsubscribe when page unloads
+    const cleanup = () => {
+        if (typeof unsubscribeHodList === 'function') {
+            unsubscribeHodList();
+        }
+        if (typeof unsubscribeHodPriceUpdate === 'function') {
+            unsubscribeHodPriceUpdate();
+        }
+    };
+
+    // Register cleanup on page unload
+    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('unload', cleanup);
+
+    // Audio handling for HOD events + price updates
+    window.eventsAPI.onAlert((p = {}) => {
+        if (!p || !p.hero) return; // Ignore invalid alerts
+        const sym = up(p.hero);
+        
+        // Check if this symbol is in our current HOD list
+        const hodItem = state.hodTopList.find(item => up(item.symbol || item.name) === sym);
+        if (!hodItem) return;
+
+        // Update price in HOD list
+        if (Number.isFinite(p.price)) {
+            hodItem.price = p.price;
+            hodItem.lastMoveAt = Date.now();
+            hodItem.lastPriceDir = p.hp > 0 ? 1 : p.dp > 0 ? -1 : 0;
+            
+            // Calculate percentage below high
+            if (Number.isFinite(hodItem.session_high) && hodItem.session_high > 0) {
+                hodItem.pct_below_high = ((hodItem.session_high - hodItem.price) / hodItem.session_high) * 100;
+            }
+            
+            // Force immediate render for price updates (bypass throttling)
+            state.lastRenderAt = 0;
+            markDirty();
+        }
+
+        // Simple audio handling based on alert data
+        const isHOD = p.isHighOfDay === true;
+        const isUptick = Number.isFinite(p.hp) && p.hp > 0;
+        
+        if (isHOD && shouldPlayHodChime(sym)) {
+            play(magicBase, getChimeVol(state.settings));
+        } else if (isUptick && shouldPlayTick(sym)) {
+            // Use a default proximity for tick volume
+            const user = clamp(getTickVol(state.settings), 0, 1);
+            const vol = clamp(user * 0.5, 0, 1); // Default 50% volume for ticks
+            play(ticksBase, vol);
+        }
+    });
+
+    // Nuke resets HOD list
     window.electronAPI.onNukeState?.(() => {
-        state.tickers.clear();
+        state.hodTopList = [];
+        state.previousHodList = [];
         state.renderKey = "";
         const container = document.getElementById("hod-scroll");
         if (container) container.innerHTML = "";
@@ -614,91 +596,86 @@ document.addEventListener("DOMContentLoaded", async () => {
     markDirty();
 });
 
-/* 8) Debug helpers */
-window.hodPeek = () => {
-    const first = state.tickers.values().next().value || null;
-    console.log({ 
-        oracleSymbols: state.oracleActiveStocks?.symbols?.length || 0,
-        oracleSample: state.oracleActiveStocks?.symbols?.slice(0, 3) || [],
-        tickerCount: state.tickers.size, 
-        sample: first 
-    });
-};
-window.hodAudioStatus = () => {
-    setupAudio?.();
-    const ch = getChimeVol(state.settings);
-    const tv = getTickVol(state.settings);
-    console.log({
-        audioReady,
-        chimeVolume: ch,
-        tickVolume: tv,
-        magicSrc: magicBase?.src || "(unset)",
-        ticksSrc: ticksBase?.src || "(unset)",
-        minAudioIntervalMs: window.MIN_AUDIO_INTERVAL_MS,
-        lastAudioTime: window.lastAudioTime,
-    });
-};
-
-window.hodOracleStatus = () => {
-    console.log({
-        oracleData: state.oracleActiveStocks ? {
-            symbolCount: state.oracleActiveStocks.symbols?.length || 0,
-            top5: state.oracleActiveStocks.symbols?.slice(0, 5).map(s => s.symbol) || [],
-            hasXpAPI: !!window.xpAPI,
-            hasGetActiveStocks: !!window.xpAPI?.getActiveStocks,
-            hasOnActiveStocksUpdate: !!window.xpAPI?.onActiveStocksUpdate
-        } : null,
-        tickerCount: state.tickers.size,
-        activeSymbols: Array.from(state.tickers.keys()).slice(0, 5)
-    });
-};
-
-window.hodPerformanceStatus = () => {
-    console.log({
-        turboMode: TURBO_MODE,
-        renderThrottleMs: TURBO_MODE ? TURBO_RENDER_MS : RENDER_THROTTLE_MS,
-        rankHysteresis: TURBO_MODE ? TURBO_HYSTERESIS : RANK_HYSTERESIS,
-        emaAlpha: EMA_ALPHA,
-        maxBubblePasses: 3,
-        immediateUpdateThreshold: "0.5% price change",
-        currentFPS: Math.round(1000 / (TURBO_MODE ? TURBO_RENDER_MS : RENDER_THROTTLE_MS))
-    });
-};
-
-window.hodToggleTurbo = () => {
-    // This would require reloading the page to take effect, but we can show the current state
-    console.log(`[HOD] Turbo mode is currently ${TURBO_MODE ? 'ENABLED' : 'DISABLED'}`);
-    console.log(`[HOD] To change, set TURBO_MODE = ${!TURBO_MODE} in the code and reload`);
-    console.log(`[HOD] Current performance: ${Math.round(1000 / (TURBO_MODE ? TURBO_RENDER_MS : RENDER_THROTTLE_MS))} FPS max`);
-};
-
+/* 8) Production helpers */
+// Minimal test functions for production use
 window.hodTickTest = (p = 0.0) => {
     const user = clamp(getTickVol(state.settings), 0, 1);
     const eased = Math.pow(clamp(p, 0, 1), TICK_VOL_EASE);
     const shaped = TICK_VOL_FLOOR + (1 - TICK_VOL_FLOOR) * eased;
     const vol = clamp(user * shaped, 0, 1);
-    console.log({ p, vol, user, shaped });
     play(ticksBase, vol);
 };
 
 window.hodChimeTest = () => {
     const vol = getChimeVol(state.settings);
-    console.log(`[HOD] Testing chime with volume: ${vol}`);
-    console.log(`[HOD] Audio ready: ${audioReady}, Magic base: ${magicBase?.src || 'not loaded'}`);
     play(magicBase, vol);
 };
 
 // IPC listeners for audio test commands
 if (window.ipcListenerAPI) {
     window.ipcListenerAPI.onTestChimeAlert(() => {
-        console.log("[HOD] Received test-chime-alert command from main process");
         window.hodChimeTest();
     });
 
     window.ipcListenerAPI.onTestTickAlert(() => {
-        console.log("[HOD] Received test-tick-alert command from main process");
-        window.hodTickTest(0.5); // Test with medium proximity
+        window.hodTickTest(0.5);
     });
 }
+
+// Test function for price updates - call from browser console
+window.testHodPriceUpdate = (symbol, newPrice) => {
+    console.log(`🧪 Testing price update for ${symbol} to $${newPrice}`);
+    
+    if (!symbol || !newPrice) {
+        console.log("Usage: testHodPriceUpdate('SYMBOL', newPrice)");
+        console.log("Example: testHodPriceUpdate('AAPL', 150.25)");
+        return;
+    }
+    
+    // Find the symbol in the HOD list
+    const hodItem = state.hodTopList.find(item => up(item.symbol || item.name) === up(symbol));
+    if (hodItem) {
+        const oldPrice = hodItem.price;
+        hodItem.price = newPrice;
+        hodItem.lastMoveAt = Date.now();
+        
+        // Recalculate percentage below high
+        if (Number.isFinite(hodItem.session_high) && hodItem.session_high > 0) {
+            hodItem.pct_below_high = ((hodItem.session_high - hodItem.price) / hodItem.session_high) * 100;
+        }
+        
+        console.log(`🧪 Updated ${symbol} price from $${oldPrice} to $${newPrice}`);
+        console.log(`🧪 Triggering FORCED render...`);
+        
+        // Force immediate render
+        markDirty(true);
+    } else {
+        console.log(`🧪 Symbol ${symbol} not found in HOD list`);
+        console.log(`🧪 Available symbols:`, state.hodTopList.map(item => up(item.symbol || item.name)).slice(0, 10).join(', '));
+    }
+};
+
+// Helper function to find a symbol in the HOD list
+window.findHodSymbol = (symbol) => {
+    const searchSymbol = up(symbol);
+    const hodItem = state.hodTopList.find(item => up(item.symbol || item.name) === searchSymbol);
+    
+    if (hodItem) {
+        const index = state.hodTopList.findIndex(item => up(item.symbol || item.name) === searchSymbol);
+        console.log(`🔍 Found ${searchSymbol} at position ${index + 1}:`, {
+            symbol: hodItem.symbol || hodItem.name,
+            price: hodItem.price,
+            session_high: hodItem.session_high,
+            pct_below_high: hodItem.pct_below_high,
+            at_high: hodItem.at_high,
+            last_updated: hodItem.last_updated
+        });
+        return hodItem;
+    } else {
+        console.log(`🔍 Symbol ${searchSymbol} not found in HOD list`);
+        console.log(`🔍 Available symbols:`, state.hodTopList.map(item => up(item.symbol || item.name)).join(', '));
+        return null;
+    }
+};
 
 

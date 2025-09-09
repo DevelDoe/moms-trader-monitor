@@ -4,12 +4,44 @@
         <meta charset="UTF-8" />
         <link rel="stylesheet" href="../styles.css" />
         <link rel="stylesheet" href="./progress.css" />
-        <title>Tide</title>
+        <title>Arcane Monitor</title>
     </head>
     <body>
-        <div class="sentiment-flow draggable">
-            <div class="flow-hp draggable" id="flow-hp"></div>
-            <div class="flow-dp draggable" id="flow-dp"></div>
+        <div class="arcane-header">
+            <!-- Header Title -->
+            <h1 class="header-title">Arcane Monitor</h1>
+            
+            <!-- Data Banner -->
+            <div class="data-banner" id="data-banner">
+                <div class="banner-content">
+                    <div class="session-info">
+                        <span class="label">Session:</span>
+                        <span class="value" id="session-info">closed</span>
+                    </div>
+                    <div class="heroes-count">
+                        <span class="label">Heroes:</span>
+                        <span class="value" id="heroes-count">--</span>
+                    </div>
+                    <div class="buy-info">
+                        <span class="label">Buy:</span>
+                        <span class="value" id="buy-info">--</span>
+                    </div>
+                    <div class="sell-info">
+                        <span class="label">Sell:</span>
+                        <span class="value" id="sell-info">--</span>
+                    </div>
+                    <div class="market-temp">
+                        <span class="label">Market:</span>
+                        <span class="value" id="market-temp">--</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="sentiment-flow draggable">
+                <div class="flow-hp draggable" id="flow-hp" title="Buying Volume"></div>
+                <div class="flow-dp draggable" id="flow-dp" title="Selling Volume"></div>
+            </div>
         </div>
 
         <script src="./progress.js"></script>

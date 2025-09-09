@@ -174,12 +174,10 @@ body {
     height: 100%;
     width: 0%;
     pointer-events: none;
-    z-index: 0;
     background: rgba(78, 255, 122, 0.5);
     background-size: 200% 100%;
-    transition: width 0.6s ease-out, background 0.2s linear;
-    will-change: width;
-    mix-blend-mode: screen;
+    transition: width 0.3s ease-out; /* Reduced from 0.6s for better performance */
+    /* Removed will-change and mix-blend-mode for better performance */
 }
 
 .alert.combo-active .alert-symbol {
@@ -210,8 +208,8 @@ body {
     left: unset; /* ✅ Cancel the default left fill */
     right: 0; /* ✅ Start from right side */
     transform-origin: right center;
-    transition: width 0.6s ease-out, background 0.2s linear;
-    mix-blend-mode: screen;
+    transition: width 0.3s ease-out; /* Reduced from 0.6s for better performance */
+    /* Removed mix-blend-mode for better performance */
 }
 
 .alert.combo-active.down-combo {
@@ -223,45 +221,34 @@ body {
 }
 
 @keyframes blink-soft {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.8;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
 }
 
 @keyframes blink-medium {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.6;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 
 @keyframes blink-intense {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.3;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
 
 .blink-soft {
     animation: blink-soft 1.2s infinite;
+    /* Use transform instead of opacity for better performance */
+    will-change: transform;
 }
 
 .blink-medium {
     animation: blink-medium 0.6s infinite;
+    will-change: transform;
 }
 
 .blink-intense {
     animation: blink-intense 0.3s infinite;
+    will-change: transform;
 }
 
 /* 1) Make content stack above fills */
@@ -285,11 +272,10 @@ body {
     height: 100%;
     width: 0%;
     pointer-events: none;
-    transition: width 0.6s ease-out, background 0.2s linear;
-    will-change: width;
+    transition: width 0.3s ease-out; /* Reduced for better performance */
     z-index: 0;
     opacity: 0.25;
-    mix-blend-mode: screen;
+    /* Removed will-change and mix-blend-mode for better performance */
 }
 
 /* 3) Separate directions */
@@ -305,18 +291,22 @@ body {
     transform-origin: right center;
 }
 
-/* (optional) pulse keeps working */
+/* (optional) pulse keeps working - optimized */
 .combo-pulse-1 {
     animation: comboPulse 6s ease-in-out infinite;
+    will-change: opacity;
 }
 .combo-pulse-2 {
     animation: comboPulse 5s ease-in-out infinite;
+    will-change: opacity;
 }
 .combo-pulse-3 {
     animation: comboPulse 4s ease-in-out infinite;
+    will-change: opacity;
 }
 .combo-pulse-4 {
     animation: comboPulse 0.3s ease-in-out infinite;
+    will-change: opacity;
 }
 
 /* 5) High of Day must always win, even while comboing */

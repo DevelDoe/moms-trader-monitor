@@ -37,7 +37,6 @@
 
         // medals/top3
         rankMap: new Map(),
-        trophyMap: new Map(),
     };
 
     /**************************************************************************
@@ -181,45 +180,57 @@
         return "";
     }
 
-    function getSymbolMedal(sym) {
-        const trophy = state.trophyMap.get(sym) || '';
+    const getSymbolMedal = (s) => {
+        const sym = String(s || "").toUpperCase();
         const medal = medalForRank(state.rankMap.get(sym) || 0);
-        
-        if (trophy && medal) {
-            return `<span class="trophy">${trophy}</span><span class="medal">${medal}</span>`;
-        } else if (trophy) {
-            return `<span class="trophy">${trophy}</span>`;
-        } else if (medal) {
-            return `<span class="medal">${medal}</span>`;
-        }
-        return '';
-    }
+        return medal ? `<span class="medal">${medal}</span>` : '';
+    };
+
+    const getSymbolTrophy = (s) => {
+        const sym = String(s || "").toUpperCase();
+        const trophy = window.trophyMap?.get(sym) || '';
+        return trophy ? `<span class="trophy">${trophy}</span>` : '';
+    };
 
     // cheap per-card patch (kept minimal here — keep your existing visuals if needed)
     function patchCardDOM(sym, hero) {
-        const card = state.container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
+        const card = state.container.querySelector(`.hero-card[data-symbol="${sym}"]`);
         if (!card) return;
-        const scoreFill = card.querySelector(".bar-fill.score");
+        
+        const scoreFill = card.querySelector(".progress-fill.score");
         if (scoreFill) {
             const exponent = 0.75;
             const normalized = Math.min(hero.score / state.maxScore, 1);
             scoreFill.style.width = `${Math.pow(normalized, exponent) * 100}%`;
         }
-        const volEl = card.querySelector(".bar-text");
+        
+        const volEl = card.querySelector(".volume-text");
         if (volEl) {
             volEl.textContent = abbreviatedValues(hero.strength || 0);
         }
-        const priceEl = card.querySelector(".lv-price");
+        
+        const priceEl = card.querySelector(".price-badge");
         if (priceEl) priceEl.textContent = `$${(hero.price ?? 0).toFixed(2)}`;
 
-        const medalEl = card.querySelector(".lv-medal");
-        if (medalEl) {
-            medalEl.innerHTML = getSymbolMedal(sym);
+        const medalEl = card.querySelector(".medal");
+        if (medalEl) medalEl.innerHTML = getSymbolMedal(sym);
+        
+        // Update trophy separately
+        const trophyEl = card.querySelector('.trophy');
+        if (trophyEl) {
+            const trophy = getSymbolTrophy(sym);
+            trophyEl.outerHTML = trophy;
+        } else if (getSymbolTrophy(sym)) {
+            // Add trophy if it doesn't exist but should
+            const badgesEl = card.querySelector('.symbol-badges');
+            if (badgesEl) {
+                badgesEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+            }
         }
 
         // flash on update
-        card.classList.add("card-update-highlight");
-        setTimeout(() => card.classList.remove("card-update-highlight"), 220);
+        card.classList.add("is-updating");
+        setTimeout(() => card.classList.remove("is-updating"), 220);
 
         const buffsEl = card.querySelector(".buffs-container");
         if (buffsEl) buffsEl.innerHTML = buildBuffInlineHTML(hero);
@@ -228,35 +239,35 @@
     function createCard(hero) {
         const sym = hero.hero;
         const card = document.createElement("div");
-        card.className = "ticker-card";
+        card.className = "hero-card";
         card.dataset.symbol = sym;
 
-        // const changeText = hero.lastEvent?.hp ? `+${hero.lastEvent.hp.toFixed(2)}%` : hero.lastEvent?.dp ? `-${hero.lastEvent.dp.toFixed(2)}%` : "";
-
         card.innerHTML = `
-        <div class="ticker-header">
-            <div class="ticker-symbol" style="background-color:${getSymbolColor(hero.hue || 0)}">
-            ${sym}
-            <span class="lv">
-                <span class="lv-medal">${getSymbolMedal(sym)}</span>
-                <span class="lv-price">$${(hero.price ?? 0).toFixed(2)}</span>
-            </span>
+        <div class="hero-header">
+            <div class="hero-symbol" style="background-color:${getSymbolColor(hero.hue || 0)}">
+                ${sym}
+                <div class="symbol-badges">
+                    <span class="medal">${getSymbolMedal(sym)}</span>
+                    ${getSymbolTrophy(sym)}
+                    <span class="price-badge">$${(hero.price ?? 0).toFixed(2)}</span>
+                </div>
             </div>
-            <div class="ticker-info">
-            <div class="ticker-data">
-                <span class="bar-text" style="color:${volumeColorFromImpact(hero)}">
-                ${abbreviatedValues(hero.strength || 0)}
-                </span>
-                <div class="buffs-container">${buildBuffInlineHTML(hero)}</div>
-            </div>
-            <div class="bars">
-                <div class="bar"><div class="bar-fill score" style="width:0%"></div></div>
-            </div>
+            <div class="hero-info">
+                <div class="hero-data">
+                    <span class="volume-text" style="color:${volumeColorFromImpact(hero)}">
+                        ${abbreviatedValues(hero.strength || 0)}
+                    </span>
+                    <div class="buffs-container">${buildBuffInlineHTML(hero)}</div>
+                </div>
+                <div class="progress-bars">
+                    <div class="progress-bar">
+                        <div class="progress-fill score" style="width:0%"></div>
+                    </div>
+                </div>
             </div>
         </div>`;
 
-
-        const symEl = card.querySelector(".ticker-symbol");
+        const symEl = card.querySelector(".hero-symbol");
         symEl.onclick = (e) => {
             e.stopPropagation();
             try {
@@ -295,7 +306,7 @@
         // reconcile cards
         const need = new Set(top.map((h) => h.hero));
         // remove stale
-        state.container.querySelectorAll(".ticker-card").forEach((node) => {
+        state.container.querySelectorAll(".hero-card").forEach((node) => {
             const sym = node.dataset.symbol?.toUpperCase() || "";
             if (!need.has(sym)) node.remove();
         });
@@ -303,7 +314,7 @@
         // insert/update in correct order
         top.forEach((h, i) => {
             const sym = h.hero;
-            let card = state.container.querySelector(`.ticker-card[data-symbol="${sym}"]`);
+            let card = state.container.querySelector(`.hero-card[data-symbol="${sym}"]`);
             if (!card) {
                 card = createCard(h);
                 state.container.insertBefore(card, state.container.children[i] || null);
@@ -450,12 +461,25 @@
 
         __top3Unsub = window.top3API.subscribe?.(({ entries }) => {
             state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
-            // medals updated next render; optionally patch visible cards:
-            state.container?.querySelectorAll(".ticker-card").forEach((card) => {
+            // medals and trophies updated next render; optionally patch visible cards:
+            state.container?.querySelectorAll(".hero-card").forEach((card) => {
                 const sym = card.dataset.symbol?.toUpperCase();
-                const medalEl = card.querySelector(".lv-medal");
+                const medalEl = card.querySelector(".medal");
                 if (sym && medalEl) {
                     medalEl.innerHTML = getSymbolMedal(sym);
+                    
+                    // Update trophy separately
+                    const trophyEl = card.querySelector('.trophy');
+                    if (trophyEl) {
+                        const trophy = getSymbolTrophy(sym);
+                        trophyEl.outerHTML = trophy;
+                    } else if (getSymbolTrophy(sym)) {
+                        // Add trophy if it doesn't exist but should
+                        const badgesEl = card.querySelector('.symbol-badges');
+                        if (badgesEl) {
+                            badgesEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+                        }
+                    }
                 }
             });
         });
@@ -521,28 +545,30 @@
         // top3 medals
         await initTop3();
 
-        // Initialize trophy data from the store
-        try {
-            const trophyData = await window.storeAPI.getTrophyData();
-            state.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
-            console.log("🏆 [FRONTLINE] Initial trophy data loaded:", state.trophyMap);
-        } catch (error) {
-            console.error("❌ [FRONTLINE] Failed to load initial trophy data:", error);
-        }
+        // Fetch trophy data from the store
+        const trophyData = await window.storeAPI.getTrophyData();
+        window.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
 
-        // Subscribe to trophy updates
-        window.storeAPI.onTrophyUpdate?.((trophyData) => {
-            console.log("🏆 [FRONTLINE] Trophy update received:", trophyData);
-            state.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
-            
-            // Update visible cards with new trophies
-            state.container?.querySelectorAll(".ticker-card").forEach((card) => {
-                const sym = card.dataset.symbol?.toUpperCase();
-                const medalEl = card.querySelector(".lv-medal");
-                if (sym && medalEl) {
-                    medalEl.innerHTML = getSymbolMedal(sym);
+        // Update medals and trophies separately
+        state.container?.querySelectorAll(".hero-card").forEach((card) => {
+            const sym = card.dataset.symbol?.toUpperCase();
+            const medalEl = card.querySelector(".medal");
+            if (sym && medalEl) {
+                medalEl.innerHTML = getSymbolMedal(sym);
+                
+                // Update trophy separately
+                const trophyEl = card.querySelector('.trophy');
+                if (trophyEl) {
+                    const trophy = getSymbolTrophy(sym);
+                    trophyEl.outerHTML = trophy;
+                } else if (getSymbolTrophy(sym)) {
+                    // Add trophy if it doesn't exist but should
+                    const badgesEl = card.querySelector('.symbol-badges');
+                    if (badgesEl) {
+                        badgesEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+                    }
                 }
-            });
+            }
         });
 
         // decay

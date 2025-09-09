@@ -3,7 +3,7 @@
 // ============================
 // Debug Mode
 const debugMode = window.appFlags?.isDev === true;
-const debugCombo = true;
+const debugCombo = false; // Disabled by default for performance
 if (!debugMode) {
     console.log = () => {};
     console.debug = () => {};
@@ -17,14 +17,13 @@ let flushScheduled = false;
 let lastAudioTime = 0;
 const MIN_AUDIO_INTERVAL_MS = 93;
 
-const symbolUptickTimers = {};
-const symbolNoteIndices = {};
-
-const symbolDowntickTimers = {};
-const symbolDownNoteIndices = {};
-
-const symbolComboLastPrice = {};
-const symbolDownComboLastPrice = {};
+// Use Map for better performance than objects
+const symbolUptickTimers = new Map();
+const symbolNoteIndices = new Map();
+const symbolDowntickTimers = new Map();
+const symbolDownNoteIndices = new Map();
+const symbolComboLastPrice = new Map();
+const symbolDownComboLastPrice = new Map();
 
 const UPTICK_WINDOW_MS = 60_000;
 
@@ -181,44 +180,53 @@ async function initializeApp() {
         return `hsla(${hue}, 80%, 50%, 0.5)`;
     }
 
-    function createAlertElement(alertData) {
-        const { hero, price, strength = 0, hp = 0, dp = 0 } = alertData;
+    // Template for alert elements to reduce DOM creation
+    const alertTemplate = document.createElement("li");
+    alertTemplate.className = "alert";
+    
+    const fillUpTemplate = document.createElement("div");
+    fillUpTemplate.className = "combo-fill up";
+    const fillDownTemplate = document.createElement("div");
+    fillDownTemplate.className = "combo-fill down";
+    alertTemplate.appendChild(fillUpTemplate);
+    alertTemplate.appendChild(fillDownTemplate);
+    
+    const contentTemplate = document.createElement("div");
+    contentTemplate.className = "alert-content";
+    const valuesTemplate = document.createElement("div");
+    valuesTemplate.className = "alert-values";
+    contentTemplate.appendChild(valuesTemplate);
+    alertTemplate.appendChild(contentTemplate);
 
-        const upLevel = symbolNoteIndices[hero] ?? -1;
-        const downLevel = symbolDownNoteIndices[hero] ?? -1;
+    function createAlertElement(alertData) {
+        const { hero, price, strength = 0, hp = 0, dp = 0, change = 0 } = alertData;
+
+        const upLevel = symbolNoteIndices.get(hero) ?? -1;
+        const downLevel = symbolDownNoteIndices.get(hero) ?? -1;
 
         const upPercent = comboPercentFromLevel(upLevel);
         const downPercent = comboPercentFromLevel(downLevel);
 
-        const isUp = hp > 0;
+        const isUp = change > 0;
         const isNewHigh = alertData.isHighOfDay === true;
         const isNewEntry = alertData.isNewEntry === true;
 
-        const alertDiv = document.createElement("li");
+        // Clone template for better performance
+        const alertDiv = alertTemplate.cloneNode(true);
         alertDiv.dataset.symbol = hero;
         alertDiv.className = `alert ${isUp ? "up" : "down"}`;
 
-        // two independent layers
-        const fillUp = document.createElement("div");
-        fillUp.className = "combo-fill up";
-        const fillDown = document.createElement("div");
-        fillDown.className = "combo-fill down";
-        alertDiv.appendChild(fillUp);
-        alertDiv.appendChild(fillDown);
-
-        const contentDiv = document.createElement("div");
-        contentDiv.className = "alert-content";
-
-        const valuesDiv = document.createElement("div");
-        valuesDiv.className = "alert-values";
+        const fillUp = alertDiv.querySelector(".combo-fill.up");
+        const fillDown = alertDiv.querySelector(".combo-fill.down");
+        const valuesDiv = alertDiv.querySelector(".alert-values");
+        
+        // Use textContent for better performance than innerHTML
         valuesDiv.innerHTML = `
           <span class="alert-symbol no-drag" style="background-color: ${getSymbolColor(alertData.hue || 0)}" title="Click to copy and set active ticker">${hero}</span>
           <span class="price">$${Number(price).toFixed(2)}</span>
-          <span class="${isUp ? "change-up" : "change-down"}">${(isUp ? hp : -dp).toFixed(2)}%</span>
+          <span class="${isUp ? "change-up" : "change-down"}">${change.toFixed(2)}%</span>
           <span class="size">${abbreviatedValues(strength)}</span>
         `;
-        contentDiv.appendChild(valuesDiv);
-        alertDiv.appendChild(contentDiv);
 
         valuesDiv.querySelector(".alert-symbol").onclick = () => {
             navigator.clipboard.writeText(hero);
@@ -228,13 +236,16 @@ async function initializeApp() {
         if (isNewHigh) alertDiv.classList.add("new-high");
         if (isNewEntry) alertDiv.classList.add("new-entry");
 
-        // blink / brightness
-        alertDiv.classList.remove("blink-soft", "blink-medium", "blink-intense", "low-1", "low-2", "low-3", "low-4");
+        // Optimized class management - batch operations
+        const classesToRemove = ["blink-soft", "blink-medium", "blink-intense", "low-1", "low-2", "low-3", "low-4"];
+        alertDiv.classList.remove(...classesToRemove);
+        
         if (isUp) {
             if (strength >= 100_000) alertDiv.classList.add("blink-intense");
             else if (strength >= 50_000) alertDiv.classList.add("blink-medium");
             else if (strength >= 10_000) alertDiv.classList.add("blink-soft");
         }
+        
         let brightnessClass = "";
         if (strength >= 5_000) brightnessClass = "low-1";
         else if (strength >= 2_500) brightnessClass = "low-2";
@@ -283,6 +294,7 @@ async function initializeApp() {
             const alertElement = createAlertElement(data);
             if (alertElement instanceof Node) {
                 logElement.appendChild(alertElement);
+                performanceStats.domUpdates++;
             }
         }
 
@@ -295,18 +307,22 @@ async function initializeApp() {
     }
     function resetCombo(symbol, isDown = false) {
         if (isDown) {
-            clearTimeout(symbolDowntickTimers[symbol]);
-            delete symbolDowntickTimers[symbol];
-            delete symbolDownNoteIndices[symbol];
-            delete symbolDownComboLastPrice[symbol];
+            const timer = symbolDowntickTimers.get(symbol);
+            if (timer) clearTimeout(timer);
+            symbolDowntickTimers.delete(symbol);
+            symbolDownNoteIndices.delete(symbol);
+            symbolDownComboLastPrice.delete(symbol);
         } else {
-            clearTimeout(symbolUptickTimers[symbol]);
-            delete symbolUptickTimers[symbol];
-            delete symbolNoteIndices[symbol];
-            delete symbolComboLastPrice[symbol];
+            const timer = symbolUptickTimers.get(symbol);
+            if (timer) clearTimeout(timer);
+            symbolUptickTimers.delete(symbol);
+            symbolNoteIndices.delete(symbol);
+            symbolComboLastPrice.delete(symbol);
         }
 
-        document.querySelectorAll(`.alert[data-symbol="${symbol}"]`).forEach((card) => {
+        // Use more efficient selector and batch DOM operations
+        const cards = document.querySelectorAll(`.alert[data-symbol="${symbol}"]`);
+        cards.forEach((card) => {
             if (isDown) {
                 card.classList.remove("down-combo");
                 const d = card.querySelector(".combo-fill.down");
@@ -346,15 +362,15 @@ async function initializeApp() {
             const { minPrice = 0, maxPrice = Infinity } = topSettings;
 
             const symbol = alertData.hero || alertData.symbol;
-            const { price = 0, hp = 0, dp = 0, strength = 0 } = alertData;
+            const { price = 0, hp = 0, dp = 0, strength = 0, change = 0 } = alertData;
 
             // 🔍 Debug the actual filter values and the incoming data
             // if (debugMode) {
             //     console.log("🧪 Settings:", { minPrice, maxPrice, minChangePercent, minVolume });
-            //     console.log("🧪 Alert candidate:", { symbol, price, hp, dp, strength });
+            //     console.log("🧪 Alert candidate:", { symbol, price, hp, dp, strength, change });
             // }
 
-            const passesFilters = (minPrice === 0 || price >= minPrice) && (maxPrice === 0 || price <= maxPrice) && (hp >= minChangePercent || dp >= minChangePercent) && strength >= minVolume;
+            const passesFilters = (minPrice === 0 || price >= minPrice) && (maxPrice === 0 || price <= maxPrice) && Math.abs(change) >= minChangePercent && strength >= minVolume;
 
             if (!passesFilters) {
                 // if (debugMode) console.log("⛔️ Filtered out:", symbol);
@@ -365,30 +381,30 @@ async function initializeApp() {
 
             const quietTime = isQuietTimeEST();
 
-            if (hp > 0 && strength >= minVolume) {
-                if (debugMode && debugCombo) console.log(`🔍 ${symbol} tick detected — HP: ${hp.toFixed(2)} | Volume: ${strength}`);
+            if (change > 0 && strength >= minVolume) {
+                if (debugMode && debugCombo) console.log(`🔍 ${symbol} tick detected — Change: ${change.toFixed(2)}% | Volume: ${strength}`);
 
                 if (debugMode && debugCombo) {
                     console.log(`\n📌 ${symbol} — Incoming Tick`);
                     console.log(`   🧭 Previous Level: ${symbolNoteIndices[symbol] ?? "N/A (defaulting to 0)"}`);
-                    console.log(`   💪 Volume: ${strength} | 🔺 HP: ${hp.toFixed(2)}`);
+                    console.log(`   💪 Volume: ${strength} | 🔺 Change: ${change.toFixed(2)}%`);
                 }
 
-                const currentLevel = symbolNoteIndices[symbol] ?? -1;
+                const currentLevel = symbolNoteIndices.get(symbol) ?? -1;
                 const nextLevel = currentLevel + 1;
 
                 const currentRequiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(currentLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
 
-                if (symbolUptickTimers[symbol]) {
-                    clearTimeout(symbolUptickTimers[symbol]);
+                if (symbolUptickTimers.has(symbol)) {
+                    clearTimeout(symbolUptickTimers.get(symbol));
 
                     if (strength >= requiredVolume) {
-                        const lastPrice = symbolComboLastPrice[symbol] ?? 0;
+                        const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
 
                         if (price > lastPrice) {
-                            symbolNoteIndices[symbol] = nextLevel;
-                            symbolComboLastPrice[symbol] = price;
+                            symbolNoteIndices.set(symbol, nextLevel);
+                            symbolComboLastPrice.set(symbol, price);
 
                             if (nextLevel >= 1 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
                                 const bank = pickBankByVolume(strength); // "short" | "long"
@@ -398,91 +414,94 @@ async function initializeApp() {
 
                                 playSampleBuffer(bank, idx, vol); // fire-and-forget
                                 lastAudioTime = now;
+                                performanceStats.audioPlayed++;
 
                                 if (debugMode && debugCombo) {
                                     console.log(`🎧 ${symbol} ${bank}#${idx + 1} (LV${nextLevel}, vol=${vol.toFixed(2)})`);
                                 }
                             }
 
-                            symbolUptickTimers[symbol] = setTimeout(() => {
+                            symbolUptickTimers.set(symbol, setTimeout(() => {
                                 if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
                                 resetCombo(symbol);
-                            }, UPTICK_WINDOW_MS);
+                            }, UPTICK_WINDOW_MS));
                         } else {
                             if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not higher than last combo price (${price} ≤ ${lastPrice})`);
-                            return; // stop combo progression
+                            // stop combo progression but continue processing alert
                         }
                     }
                 } else {
                     // First uptick — start tracking
-                    symbolNoteIndices[symbol] = 0;
+                    symbolNoteIndices.set(symbol, 0);
                     if (debugMode && debugCombo) console.log(`🧪 ${symbol} started tracking (LV0)`);
 
-                    symbolUptickTimers[symbol] = setTimeout(() => {
+                    symbolUptickTimers.set(symbol, setTimeout(() => {
                         if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
                         resetCombo(symbol);
-                    }, UPTICK_WINDOW_MS);
+                    }, UPTICK_WINDOW_MS));
                 }
             }
 
-            if (dp > 0 && strength >= minVolume) {
+            if (change < 0 && strength >= minVolume) {
                 if (debugMode && debugCombo) {
-                    console.log(`🔍 ${symbol} tick detected — DP: ${dp.toFixed(2)} | Volume: ${strength}`);
+                    console.log(`🔍 ${symbol} tick detected — Change: ${change.toFixed(2)}% | Volume: ${strength}`);
                     console.log(`\n📌 ${symbol} — Incoming Down Tick`);
                     console.log(`   🧭 Previous Down Level: ${symbolDownNoteIndices[symbol] ?? "N/A (defaulting to 0)"}`);
-                    console.log(`   💪 Volume: ${strength} | 🔻 DP: ${dp.toFixed(2)}`);
+                    console.log(`   💪 Volume: ${strength} | 🔻 Change: ${change.toFixed(2)}%`);
                 }
 
-                const currentLevel = symbolDownNoteIndices[symbol] ?? -1;
+                const currentLevel = symbolDownNoteIndices.get(symbol) ?? -1;
                 const nextLevel = currentLevel + 1;
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
 
-                if (symbolDowntickTimers[symbol]) {
-                    clearTimeout(symbolDowntickTimers[symbol]);
+                if (symbolDowntickTimers.has(symbol)) {
+                    clearTimeout(symbolDowntickTimers.get(symbol));
 
                     if (strength >= requiredVolume) {
-                        const lastDownPrice = symbolDownComboLastPrice[symbol] ?? Infinity;
+                        const lastDownPrice = symbolDownComboLastPrice.get(symbol) ?? Infinity;
 
                         if (price < lastDownPrice) {
-                            symbolDownNoteIndices[symbol] = nextLevel;
-                            symbolDownComboLastPrice[symbol] = price;
+                            symbolDownNoteIndices.set(symbol, nextLevel);
+                            symbolDownComboLastPrice.set(symbol, price);
 
                             if (debugMode && debugCombo) console.log(`🔥 ${symbol} down-combo advanced to LV${nextLevel}`);
 
-                            symbolDowntickTimers[symbol] = setTimeout(() => {
+                            symbolDowntickTimers.set(symbol, setTimeout(() => {
                                 if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                                 resetCombo(symbol, true);
-                            }, UPTICK_WINDOW_MS);
+                            }, UPTICK_WINDOW_MS));
                         } else {
                             if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not lower than last down-combo price (${price} ≥ ${lastDownPrice})`);
                             // no advance, but keep timer alive
-                            symbolDowntickTimers[symbol] = setTimeout(() => {
+                            symbolDowntickTimers.set(symbol, setTimeout(() => {
                                 if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                                 resetCombo(symbol, true);
-                            }, UPTICK_WINDOW_MS);
+                            }, UPTICK_WINDOW_MS));
                         }
                     } else {
                         // not enough volume to advance — just refresh timer
-                        symbolDowntickTimers[symbol] = setTimeout(() => {
+                        symbolDowntickTimers.set(symbol, setTimeout(() => {
                             if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                             resetCombo(symbol, true);
-                        }, UPTICK_WINDOW_MS);
+                        }, UPTICK_WINDOW_MS));
                     }
                 } else {
                     // ✅ First downtick — start tracking (LV0)
-                    symbolDownNoteIndices[symbol] = 0;
-                    symbolDownComboLastPrice[symbol] = price;
+                    symbolDownNoteIndices.set(symbol, 0);
+                    symbolDownComboLastPrice.set(symbol, price);
 
                     if (debugMode && debugCombo) console.log(`🧪 ${symbol} down-combo started (LV0)`);
 
-                    symbolDowntickTimers[symbol] = setTimeout(() => {
+                    symbolDowntickTimers.set(symbol, setTimeout(() => {
                         if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
                         resetCombo(symbol, true);
-                    }, UPTICK_WINDOW_MS);
+                    }, UPTICK_WINDOW_MS));
                 }
             }
 
             alertQueue.push(alertData);
+            performanceStats.alertsProcessed++;
+            
             if (!flushScheduled) {
                 flushScheduled = true;
                 requestAnimationFrame(flushAlerts);
@@ -493,8 +512,73 @@ async function initializeApp() {
     });
 }
 
+// Performance monitoring
+let performanceStats = {
+    alertsProcessed: 0,
+    audioPlayed: 0,
+    domUpdates: 0,
+    lastCleanup: Date.now()
+};
+
+// Cleanup function to prevent memory leaks
+function performCleanup() {
+    const now = Date.now();
+    if (now - performanceStats.lastCleanup < 30000) return; // Only cleanup every 30 seconds
+    
+    // Clean up old DOM elements
+    const logElement = document.getElementById("log");
+    if (logElement && logElement.children.length > 100) {
+        const excess = logElement.children.length - 50;
+        for (let i = 0; i < excess; i++) {
+            if (logElement.firstChild) {
+                logElement.removeChild(logElement.firstChild);
+            }
+        }
+    }
+    
+    // Clean up expired timers
+    const expiredSymbols = [];
+    for (const [symbol, timer] of symbolUptickTimers) {
+        if (!timer) expiredSymbols.push(symbol);
+    }
+    for (const [symbol, timer] of symbolDowntickTimers) {
+        if (!timer) expiredSymbols.push(symbol);
+    }
+    
+    expiredSymbols.forEach(symbol => {
+        symbolUptickTimers.delete(symbol);
+        symbolDowntickTimers.delete(symbol);
+        symbolNoteIndices.delete(symbol);
+        symbolDownNoteIndices.delete(symbol);
+        symbolComboLastPrice.delete(symbol);
+        symbolDownComboLastPrice.delete(symbol);
+    });
+    
+    performanceStats.lastCleanup = now;
+    if (debugMode) console.log(`🧹 Cleanup completed. Removed ${expiredSymbols.length} expired symbols`);
+}
+
 // Start initialization immediately
 initializeApp();
+
+// Schedule periodic cleanup
+setInterval(performCleanup, 30000);
+
+// Performance monitoring function
+window.getEventsPerformanceStats = () => {
+    const logElement = document.getElementById("log");
+    const stats = {
+        ...performanceStats,
+        activeSymbols: symbolUptickTimers.size + symbolDowntickTimers.size,
+        domElements: logElement ? logElement.children.length : 0,
+        audioBuffersLoaded: {
+            short: sampleBuffers.short.filter(Boolean).length,
+            long: sampleBuffers.long.filter(Boolean).length
+        }
+    };
+    console.table(stats);
+    return stats;
+};
 
 // Test functions for audio alerts
 window.testComboAlert = () => {

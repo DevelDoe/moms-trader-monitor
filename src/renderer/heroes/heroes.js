@@ -35,17 +35,14 @@ const state = {
 const medalForRank = (r) => (r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : "");
 const getSymbolMedal = (s) => {
     const sym = String(s || "").toUpperCase();
-    const trophy = state.trophyMap.get(sym) || '';
     const medal = medalForRank(state.rankMap.get(sym) || 0);
-    
-    if (trophy && medal) {
-        return `<span class="trophy">${trophy}</span><span class="medal">${medal}</span>`;
-    } else if (trophy) {
-        return `<span class="trophy">${trophy}</span>`;
-    } else if (medal) {
-        return `<span class="medal">${medal}</span>`;
-    }
-    return '';
+    return medal ? `<span class="medal">${medal}</span>` : '';
+};
+
+const getSymbolTrophy = (s) => {
+    const sym = String(s || "").toUpperCase();
+    const trophy = state.trophyMap.get(sym) || '';
+    return trophy ? `<span class="trophy">${trophy}</span>` : '';
 };
 
 function buffSignature(h) {
@@ -60,14 +57,17 @@ function buffSignature(h) {
         .join("|");
 }
 
-const BUFF_SORT_ORDER = ["float", "volume", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
+const BUFF_SORT_ORDER = ["float", "volume", "news", "hasNews", "hasBullishNews", "hasBearishNews", "hasFiling", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
 const placeholderDot = `<span class="buff-icon" style="opacity:.0">•</span>`;
 
 function buildBuffRows(h) {
     const arr = Object.entries(h.buffs || {}).map(([key, v]) => ({
         ...(v || {}),
         key,
-        _sortKey: key.toLowerCase().startsWith("float") ? "float" : key.toLowerCase().includes("vol") ? "volume" : key,
+        _sortKey: key.toLowerCase().startsWith("float") ? "float" : 
+                  key.toLowerCase().includes("vol") ? "volume" : 
+                  key.toLowerCase().includes("news") ? "news" :
+                  key.toLowerCase().includes("filing") ? "hasFiling" : key,
     }));
 
     const sort = (xs) =>
@@ -117,6 +117,7 @@ function createCard(h) {
           $${h.hero}
           <span class="lv">
             <span class="lv-medal">${getSymbolMedal(h.hero)}</span>
+            ${getSymbolTrophy(h.hero)}
             <span class="lv-price">$${(h.price ?? 0).toFixed(2)}</span>
           </span>
         </div>
@@ -172,6 +173,19 @@ function patchCardDOM(sym, h) {
 
     const medalEl = card.querySelector(".lv-medal");
     if (medalEl) medalEl.innerHTML = getSymbolMedal(sym);
+    
+    // Update trophy separately
+    const trophyEl = card.querySelector('.trophy');
+    if (trophyEl) {
+        const trophy = getSymbolTrophy(sym);
+        trophyEl.outerHTML = trophy;
+    } else if (getSymbolTrophy(sym)) {
+        // Add trophy if it doesn't exist but should
+        const lvEl = card.querySelector('.lv');
+        if (lvEl) {
+            lvEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+        }
+    }
 
     const impact = window.hlpsFunctions?.calculateImpact?.(h.strength || 0, h.price || 0, state.buffsMaster) || { style: { color: "" } };
     const { xpPercent } = window.helpers.getXpProgress(h);
@@ -384,6 +398,19 @@ async function initTop3() {
             const sym = card.dataset.symbol?.toUpperCase();
             const el = card.querySelector(".lv-medal");
             if (sym && el) el.innerHTML = getSymbolMedal(sym);
+            
+            // Update trophy separately
+            const trophyEl = card.querySelector('.trophy');
+            if (trophyEl) {
+                const trophy = getSymbolTrophy(sym);
+                trophyEl.outerHTML = trophy;
+            } else if (getSymbolTrophy(sym)) {
+                // Add trophy if it doesn't exist but should
+                const lvEl = card.querySelector('.lv');
+                if (lvEl) {
+                    lvEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+                }
+            }
         });
     });
 }
@@ -518,6 +545,19 @@ async function boot() {
             const medalEl = card.querySelector(".lv-medal");
             if (sym && medalEl) {
                 medalEl.innerHTML = getSymbolMedal(sym);
+                
+                // Update trophy separately
+                const trophyEl = card.querySelector('.trophy');
+                if (trophyEl) {
+                    const trophy = getSymbolTrophy(sym);
+                    trophyEl.outerHTML = trophy;
+                } else if (getSymbolTrophy(sym)) {
+                    // Add trophy if it doesn't exist but should
+                    const lvEl = card.querySelector('.lv');
+                    if (lvEl) {
+                        lvEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+                    }
+                }
             }
         });
     });

@@ -8,11 +8,28 @@ const { windows } = require("../windowManager");
 
 const log = createLogger(__filename);
 
-// Debug flag for XP data logging
-const XP_DEBUG = false;
+// Debug flags for different features - can be toggled independently when DEBUG=true
+const DEBUG = process.env.DEBUG === "true";
+const XP_DEBUG = DEBUG && false;        // XP data logging
+const NEWS_DEBUG = DEBUG && false;      // News data logging  
+const FILING_DEBUG = DEBUG && false;    // Filing data logging
+const SESSION_DEBUG = DEBUG && false;   // Session data logging
+const SYMBOL_DEBUG = DEBUG && false;    // Symbol data logging
 
 if (XP_DEBUG) {
-    log.log("🔍 XP Debug logging enabled - will show detailed data structures");
+    log.log("🔍 XP Debug logging enabled - will show detailed XP data structures");
+}
+if (NEWS_DEBUG) {
+    log.log("📰 News Debug logging enabled - will show detailed news data structures");
+}
+if (FILING_DEBUG) {
+    log.log("📁 Filing Debug logging enabled - will show detailed filing data structures");
+}
+if (SESSION_DEBUG) {
+    log.log("📊 Session Debug logging enabled - will show detailed session data structures");
+}
+if (SYMBOL_DEBUG) {
+    log.log("🔔 Symbol Debug logging enabled - will show detailed symbol data structures");
 }
 
 const URL = "wss://oracle.arcanemonitor.com:8443/ws";
@@ -32,28 +49,42 @@ let latestActiveStocks = null;
 let latestSessionHistory = null;
 let latestSessionUpdate = null;
 
+// Store latest news data for IPC requests
+let latestNewsHeadlines = null;
+let latestNewsCount = 0;
+
+// Store latest filing data for IPC requests
+let latestFilings = null;
+let latestFilingCount = 0;
+let hasLoggedFilingStructure = false;
+
 // Configure which windows should receive XP broadcasts
 const XP_BROADCAST_TARGETS = [
     "scrollXp",
-    "scrollHod",
     "sessionHistory",
-    "scrollStats"
+    "scrollStats",
+    "progress",
     // Add more windows here as needed:
     // "frontline",
     // "heroes",
     // etc.
 ];
 
+// Configure which windows should receive News broadcasts
+const NEWS_BROADCAST_TARGETS = [
+    "news",
+    "active",
+    "infobar",
+];
+
+// Configure which windows should receive Filing broadcasts
+const FILING_BROADCAST_TARGETS = [
+    "news",
+    "active",
+    "infobar",
+];
+
 // ---- utils ----
-const safeParse = (data) => {
-    try {
-        const sanitized = data.toString().replace(/[^\x20-\x7F]/g, "");
-        return JSON.parse(sanitized);
-    } catch {
-        log.error("Failed to parse message:", data.toString());
-        return null;
-    }
-};
 
 const asNum = (n, fb = NaN) => {
     const x = Number(n);
@@ -62,12 +93,14 @@ const asNum = (n, fb = NaN) => {
 
 function broadcastXpData(type, data) {
     // Only log session-related broadcasts
-    if (type === 'session-history') {
-        log.log(`📊 Broadcasting session history to ${XP_BROADCAST_TARGETS.length} windows`);
+    if (type === "session-history") {
+        if (SESSION_DEBUG) {
+            log.log(`📊 Broadcasting session history to ${XP_BROADCAST_TARGETS.length} windows`);
+        }
     }
-    
+
     // Broadcast to all configured target windows
-    XP_BROADCAST_TARGETS.forEach(windowName => {
+    XP_BROADCAST_TARGETS.forEach((windowName) => {
         const w = windows[windowName];
         if (w?.webContents && !w.webContents.isDestroyed()) {
             w.webContents.send(`xp-${type}`, data);
@@ -163,7 +196,9 @@ const createWebSocket = () => {
     ws.on("open", () => {
         reconnecting = false;
         clientId = `${ORACLE_AUTH.userId}-terra`;
-        log.log(`✅ Connected. Registering as ${clientId}`);
+        if (DEBUG) {
+            log.log(`✅ Connected. Registering as ${clientId}`);
+        }
 
         const manifest = {
             type: "register",
@@ -178,17 +213,43 @@ const createWebSocket = () => {
             },
         };
 
-        ws.send(JSON.stringify(manifest));
-        log.log("📤 Sent registration manifest");
+        try {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(manifest));
+                if (DEBUG) {
+                    log.log("📤 Sent registration manifest");
+                }
+            } else {
+                log.warn("⚠️ WebSocket not ready for registration, readyState:", ws.readyState);
+            }
+        } catch (err) {
+            log.error("❌ Failed to send registration manifest:", err.message);
+        }
     });
 
     ws.on("message", async (data) => {
-        const msg = safeParse(data);
-        if (!msg) return;
+        let msg;
+        try {
+            // Handle potential buffer/encoding issues
+            const dataStr = data.toString('utf8');
+            if (!dataStr || dataStr.trim() === '') {
+                log.warn("⚠️ Received empty message, skipping");
+                return;
+            }
+            msg = JSON.parse(dataStr);
+        } catch (err) {
+            log.error("❌ Failed to parse WebSocket message:", err.message);
+            log.error("❌ Raw data:", data.toString('hex').substring(0, 100) + "...");
+            return;
+        }
 
         if (msg.type === "ping") {
             try {
-                ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: "pong", client_id: clientId }));
+                } else {
+                    log.warn("⚠️ Cannot send pong - WebSocket not open, readyState:", ws.readyState);
+                }
             } catch (err) {
                 log.error("❌ Failed to send pong:", err.message);
             }
@@ -202,9 +263,26 @@ const createWebSocket = () => {
                 ws.close(4001, "Unauthorized");
                 return;
             } else {
-                log.log(`✅ Registered as ${msg.client_id}`);
+                if (DEBUG) {
+                    log.log(`✅ Registered as ${msg.client_id}`);
+                    
+                    // Log which windows are available for news broadcasting
+                    if (NEWS_DEBUG) {
+                        log.log(`🔍 Available windows for news broadcasting:`);
+                        NEWS_BROADCAST_TARGETS.forEach((windowName) => {
+                            const w = windows[windowName];
+                            const exists = !!w;
+                            const destroyed = w?.isDestroyed?.() || false;
+                            const available = exists && !destroyed;
+                            log.log(`  - ${windowName}: ${available ? '✅ available' : `❌ not available (exists: ${exists}, destroyed: ${destroyed})`}`);
+                        });
+                    }
+                }
                 // seed local cursor from persisted value
                 lastCursor = getLastAckCursor() || 0;
+
+                // Request hydration (both headlines and filings) on successful registration
+                requestHydration();
                 return;
             }
         }
@@ -214,10 +292,14 @@ const createWebSocket = () => {
 
         // Treat both upsert & delete as a doorbell with a target cursor.
         if (type === "SYMBOLS_UPSERT" || type === "SYMBOLS_DELETE") {
-            log.log(`🔔 ${type} doorbell: target cursor=${Number.isFinite(target) ? target : "?"}`);
+            if (SYMBOL_DEBUG) {
+                log.log(`🔔 ${type} doorbell: target cursor=${Number.isFinite(target) ? target : "?"}`);
+            }
             try {
                 const after = await pullToAtLeast(target);
-                log.log(`✅ caught up to cursor=${after}`);
+                if (SYMBOL_DEBUG) {
+                    log.log(`✅ caught up to cursor=${after}`);
+                }
             } catch (e) {
                 log.error("delta pull failed:", e.message);
             }
@@ -239,21 +321,25 @@ const createWebSocket = () => {
         if (msg.type === "xp_session_history") {
             // C backend sends data directly, not wrapped in payload
             const sessionHistory = msg;
-            
+
             // Dump top level structure to console for debugging
-            console.log('🔍 === RAW XP SESSION HISTORY FROM BACKEND ===');
-            console.log('🔍 Top level keys:', Object.keys(msg));
-            console.log('🔍 Sessions count:', sessionHistory.sessions?.length || 0);
-            console.log('🔍 Has current session:', sessionHistory.has_current_session || false);
-            
+            if (SESSION_DEBUG) { 
+                log.log("🔍 === RECEIVED SESSION HISTORY FROM BACKEND ===");
+                log.log("🔍 Top keys:", Object.keys(msg));
+                log.log("🔍 Session count:", sessionHistory.sessions?.length || 0);
+                log.log("🔍 Has current session:", sessionHistory.has_current_session || false);
+            }
+
             if (sessionHistory.sessions) {
                 // Log all sessions with name & symbol count
-                console.log('🔍 === ALL SESSIONS ===');
-                sessionHistory.sessions.forEach(session => {
-                    console.log(`🔍 ${session.session_name}: ${session.symbol_count} symbols`);
-                });
+                if (SESSION_DEBUG) {
+                    log.log("🔍 === ALL SESSIONS ===");
+                    sessionHistory.sessions.forEach((session) => {
+                        log.log(`🔍 ${session.session_name}: ${session.symbol_count} symbols`);
+                    });
+                }
             }
-            
+
             // Store latest data and broadcast to windows (preserve original structure)
             latestSessionHistory = sessionHistory;
             broadcastXpData("session-history", latestSessionHistory);
@@ -263,37 +349,50 @@ const createWebSocket = () => {
         if (msg.type === "xp_active_stocks") {
             // C backend sends data directly, not wrapped in payload
             const activeStocks = msg;
-            
-            // Only log when symbols count changes significantly (reduce flooding)
-            if (latestActiveStocks?.symbols?.length !== activeStocks.symbols?.length) {
-                log.log(`📊 XP Active Stocks: ${activeStocks.symbols?.length || 0} symbols`);
-            }
-            
+
             // Store latest data and broadcast to windows (preserve original structure)
             latestActiveStocks = activeStocks;
-            broadcastXpData("active-stocks", latestActiveStocks);
+
+            // Send specific count to progress window BEFORE truncation
+            const progressWindow = windows["progress"];
+            if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
+                progressWindow.webContents.send("xp-active-stocks-count", {
+                    count: activeStocks.symbols?.length || 0,
+                    timestamp: Date.now()
+                });
+            }
+
+            // Create truncated version for other windows (top 50 symbols)
+            const truncatedActiveStocks = {
+                ...activeStocks,
+                symbols: activeStocks.symbols ? activeStocks.symbols.slice(0, 50) : []
+            };
+
+            // Broadcast truncated data to other windows
+            broadcastXpData("active-stocks", truncatedActiveStocks);
+
             return;
         }
 
         if (msg.type === "xp_session_update") {
             // C backend sends data directly, not wrapped in payload
             const sessionUpdate = msg;
-            
+
             if (sessionUpdate.sessions && sessionUpdate.sessions.length > 0) {
                 const latest = sessionUpdate.sessions[sessionUpdate.sessions.length - 1];
-                log.log(`📈 XP Session Update: ${latest.session_name} (${latest.symbol_count} symbols, ${latest.total_net_xp} net XP)`);
-                
+                if (SESSION_DEBUG) {
+                    log.log(`📈 XP Session Update: ${latest.session_name} (${latest.symbol_count} symbols, ${latest.total_net_xp} net XP)`);
+                }
+
                 // Store latest data (preserve original structure)
                 latestSessionUpdate = sessionUpdate;
-                
+
                 // CRITICAL: Update the session history with the new session data
                 // This ensures symbols arrays are preserved when sessions transition
                 if (latestSessionHistory && latestSessionHistory.sessions) {
                     // Find and update the existing session, or add new one
-                    const existingIndex = latestSessionHistory.sessions.findIndex(
-                        s => s.session_name === latest.session_name
-                    );
-                    
+                    const existingIndex = latestSessionHistory.sessions.findIndex((s) => s.session_name === latest.session_name);
+
                     if (existingIndex >= 0) {
                         // Update existing session with new data (preserve symbols array)
                         // Only update symbols if the update actually contains symbols
@@ -303,27 +402,294 @@ const createWebSocket = () => {
                             ...latest,
                             // CRITICAL: Only overwrite symbols if the update actually contains symbols
                             // Session updates often don't contain the full symbols array
-                            symbols: (latest.symbols && latest.symbols.length > 0) 
-                                ? latest.symbols 
-                                : existingSession.symbols
+                            symbols: latest.symbols && latest.symbols.length > 0 ? latest.symbols : existingSession.symbols,
                         };
-                        
+
                         latestSessionHistory.sessions[existingIndex] = updatedSession;
-                        log.log(`🔄 Updated existing session ${latest.session_name} in history (preserved ${existingSession.symbols?.length || 0} symbols, update had ${latest.symbols?.length || 0} symbols)`);
+                        if (SESSION_DEBUG) {
+                            log.log(
+                                `🔄 Updated existing session ${latest.session_name} in history (preserved ${existingSession.symbols?.length || 0} symbols, update had ${
+                                    latest.symbols?.length || 0
+                                } symbols)`
+                            );
+                        }
                     } else {
                         // Add new session to history
                         latestSessionHistory.sessions.push(latest);
-                        log.log(`➕ Added new session ${latest.session_name} to history`);
+                        if (SESSION_DEBUG) {
+                            log.log(`➕ Added new session ${latest.session_name} to history`);
+                        }
                     }
-                    
+
                     // Broadcast updated session history to all windows
                     broadcastXpData("session-history", latestSessionHistory);
                 }
-                
+
                 // Also broadcast the session update
                 broadcastXpData("session-update", latestSessionUpdate);
             }
             return;
+        }
+
+        // Handle Hydration Response (both headlines and filings)
+        if (msg.type === "hydration_response") {
+            const payload = msg.payload || {};
+            const headlines = payload.headlines || [];
+            const filings = payload.filings || [];
+            const metadata = payload.metadata || {};
+
+            if (NEWS_DEBUG || FILING_DEBUG) {
+                log.log(`🔄 Received hydration response: ${headlines.length} headlines, ${filings.length} filings`);
+                log.log(`📊 Metadata: headlines_count=${metadata.headlines_count}, filings_count=${metadata.filings_count}`);
+            }
+
+            // FRESH START: Clear all existing news and filings data before processing new data
+            // This ensures we start clean on reconnects/rehydration
+            log.log("🧹 Starting fresh - clearing all existing news and filings data");
+            store.clearAllNews();
+            store.clearAllFilings();
+            
+            // Clear local cached data as well
+            latestNewsHeadlines = null;
+            latestFilings = null;
+            latestNewsCount = 0;
+            latestFilingCount = 0;
+
+            // Handle headlines
+            if (headlines.length > 0) {
+                // Store latest headlines data
+                latestNewsHeadlines = headlines;
+                
+                // Debug: Log the structure of the first headline
+                if (NEWS_DEBUG && headlines.length > 0) {
+                    log.log(`📰 First headline structure:`, JSON.stringify(headlines[0], null, 2));
+                }
+
+                // Attach news to individual symbols
+                headlines.forEach((newsItem) => {
+                    if (newsItem.symbols && Array.isArray(newsItem.symbols)) {
+                        newsItem.symbols.forEach((symbol) => {
+                            store.attachNewsToSymbol(newsItem, symbol);
+                        });
+                    }
+                });
+
+                // Broadcast to all configured news target windows
+                let actualBroadcastCount = 0;
+                NEWS_BROADCAST_TARGETS.forEach((windowName) => {
+                    const w = windows[windowName];
+                    if (w?.webContents && !w.webContents.isDestroyed()) {
+                        w.webContents.send("news-headlines", headlines);
+                        actualBroadcastCount++;
+                    } else {
+                        if (NEWS_DEBUG) {
+                            log.log(`⚠️ News window '${windowName}' not available for headlines broadcast (exists: ${!!w}, destroyed: ${w?.isDestroyed?.()})`);
+                        }
+                    }
+                });
+
+                if (NEWS_DEBUG) {
+                    log.log(`📤 Broadcasted ${headlines.length} headlines to ${actualBroadcastCount}/${NEWS_BROADCAST_TARGETS.length} windows`);
+                }
+            }
+
+            // Handle filings
+            if (filings.length > 0) {
+                // Store latest filings data
+                latestFilings = filings;
+
+                // Log filing object structure only once (from hydration or delta)
+                if (FILING_DEBUG && !hasLoggedFilingStructure && filings.length > 0) {
+                    log.log(`📁 Filing object structure (first time from hydration):`, JSON.stringify(filings[0], null, 2));
+                    hasLoggedFilingStructure = true;
+                }
+
+                // Attach filings to individual symbols
+                filings.forEach((filingItem) => {
+                    if (filingItem.symbols && Array.isArray(filingItem.symbols)) {
+                        filingItem.symbols.forEach((symbol) => {
+                            store.attachFilingToSymbol(filingItem, symbol);
+                        });
+                    } else if (filingItem.symbol) {
+                        // Handle single symbol case
+                        store.attachFilingToSymbol(filingItem, filingItem.symbol);
+                    }
+                });
+
+                // Broadcast to all configured filing target windows
+                FILING_BROADCAST_TARGETS.forEach((windowName) => {
+                    const w = windows[windowName];
+                    if (w?.webContents && !w.webContents.isDestroyed()) {
+                        w.webContents.send("filing-headlines", filings);
+                    }
+                });
+
+                if (FILING_DEBUG) {
+                    log.log(`📤 Broadcasted ${filings.length} filings to ${FILING_BROADCAST_TARGETS.length} windows`);
+                }
+            }
+
+            // Update counts
+            latestNewsCount = metadata.headlines_count || headlines.length;
+            latestFilingCount = metadata.filings_count || filings.length;
+
+            return;
+        }
+
+        // Handle News Management messages (legacy support)
+        if (msg.type === "news_response") {
+            // Handle full headlines list response
+            const headlines = msg.headlines || [];
+            if (NEWS_DEBUG) {
+                log.log(`📰 Received ${headlines.length} headlines from CDSH news store`);
+            }
+
+            // Store latest headlines data
+            latestNewsHeadlines = headlines;
+
+            // Broadcast to all configured news target windows
+            let actualBroadcastCount = 0;
+            NEWS_BROADCAST_TARGETS.forEach((windowName) => {
+                const w = windows[windowName];
+                if (w?.webContents && !w.webContents.isDestroyed()) {
+                    w.webContents.send("news-headlines", headlines);
+                    actualBroadcastCount++;
+                } else {
+                    if (NEWS_DEBUG) {
+                        log.log(`⚠️ News window '${windowName}' not available for legacy headlines broadcast (exists: ${!!w}, destroyed: ${w?.isDestroyed?.()})`);
+                    }
+                }
+            });
+
+            if (NEWS_DEBUG) {
+                log.log(`📤 Broadcasted ${headlines.length} headlines to ${actualBroadcastCount}/${NEWS_BROADCAST_TARGETS.length} windows`);
+            }
+            return;
+        }
+
+        if (msg.type === "news_delta") {
+            // Handle real-time news updates
+            const newsItem = msg.news || msg;
+            // if (process.env.DEBUG === "true") {
+            //     log.log(`📰 Received news delta: ${newsItem.symbol || "unknown"} - ${newsItem.headline || "no title"}`);
+            // }
+
+            // Attach news to individual symbols
+            if (newsItem.symbols && Array.isArray(newsItem.symbols)) {
+                newsItem.symbols.forEach((symbol) => {
+                    store.attachNewsToSymbol(newsItem, symbol);
+                });
+            }
+
+            // Add to existing headlines (if we have them)
+            if (latestNewsHeadlines && Array.isArray(latestNewsHeadlines)) {
+                latestNewsHeadlines.unshift(newsItem); // Add to beginning for latest first
+
+                // Keep only last 1000 headlines to prevent memory bloat
+                if (latestNewsHeadlines.length > 1000) {
+                    latestNewsHeadlines = latestNewsHeadlines.slice(0, 1000);
+                }
+            } else {
+                // Initialize with this single item
+                latestNewsHeadlines = [newsItem];
+            }
+
+            // Broadcast delta update to all configured news target windows
+            let actualBroadcastCount = 0;
+            NEWS_BROADCAST_TARGETS.forEach((windowName) => {
+                const w = windows[windowName];
+                if (w?.webContents && !w.webContents.isDestroyed()) {
+                    w.webContents.send("news-delta", newsItem);
+                    actualBroadcastCount++;
+                } else {
+                    if (NEWS_DEBUG) {
+                        log.log(`⚠️ News window '${windowName}' not available for broadcast (exists: ${!!w}, destroyed: ${w?.isDestroyed?.()})`);
+                    }
+                }
+            });
+
+            if (NEWS_DEBUG) {
+                log.log(`📤 Broadcasted news delta to ${actualBroadcastCount}/${NEWS_BROADCAST_TARGETS.length} windows`);
+            }
+            return;
+        }
+
+        if (msg.type === "filing_delta") {
+            // Handle real-time filing updates
+            const filingItem = msg.filing || msg;
+            if (FILING_DEBUG) {
+                log.log(`📁 Received filing delta: ${filingItem.symbol || "unknown"} - ${filingItem.form_type || "no type"} - ${filingItem.title || "no title"}`);
+                
+                
+                // Log filing object structure only once
+                if (!hasLoggedFilingStructure) {
+                    log.log(`📁 Filing object structure (first time):`, JSON.stringify(filingItem, null, 2));
+                    hasLoggedFilingStructure = true;
+                }
+            }
+
+            // Attach filing to individual symbols
+            if (filingItem.symbols && Array.isArray(filingItem.symbols)) {
+                filingItem.symbols.forEach((symbol) => {
+                    store.attachFilingToSymbol(filingItem, symbol);
+                });
+            } else if (filingItem.symbol) {
+                // Handle single symbol case
+                store.attachFilingToSymbol(filingItem, filingItem.symbol);
+            }
+
+            // Add to existing filings (if we have them)
+            if (latestFilings && Array.isArray(latestFilings)) {
+                latestFilings.unshift(filingItem); // Add to beginning for latest first
+
+                // Keep only last 1000 filings to prevent memory bloat
+                if (latestFilings.length > 1000) {
+                    latestFilings = latestFilings.slice(0, 1000);
+                }
+            } else {
+                // Initialize with this single item
+                latestFilings = [filingItem];
+            }
+
+            // Broadcast delta update to all configured filing target windows
+            FILING_BROADCAST_TARGETS.forEach((windowName) => {
+                const w = windows[windowName];
+                if (w?.webContents && !w.webContents.isDestroyed()) {
+                    w.webContents.send("filing-delta", filingItem);
+                }
+            });
+
+            if (FILING_DEBUG) {
+                log.log(`📤 Broadcasted filing delta to ${FILING_BROADCAST_TARGETS.length} windows`);
+            }
+            return;
+        }
+
+        if (msg.type === "news_count") {
+            // Handle news count response
+            const count = msg.count || 0;
+            if (NEWS_DEBUG) {
+                log.log(`📊 News count: ${count} headlines available`);
+            }
+
+            // Store latest count
+            latestNewsCount = count;
+
+            // Broadcast count to all configured news target windows
+            NEWS_BROADCAST_TARGETS.forEach((windowName) => {
+                const w = windows[windowName];
+                if (w?.webContents && !w.webContents.isDestroyed()) {
+                    w.webContents.send("news-count", count);
+                }
+            });
+
+            return;
+        }
+
+        // Debug: Log any unhandled message types (but not client_list)
+
+        if (DEBUG) {
+            log.log(`🔍 DEBUG: Unhandled message type: ${msg.type}`);
         }
     });
 
@@ -343,6 +709,77 @@ const createWebSocket = () => {
     });
 };
 
+// Hydration request function (replaces separate news and filing requests)
+function requestHydration() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        log.warn("⚠️ Cannot request hydration - WebSocket not open");
+        return;
+    }
+
+    const request = {
+        type: "hydration_request",
+        client_id: `${ORACLE_AUTH.userId}-terra`,
+    };
+
+    try {
+        ws.send(JSON.stringify(request));
+        if (NEWS_DEBUG || FILING_DEBUG) {
+            log.log("🔄 Requested hydration (headlines + filings) from CDSH");
+        }
+    } catch (err) {
+        log.error("❌ Failed to request hydration:", err.message);
+    }
+}
+
+// Legacy news request functions (kept for backward compatibility)
+function requestHeadlines() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        log.warn("⚠️ Cannot request headlines - WebSocket not open");
+        return;
+    }
+
+    const request = {
+        type: "news_request",
+        client_id: `${ORACLE_AUTH.userId}-terra`,
+        payload: {
+            request_type: "full_list",
+        },
+    };
+
+    try {
+        ws.send(JSON.stringify(request));
+        if (NEWS_DEBUG) {
+            log.log("📰 Requested full headlines list from CDSH");
+        }
+    } catch (err) {
+        log.error("❌ Failed to request headlines:", err.message);
+    }
+}
+
+function requestNewsCount() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        log.warn("⚠️ Cannot request news count - WebSocket not open");
+        return;
+    }
+
+    const request = {
+        type: "news_request",
+        client_id: `${ORACLE_AUTH.userId}-terra`,
+        payload: {
+            request_type: "count",
+        },
+    };
+
+    try {
+        ws.send(JSON.stringify(request));
+        if (NEWS_DEBUG) {
+            log.log("📊 Requested news count from CDSH");
+        }
+    } catch (err) {
+        log.error("❌ Failed to request news count:", err.message);
+    }
+}
+
 const oracle = (authData) => {
     ORACLE_AUTH = authData;
     permanentlyRejected = false;
@@ -357,9 +794,13 @@ const getXpActiveStocks = () => {
 
 const getXpSessionHistory = () => {
     if (latestSessionHistory) {
-        log.log(`📊 IPC getXpSessionHistory: returning ${latestSessionHistory.sessions?.length || 0} sessions`);
+        if (SESSION_DEBUG) {
+            log.log(`📊 IPC getXpSessionHistory: returning ${latestSessionHistory.sessions?.length || 0} sessions`);
+        }
     } else {
-        log.log(`📊 IPC getXpSessionHistory: no data available`);
+        if (SESSION_DEBUG) {
+            log.log(`📊 IPC getXpSessionHistory: no data available`);
+        }
     }
     return latestSessionHistory;
 };
@@ -368,4 +809,66 @@ const getXpSessionUpdate = () => {
     return latestSessionUpdate;
 };
 
-module.exports = { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate };
+// IPC handlers for News data requests
+const getNewsHeadlines = () => {
+    if (latestNewsHeadlines) {
+        if (NEWS_DEBUG) {
+            log.log(`📰 IPC getNewsHeadlines: returning ${latestNewsHeadlines.length} headlines`);
+            if (latestNewsHeadlines.length > 0) {
+                log.log(`📰 First headline sample:`, {
+                    symbol: latestNewsHeadlines[0].symbol,
+                    headline: latestNewsHeadlines[0].headline?.substring(0, 50) + "...",
+                    hasBody: !!latestNewsHeadlines[0].body,
+                    timestamp: latestNewsHeadlines[0].created_at || latestNewsHeadlines[0].updated_at
+                });
+            }
+        }
+    } else {
+        if (NEWS_DEBUG) {
+            log.log(`📰 IPC getNewsHeadlines: no headlines available`);
+        }
+    }
+    return latestNewsHeadlines;
+};
+
+const getNewsCount = () => {
+    if (NEWS_DEBUG) {
+        log.log(`📊 IPC getNewsCount: returning ${latestNewsCount} headlines`);
+    }
+    return latestNewsCount;
+};
+
+// IPC handlers for Filing data requests
+const getFilingHeadlines = () => {
+    if (latestFilings) {
+        if (FILING_DEBUG) {
+            log.log(`📁 IPC getFilingHeadlines: returning ${latestFilings.length} filings`);
+        }
+    } else {
+        if (FILING_DEBUG) {
+            log.log(`📁 IPC getFilingHeadlines: no filings available`);
+        }
+    }
+    return latestFilings;
+};
+
+const getFilingCount = () => {
+    if (FILING_DEBUG) {
+        log.log(`📊 IPC getFilingCount: returning ${latestFilingCount} filings`);
+    }
+    return latestFilingCount;
+};
+
+module.exports = {
+    oracle,
+    getXpActiveStocks,
+    getXpSessionHistory,
+    getXpSessionUpdate,
+    getNewsHeadlines,
+    getNewsCount,
+    getFilingHeadlines,
+    getFilingCount,
+    requestHydration,
+    requestHeadlines,
+    requestNewsCount,
+};

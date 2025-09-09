@@ -1,4 +1,4 @@
-const symbolColors = {};
+// symbolColors moved to Symbol component
 
 // Trophy utility function - can be reused throughout the application
 function getTrophyIcon(rank) {
@@ -15,8 +15,7 @@ function getTrophyIcon(rank) {
 // Oracle XP Active Stocks data
 let oracleActiveStocks = null;
 
-// Sorting state
-let currentSort = { column: 'net', direction: 'desc' };
+// Sorting removed - backend sends data pre-sorted
 
 // Trophy hash tracking
 let lastTrophyHash = null;
@@ -25,67 +24,7 @@ function getSymbolLength() {
     return Math.max(1, Number(window.xpSettings?.listLength) || 25);
 }
 
-function sortData(data, column, direction) {
-    return [...data].sort((a, b) => {
-        let aVal, bVal;
-        
-        switch (column) {
-            case 'symbol':
-                aVal = a.hero.toLowerCase();
-                bVal = b.hero.toLowerCase();
-                break;
-            case 'upDownRatio':
-                aVal = a.up + a.down > 0 ? (a.up / (a.up + a.down)) : 0;
-                bVal = b.up + b.down > 0 ? (b.up / (b.up + b.down)) : 0;
-                break;
-            case 'total':
-                aVal = a.total;
-                bVal = b.total;
-                break;
-            case 'net':
-                aVal = a.net;
-                bVal = b.net;
-                break;
-            case 'price':
-                aVal = a.price;
-                bVal = b.price;
-                break;
-            case 'totalVolume':
-                aVal = a.totalVolume;
-                bVal = b.totalVolume;
-                break;
-            case 'level':
-                aVal = a.level;
-                bVal = b.level;
-                break;
-            default:
-                return 0;
-        }
-        
-        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
-        return 0;
-    });
-}
-
-function getSortIcon(column) {
-    if (currentSort.column !== column) {
-        return '↕️'; // Neutral sort icon
-    }
-    return currentSort.direction === 'asc' ? '↑' : '↓';
-}
-
-function handleSort(column) {
-    if (currentSort.column === column) {
-        // Toggle direction if same column
-        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        // New column, default to ascending
-        currentSort.column = column;
-        currentSort.direction = 'asc';
-    }
-    refreshList();
-}
+// Sorting functions removed - backend handles sorting
 
 async function refreshList() {
     if (!oracleActiveStocks?.symbols || oracleActiveStocks.symbols.length === 0) {
@@ -121,14 +60,15 @@ async function refreshList() {
                 total: s.total_xp_gained || 0,
                 net: s.net_xp || 0,
                 price: s.last_price || 0,
-                totalVolume: s.one_min_volume ||    s.total_volume || s.volume || s.fiveMinVolume || s.strength || 0,
+                totalVolume: s.one_min_volume || s.total_volume || s.volume || s.fiveMinVolume || s.strength || 0,
                 level: s.lv || s.level || 0,
+                sessionChangePercent: s.session_change_percent || 0,
                 rank: index + 1
             };
         });
 
-    // Always apply current sorting to the data before rendering
-    const sortedList = sortData(viewList, currentSort.column, currentSort.direction);
+    // Use data as-is from backend (already sorted)
+    const sortedList = viewList;
 
     // Extract top 3 symbols for trophy data
     const top3Trophies = sortedList.slice(0, 3).map((item, index) => ({
@@ -172,32 +112,35 @@ async function refreshList() {
                 <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Rank Position">
                     #
                 </th>
-                <th class="${currentSort.column === 'symbol' ? 'sort-active' : ''}" data-sort="symbol" style="text-align: left; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Symbol">
-                    Symbol <span class="sort-icon">${getSortIcon('symbol')}</span>
+                <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
+                    Symbol
                 </th>
-                ${window.xpSettings?.showUpXp !== false ? `<th class="${currentSort.column === 'up' ? 'sort-active' : ''}" data-sort="up" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Up XP">
-                    Up XP<span class="sort-icon">${getSortIcon('up')}</span>
+                ${window.xpSettings?.showUpXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                    Up XP
                 </th>` : ''}
-                ${window.xpSettings?.showDownXp !== false ? `<th class="${currentSort.column === 'down' ? 'sort-active' : ''}" data-sort="down" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Down XP">
-                    Down XP<span class="sort-icon">${getSortIcon('down')}</span>
+                ${window.xpSettings?.showDownXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                    Down XP
                 </th>` : ''}
-                ${window.xpSettings?.showRatio !== false ? `<th class="${currentSort.column === 'upDownRatio' ? 'sort-active' : ''}" data-sort="upDownRatio" style="text-align: right; padding: 6px 8px; color: #666;    text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Net XP Ratio">
-                    Ratio <span class="sort-icon">${getSortIcon('upDownRatio')}</span>
+                ${window.xpSettings?.showRatio !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
+                    Ratio
                 </th>` : ''}
-                ${window.xpSettings?.showTotal !== false ? `<th class="${currentSort.column === 'total' ? 'sort-active' : ''}" data-sort="total" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Total XP">
-                    Total <span class="sort-icon">${getSortIcon('total')}</span>
+                ${window.xpSettings?.showTotal !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                    Total
                 </th>` : ''}
-                ${window.xpSettings?.showNet !== false ? `<th class="${currentSort.column === 'net' ? 'sort-active' : ''}" data-sort="net" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Net XP">
-                    Net <span class="sort-icon">${getSortIcon('net')}</span>
+                ${window.xpSettings?.showNet !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                    Net
                 </th>` : ''}
-                ${window.xpSettings?.showTotalVolume !== false ? `<th class="${currentSort.column === 'totalVolume' ? 'sort-active' : ''}" data-sort="totalVolume" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Total Volume">
-                    Volume <span class="sort-icon">${getSortIcon('totalVolume')}</span>
+                ${window.xpSettings?.showTotalVolume !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                    Volume
                 </th>` : ''}
-                ${window.xpSettings?.showLevel !== false ? `<th class="${currentSort.column === 'level' ? 'sort-active' : ''}" data-sort="level" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Level">
-                    Level <span class="sort-icon">${getSortIcon('level')}</span>
+                ${window.xpSettings?.showLevel !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                    Level
                 </th>` : ''}
-                ${window.xpSettings?.showPrice !== false ? `<th class="${currentSort.column === 'price' ? 'sort-active' : ''}" data-sort="price" style="text-align: right; padding: 6px 8px; color: #666;  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Click to sort by Price">
-                    Price <span class="sort-icon">${getSortIcon('price')}</span>
+                ${window.xpSettings?.showPrice !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                    Price
+                </th>` : ''}
+                ${window.xpSettings?.showSessionChange !== false ? `<th style="text-align: right; padding: 6px 8px; color: #4A90E2; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px); border-bottom: 2px solid #4A90E2;">
+                    Change % <span style="color: #4A90E2; font-size: 12px;">↓</span>
                 </th>` : ''}
             </tr>
         </thead>
@@ -208,7 +151,6 @@ async function refreshList() {
             ${headersHtml}
             <tbody>
                 ${sortedList.map((h, i) => {
-                    const bg = getSymbolColor(h.hero);
                     return `
                         <tr style="border-bottom: 1px solid #222; transition: all 0.2s ease;">
                             <td style="padding: 6px 8px; color: #666; text-align: right;" title="Rank Position">
@@ -217,9 +159,11 @@ async function refreshList() {
                                 </div>
                             </td>
                             <td style="padding: 6px 8px;" title="Symbol">
-                                <span class="symbol" style="background: ${bg}; padding: 2px 4px; border-radius: 1px; cursor: pointer;">
-                                    ${h.hero}
-                                </span>
+                                ${window.components.Symbol({ 
+                                    symbol: h.hero, 
+                                    size: "medium",
+                                    onClick: true
+                                })}
                             </td>
                             ${window.xpSettings?.showUpXp !== false ? `<td style="padding: 6px 8px; text-align: right; color: #00ff00;" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
                             ${window.xpSettings?.showDownXp !== false ? `<td style="padding: 6px 8px; text-align: right; color: #ff0000;" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
@@ -231,6 +175,7 @@ async function refreshList() {
                             ${window.xpSettings?.showTotalVolume !== false ? `<td style="padding: 6px 8px; text-align: right; color: #00ff00;" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
                             ${window.xpSettings?.showLevel !== false ? `<td style="padding: 6px 8px; text-align: right; color: #00aeff;" title="Level">${h.level}</td>` : ''}
                             ${window.xpSettings?.showPrice !== false ? `<td style="padding: 6px 8px; text-align: right; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
+                            ${window.xpSettings?.showSessionChange !== false ? `<td style="padding: 6px 8px; text-align: right; color: ${h.sessionChangePercent > 0 ? '#00ff00' : h.sessionChangePercent < 0 ? '#ff0000' : '#666'};" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
                         </tr>
                     `;
                 }).join('')}
@@ -238,31 +183,8 @@ async function refreshList() {
         </table>
     `;
 
-    // Click → copy + set active
-    container.querySelectorAll(".symbol").forEach((el) => {
-        el.addEventListener("click", (e) => {
-            const hero = el.textContent.trim().split(" ")[0].replace("$", "");
-            try {
-                navigator.clipboard.writeText(hero);
-                if (window.activeAPI?.setActiveTicker) window.activeAPI.setActiveTicker(hero);
-                el.classList.add("symbol-clicked");
-                setTimeout(() => el.classList.remove("symbol-clicked"), 200);
-            } catch (err) {
-                console.error(`⚠️ Failed to handle click for ${hero}:`, err);
-            }
-            e.stopPropagation();
-        });
-    });
-
-    // Setup sorting click handlers using event delegation
-    container.addEventListener("click", (e) => {
-        const th = e.target.closest("th[data-sort]");
-        if (th) {
-            const sortColumn = th.getAttribute("data-sort");
-            handleSort(sortColumn);
-            e.stopPropagation();
-        }
-    });
+    // Symbol click handling is now done by the component
+    // Sorting removed - backend handles sorting
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -285,7 +207,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             showNet: true,
             showPrice: true,
             showTotalVolume: true,
-            showLevel: true
+            showLevel: true,
+            showSessionChange: true
         }; // fallback
     }
 
@@ -324,17 +247,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // -------------------- helpers --------------------
 
-function getSymbolColor(symbol) {
-    if (!symbolColors[symbol]) {
-        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const hue = (hash * 37) % 360;
-        const saturation = 80;
-        const lightness = 50;
-        const alpha = 0.5;
-        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
-    }
-    return symbolColors[symbol];
-}
+// getSymbolColor function moved to Symbol component
 
 function abbreviateXp(num) {
     const isNegative = num < 0;
