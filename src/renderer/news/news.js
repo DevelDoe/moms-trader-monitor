@@ -188,7 +188,7 @@ function isNewsItemCollapsed(newsItem) {
     if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
-    const fifteenMinutesInMs = 4 * 60 * 1000; // 15 minutes in milliseconds
+    const fifteenMinutesInMs = 15 * 60 * 1000; // 15 minutes in milliseconds
     
     return (now - ms) > fifteenMinutesInMs;
 }
@@ -324,6 +324,14 @@ function renderFilingItem(filingItem, container) {
     // Use filing_date directly for formatting
     const when = ts ? formatFilingTime(ts) : "";
     
+    // Debug: Log collapse decision
+    console.log(`🔍 COLLAPSE DECISION:`, {
+        symbol: filingItem.symbol,
+        filing_date: filingItem.filing_date,
+        isCollapsed: isCollapsed,
+        when: when
+    });
+    
     // Get symbol from filing item
     const symbol = filingItem.symbol;
     const symbolSize = isCollapsed ? "small" : "medium";
@@ -437,7 +445,7 @@ function isFilingItemCollapsed(filingItem) {
     if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
-    const fifteenMinutesInMs = 4 * 60 * 1000; // 15 minutes in milliseconds
+    const fifteenMinutesInMs = 15 * 60 * 1000; // 15 minutes in milliseconds
     
     return (now - ms) > fifteenMinutesInMs;
 }
