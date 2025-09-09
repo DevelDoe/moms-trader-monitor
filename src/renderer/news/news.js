@@ -339,6 +339,14 @@ function renderFilingItem(filingItem, container) {
     }
     
     if (isCollapsed) {
+        // Debug: Log the exact values being used in template
+        console.log(`🔍 TEMPLATE VALUES:`, {
+            form_type: filingItem.form_type,
+            form_description: filingItem.form_description,
+            form_type_type: typeof filingItem.form_type,
+            form_description_type: typeof filingItem.form_description
+        });
+        
         // Collapsed view: Symbol + Form Type + Time
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
