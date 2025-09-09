@@ -769,6 +769,7 @@ function renderOracleNews(symbolData = null) {
     const symbolFilings = symbolData?.Filings || [];
     
     // Log filing structure for debugging
+    console.log(`🔍 Checking filings for ${currentActiveSymbol}: ${symbolFilings.length} filings found`);
     logFilingStructure(symbolFilings, `FOR SYMBOL ${currentActiveSymbol}`);
     
     // Deduplicate filings by accession_number to prevent double rendering
