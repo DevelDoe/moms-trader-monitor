@@ -332,8 +332,6 @@ function renderFilingItem(filingItem, container) {
         when: when
     });
     
-    // Get symbol from filing item
-    const symbol = filingItem.symbol;
     const symbolSize = isCollapsed ? "small" : "medium";
 
     const itemDiv = document.createElement("div");
@@ -357,17 +355,9 @@ function renderFilingItem(filingItem, container) {
         });
         
         // Collapsed view: Symbol + Form Type + Time
-        // Debug: Log right before template creation
-        console.log(`🔍 COLLAPSED TEMPLATE CREATION:`, {
-            form_type: filingItem.form_type,
-            form_description: filingItem.form_description,
-            when: when,
-            symbol: symbol
-        });
-        
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
-                symbol: symbol, 
+                symbol: filingItem.symbol, 
                 size: symbolSize,
                 onClick: true
             })}
@@ -387,7 +377,7 @@ function renderFilingItem(filingItem, container) {
         // Expanded view: Symbol + Full Title + Company + Time + URL
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
-                symbol: symbol, 
+                symbol: filingItem.symbol, 
                 size: symbolSize,
                 onClick: true
             })}
@@ -405,6 +395,11 @@ function renderFilingItem(filingItem, container) {
                 ${filingItem.filing_url ? `
                     <div class="filing-url">
                         <span class="filing-link-text">📄 View on SEC.gov</span>
+                    </div>
+                ` : ''}
+                ${filingItem.accession_with_dashes ? `
+                    <div class="filing-details">
+                        Filed: ${filingItem.filing_date} AccNo: ${filingItem.accession_with_dashes} Size: 6 KB
                     </div>
                 ` : ''}
             </div>
