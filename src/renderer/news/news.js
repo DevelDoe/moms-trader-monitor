@@ -303,6 +303,15 @@ function renderNewsItem(newsItem, container) {
 }
 
 function renderFilingItem(filingItem, container) {
+    // Debug: Log what's actually being rendered
+    console.log(`🔍 RENDERING FILING ITEM:`, {
+        symbol: filingItem.symbol,
+        form_type: filingItem.form_type,
+        form_description: filingItem.form_description,
+        title: filingItem.title,
+        ALL_FIELDS: Object.keys(filingItem)
+    });
+    
     const isCollapsed = isFilingItemCollapsed(filingItem);
     const ts = filingItem.filing_date;
     const when = ts ? formatNewsTime(ts) : "";
