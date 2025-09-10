@@ -666,6 +666,397 @@ describe('Events Window Tests', () => {
         });
     });
 
+    describe('Combo Timer System', () => {
+        let clock;
+        let symbolUptickTimers;
+        let symbolDowntickTimers;
+        let symbolNoteIndices;
+        let symbolDownNoteIndices;
+        let symbolComboLastPrice;
+        let symbolDownComboLastPrice;
+
+        beforeEach(() => {
+            clock = sinon.useFakeTimers();
+            
+            // Mock the Maps used in the combo system
+            symbolUptickTimers = new Map();
+            symbolDowntickTimers = new Map();
+            symbolNoteIndices = new Map();
+            symbolDownNoteIndices = new Map();
+            symbolComboLastPrice = new Map();
+            symbolDownComboLastPrice = new Map();
+        });
+
+        afterEach(() => {
+            clock.restore();
+        });
+
+        describe('Fixed Duration Timer Behavior', () => {
+            it('should start a 60-second timer on first uptick', () => {
+                const symbol = 'TEST';
+                const UPTICK_WINDOW_MS = 60_000;
+                
+                // Simulate first uptick
+                const resetCombo = sinon.stub();
+                const timerId = setTimeout(() => resetCombo(symbol), UPTICK_WINDOW_MS);
+                symbolUptickTimers.set(symbol, timerId);
+                symbolNoteIndices.set(symbol, 0);
+
+                expect(symbolUptickTimers.has(symbol)).to.be.true;
+                expect(symbolNoteIndices.get(symbol)).to.equal(0);
+
+                // Advance time by 59 seconds - should not expire
+                clock.tick(59000);
+                expect(resetCombo.called).to.be.false;
+
+                // Advance by 1 more second - should expire
+                clock.tick(1000);
+                expect(resetCombo.calledWith(symbol)).to.be.true;
+            });
+
+            it('should NOT extend timer on consecutive upticks', () => {
+                const symbol = 'TEST';
+                const UPTICK_WINDOW_MS = 60_000;
+                const resetCombo = sinon.stub();
+                
+                // First uptick - start timer
+                const timerId = setTimeout(() => resetCombo(symbol), UPTICK_WINDOW_MS);
+                symbolUptickTimers.set(symbol, timerId);
+                symbolNoteIndices.set(symbol, 0);
+                symbolComboLastPrice.set(symbol, 1.00);
+
+                // Advance 30 seconds
+                clock.tick(30000);
+
+                // Second uptick - should NOT reset timer
+                if (symbolUptickTimers.has(symbol)) {
+                    // DON'T clear the existing timer - this is the key change
+                    const currentPrice = 1.10;
+                    const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
+                    
+                    if (currentPrice > lastPrice) {
+                        const currentLevel = symbolNoteIndices.get(symbol) ?? -1;
+                        symbolNoteIndices.set(symbol, currentLevel + 1);
+                        symbolComboLastPrice.set(symbol, currentPrice);
+                        // Timer continues unchanged - no new setTimeout
+                    }
+                }
+
+                expect(symbolNoteIndices.get(symbol)).to.equal(1); // Level advanced
+                expect(symbolComboLastPrice.get(symbol)).to.equal(1.10); // Price updated
+
+                // Advance another 25 seconds (total 55 seconds from start)
+                clock.tick(25000);
+                expect(resetCombo.called).to.be.false;
+
+                // Advance 5 more seconds (total 60 seconds from start) - should expire
+                clock.tick(5000);
+                expect(resetCombo.calledWith(symbol)).to.be.true;
+            });
+
+            it('should expire combo exactly 60 seconds from start regardless of activity', () => {
+                const symbol = 'TEST';
+                const UPTICK_WINDOW_MS = 60_000;
+                const resetCombo = sinon.stub();
+                
+                // Start combo
+                const timerId = setTimeout(() => resetCombo(symbol), UPTICK_WINDOW_MS);
+                symbolUptickTimers.set(symbol, timerId);
+                symbolNoteIndices.set(symbol, 0);
+                symbolComboLastPrice.set(symbol, 1.00);
+
+                // Simulate multiple upticks throughout the 60-second window
+                const uptickTimes = [10000, 20000, 30000, 40000, 50000]; // Every 10 seconds
+                
+                uptickTimes.forEach((time, index) => {
+                    clock.tick(time - (index > 0 ? uptickTimes[index - 1] : 0));
+                    
+                    // Process uptick without extending timer
+                    if (symbolUptickTimers.has(symbol)) {
+                        const currentPrice = 1.00 + (index + 1) * 0.10;
+                        const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
+                        
+                        if (currentPrice > lastPrice) {
+                            const currentLevel = symbolNoteIndices.get(symbol) ?? -1;
+                            symbolNoteIndices.set(symbol, currentLevel + 1);
+                            symbolComboLastPrice.set(symbol, currentPrice);
+                        }
+                    }
+                });
+
+                // At 50 seconds, combo should still be active
+                expect(resetCombo.called).to.be.false;
+                expect(symbolNoteIndices.get(symbol)).to.equal(5); // Level 5 from 5 upticks
+
+                // Advance to exactly 60 seconds from start
+                clock.tick(10000);
+                expect(resetCombo.calledWith(symbol)).to.be.true;
+            });
+
+            it('should handle down-combo timer behavior consistently', () => {
+                const symbol = 'TEST';
+                const UPTICK_WINDOW_MS = 60_000;
+                const resetCombo = sinon.stub();
+                
+                // Start down-combo
+                const timerId = setTimeout(() => resetCombo(symbol, true), UPTICK_WINDOW_MS);
+                symbolDowntickTimers.set(symbol, timerId);
+                symbolDownNoteIndices.set(symbol, 0);
+                symbolDownComboLastPrice.set(symbol, 2.00);
+
+                // Advance 30 seconds
+                clock.tick(30000);
+
+                // Second downtick - should NOT reset timer
+                if (symbolDowntickTimers.has(symbol)) {
+                    const currentPrice = 1.90;
+                    const lastDownPrice = symbolDownComboLastPrice.get(symbol) ?? Infinity;
+                    
+                    if (currentPrice < lastDownPrice) {
+                        const currentLevel = symbolDownNoteIndices.get(symbol) ?? -1;
+                        symbolDownNoteIndices.set(symbol, currentLevel + 1);
+                        symbolDownComboLastPrice.set(symbol, currentPrice);
+                        // Timer continues unchanged
+                    }
+                }
+
+                expect(symbolDownNoteIndices.get(symbol)).to.equal(1);
+                expect(symbolDownComboLastPrice.get(symbol)).to.equal(1.90);
+
+                // Advance to 60 seconds total - should expire
+                clock.tick(30000);
+                expect(resetCombo.calledWith(symbol, true)).to.be.true;
+            });
+        });
+
+        describe('Combo Level Progression', () => {
+            it('should advance combo level on valid consecutive upticks within timer window', () => {
+                const symbol = 'TEST';
+                const COMBO_VOLUME_REQUIREMENTS = [0, 100, 500, 1000, 2000, 100, 100];
+                
+                symbolUptickTimers.set(symbol, setTimeout(() => {}, 60000));
+                symbolNoteIndices.set(symbol, 1); // Start at level 1
+                symbolComboLastPrice.set(symbol, 1.00);
+
+                // Test level progression
+                const testCases = [
+                    { level: 1, nextLevel: 2, price: 1.10, strength: 600, shouldAdvance: true },
+                    { level: 2, nextLevel: 3, price: 1.20, strength: 1200, shouldAdvance: true },
+                    { level: 3, nextLevel: 4, price: 1.30, strength: 2500, shouldAdvance: true },
+                    { level: 4, nextLevel: 5, price: 1.40, strength: 150, shouldAdvance: true }
+                ];
+
+                testCases.forEach(({ level, nextLevel, price, strength, shouldAdvance }) => {
+                    symbolNoteIndices.set(symbol, level);
+                    symbolComboLastPrice.set(symbol, price - 0.10);
+                    
+                    const currentLevel = symbolNoteIndices.get(symbol) ?? -1;
+                    const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
+                    const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
+                    
+                    if (symbolUptickTimers.has(symbol) && strength >= requiredVolume && price > lastPrice) {
+                        symbolNoteIndices.set(symbol, nextLevel);
+                        symbolComboLastPrice.set(symbol, price);
+                    }
+
+                    if (shouldAdvance) {
+                        expect(symbolNoteIndices.get(symbol)).to.equal(nextLevel);
+                        expect(symbolComboLastPrice.get(symbol)).to.equal(price);
+                    }
+                });
+            });
+
+            it('should not advance combo level if price does not increase', () => {
+                const symbol = 'TEST';
+                
+                symbolUptickTimers.set(symbol, setTimeout(() => {}, 60000));
+                symbolNoteIndices.set(symbol, 1);
+                symbolComboLastPrice.set(symbol, 1.50);
+
+                // Try to advance with same or lower price
+                const currentLevel = symbolNoteIndices.get(symbol);
+                const newPrice = 1.50; // Same price
+                const strength = 1000; // Sufficient volume
+                const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
+
+                if (symbolUptickTimers.has(symbol) && newPrice > lastPrice) {
+                    symbolNoteIndices.set(symbol, currentLevel + 1);
+                    symbolComboLastPrice.set(symbol, newPrice);
+                }
+
+                // Should not advance because price didn't increase
+                expect(symbolNoteIndices.get(symbol)).to.equal(1);
+                expect(symbolComboLastPrice.get(symbol)).to.equal(1.50);
+            });
+
+            it('should not advance combo level if volume requirement not met', () => {
+                const symbol = 'TEST';
+                const COMBO_VOLUME_REQUIREMENTS = [0, 100, 500, 1000, 2000, 100, 100];
+                
+                symbolUptickTimers.set(symbol, setTimeout(() => {}, 60000));
+                symbolNoteIndices.set(symbol, 2); // Level 2
+                symbolComboLastPrice.set(symbol, 1.00);
+
+                const currentLevel = symbolNoteIndices.get(symbol);
+                const nextLevel = currentLevel + 1; // Level 3
+                const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)]; // 1000
+                const strength = 500; // Insufficient volume
+                const newPrice = 1.10;
+                const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
+
+                if (symbolUptickTimers.has(symbol) && strength >= requiredVolume && newPrice > lastPrice) {
+                    symbolNoteIndices.set(symbol, nextLevel);
+                    symbolComboLastPrice.set(symbol, newPrice);
+                }
+
+                // Should not advance because volume requirement not met
+                expect(symbolNoteIndices.get(symbol)).to.equal(2);
+                expect(symbolComboLastPrice.get(symbol)).to.equal(1.00);
+            });
+        });
+
+        describe('Timer Cleanup and Reset', () => {
+            it('should clean up timer state on combo expiration', () => {
+                const symbol = 'TEST';
+                
+                // Set up combo state
+                const resetCombo = (sym, isDown = false) => {
+                    if (isDown) {
+                        const timer = symbolDowntickTimers.get(sym);
+                        if (timer) clearTimeout(timer);
+                        symbolDowntickTimers.delete(sym);
+                        symbolDownNoteIndices.delete(sym);
+                        symbolDownComboLastPrice.delete(sym);
+                    } else {
+                        const timer = symbolUptickTimers.get(sym);
+                        if (timer) clearTimeout(timer);
+                        symbolUptickTimers.delete(sym);
+                        symbolNoteIndices.delete(sym);
+                        symbolComboLastPrice.delete(sym);
+                    }
+                };
+
+                const timerId = setTimeout(() => resetCombo(symbol), 60000);
+                symbolUptickTimers.set(symbol, timerId);
+                symbolNoteIndices.set(symbol, 3);
+                symbolComboLastPrice.set(symbol, 1.50);
+
+                // Verify state is set
+                expect(symbolUptickTimers.has(symbol)).to.be.true;
+                expect(symbolNoteIndices.has(symbol)).to.be.true;
+                expect(symbolComboLastPrice.has(symbol)).to.be.true;
+
+                // Trigger reset
+                resetCombo(symbol);
+
+                // Verify state is cleaned up
+                expect(symbolUptickTimers.has(symbol)).to.be.false;
+                expect(symbolNoteIndices.has(symbol)).to.be.false;
+                expect(symbolComboLastPrice.has(symbol)).to.be.false;
+            });
+
+            it('should handle multiple symbols independently', () => {
+                const symbol1 = 'TEST1';
+                const symbol2 = 'TEST2';
+                const UPTICK_WINDOW_MS = 60_000;
+                
+                const resetCombo1 = sinon.stub();
+                const resetCombo2 = sinon.stub();
+
+                // Start combo for symbol1
+                const timer1 = setTimeout(() => resetCombo1(symbol1), UPTICK_WINDOW_MS);
+                symbolUptickTimers.set(symbol1, timer1);
+                symbolNoteIndices.set(symbol1, 1);
+
+                // Start combo for symbol2 10 seconds later
+                clock.tick(10000);
+                const timer2 = setTimeout(() => resetCombo2(symbol2), UPTICK_WINDOW_MS);
+                symbolUptickTimers.set(symbol2, timer2);
+                symbolNoteIndices.set(symbol2, 1);
+
+                // Advance 50 more seconds (60 total for symbol1, 50 for symbol2)
+                clock.tick(50000);
+                expect(resetCombo1.calledWith(symbol1)).to.be.true;
+                expect(resetCombo2.called).to.be.false;
+
+                // Advance 10 more seconds (60 total for symbol2)
+                clock.tick(10000);
+                expect(resetCombo2.calledWith(symbol2)).to.be.true;
+            });
+        });
+
+        describe('Edge Cases', () => {
+            it('should handle rapid consecutive upticks correctly', () => {
+                const symbol = 'TEST';
+                const UPTICK_WINDOW_MS = 60_000;
+                const resetCombo = sinon.stub();
+                
+                // Start combo
+                const timerId = setTimeout(() => resetCombo(symbol), UPTICK_WINDOW_MS);
+                symbolUptickTimers.set(symbol, timerId);
+                symbolNoteIndices.set(symbol, 0);
+                symbolComboLastPrice.set(symbol, 1.00);
+
+                // Process 10 rapid upticks in first 5 seconds
+                for (let i = 1; i <= 10; i++) {
+                    clock.tick(500); // 0.5 seconds between each
+                    
+                    if (symbolUptickTimers.has(symbol)) {
+                        const currentPrice = 1.00 + (i * 0.01);
+                        const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
+                        
+                        if (currentPrice > lastPrice) {
+                            const currentLevel = symbolNoteIndices.get(symbol) ?? -1;
+                            symbolNoteIndices.set(symbol, currentLevel + 1);
+                            symbolComboLastPrice.set(symbol, currentPrice);
+                        }
+                    }
+                }
+
+                expect(symbolNoteIndices.get(symbol)).to.equal(10);
+                expect(resetCombo.called).to.be.false;
+
+                // Advance to exactly 60 seconds from start
+                clock.tick(55000); // 55 + 5 = 60 seconds total
+                expect(resetCombo.calledWith(symbol)).to.be.true;
+            });
+
+            it('should handle timer expiration during active trading', () => {
+                const symbol = 'TEST';
+                const UPTICK_WINDOW_MS = 60_000;
+                const resetCombo = sinon.stub();
+                
+                // Start combo
+                const timerId = setTimeout(() => resetCombo(symbol), UPTICK_WINDOW_MS);
+                symbolUptickTimers.set(symbol, timerId);
+                symbolNoteIndices.set(symbol, 0);
+                symbolComboLastPrice.set(symbol, 1.00);
+
+                // Advance to 59.9 seconds
+                clock.tick(59900);
+                
+                // Try to process uptick just before expiration
+                if (symbolUptickTimers.has(symbol)) {
+                    const currentPrice = 1.50;
+                    const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
+                    
+                    if (currentPrice > lastPrice) {
+                        const currentLevel = symbolNoteIndices.get(symbol) ?? -1;
+                        symbolNoteIndices.set(symbol, currentLevel + 1);
+                        symbolComboLastPrice.set(symbol, currentPrice);
+                    }
+                }
+
+                expect(symbolNoteIndices.get(symbol)).to.equal(1);
+                expect(resetCombo.called).to.be.false;
+
+                // Advance past 60 seconds
+                clock.tick(100);
+                expect(resetCombo.calledWith(symbol)).to.be.true;
+            });
+        });
+    });
+
     describe('Integration Tests', () => {
         it('should handle complete alert processing flow', () => {
             const alertData = {

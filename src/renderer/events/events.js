@@ -481,7 +481,7 @@ async function initializeApp() {
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
 
                 if (symbolUptickTimers.has(symbol)) {
-                    clearTimeout(symbolUptickTimers.get(symbol));
+                    // DON'T clear the existing timer - let it run for the full 60 seconds from start
 
                     if (strength >= requiredVolume) {
                         const lastPrice = symbolComboLastPrice.get(symbol) ?? 0;
@@ -505,10 +505,7 @@ async function initializeApp() {
                                 }
                             }
 
-                            symbolUptickTimers.set(symbol, setTimeout(() => {
-                                if (debugMode && debugCombo) console.log(`⌛ ${symbol} combo expired`);
-                                resetCombo(symbol);
-                            }, UPTICK_WINDOW_MS));
+                            // Timer continues unchanged - no need to reset it
                         } else {
                             if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not higher than last combo price (${price} ≤ ${lastPrice})`);
                             // stop combo progression but continue processing alert
@@ -539,7 +536,7 @@ async function initializeApp() {
                 const requiredVolume = COMBO_VOLUME_REQUIREMENTS[Math.min(nextLevel, COMBO_VOLUME_REQUIREMENTS.length - 1)];
 
                 if (symbolDowntickTimers.has(symbol)) {
-                    clearTimeout(symbolDowntickTimers.get(symbol));
+                    // DON'T clear the existing timer - let it run for the full 60 seconds from start
 
                     if (strength >= requiredVolume) {
                         const lastDownPrice = symbolDownComboLastPrice.get(symbol) ?? Infinity;
@@ -550,25 +547,13 @@ async function initializeApp() {
 
                             if (debugMode && debugCombo) console.log(`🔥 ${symbol} down-combo advanced to LV${nextLevel}`);
 
-                            symbolDowntickTimers.set(symbol, setTimeout(() => {
-                                if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
-                                resetCombo(symbol, true);
-                            }, UPTICK_WINDOW_MS));
+                            // Timer continues unchanged - no need to reset it
                         } else {
                             if (debugMode && debugCombo) console.log(`⛔ ${symbol} price not lower than last down-combo price (${price} ≥ ${lastDownPrice})`);
-                            // no advance, but keep timer alive
-                            symbolDowntickTimers.set(symbol, setTimeout(() => {
-                                if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
-                                resetCombo(symbol, true);
-                            }, UPTICK_WINDOW_MS));
+                            // stop combo progression but continue processing alert
                         }
-                    } else {
-                        // not enough volume to advance — just refresh timer
-                        symbolDowntickTimers.set(symbol, setTimeout(() => {
-                            if (debugMode && debugCombo) console.log(`⌛ ${symbol} down-combo expired`);
-                            resetCombo(symbol, true);
-                        }, UPTICK_WINDOW_MS));
                     }
+                    // Timer continues unchanged regardless of volume - no need to refresh it
                 } else {
                     // ✅ First downtick — start tracking (LV0)
                     symbolDownNoteIndices.set(symbol, 0);
