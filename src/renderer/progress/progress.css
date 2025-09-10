@@ -1,0 +1,255 @@
+/* Progress component styles - ultra high-performance version */
+
+/* Main header container */
+.arcane-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 10px 10px 10px 0px; /* padign bottom 0? */
+}
+
+/* Clock and Session Header */
+.clock-session-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 10px;
+    margin-bottom: 5px;
+    flex-shrink: 0;
+}
+
+.ny-clock {
+    color: #f13535;
+    font-size: 16px;
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(146, 1, 1, 0.5);
+    margin-bottom: -6px;
+    margin-left: 2px;
+}
+
+.session-countdown {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: -5px;
+}
+
+.session-label {
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 1;
+}
+
+.countdown-timer {
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* Data Banner */
+.data-banner {
+    padding: 5px 0px;
+    margin: 0 0px 5px 10px;
+    flex-shrink: 0;
+    margin-bottom: 0px;
+}
+
+.banner-content {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 5px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+    flex-wrap: wrap;
+    row-gap: 6px;
+}
+
+.heroes-count,
+.buy-info,
+.sell-info,
+.market-temp {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.label {
+    color: #ffffff;
+    opacity: 0.8;
+    font-weight: 500;
+    font-size: 11px;
+}
+
+.value {
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid;
+    font-size: 11px;
+    min-width: fit-content;
+}
+
+.heroes-count .value {
+    color: #F5A623;
+    /* background: rgba(245, 166, 35, 0.15); */
+    border-color: rgba(245, 166, 35, 0.4);
+    border: none;
+}
+
+.buy-info .value {
+    color: #00ffa3;
+    /* background: rgba(0, 255, 163, 0.15); */
+    border-color: rgba(0, 255, 163, 0.4);
+    border: none;
+}
+
+.sell-info .value {
+    color: #ff4444;
+    /* background: rgba(255, 68, 68, 0.15); */
+    border-color: rgba(255, 68, 68, 0.4);
+    border: none;
+}
+
+.market-temp .value {
+    color: #ffffff;
+    /* background: rgba(255, 255, 255, 0.15); */
+    border-color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+/* Main sentiment flow container */
+.sentiment-flow {
+    height: 60px;
+    width: 100%;
+    display: flex;
+    transition: box-shadow 0.4s ease;
+    transform-origin: bottom;
+    flex-shrink: 0;
+}
+
+/* Flow bars - using width for proper horizontal layout */
+.flow-hp,
+.flow-dp {
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    /* Hardware acceleration */
+    will-change: width;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    /* Smooth transitions */
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Set initial widths */
+.flow-hp {
+    width: 50%; /* Start balanced */
+    background: linear-gradient(to right, rgb(0 255 163 / 90%), rgb(2 51 51 / 90%));
+    position: relative;
+    position: relative;
+}
+
+.flow-dp {
+    width: 50%; /* Start balanced */
+    background: linear-gradient(to right, rgb(80 24 18 / 90%), rgb(255 3 0 / 90%));
+    border-left: 1px solid #000;
+    position: relative;
+}
+
+
+/* Simplified swoosh effect - reduced complexity */
+.flow-hp::after,
+.flow-dp::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 150px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: swoosh var(--swoosh-speed, 3s) linear infinite;
+    will-change: transform;
+    opacity: 0.8;
+}
+
+/* Single swoosh animation - simplified */
+@keyframes swoosh {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    20% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateX(200%);
+        opacity: 0;
+    }
+}
+
+/* Optimized effects - reduced complexity */
+.sentiment-flow.glow {
+    box-shadow: 0 0 8px 1px rgba(255, 255, 255, 0.03);
+}
+
+.sentiment-flow.heartbeat {
+    animation: heartbeat 0.8s ease-in-out;
+}
+
+@keyframes heartbeat {
+    0%, 100% { 
+        transform: scaleY(1); 
+    }
+    50% { 
+        transform: scaleY(1.03); 
+    }
+}
+
+/* Performance optimizations */
+.flow-hp,
+.flow-dp {
+    /* Hardware acceleration */
+    transform: translateZ(0);
+}
+
+/* Reduce animation complexity when system is under load */
+@media (prefers-reduced-motion: reduce) {
+    .flow-hp::after,
+    .flow-dp::after {
+        animation: none;
+    }
+    
+    .sentiment-flow.heartbeat {
+        animation: none;
+    }
+    
+    .flow-hp,
+    .flow-dp {
+        transition: width 0.1s linear;
+    }
+}
+
+/* High-performance mode for modern browsers */
+@supports (contain: layout) {
+    .sentiment-flow {
+        contain: layout style paint;
+    }
+    
+    .flow-hp,
+    .flow-dp {
+        contain: layout style;
+    }
+}

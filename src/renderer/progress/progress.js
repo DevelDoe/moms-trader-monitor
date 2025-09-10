@@ -32,11 +32,12 @@ const elements = {
     buyBar: null,
     sellBar: null,
     container: null,
-    sessionInfo: null,
     buyInfo: null,
     sellInfo: null,
     marketTemp: null,
-    heroesCount: null
+    heroesCount: null,
+    nyClock: null,
+    countdownTimer: null
 };
 
 // Get current trading session based on New York time
@@ -59,16 +60,129 @@ function getCurrentSession() {
     return { key: 'POST', ...SESSIONS.POST };
 }
 
+// Update NY clock display
+function updateNYClock() {
+    if (!elements.nyClock) return;
+    
+    const now = new Date();
+    const nyTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const timeString = nyTime.toLocaleTimeString("en-US", {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+    
+    elements.nyClock.textContent = timeString;
+}
+
+// Get next session and calculate countdown
+function getNextSession() {
+    const now = new Date();
+    const nyTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const currentHour = nyTime.getHours() + (nyTime.getMinutes() / 60);
+    
+    // Find current session
+    let currentSession = null;
+    for (const [key, session] of Object.entries(SESSIONS)) {
+        if (currentHour >= session.start && currentHour < session.end) {
+            currentSession = { key, ...session };
+            break;
+        }
+    }
+    
+    // If no current session, find next session
+    if (!currentSession) {
+        // Find the next session that starts today
+        for (const [key, session] of Object.entries(SESSIONS)) {
+            if (currentHour < session.start) {
+                return { key, ...session };
+            }
+        }
+        // If no session today, return first session tomorrow
+        return { key: 'PRE', ...SESSIONS.PRE };
+    }
+    
+    return currentSession;
+}
+
+// Calculate countdown to session end or next session
+function calculateCountdown() {
+    const now = new Date();
+    const nyTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const currentHour = nyTime.getHours() + (nyTime.getMinutes() / 60);
+    
+    // Find current session
+    let currentSession = null;
+    for (const [key, session] of Object.entries(SESSIONS)) {
+        if (currentHour >= session.start && currentHour < session.end) {
+            currentSession = { key, ...session };
+            break;
+        }
+    }
+    
+    let targetTime;
+    let sessionName;
+    
+    if (currentSession) {
+        // Countdown to end of current session
+        targetTime = currentSession.end;
+        sessionName = currentSession.name.toUpperCase();
+    } else {
+        // Find next session
+        const nextSession = getNextSession();
+        targetTime = nextSession.start;
+        sessionName = nextSession.name.toUpperCase();
+    }
+    
+    // Calculate time until target
+    const targetDate = new Date(nyTime);
+    targetDate.setHours(Math.floor(targetTime), (targetTime % 1) * 60, 0, 0);
+    
+    // If target is tomorrow, add a day
+    if (targetDate <= nyTime) {
+        targetDate.setDate(targetDate.getDate() + 1);
+    }
+    
+    const timeDiff = targetDate - nyTime;
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+    
+    return {
+        hours,
+        minutes,
+        seconds,
+        sessionName,
+        timeString: `${hours}h ${minutes}m ${seconds}s`
+    };
+}
+
+// Update countdown display
+function updateCountdown() {
+    if (!elements.countdownTimer) return;
+    
+    const countdown = calculateCountdown();
+    elements.countdownTimer.textContent = countdown.timeString;
+    
+    // Update session label if needed
+    const sessionLabel = document.querySelector('.session-label');
+    if (sessionLabel) {
+        sessionLabel.textContent = `${countdown.sessionName} MARKET:`;
+    }
+}
+
 // Initialize DOM elements
 function initializeElements() {
     elements.buyBar = document.getElementById("flow-hp");
     elements.sellBar = document.getElementById("flow-dp");
     elements.container = document.querySelector(".sentiment-flow");
-    elements.sessionInfo = document.getElementById("session-info");
     elements.buyInfo = document.getElementById("buy-info");
     elements.sellInfo = document.getElementById("sell-info");
     elements.marketTemp = document.getElementById("market-temp");
     elements.heroesCount = document.getElementById("heroes-count");
+    elements.nyClock = document.getElementById("ny-clock");
+    elements.countdownTimer = document.getElementById("countdown-timer");
     
     if (!elements.buyBar || !elements.sellBar || !elements.container) {
         console.warn("[progress] Required DOM elements not found");
@@ -167,10 +281,6 @@ function updateSessionDisplay() {
     updateDisplay(buyPercent, sellPercent, currentSession.name, totalVolume, tempColor);
     
     // Update banner elements
-    if (elements.sessionInfo) {
-        elements.sessionInfo.textContent = currentSession.name;
-    }
-    
     if (elements.buyInfo) {        elements.buyInfo.textContent = formatVolume(sessionData.buyVolume);
     }
     
@@ -284,15 +394,39 @@ function initialize() {
 
     // Set up periodic updates
     const updateInterval = setInterval(checkSessionAndUpdate, CONFIG.UPDATE_INTERVAL);
-
-    // Initial display update
+    
+    // Initial display update - do this first to show current time immediately
     updateSessionDisplay();
+    updateNYClock();
+    updateCountdown();
+    
+    // Set up clock and countdown updates - start after a short delay to sync with second boundaries
+    const now = new Date();
+    const delayToNextSecond = 1000 - (now.getMilliseconds());
+    
+    setTimeout(() => {
+        // Update immediately when we hit the next second
+        updateNYClock();
+        updateCountdown();
+        
+        // Then continue updating every second
+        const clockInterval = setInterval(() => {
+            updateNYClock();
+            updateCountdown();
+        }, 1000);
+        
+        // Store interval for cleanup
+        window.clockInterval = clockInterval;
+    }, delayToNextSecond);
 
     console.log(`[progress] Initialized for session: ${currentSession.name}`);
 
     // Cleanup function
     return () => {
         clearInterval(updateInterval);
+        if (window.clockInterval) {
+            clearInterval(window.clockInterval);
+        }
     };
 }
 

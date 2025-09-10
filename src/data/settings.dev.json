@@ -57,7 +57,7 @@
     "allowMultiSymbols": false
   },
   "events": {
-    "comboVolume": 0.25,
-    "newsAlertVolume": 0.45
+    "comboVolume": 0,
+    "newsAlertVolume": 0
   }
 }

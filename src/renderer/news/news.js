@@ -231,10 +231,6 @@ function render() {
         });
     });
     
-    // Log filing structure for debugging
-    console.log(`🔍 Checking filings in news view: ${allFilings.length} filings found`);
-    logFilingStructure(allFilings, "IN NEWS VIEW");
-    
     // Add filing items
     allFilings.forEach(filingItem => {
         allItems.push({
@@ -310,7 +306,8 @@ function renderNewsItem(newsItem, container) {
 }
 
 function renderFilingItem(filingItem, container) {
-    // Debug: Log what's actually being rendered
+    console.log(`📁 Rendering filing: ${filingItem.symbol} - ${filingItem.filing_date}`);
+    
     const isCollapsed = isFilingItemCollapsed(filingItem);
     const when = filingItem.filing_date ? formatFilingTime(filingItem.filing_date) : "";
     const symbolSize = isCollapsed ? "small" : "medium";
@@ -318,25 +315,35 @@ function renderFilingItem(filingItem, container) {
     const itemDiv = document.createElement("div");
     itemDiv.className = `filing-item${isCollapsed ? ' collapsed' : ''}`;
     
-    // Make the entire filing item clickable if there's a URL
-    if (filingItem.filing_url) {
-        itemDiv.style.cursor = "pointer";
-        itemDiv.addEventListener("click", () => {
-            window.open(filingItem.filing_url, "_blank", "noopener,noreferrer");
-        });
-    }
+    // Remove general click handler - we'll make specific elements clickable
     
     if (isCollapsed) {
-        // Collapsed view: Symbol + Form Type + Time
+        // Collapsed view: Use the same format as infobar
+        const symbol = filingItem.symbol;
+        const formType = filingItem.form_type;
+        const description = filingItem.form_description || filingItem.title || "filing";
+        const filingText = `${symbol} has filed a ${formType} ${description}`;
+        
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
                 symbol: filingItem.symbol, 
                 size: symbolSize,
                 onClick: true
             })}
-            <h5>📁 ${filingItem.form_type} - ${filingItem.form_description}</h5>
+            <h5 class="${filingItem.filing_url ? 'filing-text-clickable' : ''}">📁 ${filingText}</h5>
             ${when ? `<div class="filing-time">${when}</div>` : ""}
         `;
+        
+        // Make the entire filing text clickable if there's a URL
+        if (filingItem.filing_url) {
+            const textElement = itemDiv.querySelector('h5');
+            if (textElement) {
+                textElement.style.cursor = 'pointer';
+                textElement.addEventListener('click', () => {
+                    window.open(filingItem.filing_url, '_blank', 'noopener,noreferrer');
+                });
+            }
+        }
     } else {
         // Expanded view: Symbol + Full Title + Company + Time + URL
         itemDiv.innerHTML = `
@@ -346,7 +353,10 @@ function renderFilingItem(filingItem, container) {
                 onClick: true
             })}
             <div class="filing-content">
-                <h3 class="filing-title-large">${filingItem.title}</h3>
+                <h3 class="filing-title-large ${filingItem.filing_url ? 'filing-title-clickable' : ''}">${filingItem.title}</h3>
+                ${filingItem.form_description ? `
+                    <div class="filing-description"> ${filingItem.form_description}</div>
+                ` : ''}
                 ${filingItem.company_name || when ? `
                     <div class="filing-meta">
                         ${when ? `<div class="filing-time">${when}</div>` : ''}
@@ -356,11 +366,6 @@ function renderFilingItem(filingItem, container) {
                 ${filingItem.summary ? `
                     <div class="filing-summary">${filingItem.summary}</div>
                 ` : ''}
-                ${filingItem.filing_url ? `
-                    <div class="filing-url">
-                        <span class="filing-link-text">📄 View on SEC.gov</span>
-                    </div>
-                ` : ''}
                 ${filingItem.accession_with_dashes ? `
                     <div class="filing-details">
                         Filed: ${filingItem.filing_date} AccNo: ${filingItem.accession_with_dashes} Size: 6 KB
@@ -368,34 +373,40 @@ function renderFilingItem(filingItem, container) {
                 ` : ''}
             </div>
         `;
+        
+        // Make only the title clickable if there's a URL
+        if (filingItem.filing_url) {
+            const titleElement = itemDiv.querySelector('.filing-title-large');
+            if (titleElement) {
+                titleElement.style.cursor = 'pointer';
+                titleElement.addEventListener('click', () => {
+                    window.open(filingItem.filing_url, '_blank', 'noopener,noreferrer');
+                });
+            }
+        }
     }
     
     container.appendChild(itemDiv);
 }
 
 function getFilingTime(filingItem) {
-    // Use filing_date directly - it's already in ISO format
+    // Use filing_date - the actual SEC filing time
     if (!filingItem.filing_date) return 0;
     const date = new Date(filingItem.filing_date);
     return Number.isFinite(date.getTime()) ? date.getTime() : 0;
 }
 
 function formatFilingTime(filingDate) {
-    // Format filing date directly from ISO string - don't convert timezone
+    // Use the same timezone-aware formatting as news items
     if (!filingDate) return "";
     
-    // Extract time from ISO string directly: "2025-09-09T16:28:40-04:00" -> "4:28 PM"
-    const timeMatch = filingDate.match(/T(\d{2}):(\d{2}):\d{2}/);
-    if (!timeMatch) return "";
+    const ms = parseTs(filingDate);
+    if (Number.isNaN(ms)) return "";
     
-    const hours = parseInt(timeMatch[1]);
-    const minutes = timeMatch[2];
+    const formatted = formatNewsTime(filingDate);
+    console.log(`📅 Filing time: ${filingDate} → ${formatted}`);
     
-    // Convert 24h to 12h format
-    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-    const ampm = hours >= 12 ? "PM" : "AM";
-    
-    return `${displayHours}:${minutes} ${ampm}`;
+    return formatted;
 }
 
 // Check if filing item is older than 15 minutes

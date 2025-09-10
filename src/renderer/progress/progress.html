@@ -8,16 +8,18 @@
     </head>
     <body>
         <div class="arcane-header">
-            <!-- Header Title -->
-            <h1 class="header-title">Arcane Monitor</h1>
+            <!-- Clock and Session Header -->
+            <div class="clock-session-header">
+                <div class="ny-clock" id="ny-clock">12:53:37 PM</div>
+                <div class="session-countdown">
+                    <div class="session-label">OPEN MARKET:</div>
+                    <div class="countdown-timer" id="countdown-timer">3h 6m 23s</div>
+                </div>
+            </div>
             
             <!-- Data Banner -->
             <div class="data-banner" id="data-banner">
                 <div class="banner-content">
-                    <div class="session-info">
-                        <span class="label">Session:</span>
-                        <span class="value" id="session-info">closed</span>
-                    </div>
                     <div class="heroes-count">
                         <span class="label">Heroes:</span>
                         <span class="value" id="heroes-count">--</span>
