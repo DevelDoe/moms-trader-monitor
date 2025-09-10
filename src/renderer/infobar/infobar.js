@@ -22,6 +22,35 @@ function maybeActivateFromSymbols(symbols) {
     lastActivePush = now;
 }
 
+/**
+ * Check if a timestamp is within 4 minutes of current time
+ * @param {string|number} timestamp - The timestamp to check (already in ET timezone)
+ * @returns {boolean} - True if within 4 minutes, false otherwise
+ */
+function isWithinTimeLimit(timestamp) {
+    if (!timestamp) return false;
+    
+    let timestampMs;
+    if (typeof timestamp === 'string') {
+        timestampMs = new Date(timestamp).getTime();
+    } else {
+        timestampMs = Number(timestamp);
+    }
+    
+    if (!Number.isFinite(timestampMs)) return false;
+    
+    // Since the incoming timestamps are already in ET timezone,
+    // we can directly compare with current time
+    const nowMs = Date.now();
+    
+    // 4 minutes in milliseconds
+    const fourMinutesInMs = 4 * 60 * 1000;
+    
+    // Check if timestamp is within 4 minutes of current time
+    const timeDifference = nowMs - timestampMs;
+    return timeDifference >= 0 && timeDifference <= fourMinutesInMs;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Page Loaded. Initializing...");
 
@@ -59,6 +88,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Skip blocked or duplicate news
             if (isBlocked || isDuplicate) return;
 
+            // Skip news older than 4 minutes ET
+            if (!isWithinTimeLimit(newsItem.published_at || newsItem.updated_at)) {
+                console.log("📰 Skipping news older than 4 minutes:", newsItem.headline);
+                return;
+            }
+
             const type = getSentimentClass(newsItem.headline);
             let truncated = newsItem.headline;
             if (truncated.length > 240) truncated = truncated.slice(0, 239).trimEnd() + "…";
@@ -83,6 +118,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Skip duplicate filings
             if (isDuplicate) return;
+
+            // Skip filings older than 4 minutes ET
+            if (!isWithinTimeLimit(filingItem.filing_date)) {
+                console.log("📁 Skipping filing older than 4 minutes:", filingItem.symbol, filingItem.form_type);
+                return;
+            }
 
             const type = "filing"; // Filings are always neutral
             const symbol = filingItem.symbol;

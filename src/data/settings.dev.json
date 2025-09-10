@@ -58,6 +58,6 @@
   },
   "events": {
     "comboVolume": 0,
-    "newsAlertVolume": 0
+    "newsAlertVolume": 0.25
   }
 }

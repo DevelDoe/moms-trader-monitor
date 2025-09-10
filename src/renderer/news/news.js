@@ -103,13 +103,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
+        console.log("📁 [NEWS] Requesting filing headlines from Oracle...");
         const filings = await window.filingAPI.getHeadlines();
+        console.log("📁 [NEWS] Received filing headlines response:", filings);
         if (Array.isArray(filings)) {
             allFilings = filings;
-            // console.log(`📁 Hydrated: ${allFilings.length} filings`);
+            console.log(`📁 [NEWS] Hydrated: ${allFilings.length} filings`);
+        } else {
+            console.warn("📁 [NEWS] Filing headlines response is not an array:", typeof filings, filings);
+            console.log("📁 [NEWS] This is expected if Oracle hasn't processed hydration yet - will wait for filing-headlines event");
         }
     } catch (e) {
-        console.warn("Filing hydration failed:", e);
+        console.warn("📁 [NEWS] Filing hydration failed:", e);
     }
 
     render();
@@ -141,10 +146,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     window.filingAPI.onHeadlines((filings) => {
+        console.log("📁 [NEWS] Received filing-headlines event:", filings);
         if (Array.isArray(filings)) {
             allFilings = filings;
-            // console.log(`📁 Full refresh: ${allFilings.length} filings`);
+            console.log(`📁 [NEWS] Full refresh: ${allFilings.length} filings`);
             render();
+        } else {
+            console.warn("📁 [NEWS] Filing headlines event data is not an array:", typeof filings, filings);
         }
     });
 
@@ -179,7 +187,7 @@ function getNewsSentimentClass(newsItem) {
     return "neutral";
 }
 
-// Check if news item is older than 15 minutes
+// Check if news item is older than 4 minutes
 function isNewsItemCollapsed(newsItem) {
     const ts = newsItem.updated_at ?? newsItem.created_at;
     if (!ts) return true; // If no timestamp, treat as collapsed
@@ -188,9 +196,9 @@ function isNewsItemCollapsed(newsItem) {
     if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
-    const fifteenMinutesInMs = 4 * 60 * 1000; // 15 minutes in milliseconds
+    const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
     
-    return (now - ms) > fifteenMinutesInMs;
+    return (now - ms) > fourMinutesInMs;
 }
 
 // 3. SORT & RENDER
@@ -232,11 +240,27 @@ function render() {
     });
     
     // Add filing items
-    allFilings.forEach(filingItem => {
+    console.log(`📁 [NEWS] Rendering ${allFilings.length} filings`);
+    allFilings.forEach((filingItem, index) => {
+        // Debug: Log the structure of the first few filings
+        if (index < 3) {
+            console.log(`📁 [NEWS] Filing ${index} structure:`, {
+                symbol: filingItem.symbol,
+                symbols: filingItem.symbols,
+                form_type: filingItem.form_type,
+                filing_date: filingItem.filing_date,
+                filed_at: filingItem.filed_at,
+                allKeys: Object.keys(filingItem)
+            });
+        }
+        
+        const timestamp = getFilingTime(filingItem);
+        const symbol = filingItem.symbol || (filingItem.symbols && filingItem.symbols[0]);
+        console.log(`📁 [NEWS] Adding filing: ${symbol} - ${filingItem.form_type} - timestamp: ${timestamp}`);
         allItems.push({
             type: 'filing',
             data: filingItem,
-            timestamp: getFilingTime(filingItem)
+            timestamp: timestamp
         });
     });
     
@@ -262,7 +286,15 @@ function render() {
     // Log the rendering info
     const newsCount = limited.filter(item => item.type === 'news').length;
     const filingCount = limited.filter(item => item.type === 'filing').length;
-    // console.log(`📰 Rendered ${newsCount} news items and ${filingCount} filing items (total: ${limited.length})`);
+    console.log(`📰 [NEWS] Rendered ${newsCount} news items and ${filingCount} filing items (total: ${limited.length})`);
+    
+    if (filingCount > 0) {
+        console.log(`📁 [NEWS] Filing items being rendered:`, limited.filter(item => item.type === 'filing').map(item => ({
+            symbol: item.data.symbol,
+            form_type: item.data.form_type,
+            timestamp: item.timestamp
+        })));
+    }
 }
 
 function renderNewsItem(newsItem, container) {
@@ -306,10 +338,12 @@ function renderNewsItem(newsItem, container) {
 }
 
 function renderFilingItem(filingItem, container) {
-    console.log(`📁 Rendering filing: ${filingItem.symbol} - ${filingItem.filing_date}`);
+    const symbol = filingItem.symbol || (filingItem.symbols && filingItem.symbols[0]);
+    const filingDate = filingItem.filing_date || filingItem.filed_at;
+    console.log(`📁 [NEWS] Rendering filing: ${symbol} - ${filingDate}`);
     
     const isCollapsed = isFilingItemCollapsed(filingItem);
-    const when = filingItem.filing_date ? formatFilingTime(filingItem.filing_date) : "";
+    const when = filingDate ? formatFilingTime(filingDate) : "";
     const symbolSize = isCollapsed ? "small" : "medium";
 
     const itemDiv = document.createElement("div");
@@ -319,18 +353,17 @@ function renderFilingItem(filingItem, container) {
     
     if (isCollapsed) {
         // Collapsed view: Use the same format as infobar
-        const symbol = filingItem.symbol;
         const formType = filingItem.form_type;
         const description = filingItem.form_description || filingItem.title || "filing";
-        const filingText = `${symbol} has filed a ${formType} ${description}`;
+        const filingText = `${symbol} has filed a form ${formType} ${description}`;
         
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
-                symbol: filingItem.symbol, 
+                symbol: symbol, 
                 size: symbolSize,
                 onClick: true
             })}
-            <h5 class="${filingItem.filing_url ? 'filing-text-clickable' : ''}">📁 ${filingText}</h5>
+            <h5 class="${filingItem.filing_url ? 'filing-text-clickable' : ''}">${filingText}</h5>
             ${when ? `<div class="filing-time">${when}</div>` : ""}
         `;
         
@@ -348,7 +381,7 @@ function renderFilingItem(filingItem, container) {
         // Expanded view: Symbol + Full Title + Company + Time + URL
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
-                symbol: filingItem.symbol, 
+                symbol: symbol, 
                 size: symbolSize,
                 onClick: true
             })}
@@ -368,7 +401,7 @@ function renderFilingItem(filingItem, container) {
                 ` : ''}
                 ${filingItem.accession_with_dashes ? `
                     <div class="filing-details">
-                        Filed: ${filingItem.filing_date} AccNo: ${filingItem.accession_with_dashes} Size: 6 KB
+                        Filed: ${filingDate} AccNo: ${filingItem.accession_with_dashes} Size: 6 KB
                     </div>
                 ` : ''}
             </div>
@@ -390,28 +423,34 @@ function renderFilingItem(filingItem, container) {
 }
 
 function getFilingTime(filingItem) {
-    // Use filing_date - the actual SEC filing time
-    if (!filingItem.filing_date) return 0;
-    const date = new Date(filingItem.filing_date);
-    return Number.isFinite(date.getTime()) ? date.getTime() : 0;
+    // Use filing_date or filed_at - the actual SEC filing time
+    const filingDate = filingItem.filing_date || filingItem.filed_at;
+    if (!filingDate) {
+        console.log(`📁 [NEWS] Filing ${filingItem.symbol} has no filing_date or filed_at, using 0 timestamp`);
+        return 0;
+    }
+    const date = new Date(filingDate);
+    const timestamp = Number.isFinite(date.getTime()) ? date.getTime() : 0;
+    console.log(`📁 [NEWS] Filing ${filingItem.symbol} filing_date: ${filingDate} -> timestamp: ${timestamp}`);
+    return timestamp;
 }
 
 function formatFilingTime(filingDate) {
-    // Use the same timezone-aware formatting as news items
+    // Backend already provides dates in ET timezone, display as-is
     if (!filingDate) return "";
     
     const ms = parseTs(filingDate);
     if (Number.isNaN(ms)) return "";
     
     const formatted = formatNewsTime(filingDate);
-    console.log(`📅 Filing time: ${filingDate} → ${formatted}`);
+    console.log(`📅 [NEWS] Filing time: ${filingDate} → ${formatted}`);
     
     return formatted;
 }
 
-// Check if filing item is older than 15 minutes
+// Check if filing item is older than 4 minutes
 function isFilingItemCollapsed(filingItem) {
-    const ts = filingItem.filing_date;
+    const ts = filingItem.filing_date || filingItem.filed_at;
     if (!ts) return true; // If no timestamp, treat as collapsed
     
     // Use filing_date directly - it's already in ISO format
@@ -440,6 +479,7 @@ function toMs(timestamp) {
 
 function formatTime(ms) {
     if (!ms) return "--:--";
+    // Backend provides dates in ET timezone, display in ET to preserve original timezone
     return new Date(ms).toLocaleTimeString("en-US", {
         timeZone: "America/New_York",
         hour: "2-digit",
@@ -451,18 +491,21 @@ function formatTime(ms) {
 function formatNewsTime(ts) {
     const ms = parseTs(ts);
     if (Number.isNaN(ms)) return "";
+    // Backend provides dates in ET timezone, display in ET to preserve original timezone
     const d = new Date(ms);
     const now = new Date();
 
     const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
 
     return sameDay
-        ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        ? d.toLocaleTimeString([], { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })
         : d.toLocaleString([], {
+              timeZone: "America/New_York",
               month: "short",
               day: "numeric",
-              hour: "2-digit",
+              hour: "numeric",
               minute: "2-digit",
+              hour12: true,
           });
 }
 

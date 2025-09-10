@@ -61,10 +61,10 @@ body.draggable {
     color: #ef4444;
 } /* red */
 .news-item.neutral h5 {
-    color: #aaa;
+    color: #cfcfcf;
 } /* gray */
 
-/* Collapsed news items (older than 15 minutes) */
+/* Collapsed news items (older than 4 minutes) */
 .news-item.collapsed {
     padding: 3px 8px;
     display: flex;
@@ -90,6 +90,10 @@ body.draggable {
     flex-shrink: 0;
 }
 
+a {
+    color: #999 !important;
+}
+
 /* ===================== FILING STYLING ===================== */
 .filing-item {
     padding: 6px 8px;
@@ -108,7 +112,7 @@ body.draggable {
     font-size: 14px;
     font-weight: 500;
     line-height: 1.4;
-    color: #ddd;
+    color: #cfcfcf;
     white-space: normal; /* allow wrapping */
     overflow: visible; /* don't hide overflow */
     text-overflow: unset; /* disable ellipsis */
@@ -121,7 +125,7 @@ body.draggable {
     opacity: 0.9;
 }
 
-/* Collapsed filing items (older than 15 minutes) */
+/* Collapsed filing items (older than 4 minutes) */
 .filing-item.collapsed {
     padding: 3px 8px;
     display: flex;

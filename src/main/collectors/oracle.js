@@ -12,10 +12,10 @@ const log = createLogger(__filename);
 const DEBUG = process.env.DEBUG === "true";
 const XP_DEBUG = DEBUG && false;        // XP data logging
 const NEWS_DEBUG = DEBUG && false;      // News data logging  
-const FILING_DEBUG = DEBUG && false;    // Filing data logging
+const FILING_DEBUG = DEBUG && true;    // Filing data logging
 const SESSION_DEBUG = DEBUG && false;   // Session data logging
 const SYMBOL_DEBUG = DEBUG && false;    // Symbol data logging
-const HYDRATION_DEBUG = DEBUG && false;    // Symbol data logging
+const HYDRATION_DEBUG = DEBUG && true;    // Symbol data logging
 
 if (XP_DEBUG) {
     log.log("🔍 XP Debug logging enabled - will show detailed XP data structures");
@@ -520,6 +520,7 @@ const createWebSocket = () => {
                 
                 // Store latest filings data
                 latestFilings = filings;
+                log.log(`📁 [ORACLE] HYDRATION: Stored ${filings.length} filings in latestFilings`);
 
                 // Log filing object structure only once (from hydration or delta)
                 if (FILING_DEBUG && !hasLoggedFilingStructure && filings.length > 0) {
@@ -534,11 +535,19 @@ const createWebSocket = () => {
                         filingItem.symbols.forEach((symbol) => {
                             store.attachFilingToSymbol(filingItem, symbol);
                             filingAttachmentCount++;
+                            log.log(`📁 [ORACLE] HYDRATION: Attached filing to symbol ${symbol}`);
                         });
                     } else if (filingItem.symbol) {
                         // Handle single symbol case
                         store.attachFilingToSymbol(filingItem, filingItem.symbol);
                         filingAttachmentCount++;
+                        log.log(`📁 [ORACLE] HYDRATION: Attached filing to single symbol ${filingItem.symbol}`);
+                    } else {
+                        log.log(`📁 [ORACLE] HYDRATION: Filing has no symbol or symbols array:`, {
+                            symbol: filingItem.symbol,
+                            symbols: filingItem.symbols,
+                            title: filingItem.title
+                        });
                     }
                 });
                 if (FILING_DEBUG) {
@@ -546,12 +555,18 @@ const createWebSocket = () => {
                 }
 
                 // Broadcast to all configured filing target windows
+                let actualBroadcastCount = 0;
                 FILING_BROADCAST_TARGETS.forEach((windowName) => {
                     const w = windows[windowName];
                     if (w?.webContents && !w.webContents.isDestroyed()) {
                         w.webContents.send("filing-headlines", filings);
+                        actualBroadcastCount++;
+                        log.log(`📁 [ORACLE] HYDRATION: Broadcasted ${filings.length} filings to ${windowName}`);
+                    } else {
+                        log.log(`📁 [ORACLE] HYDRATION: Window '${windowName}' not available for filing broadcast (exists: ${!!w}, destroyed: ${w?.isDestroyed?.()})`);
                     }
                 });
+                log.log(`📁 [ORACLE] HYDRATION: Broadcasted filings to ${actualBroadcastCount}/${FILING_BROADCAST_TARGETS.length} windows`);
 
                 if (FILING_DEBUG) {
                     log.log(`📤 Broadcasted ${filings.length} filings to ${FILING_BROADCAST_TARGETS.length} windows`);
@@ -895,10 +910,12 @@ const getNewsCount = () => {
 // IPC handlers for Filing data requests
 const getFilingHeadlines = () => {
     if (latestFilings) {
+        log.log(`📁 IPC getFilingHeadlines: returning ${latestFilings.length} filings`);
         if (FILING_DEBUG) {
             log.log(`📁 IPC getFilingHeadlines: returning ${latestFilings.length} filings`);
         }
     } else {
+        log.log(`📁 IPC getFilingHeadlines: no filings available`);
         if (FILING_DEBUG) {
             log.log(`📁 IPC getFilingHeadlines: no filings available`);
         }

@@ -546,15 +546,15 @@ body {
     color: #aaa;
 } /* gray */
 
-/* ===================== LARGE 15-MINUTE NEWS LAYOUT ===================== */
+/* ===================== LARGE 4-MINUTE NEWS LAYOUT ===================== */
 .news-item:not(.collapsed) {
-    padding: 16px;
-    margin-bottom: 12px;
-    border-radius: 8px;
+    padding: 0px;
+    margin-bottom: 5px;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.2);
 }
 
 .news-image-container {
-    margin-bottom: 12px;
+    margin-bottom: 5px;
     text-align: center;
 }
 

@@ -1,6 +1,75 @@
-// Global object to store chart instances
+/**
+ * ACTIVE WINDOW - NEWS & FILINGS DISPLAY
+ * 
+ * This file handles the active window's news and filings display functionality.
+ * 
+ * DATA STRUCTURES:
+ * 
+ * News Items (Standardized):
+ * {
+ *   'symbol': 'AAPL',                       # Stock symbol
+ *   'headline': 'Apple Reports Strong Q4 Earnings',
+ *   'source': 'alpaca',                     # or 'alpaca_historical'
+ *   'url': 'https://example.com/news/article',  # Link field
+ *   'published_at': '2025-01-10T14:30:00-04:00',  # ET timezone (primary timestamp)
+ *   'received_at': '2025-01-10T14:35:00-04:00',   # When we got it (fallback)
+ *   'created_at': '2025-01-10T14:30:00-04:00',    # Fallback timestamp
+ *   'updated_at': '2025-01-10T14:30:00-04:00',    # Fallback timestamp
+ *   'is_historical': False,                 # True for historical collector
+ *   'alpaca_id': '12345',                   # Alpaca's internal ID
+ *   'summary': 'Article summary...',        # News summary
+ *   'author': 'John Doe',                   # Article author
+ *   'content': 'Full article content...',   # Article content (not 'body')
+ * }
+ * 
+ * Filing Items (Standardized):
+ * {
+ *   'symbol': 'AAPL',                       # Stock symbol
+ *   'cik': '0000320193',                    # SEC CIK identifier
+ *   'form_type': '8-K',                     # SEC form type
+ *   'form_description': 'Current Report',   # Human-readable form description
+ *   'title': 'Current Report Pursuant to Section 13 or 15(d)',
+ *   'company_name': 'Apple Inc.',
+ *   'accession_number': '000032019325000001',  # Unique SEC identifier
+ *   'accession_with_dashes': '0000320193-25-000001',
+ *   'filing_date': '2025-01-10T14:30:00-04:00',  # ET timezone (primary timestamp)
+ *   'filing_url': 'https://www.sec.gov/Archives/edgar/data/320193/000032019325000001/aapl-8k_20250110.htm',
+ *   'priority': 1,                          # High priority (1=High, 2=Medium, 3=Low)
+ *   'summary': 'Form 8-K filing summary...', # Filing summary
+ *   'source': 'sec_rss',                    # or 'sec_historical'
+ *   'received_at': '2025-01-10T14:35:00-04:00'  # When we received it
+ * }
+ * 
+ * KEY FUNCTIONALITY:
+ * 
+ * 1. NEWS COLLAPSE FEATURE:
+ *    - News items show EXPANDED view (full content, images, author, source) for first 4 minutes
+ *    - After 4 minutes, automatically collapse to COMPACT view (headline, time, author only)
+ *    - Uses ET timezone for accurate time comparison
+ *    - Filings always show in single consistent format (no collapse)
+ * 
+ * 2. TIMESTAMP HANDLING:
+ *    - News: published_at → received_at → created_at → updated_at
+ *    - Filings: filing_date (primary)
+ *    - All timestamps are in ET timezone
+ * 
+ * 3. RENDERING:
+ *    - Combined news + filings timeline, sorted by timestamp (newest first)
+ *    - News items get 'collapsed' or 'expanded' CSS classes
+ *    - Clickable headlines/links open in new tabs
+ *    - Sentiment analysis applied to news items (bullish/bearish/neutral)
+ * 
+ * 4. FILTERING:
+ *    - News filtered by active symbol
+ *    - Blocklist filtering applied to news headlines
+ *    - Filing deduplication by accession_number
+ * 
+ * 5. DEBUG LOGGING:
+ *    - Only enabled in dev mode (isDev flag)
+ *    - Reduced console noise in production
+ */
 
-// todo: price
+// Global object to store chart instances
 window.ownershipCharts = {};
 const symbolColors = {};
 
@@ -11,37 +80,6 @@ let allOracleNews = [];
 let allOracleFilings = [];
 let currentActiveSymbol = null;
 let newsSettings = {}; // Store news settings for sentiment analysis and filtering
-
-// Filing structure debug logging only
-function logFilingStructure(filings, context = "") {
-    if (!Array.isArray(filings) || filings.length === 0) {
-        console.log(`🔍 ${context} - No filings to log`);
-        return;
-    }
-    
-    console.log(`🔍 === FILING STRUCTURE ${context} ===`);
-    console.log(`🔍 Total filings: ${filings.length}`);
-    
-    filings.forEach((filing, index) => {
-        console.log(`🔍 Filing ${index + 1}:`, {
-            symbol: filing.symbol,
-            form_type: filing.form_type,
-            form_description: filing.form_description,
-            title: filing.title,
-            company_name: filing.company_name,
-            accession_number: filing.accession_number,
-            accession_with_dashes: filing.accession_with_dashes,
-            filing_date: filing.filing_date,
-            filing_url: filing.filing_url,
-            summary: filing.summary,
-            cik: filing.cik,
-            priority: filing.priority,
-            source: filing.source,
-            ALL_FIELDS: Object.keys(filing)
-        });
-    });
-    console.log(`🔍 ================================`);
-}
 
 // Mock test data for testing purposes only (not used in dev mode)
 function createMockNewsData() {
@@ -229,8 +267,15 @@ async function initializeOracleNews() {
     });
 }
 
-// Filing integration not needed - filings come from store.attachFilingToSymbol()
-// The active view displays filings from symbolData.Filings (attached by store)
+    // Filing integration not needed - filings come from store.attachFilingToSymbol()
+    // The active view displays filings from symbolData.Filings (attached by store)
+    
+    // Debug: Check if filingAPI is available
+    if (window.filingAPI) {
+        console.log("📁 [ACTIVE] filingAPI is available:", Object.keys(window.filingAPI));
+    } else {
+        console.warn("📁 [ACTIVE] filingAPI not available");
+    }
 
 document.addEventListener("DOMContentLoaded", async () => {
     // console.log("⚡ DOMContentLoaded event fired!");
@@ -280,13 +325,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         // Listen for active ticker updates
         window.activeAPI.onActiveTickerUpdate(async (symbol) => {
-            // console.log(`🔄 Active ticker updated: ${symbol}`);
+            console.log(`🔄 [ACTIVE] Active ticker updated: ${symbol}`);
             const symbolData = await window.activeAPI.getSymbol(symbol);
 
             if (symbolData) {
+                console.log(`🔄 [ACTIVE] Symbol data received for ${symbol}:`, {
+                    hasFilings: !!symbolData.Filings,
+                    filingsCount: symbolData.Filings?.length || 0,
+                    symbolKeys: Object.keys(symbolData)
+                });
                 updateUI(symbolData); // Update UI with symbol data
             } else {
-                console.warn(`[active.js] No data found for symbol: ${symbol}`);
+                console.warn(`[ACTIVE] No data found for symbol: ${symbol}`);
                 updateUI(null); // Show "No active symbol" placeholder
             }
         });
@@ -666,42 +716,36 @@ function formatDate(dateStr) {
     return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric"     });
 }
 
-// Helper function to extract timestamp from different news formats
+// Helper function to extract timestamp from standardized news format
 function getNewsTimestamp(newsItem) {
     // Try different timestamp fields in order of preference
-    if (newsItem.created_at) return new Date(newsItem.created_at).getTime();
-    if (newsItem.received_at) return new Date(newsItem.received_at).getTime();
-    if (newsItem.updated_at) return new Date(newsItem.updated_at).getTime();
+    const timestampStr = newsItem.published_at || newsItem.received_at || newsItem.created_at || newsItem.updated_at;
     
-    // Debug: log what fields are available
-    // console.log("🔍 No timestamp found for news item:", {
-    //     symbol: newsItem.symbol,
-    //     headline: newsItem.headline?.substring(0, 50) + "...",
-    //     availableFields: Object.keys(newsItem),
-    //     created_at: newsItem.created_at,
-    //     received_at: newsItem.received_at,
-    //     updated_at: newsItem.updated_at
-    // });
+    if (!timestampStr) return 0;
     
-    return 0; // fallback
+    // Parse the timestamp string directly (already in ET timezone)
+    return new Date(timestampStr).getTime();
 }
 
 // Helper function to format news timestamps
 function formatNewsTime(ts) {
     const ms = parseTs(ts);
     if (Number.isNaN(ms)) return "";
+    // Backend provides dates in ET timezone, display in ET to preserve original timezone
     const d = new Date(ms);
     const now = new Date();
 
     const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
 
     return sameDay
-        ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        ? d.toLocaleTimeString([], { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })
         : d.toLocaleString([], {
+              timeZone: "America/New_York",
               month: "short",
               day: "numeric",
-              hour: "2-digit",
+              hour: "numeric",
               minute: "2-digit",
+              hour12: true,
           });
 }
 
@@ -768,9 +812,6 @@ function renderOracleNews(symbolData = null) {
     // Get filings from the symbol data itself (attached via store.attachFilingToSymbol)
     const symbolFilings = symbolData?.Filings || [];
     
-    // Log filing structure for debugging
-    console.log(`🔍 Checking filings for ${currentActiveSymbol}: ${symbolFilings.length} filings found`);
-    logFilingStructure(symbolFilings, `FOR SYMBOL ${currentActiveSymbol}`);
     
     // Deduplicate filings by accession_number to prevent double rendering
     const uniqueFilings = symbolFilings.filter((filing, index, self) => {
@@ -799,97 +840,104 @@ function renderOracleNews(symbolData = null) {
     sorted.forEach((item) => {
         if (item.type === 'news') {
             const newsItem = item.data;
-        const sentimentClass = getNewsSentimentClass(newsItem);
-        const isCollapsed = isNewsItemCollapsed(newsItem);
-        const ts = getNewsTimestamp(newsItem);
-        const when = ts ? formatNewsTime(new Date(ts)) : "";
-        
-        const itemDiv = document.createElement("div");
-        itemDiv.className = `news-item ${sentimentClass}${isCollapsed ? ' collapsed' : ''}`;
-        
-        if (isCollapsed) {
-            // Collapsed view: Headline + Time (no symbol since it's always for active symbol)
-            itemDiv.innerHTML = `
-                <h5>${newsItem.headline || "Untitled"}</h5>
-                ${when ? `<div class="news-time">${when}</div>` : ""}
-            `;
-        } else {
-            // Large 15-minute view: Image + Headline + Body + Author + Location + Time
-            itemDiv.innerHTML = `
-                ${newsItem.image_url ? `
-                    <div class="news-image-container">
-                        <img src="${newsItem.image_url}" alt="News image" class="news-image" />
-                        ${newsItem.image_caption ? `<div class="news-image-caption">${newsItem.image_caption}</div>` : ''}
+            const sentimentClass = getNewsSentimentClass(newsItem);
+            const ts = getNewsTimestamp(newsItem);
+            const when = ts ? formatNewsTime(new Date(ts)) : "";
+            const isCollapsed = isNewsItemCollapsed(newsItem);
+            
+            const itemDiv = document.createElement("div");
+            itemDiv.className = `news-item ${sentimentClass} ${isCollapsed ? 'collapsed' : 'expanded'}`;
+            itemDiv.style.padding = '0'; // Reduce padding to match filings
+            itemDiv.style.borderBottom = 'none'; // Remove any default borders
+            
+            // Extract standardized fields
+            const author = newsItem.author || '';            
+            if (isCollapsed) {
+                // Collapsed view - just headline and time
+                itemDiv.innerHTML = `
+                    <div class="news-content">
+                        <h5 class="news-title-clickable" style="cursor: pointer;">${newsItem.headline || "Untitled"}</h5>
+                        <div class="news-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                            <div class="news-meta-left">
+                                ${when ? `<span class="news-time">${when}</span>` : ''}
+                                ${author ? `<span class="news-author" style="margin-left: 8px;">${author}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="news-separator" style="border-bottom: 1px solid #333; margin-top: 8px; margin-bottom: 8px;"></div>
                     </div>
-                ` : ''}
-                <div class="news-content">
-                    <h3 class="news-headline-large">${newsItem.headline || "Untitled"}</h3>
-                    ${newsItem.author || newsItem.location || when ? `
-                        <div class="news-meta">
-                            ${newsItem.author || when ? `
-                                <div class="news-author-time">
-                                 ${when ? `<div class="news-time">${when}</div>` : ''}
-                                    ${newsItem.author ? `<div class="news-author">${newsItem.author}</div>` : ''}
-                                   
-                                </div>
-                            ` : ''}
-                            ${newsItem.location ? `<div class="news-location">${newsItem.location}</div>` : ''}
+                `;
+            } else {
+                // Expanded view - full content with image, body, etc.
+                itemDiv.innerHTML = `
+                    ${newsItem.image_url ? `
+                        <div class="news-image-container">
+                            <img src="${newsItem.image_url}" alt="News image" class="news-image" />
+                            ${newsItem.image_caption ? `<div class="news-image-caption">${newsItem.image_caption}</div>` : ''}
                         </div>
                     ` : ''}
-                    ${newsItem.body || newsItem.summary ? `
-                        <div class="news-body">${newsItem.body || newsItem.summary}</div>
-                    ` : ''}
-                </div>
-            `;
-        }
-        
-        newsContainer.appendChild(itemDiv);
+                    <div class="news-content">
+                        <h5 class="news-title-clickable" style="cursor: pointer;">${newsItem.headline || "Untitled"}</h5>
+                        ${newsItem.content || newsItem.summary ? `
+                            <div class="news-body">${newsItem.content || newsItem.summary}</div>
+                        ` : ''}
+                        <div class="news-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <div class="news-meta-left">
+                                ${when ? `<span class="news-time">${when}</span>` : ''}
+                                ${author ? `<span class="news-author" style="margin-left: 8px;">${author}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="news-separator" style="border-bottom: 1px solid #333; margin-top: 8px; margin-bottom: 8px;"></div>
+                    </div>
+                `;
+            }
+            
+            // Make only the headline clickable if there's a URL
+            if (newsItem.url) {
+                const titleElement = itemDiv.querySelector('.news-title-clickable');
+                if (titleElement) {
+                    titleElement.addEventListener("click", () => {
+                        window.open(newsItem.url, "_blank", "noopener,noreferrer");
+                    });
+                }
+            }
+            
+            newsContainer.appendChild(itemDiv);
         } else if (item.type === 'filing') {
             const filingItem = item.data;
-            const isCollapsed = isFilingItemCollapsed(filingItem);
             const ts = getFilingTimestamp(filingItem);
             const when = ts ? formatFilingTime(new Date(ts)) : "";
             
             const itemDiv = document.createElement("div");
-            itemDiv.className = `filing-item${isCollapsed ? ' collapsed' : ''}`;
+            itemDiv.className = `filing-item`;
+            itemDiv.style.padding = '0'; // Consistent padding with news items
+            itemDiv.style.borderBottom = 'none'; // Remove any default borders
             
-            // Make the entire filing item clickable if there's a URL
-            if (filingItem.filing_url) {
-                itemDiv.style.cursor = "pointer";
-                itemDiv.addEventListener("click", () => {
-                    window.open(filingItem.filing_url, "_blank", "noopener,noreferrer");
-                });
-            }
-
-            if (isCollapsed) {
-                // Collapsed view: Form Type + Title + Time
-                itemDiv.innerHTML = `
-                    <h5>${filingItem.symbol} has filed a ${filingItem.form_type} ${filingItem.form_description}</h5>
-                    ${when ? `<div class="filing-time">${when}</div>` : ""}
-                   
-                `;
-            } else {
-                // Large 15-minute view: Full Title + Company + Time + Summary + URL
-                itemDiv.innerHTML = `
-                    <div class="filing-content">
-                        <h3 class="filing-title-large">${filingItem.title}</h3>
-                        ${filingItem.company_name || when ? `
-                            <div class="filing-meta">
-                                ${when ? `<div class="filing-time">${when}</div>` : ''}
-                                ${filingItem.company_name ? `<div class="filing-company">${filingItem.company_name}</div>` : ''}
-                            </div>
-                        ` : ''}
-                        ${filingItem.summary ? `
-                            <div class="filing-summary">${filingItem.summary}</div>
-                        ` : ''}
-                        <div class="filing-accession">Accession: ${filingItem.accession_with_dashes}</div>
-                        ${filingItem.filing_url ? `
-                            <div class="filing-url">
-                                <span class="filing-link-text">📄 Click anywhere to view on SEC.gov</span>
-                            </div>
-                        ` : ''}
+            // Standardized filing format: Form Type - Title, Description, Time + SEC.gov link
+            const formType = filingItem.form_type || 'Filing';
+            const title = filingItem.title || 'SEC Filing';
+            const description = filingItem.form_description || '';
+            const secLink = filingItem.filing_url ? 'SEC.gov' : '';
+            
+            itemDiv.innerHTML = `
+                <h5 class="filing-title-clickable" style="cursor: pointer;">Form ${title}</h5>
+                ${description ? `<div class="filing-description">${description}</div>` : ''}
+                <div class="filing-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <div class="filing-meta-left">
+                        ${when ? `<span class="filing-time">${when}</span>` : ''}
                     </div>
-                `;
+                    ${secLink ? `<span class="filing-sec-link">${secLink}</span>` : ''}
+                </div>
+                <div class="filing-separator" style="border-bottom: 1px solid #333; margin-top: 8px; margin-bottom: 8px;"></div>
+            `;
+            
+            // Make only the title clickable if there's a URL
+            if (filingItem.filing_url) {
+                const titleElement = itemDiv.querySelector('.filing-title-clickable');
+                if (titleElement) {
+                    titleElement.addEventListener("click", () => {
+                        window.open(filingItem.filing_url, "_blank", "noopener,noreferrer");
+                    });
+                }
             }
             
             newsContainer.appendChild(itemDiv);
@@ -904,50 +952,54 @@ function renderOracleNews(symbolData = null) {
 
 // renderOracleFilings function removed - filings now handled in renderOracleNews()
 
-// Helper function to extract timestamp from filing objects
+// Helper function to extract timestamp from standardized filing format
 function getFilingTimestamp(filingItem) {
-    return filingItem.filing_date ? new Date(filingItem.filing_date).getTime() : 0;
+    if (filingItem.filing_date) {
+        return new Date(filingItem.filing_date).getTime();
+    }
+    
+    if (isDev) {
+        console.log(`📁 [ACTIVE] Filing ${filingItem.symbol || 'unknown'} has no filing_date, using 0 timestamp`);
+    }
+    
+    return 0; // fallback
 }
 
 // Helper function to format filing timestamps
 function formatFilingTime(ts) {
     const ms = parseTs(ts);
     if (Number.isNaN(ms)) return "";
+    // Backend provides dates in ET timezone, display in ET to preserve original timezone
     const d = new Date(ms);
     const now = new Date();
 
     const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
 
     return sameDay
-        ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        ? d.toLocaleTimeString([], { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })
         : d.toLocaleString([], {
+              timeZone: "America/New_York",
               month: "short",
               day: "numeric",
-              hour: "2-digit",
+              hour: "numeric",
               minute: "2-digit",
+              hour12: true,
           });
 }
 
-// Check if filing item is older than 15 minutes (should be collapsed)
-function isFilingItemCollapsed(filingItem) {
-    const ms = getFilingTimestamp(filingItem);
-    if (!ms || Number.isNaN(ms)) return true; // If no timestamp, treat as collapsed
-    
-    const now = Date.now();
-    const fifteenMinutesInMs = 15 * 60 * 1000; // 15 minutes in milliseconds
-    
-    return (now - ms) > fifteenMinutesInMs;
-}
 
-// Check if news item is older than 15 minutes (should be collapsed)
+// Check if news item is older than 4 minutes (should be collapsed)
 function isNewsItemCollapsed(newsItem) {
-    const ms = getNewsTimestamp(newsItem);
-    if (!ms || Number.isNaN(ms)) return true; // If no timestamp, treat as collapsed
+    const ts = newsItem.published_at ?? newsItem.received_at ?? newsItem.created_at ?? newsItem.updated_at;
+    if (!ts) return true; // If no timestamp, treat as collapsed
+    
+    const ms = parseTs(ts);
+    if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
-    const fifteenMinutesInMs = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
     
-    return (now - ms) > fifteenMinutesInMs;
+    return (now - ms) > fourMinutesInMs;
 }
 
 /**

@@ -6,7 +6,52 @@ const CONFIG = {
     HOT_MARKET_THRESHOLD: 0.40, // >35% more buying = hot market (bullish)
     WARM_MARKET_THRESHOLD: 0.20, // >20% more buying = warm market
     COOL_MARKET_THRESHOLD: 0.20, // >20% more selling = cool market
-    COLD_MARKET_THRESHOLD: 0.40 // >35% more selling = cold market (bearish)
+    COLD_MARKET_THRESHOLD: 0.40, // >35% more selling = cold market (bearish)
+    MAX_EVENTS_PER_BATCH: 50, // Maximum events to process in one batch
+    MEMORY_CLEANUP_INTERVAL: 30000, // Clean up memory every 30 seconds
+    DEBUG_LOGGING: false, // Disable excessive debug logging in production
+    LOG_THROTTLE_INTERVAL: 60000 // Only log debug info once per minute max
+};
+
+// Development logging controls to prevent memory leaks
+const debugLog = {
+    lastSessionLog: 0,
+    lastTimeLog: 0,
+    
+    // Throttled session logging - only log when session actually changes or every minute
+    session: function(message, force = false) {
+        const now = Date.now();
+        if (force || (now - this.lastSessionLog) > CONFIG.LOG_THROTTLE_INTERVAL) {
+            if (CONFIG.DEBUG_LOGGING || force) {
+                console.log(`[progress] ${message}`);
+            }
+            this.lastSessionLog = now;
+        }
+    },
+    
+    // Throttled time logging - only log once per minute instead of every second
+    time: function(message) {
+        const now = Date.now();
+        if (CONFIG.DEBUG_LOGGING && (now - this.lastTimeLog) > CONFIG.LOG_THROTTLE_INTERVAL) {
+            console.log(`[progress] ${message}`);
+            this.lastTimeLog = now;
+        }
+    },
+    
+    // Regular logging for important events
+    info: function(message) {
+        console.log(`[progress] ${message}`);
+    },
+    
+    // Warning logging (always shown)
+    warn: function(message) {
+        console.warn(`[progress] ${message}`);
+    },
+    
+    // Error logging (always shown)
+    error: function(message) {
+        console.error(`[progress] ${message}`);
+    }
 };
 
 // Trading session definitions (in 24-hour format)
@@ -24,7 +69,9 @@ const sessionData = {
     buyVolume: 0,
     sellVolume: 0,
     totalTrades: 0,
-    lastUpdate: Date.now()
+    lastUpdate: Date.now(),
+    eventBuffer: [], // Buffer for batching events
+    maxBufferSize: 100 // Limit buffer size to prevent memory leaks
 };
 
 // DOM element cache
@@ -46,17 +93,17 @@ function getCurrentSession() {
     const nyTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
     const currentHour = nyTime.getHours() + (nyTime.getMinutes() / 60);
     
-    console.log(`[progress] Current NY time: ${nyTime.toLocaleTimeString()}, Hour: ${currentHour.toFixed(2)}`);
+    debugLog.time(`Current NY time: ${nyTime.toLocaleTimeString()}, Hour: ${currentHour.toFixed(2)}`);
     
     for (const [key, session] of Object.entries(SESSIONS)) {
         if (currentHour >= session.start && currentHour < session.end) {
-            console.log(`[progress] Active session: ${session.name} (${session.start}:00 - ${session.end}:00)`);
+            debugLog.session(`Active session: ${session.name} (${session.start}:00 - ${session.end}:00)`);
             return { key, ...session };
         }
     }
     
     // Default to POST session if outside trading hours
-    console.log(`[progress] Outside trading hours, defaulting to POST session`);
+    debugLog.session(`Outside trading hours, defaulting to POST session`);
     return { key: 'POST', ...SESSIONS.POST };
 }
 
@@ -185,7 +232,7 @@ function initializeElements() {
     elements.countdownTimer = document.getElementById("countdown-timer");
     
     if (!elements.buyBar || !elements.sellBar || !elements.container) {
-        console.warn("[progress] Required DOM elements not found");
+        debugLog.warn("Required DOM elements not found");
         return false;
     }
     
@@ -196,7 +243,7 @@ function initializeElements() {
 }
 
 
-// Process market events for buy/sell tracking
+// Process market events for buy/sell tracking with batching
 function processMarketEvent(event) {
     // Early validation
     if (!event.hp && !event.dp) return;
@@ -210,32 +257,92 @@ function processMarketEvent(event) {
         resetSessionData(currentSession);
     }
 
-    // Determine if this is a buy or sell based on hp/dp values
-    // hp > dp = buying pressure, dp > hp = selling pressure
-    const buyPressure = event.hp || 0;
-    const sellPressure = event.dp || 0;
+    // Add to buffer instead of processing immediately
+    sessionData.eventBuffer.push({
+        hp: event.hp || 0,
+        dp: event.dp || 0,
+        volume: volume,
+        timestamp: Date.now()
+    });
     
-    if (buyPressure > sellPressure) {
-        sessionData.buyVolume += volume;
-    } else if (sellPressure > buyPressure) {
-        sessionData.sellVolume += volume;
+    // Prevent buffer overflow
+    if (sessionData.eventBuffer.length > sessionData.maxBufferSize) {
+        sessionData.eventBuffer.shift(); // Remove oldest event
     }
     
-    sessionData.totalTrades++;
+    // Process buffer in batches
+    processBatchedEvents();
+}
+
+// Process events in batches to reduce memory pressure
+function processBatchedEvents() {
+    if (sessionData.eventBuffer.length === 0) return;
+    
+    let totalBuyVolume = 0;
+    let totalSellVolume = 0;
+    let tradeCount = 0;
+    
+    // Process events in smaller batches to prevent memory spikes
+    const batchSize = Math.min(sessionData.eventBuffer.length, CONFIG.MAX_EVENTS_PER_BATCH);
+    const eventsToProcess = sessionData.eventBuffer.splice(0, batchSize);
+    
+    // Process batch
+    for (const event of eventsToProcess) {
+        if (event.hp > event.dp) {
+            totalBuyVolume += event.volume;
+        } else if (event.dp > event.hp) {
+            totalSellVolume += event.volume;
+        }
+        tradeCount++;
+    }
+    
+    // Update session data
+    sessionData.buyVolume += totalBuyVolume;
+    sessionData.sellVolume += totalSellVolume;
+    sessionData.totalTrades += tradeCount;
     sessionData.lastUpdate = Date.now();
     
-    // Update display
-    updateSessionDisplay();
+    // Update display (throttled)
+    throttledUpdateDisplay();
+    
+    // If there are more events, schedule another batch processing
+    if (sessionData.eventBuffer.length > 0) {
+        requestAnimationFrame(processBatchedEvents);
+    }
 }
 
 // Reset session data for new session
 function resetSessionData(newSession) {
-    console.log(`[progress] Starting new session: ${newSession.name}`);
+    debugLog.info(`Starting new session: ${newSession.name}`);
     sessionData.current = newSession.key;
     sessionData.buyVolume = 0;
     sessionData.sellVolume = 0;
     sessionData.totalTrades = 0;
     sessionData.lastUpdate = Date.now();
+    // Clear event buffer to prevent memory leaks
+    sessionData.eventBuffer.length = 0;
+}
+
+// Throttled display update to prevent excessive DOM manipulation
+let displayUpdatePending = false;
+let lastDisplayUpdate = 0;
+const DISPLAY_UPDATE_THROTTLE = 250; // Update max every 250ms
+
+function throttledUpdateDisplay() {
+    const now = Date.now();
+    if (displayUpdatePending || (now - lastDisplayUpdate) < DISPLAY_UPDATE_THROTTLE) {
+        if (!displayUpdatePending) {
+            displayUpdatePending = true;
+            requestAnimationFrame(() => {
+                updateSessionDisplay();
+                displayUpdatePending = false;
+                lastDisplayUpdate = Date.now();
+            });
+        }
+        return;
+    }
+    updateSessionDisplay();
+    lastDisplayUpdate = now;
 }
 
 // Update session display with buy/sell data
@@ -367,10 +474,54 @@ function checkSessionAndUpdate() {
     updateSessionDisplay();
 }
 
+// Store intervals for proper cleanup
+const intervals = {
+    updateInterval: null,
+    clockInterval: null,
+    memoryCleanupInterval: null
+};
+
+// Periodic memory cleanup to prevent leaks
+function performMemoryCleanup() {
+    // Force garbage collection hint
+    if (window.gc && typeof window.gc === 'function') {
+        window.gc();
+    }
+    
+    // Clear console buffer in development to prevent memory accumulation
+    if (typeof console.clear === 'function' && performance && performance.memory) {
+        const memoryInfo = performance.memory;
+        const usedMB = Math.round(memoryInfo.usedJSHeapSize / 1024 / 1024);
+        
+        // Clear console if memory usage is high (>1GB) to free up dev tools memory
+        if (usedMB > 1024) {
+            console.clear();
+            debugLog.info(`Cleared console buffer due to high memory usage: ${usedMB}MB`);
+        }
+    }
+    
+    // Clear old event buffer data if it gets too large
+    if (sessionData.eventBuffer.length > sessionData.maxBufferSize * 2) {
+        debugLog.warn("Event buffer too large, clearing oldest events");
+        sessionData.eventBuffer = sessionData.eventBuffer.slice(-sessionData.maxBufferSize);
+    }
+    
+    // Log memory usage if available (throttled)
+    if (performance && performance.memory) {
+        const memoryInfo = performance.memory;
+        const usedMB = Math.round(memoryInfo.usedJSHeapSize / 1024 / 1024);
+        const limitMB = Math.round(memoryInfo.jsHeapSizeLimit / 1024 / 1024);
+        
+        if (usedMB > limitMB * 0.8) { // If using >80% of available memory
+            debugLog.warn(`High memory usage: ${usedMB}MB/${limitMB}MB`);
+        }
+    }
+}
+
 // Initialize the application
 function initialize() {
     if (!initializeElements()) {
-        console.error("[progress] Failed to initialize DOM elements");
+        debugLog.error("Failed to initialize DOM elements");
         return;
     }
 
@@ -392,8 +543,11 @@ function initialize() {
         });
     }
 
-    // Set up periodic updates
-    const updateInterval = setInterval(checkSessionAndUpdate, CONFIG.UPDATE_INTERVAL);
+    // Set up periodic updates with proper interval tracking
+    intervals.updateInterval = setInterval(checkSessionAndUpdate, CONFIG.UPDATE_INTERVAL);
+    
+    // Set up periodic memory cleanup
+    intervals.memoryCleanupInterval = setInterval(performMemoryCleanup, CONFIG.MEMORY_CLEANUP_INTERVAL);
     
     // Initial display update - do this first to show current time immediately
     updateSessionDisplay();
@@ -410,25 +564,61 @@ function initialize() {
         updateCountdown();
         
         // Then continue updating every second
-        const clockInterval = setInterval(() => {
+        intervals.clockInterval = setInterval(() => {
             updateNYClock();
             updateCountdown();
         }, 1000);
-        
-        // Store interval for cleanup
-        window.clockInterval = clockInterval;
     }, delayToNextSecond);
 
-    console.log(`[progress] Initialized for session: ${currentSession.name}`);
+    debugLog.info(`Initialized for session: ${currentSession.name}`);
 
     // Cleanup function
     return () => {
-        clearInterval(updateInterval);
-        if (window.clockInterval) {
-            clearInterval(window.clockInterval);
+        if (intervals.updateInterval) {
+            clearInterval(intervals.updateInterval);
+            intervals.updateInterval = null;
         }
+        if (intervals.clockInterval) {
+            clearInterval(intervals.clockInterval);
+            intervals.clockInterval = null;
+        }
+        if (intervals.memoryCleanupInterval) {
+            clearInterval(intervals.memoryCleanupInterval);
+            intervals.memoryCleanupInterval = null;
+        }
+        // Clear any pending animation frames
+        if (displayUpdatePending) {
+            displayUpdatePending = false;
+        }
+        // Clear event buffer to free memory
+        sessionData.eventBuffer.length = 0;
     };
 }
+
+// Cleanup function for page unload
+function cleanup() {
+    if (intervals.updateInterval) {
+        clearInterval(intervals.updateInterval);
+        intervals.updateInterval = null;
+    }
+    if (intervals.clockInterval) {
+        clearInterval(intervals.clockInterval);
+        intervals.clockInterval = null;
+    }
+    if (intervals.memoryCleanupInterval) {
+        clearInterval(intervals.memoryCleanupInterval);
+        intervals.memoryCleanupInterval = null;
+    }
+    if (displayUpdatePending) {
+        displayUpdatePending = false;
+    }
+    sessionData.eventBuffer.length = 0;
+    debugLog.info("Cleaned up intervals and memory");
+}
+
+// Add cleanup on page unload to prevent memory leaks
+window.addEventListener('beforeunload', cleanup);
+window.addEventListener('unload', cleanup);
 
 // Start the application when DOM is ready
 if (document.readyState === 'loading') {
