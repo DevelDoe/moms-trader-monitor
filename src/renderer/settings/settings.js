@@ -1838,19 +1838,19 @@ function initializeStatsSettingsSection() {
     async function loadStatsSettings() {
         try {
             const statsSettings = await window.statsSettingsAPI.get();
-            statsListLengthInput.value = statsSettings.listLength || 25;
+            statsListLengthInput.value = statsSettings.listLength || 50;
             console.log("✅ Loaded Stats settings:", statsSettings);
         } catch (error) {
             console.error("❌ Failed to load Stats settings:", error);
-            statsListLengthInput.value = 25; // fallback
+            statsListLengthInput.value = 50; // fallback
         }
     }
 
     // Save Stats settings
     async function saveStatsSettings() {
         try {
-            const newLength = parseInt(statsListLengthInput.value, 10) || 25;
-            const clampedLength = Math.max(1, Math.min(50, newLength));
+            const newLength = parseInt(statsListLengthInput.value, 10) || 50;
+            const clampedLength = Math.max(1, Math.min(100, newLength));
             
             if (clampedLength !== newLength) {
                 statsListLengthInput.value = clampedLength;

@@ -437,7 +437,7 @@ const createWebSocket = () => {
             // Create data for windows that need symbols_sorted_by_net_xp (scrollXp, sessionHistory, scrollStats)
             const netXpSortedData = {
                 ...activeStocks,
-                symbols: activeStocks.symbols_sorted_by_net_xp ? activeStocks.symbols_sorted_by_net_xp.slice(0, 50) : []
+                symbols: activeStocks.symbols_sorted_by_net_xp ? activeStocks.symbols_sorted_by_net_xp.slice(0, 100) : []
             };
 
             // Broadcast net XP sorted data to scrollXp, sessionHistory, scrollStats
@@ -446,7 +446,7 @@ const createWebSocket = () => {
             // Create data for windows that need original symbols list (sorted by session_change_percent)
             const changeSortedData = {
                 ...activeStocks,
-                symbols: activeStocks.symbols ? activeStocks.symbols.slice(0, 50) : []
+                symbols: activeStocks.symbols ? activeStocks.symbols.slice(0, 100) : []
             };
 
             // Broadcast change sorted data to scrollChange
@@ -1079,7 +1079,7 @@ const getChangeActiveStocks = () => {
     if (latestActiveStocks) {
         return {
             ...latestActiveStocks,
-            symbols: latestActiveStocks.symbols ? latestActiveStocks.symbols.slice(0, 50) : []
+            symbols: latestActiveStocks.symbols ? latestActiveStocks.symbols.slice(0, 100) : []
         };
     }
     return null;

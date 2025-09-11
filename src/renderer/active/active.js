@@ -247,11 +247,10 @@ async function initializeOracleNews() {
 
     window.newsAPI.onDelta((newsItem) => {
         if (newsItem) {
-            // Dump delta news object structure
-            // console.log("🔍 === DELTA NEWS OBJECT ===");
-            // console.log("🔍 Delta news item:", newsItem);
-            // console.log("🔍 Available fields:", Object.keys(newsItem));
-            // console.log("🔍 =========================");
+            console.log("🔍 [ACTIVE] === DELTA NEWS OBJECT ===");
+            console.log("🔍 [ACTIVE] Delta news item:", newsItem);
+            console.log("🔍 [ACTIVE] Available fields:", Object.keys(newsItem));
+            console.log("🔍 [ACTIVE] =========================");
             
             // Add to beginning for latest first
             allOracleNews.unshift(newsItem);
@@ -261,8 +260,23 @@ async function initializeOracleNews() {
                 allOracleNews = allOracleNews.slice(0, 1000);
             }
             
-            // console.log(`📰 Active view delta: +1 (total: ${allOracleNews.length})`);
-            // Filing display now handled in renderOracleNews() when UI updates
+            console.log(`📰 [ACTIVE] Delta: +1 (total: ${allOracleNews.length})`);
+            
+            // Re-render to show the new item immediately (only if we have an active symbol)
+            if (currentActiveSymbol) {
+                // Get current symbol data before re-rendering
+                window.activeAPI.getSymbol(currentActiveSymbol).then((symbolData) => {
+                    if (symbolData) {
+                        renderOracleNews(symbolData);
+                    } else {
+                        console.log("📰 [ACTIVE] Delta: No symbol data available for", currentActiveSymbol);
+                    }
+                }).catch((e) => {
+                    console.warn("📰 [ACTIVE] Delta: Failed to get symbol data:", e);
+                });
+            } else {
+                console.log("📰 [ACTIVE] Delta: No active symbol, skipping render");
+            }
         }
     });
 
@@ -339,11 +353,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initializeOracleNews();
     
     // Start the collapse timer to ensure news items collapse after 4 minutes
-    startCollapseTimer();
+    // Timer removed for performance - collapse logic now handled on re-renders
 
     // Clean up timer when window is closed or unloaded
     window.addEventListener('beforeunload', () => {
-        stopCollapseTimer();
+        // Timer cleanup removed - no longer needed
     });
 
     // Initialize UI with no symbol data
@@ -794,6 +808,8 @@ function parseTs(t) {
 
 // Render Oracle news and filings for the active symbol (summary page only)
 function renderOracleNews(symbolData = null) {
+    console.log(`📰 [ACTIVE] renderOracleNews called - Active symbol: ${currentActiveSymbol}, Total news: ${allOracleNews.length}, Symbol data provided: ${!!symbolData}`);
+    
     // Find the news container in the summary page
     const newsContainer = document.querySelector("#news-container");
     
@@ -804,9 +820,14 @@ function renderOracleNews(symbolData = null) {
     
     newsContainer.innerHTML = "";
     
-    // console.log(`🔍 renderOracleNews called - Active symbol: ${currentActiveSymbol}, Total news: ${allOracleNews.length}, Symbol filings: ${symbolData?.Filings?.length || 0}`);
+    if (!currentActiveSymbol) {
+        console.log("📰 [ACTIVE] No active symbol, showing placeholder");
+        newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no active symbol</p>';
+        return;
+    }
     
-    if (!currentActiveSymbol || !symbolData) {
+    if (!symbolData) {
+        console.log("📰 [ACTIVE] No symbol data provided, showing placeholder");
         newsContainer.innerHTML = '<p style="opacity:0.1; color: white">no active symbol</p>';
         return;
     }
@@ -817,8 +838,14 @@ function renderOracleNews(symbolData = null) {
     // Filter news for the current active symbol
     const symbolNews = allOracleNews.filter((newsItem) => {
         const newsSymbol = newsItem.symbol || newsItem.symbols?.[0];
-        return newsSymbol && newsSymbol.toUpperCase() === currentActiveSymbol.toUpperCase();
+        const matches = newsSymbol && newsSymbol.toUpperCase() === currentActiveSymbol.toUpperCase();
+        if (!matches && newsItem.symbol) {
+            console.log(`📰 [ACTIVE] News item filtered out - Symbol: ${newsSymbol}, Active: ${currentActiveSymbol}`);
+        }
+        return matches;
     });
+    
+    console.log(`📰 [ACTIVE] Filtered ${symbolNews.length} news items for symbol ${currentActiveSymbol} from ${allOracleNews.length} total`);
     
     // Apply blocklist filtering to news
     const blockList = newsSettings?.blockList || [];
@@ -877,6 +904,18 @@ function renderOracleNews(symbolData = null) {
             const ts = getNewsTimestamp(newsItem);
             const when = ts ? formatNewsTime(new Date(ts)) : "";
             const isCollapsed = isNewsItemCollapsed(newsItem);
+            
+            console.log(`📰 [ACTIVE] Rendering news item:`, {
+                symbol: newsItem.symbol,
+                headline: newsItem.headline?.substring(0, 50) + "...",
+                timestamp: ts,
+                when: when,
+                isCollapsed: isCollapsed,
+                published_at: newsItem.published_at,
+                received_at: newsItem.received_at,
+                created_at: newsItem.created_at,
+                updated_at: newsItem.updated_at
+            });
             
             const itemDiv = document.createElement("div");
             itemDiv.className = `news-item ${sentimentClass} ${isCollapsed ? 'collapsed' : 'expanded'}`;
@@ -1050,31 +1089,7 @@ function isNewsItemCollapsed(newsItem) {
     return ageInMs > fourMinutesInMs;
 }
 
-// Timer to periodically re-render news items so they can collapse after 4 minutes
-let collapseTimer = null;
-
-function startCollapseTimer() {
-    // Clear any existing timer
-    if (collapseTimer) {
-        clearInterval(collapseTimer);
-    }
-    
-    // Check every 15 seconds for items that need to collapse (more frequent for better responsiveness)
-    collapseTimer = setInterval(() => {
-        // console.log("📰 [ACTIVE] Collapse timer: checking for items to collapse");
-        renderOracleNews();
-    }, 15000); // 15 seconds (more frequent than 30s for better timing accuracy)
-    
-    // console.log("📰 [ACTIVE] Collapse timer started: checking every 15 seconds");
-}
-
-function stopCollapseTimer() {
-    if (collapseTimer) {
-        clearInterval(collapseTimer);
-        collapseTimer = null;
-        // console.log("📰 [ACTIVE] Collapse timer stopped");
-    }
-}
+// Timer removed for performance - collapse logic now handled on re-renders
 
 /**
  * Converts a decimal ratio (0-1) into a human-readable percentage.

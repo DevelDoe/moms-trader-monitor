@@ -1079,14 +1079,14 @@ if (app && ipcMain && typeof app.on === "function" && !app.__hod_settings_ipc_re
 const statsSettingsStore = createStore("stats-settings-store", "stats.");
 const statsSettingsBus = new EventEmitter();
 
-let _statsListLength = statsSettingsStore.get("listLength", 25); // Default to 25
+let _statsListLength = statsSettingsStore.get("listLength", 50); // Default to 50
 
 function getStatsListLength() {
     return _statsListLength;
 }
 
 function setStatsListLength(length) {
-    const newLength = Math.max(1, Number(length) || 25);
+    const newLength = Math.max(1, Number(length) || 50);
     if (newLength === _statsListLength) return false;
     
     _statsListLength = newLength;
@@ -1548,6 +1548,11 @@ const DEFAULT_WINDOW_STATES = {
     sessionHistoryWindow: {
         width: 532,
         height: 168,
+        isOpen: false,
+    },
+    haltsWindow: {
+        width: 850,
+        height: 660,
         isOpen: false,
     },
 };

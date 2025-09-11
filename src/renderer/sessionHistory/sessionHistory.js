@@ -10,8 +10,7 @@ let sessionHistoryData = null;
 let activeStocksData = null;
 let currentSort = { column: 'session_name', direction: 'asc' };
 
-// Symbol colors (same as XP view)
-const symbolColors = {};
+// Symbol colors now handled by the symbol component
 
 // Session timing configuration (NY time)
 const SESSION_TIMES = {
@@ -102,21 +101,7 @@ function renderSessionHistory() {
 
     container.innerHTML = tableHtml;
     
-    // Add click functionality to symbols (same as XP view)
-    container.querySelectorAll(".stock-symbol").forEach((el) => {
-        el.addEventListener("click", (e) => {
-            const symbol = el.textContent.trim();
-            try {
-                navigator.clipboard.writeText(symbol);
-                if (window.activeAPI?.setActiveTicker) window.activeAPI.setActiveTicker(symbol);
-                el.classList.add("stock-symbol-clicked");
-                setTimeout(() => el.classList.remove("stock-symbol-clicked"), 200);
-            } catch (err) {
-                window.log.error(`Failed to handle click for ${symbol}`, err);
-            }
-            e.stopPropagation();
-        });
-    });
+    // Click handling is now done by the symbol component
 }
 
 // Generate rows for top 3 stocks in each phase
@@ -161,9 +146,11 @@ function generateTopStocksRows(sessions, activeStocks, currentSession) {
                 
                 rows += `
                     <td class="stock-cell ${isCurrentSession ? 'current-session-cell' : ''}">
-                        <div class="stock-symbol" style="background: ${getSymbolColor(stock.symbol)};" data-symbol="${stock.symbol}">
-                            ${stock.symbol || 'N/A'}
-                        </div>
+                        ${window.components.Symbol({ 
+                            symbol: stock.symbol || 'N/A', 
+                            size: "small",
+                            onClick: true
+                        })}
                     </td>
                 `;
             } else {
@@ -214,6 +201,24 @@ function getTopStocksForPhase(sessions, phaseName, currentSession) {
 
 // Initialize the view
 document.addEventListener('DOMContentLoaded', async () => {
+    // Set up event delegation for symbol clicks
+    document.addEventListener('click', function(event) {
+        const symbolElement = event.target.closest('.symbol[data-clickable="true"]');
+        if (symbolElement) {
+            const symbol = symbolElement.getAttribute('data-symbol');
+            if (symbol) {
+                console.log(`🖱️ [SessionHistory] Symbol clicked: ${symbol}`);
+                window.handleSymbolClick(symbol, event);
+            }
+        }
+    });
+
+    // Wait for activeAPI to be available
+    while (!window.activeAPI) {
+        await new Promise((r) => setTimeout(r, 100));
+    }
+    console.log("✅ SessionHistory view - activeAPI is now available");
+
     try {
         // Get initial session history data
         sessionHistoryData = await window.xpAPI.getSessionHistory();
@@ -256,15 +261,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // -------------------- helpers --------------------
 
-// Get symbol color (same as XP view)
-function getSymbolColor(symbol) {
-    if (!symbolColors[symbol]) {
-        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const hue = (hash * 37) % 360;
-        const saturation = 80;
-        const lightness = 50;
-        const alpha = 0.5;
-        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
-    }
-    return symbolColors[symbol];
-}
+// Symbol color generation is now handled by the symbol component

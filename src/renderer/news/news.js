@@ -39,6 +39,24 @@ function logFilingStructure(filings, context = "") {
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ News: Hydrating from Oracle...");
 
+    // Set up event delegation for symbol clicks
+    document.addEventListener('click', function(event) {
+        const symbolElement = event.target.closest('.symbol[data-clickable="true"]');
+        if (symbolElement) {
+            const symbol = symbolElement.getAttribute('data-symbol');
+            if (symbol) {
+                console.log(`🖱️ [News] Symbol clicked: ${symbol}`);
+                window.handleSymbolClick(symbol, event);
+            }
+        }
+    });
+
+    // Wait for activeAPI to be available
+    while (!window.activeAPI) {
+        await new Promise((r) => setTimeout(r, 100));
+    }
+    console.log("✅ News view - activeAPI is now available");
+
     // Load settings globally for sentiment analysis
     try {
         settings = await window.settingsAPI.get();
@@ -120,11 +138,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     render();
 
     // Start periodic re-render timer to collapse items after 4 minutes
-    startCollapseTimer();
+    // Timer removed for performance - collapse logic now handled on re-renders
     
     // Clean up timer when window is closed or unloaded
     window.addEventListener('beforeunload', () => {
-        stopCollapseTimer();
+        // Timer cleanup removed - no longer needed
     });
 
     // 2. SUBSCRIBE - Listen for Oracle news and filing updates
@@ -578,28 +596,4 @@ function parseTs(t) {
     return Number.isNaN(d) ? NaN : d;
 }
 
-// Timer to periodically re-render news items so they can collapse after 4 minutes
-let collapseTimer = null;
-
-function startCollapseTimer() {
-    // Clear any existing timer
-    if (collapseTimer) {
-        clearInterval(collapseTimer);
-    }
-    
-    // Check every 15 seconds for items that need to collapse (more frequent for better responsiveness)
-    collapseTimer = setInterval(() => {
-        // console.log("📰 [NEWS] Collapse timer: checking for items to collapse");
-        render();
-    }, 15000); // 15 seconds (more frequent than 30s for better timing accuracy)
-    
-    // console.log("📰 [NEWS] Collapse timer started: checking every 15 seconds");
-}
-
-function stopCollapseTimer() {
-    if (collapseTimer) {
-        clearInterval(collapseTimer);
-        collapseTimer = null;
-        // console.log("📰 [NEWS] Collapse timer stopped");
-    }
-}
+// Timer removed for performance - collapse logic now handled on re-renders

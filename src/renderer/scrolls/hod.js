@@ -20,14 +20,7 @@ function silverTone(pctBelowHigh) {
 
     return `hsla(210, ${sat}%, ${light}%, ${alpha.toFixed(2)})`;
 }
-const symbolColors = {};
-function getSymbolColor(sym) {
-    if (!symbolColors[sym]) {
-        const hash = [...sym].reduce((a, c) => a + c.charCodeAt(0), 0);
-        symbolColors[sym] = `hsla(${(hash * 37) % 360},80%,50%,0.5)`;
-    }
-    return symbolColors[sym];
-}
+// Symbol color generation is now handled by the symbol component
 
 /* 1) Config (hardcoded; volumes from settingsAPI.hod) */
 const GOLD_HEX = "#ffd24a";
@@ -349,7 +342,11 @@ function render() {
   <div class="xp-line ellipsis ${isMoving ? "moving" : ""} ${dirClass} ${animationClass}" data-ath="${atHigh ? 1 : 0}">
     <span class="rank ${rankClass}">${index + 1}</span>
     ${rankIndicator}
-    <strong class="symbol" style="background:${getSymbolColor(symbol)};">${symbol}</strong>
+    ${window.components.Symbol({ 
+        symbol: symbol, 
+        size: "medium",
+        onClick: true
+    })}
     <span class="prices">
       <span class="price now ${blinkClass}" style="color:${silverTone(pctBelowHigh)};">
         ${formatPrice(price)}
@@ -363,20 +360,8 @@ function render() {
         })
         .join("");
 
-    // one delegated click handler
-    if (!container.__boundClick) {
-        container.__boundClick = true;
-        container.addEventListener("click", async (e) => {
-            const el = e.target.closest(".symbol");
-            if (!el) return;
-            const symbol = el.textContent.trim().replace("$", "");
-            try {
-                await navigator.clipboard.writeText(symbol);
-                window.activeAPI?.setActiveTicker?.(symbol);
-            } catch {}
-            e.stopPropagation();
-        });
-    }
+    // Click handling is now done by the symbol component internally
+    // No additional click handlers needed
 }
 
 
@@ -386,8 +371,20 @@ function render() {
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("🎯 HOD window loaded, waiting for APIs...");
     
-    // Wait for bridges
-    while (!(window.settingsAPI && window.xpAPI && window.eventsAPI && window.electronAPI && window.hodSettingsAPI)) {
+    // Set up event delegation for symbol clicks
+    document.addEventListener('click', function(event) {
+        const symbolElement = event.target.closest('.symbol[data-clickable="true"]');
+        if (symbolElement) {
+            const symbol = symbolElement.getAttribute('data-symbol');
+            if (symbol) {
+                console.log(`🖱️ [HOD] Symbol clicked: ${symbol}`);
+                window.handleSymbolClick(symbol, event);
+            }
+        }
+    });
+    
+    // Wait for bridges including activeAPI
+    while (!(window.settingsAPI && window.xpAPI && window.eventsAPI && window.electronAPI && window.hodSettingsAPI && window.activeAPI)) {
         await new Promise((r) => setTimeout(r, 200));
     }
     

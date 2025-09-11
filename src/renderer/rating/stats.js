@@ -9,6 +9,7 @@
 // ============================================================================
 
 const TOP3_DEBOUNCE_MS = 150;
+const RENDER_DEBOUNCE_MS = 50; // Debounce rapid re-renders
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -16,14 +17,15 @@ const TOP3_DEBOUNCE_MS = 150;
 
 class StatsState {
     constructor() {
-        this.symbolColors = {};
         this.globalBuffs = {};
         this.trackedTickers = [];
         this.activeStocksData = null;
         this.heroes = {};
         this.renderKey = "";
         this.top3Debounce = null;
-        this.settings = { listLength: 10 };
+        this.renderDebounce = null;
+        this.settings = { listLength: 50 };
+        this.activeSymbolsSet = new Set(); // Cache for O(1) lookups
     }
 
     // Utility function to normalize symbol names
@@ -33,7 +35,7 @@ class StatsState {
 
     // Get the configured list length (no longer used since backend controls list size)
     getListLength() {
-        return Math.max(1, Number(this.settings?.listLength) || 25);
+        return Math.max(1, Number(this.settings?.listLength) || 50);
     }
 
     // Update tracked tickers from store
@@ -44,12 +46,17 @@ class StatsState {
     // Update active stocks data from Oracle
     updateActiveStocks(data) {
         this.activeStocksData = data;
-        console.log("🔄 Active stocks updated:", data?.symbols?.length || 0, "symbols");
+        // Update symbol set for O(1) lookups
+        this.activeSymbolsSet.clear();
+        if (data?.symbols) {
+            data.symbols.forEach(s => this.activeSymbolsSet.add(s.symbol));
+        }
+        // Debug logging removed for performance
     }
 
     // Update settings
     updateSettings(newSettings) {
-        this.settings = newSettings || { listLength: 25 };
+        this.settings = newSettings || { listLength: 50 };
     }
 }
 
@@ -109,25 +116,16 @@ class StatsScorer {
         return totalScore;
     }
 
-    // Get ranked heroes from active stocks (no additional filtering - backend handles pruning)
+    // Get ranked heroes from active stocks (optimized filtering)
     getRankedHeroes() {
-        // Simply get heroes that are in the active Oracle stocks list
-        // Backend has already done all the pruning and filtering
-        const activeHeroes = this.state.activeStocksData?.symbols 
-            ? Object.values(this.state.heroes).filter(h => 
-                this.state.activeStocksData.symbols.some(s => s.symbol === h.hero)
-            )
-            : [];
+        // Use Set for O(1) lookups instead of O(n) array.some()
+        const activeHeroes = Object.values(this.state.heroes).filter(h => 
+            this.state.activeSymbolsSet.has(h.hero)
+        );
 
         // Calculate scores for all active heroes
         const scored = activeHeroes.map((h) => {
             const newScore = this.calculateScore(h.buffs, h.score || 0);
-            const oldScore = h.score || 0;
-            
-            // Log score changes for debugging
-            if (Math.abs(newScore - oldScore) > 0.1) {
-                console.log(`📊 [Rating] ${h.hero} score recalculated: ${oldScore.toFixed(1)} → ${newScore.toFixed(1)} (Δ${(newScore - oldScore).toFixed(1)})`);
-            }
             
             return {
                 ...h,
@@ -153,23 +151,24 @@ class StatsRenderer {
         this.scorer = new StatsScorer(state);
     }
 
-    // Generate symbol color
-    getSymbolColor(symbol) {
-        if (!this.state.symbolColors[symbol]) {
-            const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const hue = (hash * 37) % 360;
-            this.state.symbolColors[symbol] = `hsla(${hue}, 80%, 50%, 0.5)`;
-        }
-        return this.state.symbolColors[symbol];
+    // Symbol color generation is now handled by the symbol component
+
+    // Render the stats list (with debouncing)
+    render() {
+        // Debounce rapid re-renders
+        clearTimeout(this.state.renderDebounce);
+        this.state.renderDebounce = setTimeout(() => {
+            this._doRender();
+        }, RENDER_DEBOUNCE_MS);
     }
 
-    // Render the stats list
-    render() {
+    // Internal render method (debounced)
+    _doRender() {
         const rankedHeroes = this.scorer.getRankedHeroes();
         
-        // Performance optimization: skip render if nothing changed
+        // Optimized render key generation - use fewer decimal places
         const renderKey = rankedHeroes
-            .map((h) => `${this.state.normalizeSymbol(h.hero)}:${(h.score / 10).toFixed(1)}`)
+            .map((h) => `${h.hero}:${Math.round(h.score)}`)
             .join(",");
         
         if (renderKey === this.state.renderKey) return;
@@ -190,7 +189,6 @@ class StatsRenderer {
 
     // Render individual hero row
     renderHeroRow(hero, idx, now) {
-        const bg = this.getSymbolColor(hero.hero);
         const displayScore = (hero.score / 10).toFixed(1);
         const rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1 + ".";
         
@@ -202,9 +200,11 @@ class StatsRenderer {
                 <span class="text-tertiary" style="display:inline-block; min-width: 24px; text-align:right; margin-right: 4px; opacity: 1;">
                     ${rankIcon}
                 </span>
-                <strong class="symbol" style="background: ${bg};">
-                    ${hero.hero}
-                </strong>
+                ${window.components.Symbol({ 
+                    symbol: hero.hero, 
+                    size: "medium",
+                    onClick: true
+                })}
                 <span class="buffs" style="font-weight: 600;" title="${tooltipContent}">${displayScore}</span>
             </div>`;
     }
@@ -271,24 +271,10 @@ class StatsRenderer {
         return lines.join("\n");
     }
 
-    // Attach click handlers to symbols
+    // Attach click handlers to symbols (now handled by symbol component)
     attachClickHandlers() {
-        this.container.querySelectorAll(".symbol").forEach((el) => {
-            el.addEventListener("click", (e) => {
-                const hero = el.textContent.trim().split(" ")[0].replace("$", "");
-                try {
-                    navigator.clipboard.writeText(hero);
-                    if (window.activeAPI?.setActiveTicker) {
-                        window.activeAPI.setActiveTicker(hero);
-                    }
-                    el.classList.add("symbol-clicked");
-                    setTimeout(() => el.classList.remove("symbol-clicked"), 200);
-                } catch (err) {
-                    console.error(`⚠️ Failed to handle click for ${hero}:`, err);
-                }
-                e.stopPropagation();
-            });
-        });
+        // Click handling is now done by the symbol component internally
+        // No additional click handlers needed
     }
 }
 
@@ -312,11 +298,10 @@ class StatsDataManager {
             
             window.settings = settings;
             this.state.updateSettings(statsSettings);
-            console.log("✅ Loaded settings:", { settings, statsSettings });
-            console.log("📊 Stats list length set to:", this.state.getListLength());
+            // Settings loaded successfully
         } catch (error) {
             console.error("❌ Failed to load settings:", error);
-            this.state.updateSettings({ listLength: 25 });
+            this.state.updateSettings({ listLength: 50 });
         }
     }
 
@@ -359,7 +344,7 @@ class StatsDataManager {
                 };
             });
 
-            console.log(`✅ Loaded ${symbols.length} symbols and ${Object.keys(this.state.globalBuffs).length} buffs`);
+            // Initial data loaded successfully
         } catch (error) {
             console.error("❌ Failed to load initial data:", error);
         }
@@ -370,7 +355,7 @@ class StatsDataManager {
         try {
             const activeStocks = await window.xpAPI.getActiveStocks();
             this.state.updateActiveStocks(activeStocks);
-            console.log("📊 Initial Oracle active stocks data:", activeStocks);
+            // Oracle data loaded successfully
         } catch (error) {
             console.warn("❌ Failed to get initial Oracle data:", error);
         }
@@ -402,16 +387,8 @@ class StatsDataManager {
             if (buffs) {
                 const oldBuffs = h.buffs;
                 h.buffs = buffs;
-                // Log buff changes for debugging
-                if (JSON.stringify(oldBuffs) !== JSON.stringify(buffs)) {
-                    console.log(`🔄 [Rating] ${heroSymbol} buffs updated:`, {
-                        old: Object.keys(oldBuffs || {}),
-                        new: Object.keys(buffs || {}),
-                        changed: Object.keys(buffs || {}).filter(key => 
-                            JSON.stringify(oldBuffs?.[key]) !== JSON.stringify(buffs?.[key])
-                        )
-                    });
-                }
+                // Buff change detection optimized - no expensive JSON.stringify
+                // Just update the buffs without logging for performance
             }
             if (typeof xp === "number") h.xp = xp;
             if (typeof lv === "number") h.lv = lv;
@@ -470,8 +447,7 @@ class StatsDataManager {
         window.statsSettingsAPI.onUpdate((updatedSettings) => {
             if (updatedSettings) {
                 this.state.updateSettings(updatedSettings);
-                console.log("✅ Stats settings updated:", updatedSettings);
-                console.log("📊 Stats list length now set to:", this.state.getListLength());
+                // Stats settings updated successfully
                 this.renderer.render();
             }
         });
@@ -500,6 +476,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+    // Set up event delegation for symbol clicks
+    document.addEventListener('click', function(event) {
+        const symbolElement = event.target.closest('.symbol[data-clickable="true"]');
+        if (symbolElement) {
+            const symbol = symbolElement.getAttribute('data-symbol');
+            if (symbol) {
+                console.log(`🖱️ [Rating] Symbol clicked: ${symbol}`);
+                window.handleSymbolClick(symbol, event);
+            }
+        }
+    });
+
+    // Wait for activeAPI to be available
+    while (!window.activeAPI) {
+        await new Promise((r) => setTimeout(r, 100));
+    }
+    console.log("✅ Rating view - activeAPI is now available");
+
     try {
         // Initialize components
         const renderer = new StatsRenderer(state, container);
@@ -519,7 +513,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Initial render
         renderer.render();
 
-        console.log("✅ Stats scroll initialized successfully");
+        // Stats scroll initialized successfully
     } catch (error) {
         console.error("❌ Failed to initialize stats scroll:", error);
     }

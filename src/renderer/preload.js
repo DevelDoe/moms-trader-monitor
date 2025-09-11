@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const isDev = process.env.NODE_ENV === "development";
 
+// Preload script is executing
+
 contextBridge.exposeInMainWorld("autoLogin", {
     getCredentials: () => ipcRenderer.invoke("credentials:get"),
     saveCredentials: (data) => ipcRenderer.invoke("credentials:save", data),
@@ -559,8 +561,8 @@ function Symbol({ symbol, size = "medium", onClick = null, showTrophy = false, r
     // Trophy HTML if needed
     const trophyHtml = showTrophy && rank ? getTrophyIcon(rank) : '';
     
-    // Click handler
-    const clickHandler = onClick ? `onclick="handleSymbolClick('${symbol}')"` : '';
+    // Use data attributes instead of inline onclick for better security and reliability
+    const dataAttributes = onClick ? `data-symbol="${symbol}" data-clickable="true"` : '';
     
     return `
         <span class="symbol symbol-${size}" 
@@ -580,7 +582,7 @@ function Symbol({ symbol, size = "medium", onClick = null, showTrophy = false, r
                 transition: all 0.2s ease;
                 ${Object.entries(customStyle).map(([key, value]) => `${key}: ${value};`).join(' ')}
               "
-              ${clickHandler}
+              ${dataAttributes}
               title="${symbol}">
             ${trophyHtml}${symbol}
         </span>
@@ -618,25 +620,66 @@ contextBridge.exposeInMainWorld("components", {
 });
 
 // Global click handler for symbols
-contextBridge.exposeInMainWorld("handleSymbolClick", function(symbol) {
+contextBridge.exposeInMainWorld("handleSymbolClick", function(symbol, event) {
     try {
         // Copy to clipboard
         navigator.clipboard.writeText(symbol);
+        console.log(`📋 Symbol copied to clipboard: ${symbol}`);
         
-        // Set as active ticker if API is available
+        // Set as active ticker - try multiple approaches with retry
+        let tickerSet = false;
+        
+        // Try activeAPI first
         if (window.activeAPI?.setActiveTicker) {
+            console.log(`🎯 Setting active ticker via activeAPI: ${symbol}`);
             window.activeAPI.setActiveTicker(symbol);
+            console.log(`✅ Active ticker set successfully via activeAPI: ${symbol}`);
+            tickerSet = true;
+        } 
+        // Try global function
+        else if (window.setActiveTicker) {
+            console.log(`🎯 Setting active ticker via global function: ${symbol}`);
+            window.setActiveTicker(symbol);
+            console.log(`✅ Active ticker set successfully via global function: ${symbol}`);
+            tickerSet = true;
+        }
+        // Try direct IPC as fallback
+        else {
+            console.warn(`⚠️ No setActiveTicker function available, trying direct IPC for symbol: ${symbol}`);
+            try {
+                // Use the same IPC method that activeAPI uses internally
+                const { ipcRenderer } = require('electron');
+                ipcRenderer.send('set-active-ticker', symbol);
+                console.log(`✅ Direct IPC message sent for symbol: ${symbol}`);
+                tickerSet = true;
+            } catch (ipcErr) {
+                console.error(`❌ Direct IPC approach also failed:`, ipcErr);
+            }
+        }
+        
+        if (!tickerSet) {
+            console.error(`❌ Failed to set active ticker for symbol: ${symbol}`);
         }
         
         // Add visual feedback
-        const clickedElement = event.target.closest('.symbol');
+        const clickedElement = event && event.target ? event.target.closest('.symbol') : null;
         if (clickedElement) {
             clickedElement.classList.add("symbol-clicked");
             setTimeout(() => clickedElement.classList.remove("symbol-clicked"), 200);
         }
         
-        console.log(`📋 Symbol copied and set as active: ${symbol}`);
+        console.log(`📋 Symbol click handled: ${symbol}`);
     } catch (err) {
         console.error(`⚠️ Failed to handle click for ${symbol}:`, err);
     }
 });
+
+// Expose setActiveTicker function globally so it's available in all windows
+contextBridge.exposeInMainWorld("setActiveTicker", (ticker) => {
+    ipcRenderer.send("set-active-ticker", ticker);
+});
+
+// Event delegation is set up in each individual renderer window
+// since each window has its own document context
+
+// Preload script completed - all APIs exposed

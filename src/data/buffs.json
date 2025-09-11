@@ -57,9 +57,9 @@
 
     { "key": "lockedShares", "icon": "🏛️", "desc": "High insider/institution ownership", "score": -25, "multiplier": 0.95, "isBuff": false },
 
-    { "key": "hasNews", "icon": "😼", "desc": "News catalyst", "score": 100, "multiplier": 1.1, "isBuff": true },
-    { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news", "score": 200, "multiplier": 1.25 },
-    { "key": "hasBearishNews", "icon": "🙀", "desc": "Bearish news", "score": 0, "multiplier": 1, "isBuff": false },
+    { "key": "hasNews", "icon": "😼", "desc": "News catalyst", "score": 150, "multiplier": 1.1, "isBuff": true },
+    { "key": "hasBullishNews", "icon": "😺", "desc": "Bullish news", "score": 175, "multiplier": 1.25 },
+    { "key": "hasBearishNews", "icon": "🙀", "desc": "Bearish news", "score": 125, "multiplier": 1, "isBuff": false },
     
     { "key": "bullishTerms", "terms": ["upgrade", "upgraded", "buy", "strong buy", "outperform", "positive", "beat", "beats", "exceeded", "exceeds", "growth", "growing", "expansion", "partnership", "contract", "approval", "approved", "breakthrough", "success", "successful", "revenue", "profit", "earnings", "guidance", "raised", "increase", "increased", "acquisition", "merger", "dividend", "buyback", "repurchase"] },
     { "key": "bearishTerms", "terms": ["downgrade", "downgraded", "sell", "strong sell", "underperform", "negative", "miss", "misses", "missed", "disappoint", "disappointed", "decline", "declining", "loss", "losses", "cut", "cuts", "reduced", "reduction", "layoff", "layoffs", "bankruptcy", "delisting", "warning", "warnings", "investigation", "lawsuit", "fraud", "scandal", "recall", "recalls"] },

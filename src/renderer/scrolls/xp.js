@@ -191,6 +191,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("xp-scroll");
     if (!container) return;
 
+    // Set up event delegation for symbol clicks
+    document.addEventListener('click', function(event) {
+        const symbolElement = event.target.closest('.symbol[data-clickable="true"]');
+        if (symbolElement) {
+            const symbol = symbolElement.getAttribute('data-symbol');
+            if (symbol) {
+                console.log(`🖱️ [XP] Symbol clicked: ${symbol}`);
+                window.handleSymbolClick(symbol, event);
+            }
+        }
+    });
+
+    // Wait for activeAPI to be available
+    while (!window.activeAPI) {
+        await new Promise((r) => setTimeout(r, 100));
+    }
+    console.log("✅ XP view - activeAPI is now available");
+
     // Load XP settings from electron store first
     try {
         window.xpSettings = await window.xpSettingsAPI.get();

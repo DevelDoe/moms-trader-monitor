@@ -18,6 +18,7 @@ const { createInfobarWindow } = require("./windows/infobar");
 const { createWizardWindow } = require("./windows/wizard");
 const { createProgressWindow } = require("./windows/progress");
 const { createScrollXpWindow } = require("./windows/scrollXp");
+const { createScrollChangeWindow } = require("./windows/scrollChange");
 const { createScrollStatsWindow } = require("./windows/scrollStats");
 const { createScrollHodWindow } = require("./windows/scrollHOD");
 const { createNewsWindow } = require("./windows/news");
@@ -92,6 +93,7 @@ async function restoreWindows() {
         wizard: "wizardWindow",
         progress: "progressWindow",
         scrollXp: "scrollXpWindow",
+        scrollChange: "scrollChangeWindow",
         scrollStats: "scrollStatsWindow",
         scrollHod: "scrollHodWindow",
         news: "newsWindow",
@@ -197,6 +199,8 @@ function createWindowByName(name) {
             return createProgressWindow(isDevelopment);
         case "scrollXp":
             return createScrollXpWindow(isDevelopment);
+        case "scrollChange":
+            return createScrollChangeWindow(isDevelopment);
         case "scrollStats":
             return createScrollStatsWindow(isDevelopment);
         case "scrollHod":

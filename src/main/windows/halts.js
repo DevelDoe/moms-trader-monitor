@@ -15,13 +15,12 @@ function createHaltsWindow(isDevelopment) {
         height: state.height || 660,
         x:      state.x,                // <- add
         y:      state.y,                // <- add
-        frame: false,
+        frame: false, // no OS frame
         alwaysOnTop: false,
         resizable: true,
         roundedCorners: false,
         backgroundColor: "#00000000",
         useContentSize: true,
-        frame: false, // no OS frame
         transparent: true, // fully transparent background
         hasShadow: false, // Electron hint to remove shadow
         webPreferences: {

@@ -38,8 +38,8 @@ function Symbol({ symbol, size = "medium", onClick = null, showTrophy = false, r
     // Trophy HTML if needed
     const trophyHtml = showTrophy && rank ? getTrophyIcon(rank) : '';
     
-    // Click handler
-    const clickHandler = onClick ? `onclick="handleSymbolClick('${symbol}')"` : '';
+    // Use data attributes instead of inline onclick for better security and reliability
+    const dataAttributes = onClick ? `data-symbol="${symbol}" data-clickable="true"` : '';
     
     return `
         <span class="symbol symbol-${size}" 
@@ -59,7 +59,7 @@ function Symbol({ symbol, size = "medium", onClick = null, showTrophy = false, r
                 transition: all 0.2s ease;
                 ${Object.entries(customStyle).map(([key, value]) => `${key}: ${value};`).join(' ')}
               "
-              ${clickHandler}
+              ${dataAttributes}
               title="${symbol}">
             ${trophyHtml}${symbol}
         </span>
@@ -93,7 +93,7 @@ function getSymbolColor(symbol) {
 }
 
 // Global click handler for symbols
-window.handleSymbolClick = function(symbol) {
+window.handleSymbolClick = function(symbol, event) {
     try {
         // Copy to clipboard
         navigator.clipboard.writeText(symbol);
@@ -104,7 +104,7 @@ window.handleSymbolClick = function(symbol) {
         }
         
         // Add visual feedback
-        const clickedElement = event.target.closest('.symbol');
+        const clickedElement = event ? event.target.closest('.symbol') : null;
         if (clickedElement) {
             clickedElement.classList.add("symbol-clicked");
             setTimeout(() => clickedElement.classList.remove("symbol-clicked"), 200);
