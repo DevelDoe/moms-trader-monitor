@@ -67,7 +67,15 @@
                             <input type="checkbox" id="show-scrollXp" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Hall of Legends</span>
+                        <span class="toggle-label">Hall of Legends XP</span>
+                    </div>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="show-scrollChange" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Hall of Legends Change</span>
                     </div>
 
                     <div class="toggle-row">
@@ -192,6 +200,36 @@
                         <button type="button" id="xp-show-total-volume" class="column-btn active" data-column="total-volume">Volume</button>
                         <button type="button" id="xp-show-level" class="column-btn active" data-column="level">Level</button>
                         <button type="button" id="xp-show-session-change" class="column-btn active" data-column="session-change">Change</button>
+                    </div>
+                </section>
+
+                <section id="section-hall-of-legends-change">
+                    <h2>Hall of Legends Change</h2>
+
+                    <label for="change-list-length">
+                        Max List Length:
+                        <input type="number" id="change-list-length" min="1"  step="1" />
+
+                    </label>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="change-show-headers" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Show Column Headers</span>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="button" id="change-show-up-xp" class="column-btn active" data-column="up-xp">Up XP</button>
+                        <button type="button" id="change-show-down-xp" class="column-btn active" data-column="down-xp">Down XP</button>
+                        <button type="button" id="change-show-ratio" class="column-btn active" data-column="ratio">Net Ratio</button>
+                        <button type="button" id="change-show-total" class="column-btn active" data-column="total">Total XP</button>
+                        <button type="button" id="change-show-net" class="column-btn active" data-column="net">Net XP</button>
+                        <button type="button" id="change-show-price" class="column-btn active" data-column="price">Price</button>
+                        <button type="button" id="change-show-total-volume" class="column-btn active" data-column="total-volume">Volume</button>
+                        <button type="button" id="change-show-level" class="column-btn active" data-column="level">Level</button>
+                        <button type="button" id="change-show-session-change" class="column-btn active" data-column="session-change">Change</button>
                     </div>
                 </section>
 

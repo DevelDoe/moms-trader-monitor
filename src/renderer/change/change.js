@@ -12,23 +12,19 @@ function getTrophyIcon(rank) {
     return '';
 }
 
-// Oracle XP Active Stocks data
+// Oracle Change Active Stocks data
 let oracleActiveStocks = null;
-
-// Sorting removed - backend sends data pre-sorted
 
 // Trophy hash tracking
 let lastTrophyHash = null;
 
 function getSymbolLength() {
-    return Math.max(1, Number(window.xpSettings?.listLength) || 25);
+    return Math.max(1, Number(window.changeSettings?.listLength) || 25);
 }
-
-// Sorting functions removed - backend handles sorting
 
 async function refreshList() {
     if (!oracleActiveStocks?.symbols || oracleActiveStocks.symbols.length === 0) {
-        const container = document.getElementById("xp-scroll");
+        const container = document.getElementById("change-scroll");
         if (container) {
             container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Waiting for Oracle data...</div>';
         }
@@ -36,9 +32,9 @@ async function refreshList() {
     }
 
     // Ensure we have the latest settings
-    if (!window.xpSettings) {
-        console.warn("XP settings not loaded yet, using fallback");
-        window.xpSettings = { listLength: 25, showHeaders: true };
+    if (!window.changeSettings) {
+        console.warn("Change settings not loaded yet, using fallback");
+        window.changeSettings = { listLength: 25, showHeaders: true };
     }
 
     const viewList = oracleActiveStocks.symbols
@@ -46,7 +42,7 @@ async function refreshList() {
         .map((s, index) => {
             // Debug logging to see the actual data structure
             if (index === 0) {
-                console.log("🔍 First symbol data structure:", s);
+                console.log("🔍 First symbol data structure (Change View):", s);
                 console.log("🔍 Available fields:", Object.keys(s));
                 console.log("🔍 Volume-related fields:", Object.keys(s).filter(key => key.toLowerCase().includes('volume')));
                 console.log("🔍 Level-related fields:", Object.keys(s).filter(key => key.toLowerCase().includes('level') || key.toLowerCase().includes('lv')));
@@ -67,7 +63,7 @@ async function refreshList() {
             };
         });
 
-    // Use data as-is from backend (already sorted)
+    // Use data as-is from backend (already sorted by session_change_percent)
     const sortedList = viewList;
 
     // Extract top 3 symbols for trophy data
@@ -84,7 +80,7 @@ async function refreshList() {
     if (currentTrophyHash !== lastTrophyHash) {
         try {
             await window.storeAPI.updateTrophyData(top3Trophies);
-            console.log("🏆 Trophy data updated in store:", top3Trophies);
+            console.log("🏆 Trophy data updated in store (Change View):", top3Trophies);
             console.log("🔑 Trophy hash changed:", lastTrophyHash, "→", currentTrophyHash);
             lastTrophyHash = currentTrophyHash;
         } catch (error) {
@@ -94,16 +90,16 @@ async function refreshList() {
         console.log("🏆 Trophy symbols unchanged, skipping update:", currentTrophyHash);
     }
 
-    const container = document.getElementById("xp-scroll");
+    const container = document.getElementById("change-scroll");
     if (!container) return;
 
     // Check if headers should be shown based on settings
-    const showHeaders = window.xpSettings?.showHeaders === true; // Only show if explicitly true
+    const showHeaders = window.changeSettings?.showHeaders === true; // Only show if explicitly true
     
-    console.log("🔍 XP Settings for headers:", { 
+    console.log("🔍 Change Settings for headers:", { 
         showHeaders, 
-        xpSettings: window.xpSettings,
-        showHeadersValue: window.xpSettings?.showHeaders 
+        changeSettings: window.changeSettings,
+        showHeadersValue: window.changeSettings?.showHeaders 
     });
     
     const headersHtml = showHeaders ? `
@@ -115,32 +111,32 @@ async function refreshList() {
                 <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
                     Symbol
                 </th>
-                ${window.xpSettings?.showUpXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showSessionChange !== false ? `<th style="text-align: right; padding: 6px 8px; color: #4A90E2; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px); border-bottom: 2px solid #4A90E2;">
+                    Change % <span style="color: #4A90E2; font-size: 12px;">↓</span>
+                </th>` : ''}
+                ${window.changeSettings?.showUpXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
                     Up XP
                 </th>` : ''}
-                ${window.xpSettings?.showDownXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showDownXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
                     Down XP
                 </th>` : ''}
-                ${window.xpSettings?.showRatio !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showRatio !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
                     Ratio
                 </th>` : ''}
-                ${window.xpSettings?.showTotal !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showTotal !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
                     Total
                 </th>` : ''}
-                ${window.xpSettings?.showNet !== false ? `<th style="text-align: right; padding: 6px 8px; color: #4A90E2; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px); border-bottom: 2px solid #4A90E2;">
-                    Net XP <span style="color: #4A90E2; font-size: 12px;">↓</span>
+                ${window.changeSettings?.showNet !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                    Net
                 </th>` : ''}
-                ${window.xpSettings?.showTotalVolume !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showTotalVolume !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
                     Volume
                 </th>` : ''}
-                ${window.xpSettings?.showLevel !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showLevel !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
                     Level
                 </th>` : ''}
-                ${window.xpSettings?.showPrice !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showPrice !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
                     Price
-                </th>` : ''}
-                ${window.xpSettings?.showSessionChange !== false ? `<th style="text-align: right; padding: 6px 8px; color: #4A90E2; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px); border-bottom: 2px solid #4A90E2;">
-                    Change % <span style="color: #4A90E2; font-size: 12px;">↓</span>
                 </th>` : ''}
             </tr>
         </thead>
@@ -165,17 +161,17 @@ async function refreshList() {
                                     onClick: true
                                 })}
                             </td>
-                            ${window.xpSettings?.showUpXp !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00ff00;" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
-                            ${window.xpSettings?.showDownXp !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ff0000;" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
-                            ${window.xpSettings?.showRatio !== false ? `<td style="padding: 6px 8px; text-align: center;" title="Up/Down XP Ratio">
+                            ${window.changeSettings?.showSessionChange !== false ? `<td style="padding: 6px 8px; text-align: center; color: ${h.sessionChangePercent > 0 ? '#00ff00' : h.sessionChangePercent < 0 ? '#ff0000' : '#666'};" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
+                            ${window.changeSettings?.showUpXp !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00ff00;" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
+                            ${window.changeSettings?.showDownXp !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ff0000;" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
+                            ${window.changeSettings?.showRatio !== false ? `<td style="padding: 6px 8px; text-align: center;" title="Up/Down XP Ratio">
                                 <span style="color: ${h.up > h.down ? '#00ff00' : '#ff0000'};">${h.up + h.down > 0 ? Math.round(((h.up - h.down) / (h.up + h.down)) * 100) : 0}%</span>
                             </td>` : ''}
-                            ${window.xpSettings?.showTotal !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00aeff;" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
-                            ${window.xpSettings?.showNet !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ffff00;" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
-                            ${window.xpSettings?.showTotalVolume !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00ff00;" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
-                            ${window.xpSettings?.showLevel !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00aeff;" title="Level">${h.level}</td>` : ''}
-                            ${window.xpSettings?.showPrice !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
-                            ${window.xpSettings?.showSessionChange !== false ? `<td style="padding: 6px 8px; text-align: center; color: ${h.sessionChangePercent > 0 ? '#00ff00' : h.sessionChangePercent < 0 ? '#ff0000' : '#666'};" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
+                            ${window.changeSettings?.showTotal !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00aeff;" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
+                            ${window.changeSettings?.showNet !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ffff00;" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
+                            ${window.changeSettings?.showTotalVolume !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00ff00;" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
+                            ${window.changeSettings?.showLevel !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00aeff;" title="Level">${h.level}</td>` : ''}
+                            ${window.changeSettings?.showPrice !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
                         </tr>
                     `;
                 }).join('')}
@@ -184,20 +180,19 @@ async function refreshList() {
     `;
 
     // Symbol click handling is now done by the component
-    // Sorting removed - backend handles sorting
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    const container = document.getElementById("xp-scroll");
+    const container = document.getElementById("change-scroll");
     if (!container) return;
 
-    // Load XP settings from electron store first
+    // Load Change settings from electron store first
     try {
-        window.xpSettings = await window.xpSettingsAPI.get();
-        console.log("📊 Loaded XP settings:", window.xpSettings);
+        window.changeSettings = await window.changeSettingsAPI.get();
+        console.log("📊 Loaded Change settings:", window.changeSettings);
     } catch (e) {
-        console.warn("Failed to get XP settings:", e);
-        window.xpSettings = { 
+        console.warn("Failed to get Change settings:", e);
+        window.changeSettings = { 
             listLength: 25, 
             showHeaders: true,
             showUpXp: true,
@@ -214,32 +209,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Request current Oracle data
     try {
-        oracleActiveStocks = await window.xpAPI.getActiveStocks();
-        console.log("📊 Initial Oracle XP data requested");
+        oracleActiveStocks = await window.changeAPI.getActiveStocks();
+        console.log("📊 Initial Oracle Change data requested");
     } catch (e) {
-        console.warn("Failed to get initial Oracle XP data:", e);
+        console.warn("Failed to get initial Oracle Change data:", e);
     }
 
-    // Listen for Oracle XP updates
-    window.xpAPI.onActiveStocksUpdate((data) => {
+    // Listen for Oracle Change updates
+    window.changeAPI.onActiveStocksUpdate((data) => {
         oracleActiveStocks = data;
-        console.log("🎯 Oracle XP Active Stocks Update Received");
+        console.log("🎯 Oracle Change Active Stocks Update Received");
         refreshList();
     });
 
     // Initial render
     refreshList();
 
-    // XP Settings updates
-    window.xpSettingsAPI.onUpdate(async (updatedSettings) => {
-        console.log("⚙️ XP Settings update received:", updatedSettings);
-        window.xpSettings = updatedSettings;
-        console.log("⚙️ XP Settings updated:", updatedSettings);
+    // Change Settings updates
+    window.changeSettingsAPI.onUpdate(async (updatedSettings) => {
+        console.log("⚙️ Change Settings update received:", updatedSettings);
+        window.changeSettings = updatedSettings;
+        console.log("⚙️ Change Settings updated:", updatedSettings);
         refreshList();
     });
 
-    // XP reset
-    window.electronAPI.onXpReset(() => {
+    // Change reset
+    window.electronAPI.onChangeReset(() => {
         oracleActiveStocks = null;
         refreshList();
     });

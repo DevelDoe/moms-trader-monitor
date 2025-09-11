@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         initializeNewsSection();
         initializeAdminSection();
         initializeXpSettingsSection();
+        initializeChangeSettingsSection();
         initializeStatsSettingsSection();
         
         // Set up settings update handler to reload test settings
@@ -102,6 +103,10 @@ function initializeGeneralSection() {
 
     const showScrollXpToggle = document.getElementById("show-scrollXp");
     showScrollXpToggle.checked = window.windowSettings.scrollXpWindow?.isOpen ?? false;
+    
+    const showScrollChangeToggle = document.getElementById("show-scrollChange");
+    showScrollChangeToggle.checked = window.windowSettings.scrollChangeWindow?.isOpen ?? false;
+    
     const showScrollStatsToggle = document.getElementById("show-scrollStats");
     showScrollStatsToggle.checked = window.windowSettings.scrollStatsWindow?.isOpen ?? false;
     const showScrollHodToggle = document.getElementById("show-scrollHod");
@@ -169,6 +174,16 @@ function initializeGeneralSection() {
         }
 
         await window.windowSettingsAPI.setOpenState("scrollXpWindow", event.target.checked);
+    });
+
+    showScrollChangeToggle.addEventListener("change", async (event) => {
+        if (event.target.checked) {
+            window.scrollChangeAPI.activate();
+        } else {
+            window.scrollChangeAPI.deactivate();
+        }
+
+        await window.windowSettingsAPI.setOpenState("scrollChangeWindow", event.target.checked);
     });
 
     showScrollStatsToggle.addEventListener("change", async (event) => {
@@ -1056,6 +1071,20 @@ function setupKeywordManagement() {
     });
 }
 
+// Utility functions for button state management
+function updateButtonState(button, isActive) {
+    if (isActive) {
+        button.classList.add('active');
+    } else {
+        button.classList.remove('active');
+    }
+}
+
+function toggleButtonState(button) {
+    const isActive = button.classList.contains('active');
+    updateButtonState(button, !isActive);
+}
+
 function initializeXpSettingsSection() {
     console.log("Initializing XP Settings Section");
 
@@ -1339,14 +1368,6 @@ function initializeXpSettingsSection() {
         }
     }
 
-    // Helper function to update button state
-    function updateButtonState(button, isActive) {
-        if (isActive) {
-            button.classList.add('active');
-        } else {
-            button.classList.remove('active');
-        }
-    }
 
     // Toggle functions for column buttons
     async function toggleXpShowUpXp() {
@@ -1476,6 +1497,316 @@ function initializeXpSettingsSection() {
         if (updatedSettings && updatedSettings.listLength !== undefined) {
             hodListLengthInput.value = updatedSettings.listLength;
             console.log("✅ HOD settings updated from other window:", updatedSettings);
+        }
+    });
+}
+
+function initializeChangeSettingsSection() {
+    console.log("Initializing Change Settings Section");
+
+    const changeListLengthInput = document.getElementById("change-list-length");
+    const changeShowHeadersToggle = document.getElementById("change-show-headers");
+    const changeShowUpXpBtn = document.getElementById("change-show-up-xp");
+    const changeShowDownXpBtn = document.getElementById("change-show-down-xp");
+    const changeShowRatioBtn = document.getElementById("change-show-ratio");
+    const changeShowTotalBtn = document.getElementById("change-show-total");
+    const changeShowNetBtn = document.getElementById("change-show-net");
+    const changeShowPriceBtn = document.getElementById("change-show-price");
+    const changeShowTotalVolumeBtn = document.getElementById("change-show-total-volume");
+    const changeShowLevelBtn = document.getElementById("change-show-level");
+    const changeShowSessionChangeBtn = document.getElementById("change-show-session-change");
+    
+    if (!changeListLengthInput) {
+        console.error("❌ Change list length input not found!");
+        return;
+    }
+
+    if (!changeShowHeadersToggle) {
+        console.error("❌ Change show headers toggle not found!");
+        return;
+    }
+
+    if (!changeShowUpXpBtn) {
+        console.error("❌ Change show up XP button not found!");
+        return;
+    }
+
+    if (!changeShowDownXpBtn) {
+        console.error("❌ Change show down XP button not found!");
+        return;
+    }
+
+    if (!changeShowRatioBtn) {
+        console.error("❌ Change show ratio button not found!");
+        return;
+    }
+
+    if (!changeShowTotalBtn) {
+        console.error("❌ Change show total button not found!");
+        return;
+    }
+
+    if (!changeShowNetBtn) {
+        console.error("❌ Change show net button not found!");
+        return;
+    }
+
+    if (!changeShowPriceBtn) {
+        console.error("❌ Change show price button not found!");
+        return;
+    }
+
+    if (!changeShowTotalVolumeBtn) {
+        console.error("❌ Change show total volume button not found!");
+        return;
+    }
+
+    if (!changeShowLevelBtn) {
+        console.error("❌ Change show level button not found!");
+        return;
+    }
+
+    if (!changeShowSessionChangeBtn) {
+        console.error("❌ Change show session change button not found!");
+        return;
+    }
+
+    // Load initial value from electron store
+    async function loadChangeSettings() {
+        try {
+            const changeSettings = await window.changeSettingsAPI.get();
+            changeListLengthInput.value = changeSettings.listLength || 25;
+            changeShowHeadersToggle.checked = changeSettings.showHeaders || false;
+            updateButtonState(changeShowUpXpBtn, changeSettings.showUpXp !== false);
+            updateButtonState(changeShowDownXpBtn, changeSettings.showDownXp !== false);
+            updateButtonState(changeShowRatioBtn, changeSettings.showRatio !== false);
+            updateButtonState(changeShowTotalBtn, changeSettings.showTotal !== false);
+            updateButtonState(changeShowNetBtn, changeSettings.showNet !== false);
+            updateButtonState(changeShowPriceBtn, changeSettings.showPrice !== false);
+            updateButtonState(changeShowTotalVolumeBtn, changeSettings.showTotalVolume !== false);
+            updateButtonState(changeShowLevelBtn, changeSettings.showLevel !== false);
+            updateButtonState(changeShowSessionChangeBtn, changeSettings.showSessionChange !== false);
+            console.log("✅ Loaded Change settings:", changeSettings);
+        } catch (error) {
+            console.error("❌ Failed to load Change settings:", error);
+            changeListLengthInput.value = 25; // fallback
+            changeShowHeadersToggle.checked = false; // fallback
+            updateButtonState(changeShowUpXpBtn, true); // fallback
+            updateButtonState(changeShowDownXpBtn, true); // fallback
+            updateButtonState(changeShowRatioBtn, true); // fallback
+            updateButtonState(changeShowTotalBtn, true); // fallback
+            updateButtonState(changeShowNetBtn, true); // fallback
+            updateButtonState(changeShowPriceBtn, true); // fallback
+            updateButtonState(changeShowTotalVolumeBtn, true); // fallback
+            updateButtonState(changeShowLevelBtn, true); // fallback
+            updateButtonState(changeShowSessionChangeBtn, true); // fallback
+        }
+    }
+
+    // Save Change settings
+    async function saveChangeSettings() {
+        try {
+            const newLength = parseInt(changeListLengthInput.value, 10) || 25;
+            const clampedLength = Math.max(1, Math.min(50, newLength));
+            
+            if (clampedLength !== newLength) {
+                changeListLengthInput.value = clampedLength;
+            }
+            
+            // Get current settings to preserve all existing values
+            const currentSettings = await window.changeSettingsAPI.get();
+            const currentShowHeaders = changeShowHeadersToggle.checked;
+            
+            // Update only the list length and headers, preserve all other settings
+            await window.changeSettingsAPI.set({ 
+                ...currentSettings,
+                listLength: clampedLength, 
+                showHeaders: currentShowHeaders 
+            });
+            console.log("✅ Saved Change list length:", clampedLength);
+        } catch (error) {
+            console.error("❌ Failed to save Change settings:", error);
+        }
+    }
+
+    // Save Change show headers setting
+    async function saveChangeShowHeaders() {
+        try {
+            const showHeaders = changeShowHeadersToggle.checked;
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showHeaders, listLength: currentLength });
+            console.log("✅ Saved Change show headers:", showHeaders);
+        } catch (error) {
+            console.error("❌ Failed to save Change show headers setting:", error);
+        }
+    }
+
+    // Save Change show up XP setting
+    async function saveChangeShowUpXp() {
+        try {
+            const showUpXp = changeShowUpXpBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showUpXp, listLength: currentLength });
+            console.log("✅ Saved Change show up XP:", showUpXp);
+        } catch (error) {
+            console.error("❌ Failed to save Change show up XP setting:", error);
+        }
+    }
+
+    // Save Change show down XP setting
+    async function saveChangeShowDownXp() {
+        try {
+            const showDownXp = changeShowDownXpBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showDownXp, listLength: currentLength });
+            console.log("✅ Saved Change show down XP:", showDownXp);
+        } catch (error) {
+            console.error("❌ Failed to save Change show down XP setting:", error);
+        }
+    }
+
+    // Save Change show ratio setting
+    async function saveChangeShowRatio() {
+        try {
+            const showRatio = changeShowRatioBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showRatio, listLength: currentLength });
+            console.log("✅ Saved Change show ratio:", showRatio);
+        } catch (error) {
+            console.error("❌ Failed to save Change show ratio setting:", error);
+        }
+    }
+
+    // Save Change show total setting
+    async function saveChangeShowTotal() {
+        try {
+            const showTotal = changeShowTotalBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showTotal, listLength: currentLength });
+            console.log("✅ Saved Change show total:", showTotal);
+        } catch (error) {
+            console.error("❌ Failed to save Change show total setting:", error);
+        }
+    }
+
+    // Save Change show net setting
+    async function saveChangeShowNet() {
+        try {
+            const showNet = changeShowNetBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showNet, listLength: currentLength });
+            console.log("✅ Saved Change show net:", showNet);
+        } catch (error) {
+            console.error("❌ Failed to save Change show net setting:", error);
+        }
+    }
+
+    // Save Change show price setting
+    async function saveChangeShowPrice() {
+        try {
+            const showPrice = changeShowPriceBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showPrice, listLength: currentLength });
+            console.log("✅ Saved Change show price:", showPrice);
+        } catch (error) {
+            console.error("❌ Failed to save Change show price setting:", error);
+        }
+    }
+
+    // Save Change show total volume setting
+    async function saveChangeShowTotalVolume() {
+        try {
+            const showTotalVolume = changeShowTotalVolumeBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showTotalVolume, listLength: currentLength });
+            console.log("✅ Saved Change show total volume:", showTotalVolume);
+        } catch (error) {
+            console.error("❌ Failed to save Change show total volume setting:", error);
+        }
+    }
+
+    // Save Change show level setting
+    async function saveChangeShowLevel() {
+        try {
+            const showLevel = changeShowLevelBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showLevel, listLength: currentLength });
+            console.log("✅ Saved Change show level:", showLevel);
+        } catch (error) {
+            console.error("❌ Failed to save Change show level setting:", error);
+        }
+    }
+
+    // Save Change show session change setting
+    async function saveChangeShowSessionChange() {
+        try {
+            const showSessionChange = changeShowSessionChangeBtn.classList.contains('active');
+            const currentLength = parseInt(changeListLengthInput.value, 10) || 25;
+            await window.changeSettingsAPI.set({ showSessionChange, listLength: currentLength });
+            console.log("✅ Saved Change show session change:", showSessionChange);
+        } catch (error) {
+            console.error("❌ Failed to save Change show session change setting:", error);
+        }
+    }
+
+    // Load initial settings
+    loadChangeSettings();
+
+    // Add event listeners
+    changeListLengthInput.addEventListener("input", saveChangeSettings);
+    changeShowHeadersToggle.addEventListener("change", saveChangeShowHeaders);
+    changeShowUpXpBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowUpXpBtn);
+        saveChangeShowUpXp();
+    });
+    changeShowDownXpBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowDownXpBtn);
+        saveChangeShowDownXp();
+    });
+    changeShowRatioBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowRatioBtn);
+        saveChangeShowRatio();
+    });
+    changeShowTotalBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowTotalBtn);
+        saveChangeShowTotal();
+    });
+    changeShowNetBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowNetBtn);
+        saveChangeShowNet();
+    });
+    changeShowPriceBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowPriceBtn);
+        saveChangeShowPrice();
+    });
+    changeShowTotalVolumeBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowTotalVolumeBtn);
+        saveChangeShowTotalVolume();
+    });
+    changeShowLevelBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowLevelBtn);
+        saveChangeShowLevel();
+    });
+    changeShowSessionChangeBtn.addEventListener("click", () => {
+        toggleButtonState(changeShowSessionChangeBtn);
+        saveChangeShowSessionChange();
+    });
+
+    // Set up change settings update handler
+    window.changeSettingsAPI.onUpdate(async (updatedSettings) => {
+        if (updatedSettings) {
+            changeListLengthInput.value = updatedSettings.listLength || 25;
+            changeShowHeadersToggle.checked = updatedSettings.showHeaders || false;
+            updateButtonState(changeShowUpXpBtn, updatedSettings.showUpXp !== false);
+            updateButtonState(changeShowDownXpBtn, updatedSettings.showDownXp !== false);
+            updateButtonState(changeShowRatioBtn, updatedSettings.showRatio !== false);
+            updateButtonState(changeShowTotalBtn, updatedSettings.showTotal !== false);
+            updateButtonState(changeShowNetBtn, updatedSettings.showNet !== false);
+            updateButtonState(changeShowPriceBtn, updatedSettings.showPrice !== false);
+            updateButtonState(changeShowTotalVolumeBtn, updatedSettings.showTotalVolume !== false);
+            updateButtonState(changeShowLevelBtn, updatedSettings.showLevel !== false);
+            updateButtonState(changeShowSessionChangeBtn, updatedSettings.showSessionChange !== false);
+            console.log("✅ Change settings updated from other window:", updatedSettings);
         }
     });
 }

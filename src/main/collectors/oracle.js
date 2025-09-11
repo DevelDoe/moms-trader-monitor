@@ -74,6 +74,12 @@ const XP_BROADCAST_TARGETS = [
     // etc.
 ];
 
+// Configure which windows should receive Change broadcasts (sorted by session_change_percent)
+const CHANGE_BROADCAST_TARGETS = [
+    "scrollChange",
+    // Add more windows here as needed
+];
+
 // Configure which windows should receive News broadcasts
 const NEWS_BROADCAST_TARGETS = [
     "news",
@@ -108,6 +114,16 @@ function broadcastXpData(type, data) {
         const w = windows[windowName];
         if (w?.webContents && !w.webContents.isDestroyed()) {
             w.webContents.send(`xp-${type}`, data);
+        }
+    });
+}
+
+function broadcastChangeData(type, data) {
+    // Broadcast to all configured change target windows
+    CHANGE_BROADCAST_TARGETS.forEach((windowName) => {
+        const w = windows[windowName];
+        if (w?.webContents && !w.webContents.isDestroyed()) {
+            w.webContents.send(`change-${type}`, data);
         }
     });
 }
@@ -401,8 +417,14 @@ const createWebSocket = () => {
             // Broadcast net XP sorted data to scrollXp, sessionHistory, scrollStats
             broadcastXpData("active-stocks", netXpSortedData);
 
-            // Note: Original symbols list (sorted by session_change_percent) is preserved in latestActiveStocks
-            // for future implementation of new view
+            // Create data for windows that need original symbols list (sorted by session_change_percent)
+            const changeSortedData = {
+                ...activeStocks,
+                symbols: activeStocks.symbols ? activeStocks.symbols.slice(0, 50) : []
+            };
+
+            // Broadcast change sorted data to scrollChange
+            broadcastChangeData("active-stocks", changeSortedData);
 
             return;
         }
@@ -965,6 +987,18 @@ const getFilingCount = () => {
     return latestFilingCount;
 };
 
+// IPC handlers for Change data requests
+const getChangeActiveStocks = () => {
+    // Return the original symbols list (sorted by session_change_percent)
+    if (latestActiveStocks) {
+        return {
+            ...latestActiveStocks,
+            symbols: latestActiveStocks.symbols ? latestActiveStocks.symbols.slice(0, 50) : []
+        };
+    }
+    return null;
+};
+
 module.exports = {
     oracle,
     getXpActiveStocks,
@@ -974,6 +1008,7 @@ module.exports = {
     getNewsCount,
     getFilingHeadlines,
     getFilingCount,
+    getChangeActiveStocks,
     requestHydration,
     requestHeadlines,
     requestNewsCount,

@@ -516,6 +516,383 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Change Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const changeSettingsStore = createStore("change-settings-store", "change.");
+const changeSettingsBus = new EventEmitter();
+
+let _changeListLength = changeSettingsStore.get("listLength", 25); // Default to 25
+let _changeShowHeaders = changeSettingsStore.get("showHeaders", true); // Default to visible
+let _changeShowUpXp = changeSettingsStore.get("showUpXp", true); // Default to visible
+let _changeShowDownXp = changeSettingsStore.get("showDownXp", true); // Default to visible
+let _changeShowRatio = changeSettingsStore.get("showRatio", true); // Default to visible
+let _changeShowTotal = changeSettingsStore.get("showTotal", true); // Default to visible
+let _changeShowNet = changeSettingsStore.get("showNet", true); // Default to visible
+let _changeShowPrice = changeSettingsStore.get("showPrice", true); // Default to visible
+let _changeShowTotalVolume = changeSettingsStore.get("showTotalVolume", true); // Default to visible
+let _changeShowLevel = changeSettingsStore.get("showLevel", true); // Default to visible
+let _changeShowSessionChange = changeSettingsStore.get("showSessionChange", true); // Default to visible
+
+function getChangeListLength() {
+    return _changeListLength;
+}
+
+function setChangeListLength(length) {
+    const newLength = Math.max(1, Number(length) || 25);
+    if (newLength === _changeListLength) return false;
+    
+    _changeListLength = newLength;
+    changeSettingsStore.set("listLength", _changeListLength);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowHeaders() {
+    return _changeShowHeaders;
+}
+
+function setChangeShowHeaders(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowHeaders) return false;
+    
+    _changeShowHeaders = newShow;
+    changeSettingsStore.set("showHeaders", _changeShowHeaders);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowUpXp() {
+    return _changeShowUpXp;
+}
+
+function setChangeShowUpXp(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowUpXp) return false;
+    
+    _changeShowUpXp = newShow;
+    changeSettingsStore.set("showUpXp", _changeShowUpXp);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowDownXp() {
+    return _changeShowDownXp;
+}
+
+function setChangeShowDownXp(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowDownXp) return false;
+    
+    _changeShowDownXp = newShow;
+    changeSettingsStore.set("showDownXp", _changeShowDownXp);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowRatio() {
+    return _changeShowRatio;
+}
+
+function setChangeShowRatio(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowRatio) return false;
+    
+    _changeShowRatio = newShow;
+    changeSettingsStore.set("showRatio", _changeShowRatio);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowTotal() {
+    return _changeShowTotal;
+}
+
+function setChangeShowTotal(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowTotal) return false;
+    
+    _changeShowTotal = newShow;
+    changeSettingsStore.set("showTotal", _changeShowTotal);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowNet() {
+    return _changeShowNet;
+}
+
+function setChangeShowNet(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowNet) return false;
+    
+    _changeShowNet = newShow;
+    changeSettingsStore.set("showNet", _changeShowNet);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowPrice() {
+    return _changeShowPrice;
+}
+
+function setChangeShowPrice(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowPrice) return false;
+    
+    _changeShowPrice = newShow;
+    changeSettingsStore.set("showPrice", _changeShowPrice);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowTotalVolume() {
+    return _changeShowTotalVolume;
+}
+
+function setChangeShowTotalVolume(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowTotalVolume) return false;
+    
+    _changeShowTotalVolume = newShow;
+    changeSettingsStore.set("showTotalVolume", _changeShowTotalVolume);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowLevel() {
+    return _changeShowLevel;
+}
+
+function setChangeShowLevel(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowLevel) return false;
+    
+    _changeShowLevel = newShow;
+    changeSettingsStore.set("showLevel", _changeShowLevel);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function getChangeShowSessionChange() {
+    return _changeShowSessionChange;
+}
+
+function setChangeShowSessionChange(show) {
+    const newShow = Boolean(show);
+    if (newShow === _changeShowSessionChange) return false;
+    
+    _changeShowSessionChange = newShow;
+    changeSettingsStore.set("showSessionChange", _changeShowSessionChange);
+    
+    const payload = { listLength: _changeListLength, showHeaders: _changeShowHeaders, showUpXp: _changeShowUpXp, showDownXp: _changeShowDownXp, showRatio: _changeShowRatio, showTotal: _changeShowTotal, showNet: _changeShowNet, showPrice: _changeShowPrice, showTotalVolume: _changeShowTotalVolume, showLevel: _changeShowLevel, showSessionChange: _changeShowSessionChange };
+    changeSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-settings:change", payload);
+        } catch (err) {
+            log.log("[change-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__change_settings_ipc_registered__) {
+    app.__change_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("change-settings:get");
+    ipcMain.removeHandler("change-settings:set");
+    ipcMain.handle("change-settings:get", () => {
+        return { 
+            listLength: getChangeListLength(), 
+            showHeaders: getChangeShowHeaders(),
+            showUpXp: getChangeShowUpXp(),
+            showDownXp: getChangeShowDownXp(),
+            showRatio: getChangeShowRatio(),
+            showTotal: getChangeShowTotal(),
+            showNet: getChangeShowNet(),
+            showPrice: getChangeShowPrice(),
+            showTotalVolume: getChangeShowTotalVolume(),
+            showLevel: getChangeShowLevel(),
+            showSessionChange: getChangeShowSessionChange()
+        };
+    });
+    ipcMain.handle("change-settings:set", (_e, { listLength, showHeaders, showUpXp, showDownXp, showRatio, showTotal, showNet, showPrice, showTotalVolume, showLevel, showSessionChange }) => {
+        let changed = false;
+        if (listLength !== undefined) {
+            changed = setChangeListLength(listLength) || changed;
+        }
+        if (showHeaders !== undefined) {
+            changed = setChangeShowHeaders(showHeaders) || changed;
+        }
+        if (showUpXp !== undefined) {
+            changed = setChangeShowUpXp(showUpXp) || changed;
+        }
+        if (showDownXp !== undefined) {
+            changed = setChangeShowDownXp(showDownXp) || changed;
+        }
+        if (showRatio !== undefined) {
+            changed = setChangeShowRatio(showRatio) || changed;
+        }
+        if (showTotal !== undefined) {
+            changed = setChangeShowTotal(showTotal) || changed;
+        }
+        if (showNet !== undefined) {
+            changed = setChangeShowNet(showNet) || changed;
+        }
+        if (showPrice !== undefined) {
+            changed = setChangeShowPrice(showPrice) || changed;
+        }
+        if (showTotalVolume !== undefined) {
+            changed = setChangeShowTotalVolume(showTotalVolume) || changed;
+        }
+        if (showLevel !== undefined) {
+            changed = setChangeShowLevel(showLevel) || changed;
+        }
+        if (showSessionChange !== undefined) {
+            changed = setChangeShowSessionChange(showSessionChange) || changed;
+        }
+        return changed;
+    });
+
+    ipcMain.removeAllListeners("change-settings:subscribe");
+    ipcMain.on("change-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("change-settings:change", data);
+        push({ 
+            listLength: getChangeListLength(), 
+            showHeaders: getChangeShowHeaders(),
+            showUpXp: getChangeShowUpXp(),
+            showDownXp: getChangeShowDownXp(),
+            showRatio: getChangeShowRatio(),
+            showTotal: getChangeShowTotal(),
+            showNet: getChangeShowNet(),
+            showPrice: getChangeShowPrice(),
+            showTotalVolume: getChangeShowTotalVolume(),
+            showLevel: getChangeShowLevel(),
+            showSessionChange: getChangeShowSessionChange()
+        }); // prime immediately
+        changeSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[change-settings] unsubscribe WC", wc.id);
+            changeSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // HOD Settings store (persist + broadcast)
 // ─────────────────────────────────────────────────────────────────────
 
@@ -1148,6 +1525,11 @@ const DEFAULT_WINDOW_STATES = {
         height: 200,
         isOpen: false,
     },
+    scrollChangeWindow: {
+        width: 300,
+        height: 200,
+        isOpen: false,
+    },
     scrollStatsWindow: {
         width: 300,
         height: 200,
@@ -1245,6 +1627,7 @@ function calculateSmartWindowPosition(windowKey, width = 0, height = 0) {
             dockerWindow: { x: 100, y: 100 },
             progressWindow: { x: 0, y: 100 },
             scrollXpWindow: { x: -100, y: 100 },
+            scrollChangeWindow: { x: -100, y: 125 },
             scrollStatsWindow: { x: -100, y: 150 },
             newsWindow: { x: -100, y: 200 },
             scrollHodWindow: { x: -100, y: 250 },
@@ -1537,6 +1920,30 @@ module.exports = {
     setXpShowTotalVolume,
     getXpShowLevel,
     setXpShowLevel,
+    
+    // Change settings exports
+    getChangeListLength,
+    setChangeListLength,
+    getChangeShowHeaders,
+    setChangeShowHeaders,
+    getChangeShowUpXp,
+    setChangeShowUpXp,
+    getChangeShowDownXp,
+    setChangeShowDownXp,
+    getChangeShowRatio,
+    setChangeShowRatio,
+    getChangeShowTotal,
+    setChangeShowTotal,
+    getChangeShowNet,
+    setChangeShowNet,
+    getChangeShowPrice,
+    setChangeShowPrice,
+    getChangeShowTotalVolume,
+    setChangeShowTotalVolume,
+    getChangeShowLevel,
+    setChangeShowLevel,
+    getChangeShowSessionChange,
+    setChangeShowSessionChange,
     
     // HOD settings exports
     getHodListLength,

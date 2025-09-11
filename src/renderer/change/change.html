@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+        <link rel="stylesheet" href="../flat.css" />
+        <link rel="stylesheet" href="../components/symbol/symbol.css" />
+        <title>Hall of legends (change)</title>
+        <style>
+            body {
+                padding: 10px;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+            /* Symbol styles now handled by component CSS */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 16px;
+                border-radius: 1px;
+                overflow: hidden;
+                /* background: rgba(0, 0, 0, 0.3); */
+                /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); */
+                background: transparent;
+            }
+            th {
+                font-weight: 400;
+                text-transform: uppercase;
+                font-size: 14px;
+                letter-spacing: 0.5px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                user-select: none;
+                padding: 6px 8px;
+                text-align: left;
+                color: #666;
+                border-bottom: 1px solid #333;
+            }
+            th:hover {
+                background: rgba(255, 255, 255, 0.15);
+                color: #fff !important;
+            }
+            th:active {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            td {
+                padding: 6px 8px;
+                border-bottom: 1px solid #222;
+                color: #ccc;
+            }
+            tbody tr {
+                transition: all 0.2s ease;
+            }
+            
+            tr:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .sort-icon {
+                margin-left: 4px;
+                font-size: 14px;
+                opacity: 0.7;
+            }
+            .sort-active .sort-icon {
+                opacity: 1;
+                color: #00aeff;
+            }
+            
+            .sort-active {
+                /* background: rgba(0, 174, 255, 0.1); */
+                border-bottom: 2px solid #00aeff;
+            }
+            
+            /* Trophy styles */
+            .trophy {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                margin-right: 4px;
+                vertical-align: middle;
+                margin-right: -3px;
+            }
+
+            
+            .rank-cell {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 4px;
+            }
+        </style>
+        
+        <!-- Trophy SVG Sprite - Hidden but accessible -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position: absolute; visibility: hidden;">
+            <defs>
+                <symbol id="trophy-gold" viewBox="0 0 100 100">
+                    <path d="M50 10 L65 40 H35 Z" fill="gold"/>
+                    <circle cx="50" cy="45" r="20" fill="gold"/>
+                    <rect x="40" y="65" width="20" height="20" fill="gold"/>
+                </symbol>
+                <symbol id="trophy-silver" viewBox="0 0 100 100">
+                    <path d="M50 10 L65 40 H35 Z" fill="silver"/>
+                    <circle cx="50" cy="45" r="20" fill="silver"/>
+                    <rect x="40" y="65" width="20" height="20" fill="silver"/>
+                </symbol>
+                <symbol id="trophy-bronze" viewBox="0 0 100 100">
+                    <path d="M50 10 L65 40 H35 Z" fill="#cd7f32"/>
+                    <circle cx="50" cy="45" r="20" fill="#cd7f32"/>
+                    <rect x="40" y="65" width="20" height="20" fill="#cd7f32"/>
+                </symbol>
+            </defs>
+        </svg>
+    </head>
+    <body>
+        <div class="drag-area"></div>
+        <h2>Hall of legends (change)</h2>
+        <div id="change-scroll">Loading...</div>
+
+        <script src="./change.js"></script>
+    </body>
+</html>

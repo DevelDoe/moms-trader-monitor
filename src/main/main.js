@@ -101,7 +101,7 @@ const { hydrateAndApplySymbols } = require("./collectors/arcane_api");
 // const { startMockNews } = require("./collectors/news"); // Removed - news now handled by oracle.js
 const { getLastAckCursor, setLastAckCursor, setTop3, getTop3 } = require("./electronStores");
 const { chronos } = require("./collectors/chronos");
-const { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate, getNewsHeadlines, getNewsCount, getFilingHeadlines, getFilingCount } = require("./collectors/oracle");
+const { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate, getNewsHeadlines, getNewsCount, getFilingHeadlines, getFilingCount, getChangeActiveStocks } = require("./collectors/oracle");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -129,6 +129,7 @@ const { createHeroesWindow } = require("./windows/heroes");
 const { createActiveWindow } = require("./windows/active");
 
 const { createScrollXpWindow } = require("./windows/scrollXp");
+const { createScrollChangeWindow } = require("./windows/scrollChange");
 const { createScrollStatsWindow } = require("./windows/scrollStats");
 const { createScrollHodWindow } = require("./windows/scrollHOD");
 
@@ -684,6 +685,11 @@ tickerStore.on("xp-reset", () => {
     broadcast("xp-reset");
 });
 
+tickerStore.on("change-reset", () => {
+    log.log("📢 Broadcasting change-reset to all windows");
+    broadcast("change-reset");
+});
+
 // Store
 ipcMain.handle("get-all-symbols", () => {
     return tickerStore.getAllSymbols();
@@ -781,6 +787,9 @@ ipcMain.handle("set-last-ack-cursor", (_evt, cursor) => setLastAckCursor(cursor)
 ipcMain.handle("get-xp-active-stocks", () => getXpActiveStocks());
 ipcMain.handle("get-xp-session-history", () => getXpSessionHistory());
 ipcMain.handle("get-xp-session-update", () => getXpSessionUpdate());
+
+// Change Data handlers
+ipcMain.handle("get-change-active-stocks", () => getChangeActiveStocks());
 
 // Oracle News handlers
 ipcMain.handle("get-news-headlines", () => getNewsHeadlines());
@@ -939,8 +948,22 @@ ipcMain.on("activate-scrollXp", () => {
     }
 });
 
+// Scroll Change
+ipcMain.on("activate-scrollChange", () => {
+    try {
+        const win = createWindow("scrollChange", () => createScrollChangeWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate change window:", err.message);
+    }
+});
+
 ipcMain.on("deactivate-scrollXp", () => {
     destroyWindow("scrollXp");
+});
+
+ipcMain.on("deactivate-scrollChange", () => {
+    destroyWindow("scrollChange");
 });
 
 // Scroll Stats

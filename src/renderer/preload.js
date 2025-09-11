@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
     nukeState: () => ipcRenderer.send("admin-nuke"),
     onXpReset: (cb) => ipcRenderer.on("xp-reset", cb),
+    onChangeReset: (cb) => ipcRenderer.on("change-reset", cb),
     getAuthInfo: () => ({
         token: localStorage.getItem("token"),
         role: localStorage.getItem("role"),
@@ -172,6 +173,11 @@ contextBridge.exposeInMainWorld("wizardAPI", {
     deactivate: () => ipcRenderer.send("deactivate-wizard"),
 });
 
+contextBridge.exposeInMainWorld("scrollChangeAPI", {
+    activate: () => ipcRenderer.send("activate-scrollChange"),
+    deactivate: () => ipcRenderer.send("deactivate-scrollChange"),
+});
+
 contextBridge.exposeInMainWorld("newsAPI", {
     activate: () => ipcRenderer.send("activate-news"),
     deactivate: () => ipcRenderer.send("deactivate-news"),
@@ -247,6 +253,12 @@ contextBridge.exposeInMainWorld("xpAPI", {
     onSessionUpdate: (callback) => ipcRenderer.on("xp-session-update", (_, data) => callback(data)),
 });
 
+// Change Data API
+contextBridge.exposeInMainWorld("changeAPI", {
+    getActiveStocks: () => ipcRenderer.invoke("get-change-active-stocks"),
+    onActiveStocksUpdate: (callback) => ipcRenderer.on("change-active-stocks", (_, data) => callback(data)),
+});
+
 // electron-stores
 
 contextBridge.exposeInMainWorld("oracleStore", {
@@ -263,6 +275,18 @@ contextBridge.exposeInMainWorld("xpSettingsAPI", {
         ipcRenderer.on("xp-settings:change", handler);
         ipcRenderer.send("xp-settings:subscribe");
         return () => ipcRenderer.removeListener("xp-settings:change", handler);
+    },
+});
+
+// Change Settings API
+contextBridge.exposeInMainWorld("changeSettingsAPI", {
+    get: () => ipcRenderer.invoke("change-settings:get"),
+    set: (settings) => ipcRenderer.invoke("change-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("change-settings:change", handler);
+        ipcRenderer.send("change-settings:subscribe");
+        return () => ipcRenderer.removeListener("change-settings:change", handler);
     },
 });
 
