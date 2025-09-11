@@ -170,6 +170,36 @@ document.addEventListener("DOMContentLoaded", async () => {
             render();
         }
     });
+
+    // Listen for Oracle hydration completion to refresh data
+    window.newsAPI.onHydrationComplete(() => {
+        console.log("🔄 [NEWS] Oracle hydration complete - refreshing news and filings data...");
+        
+        // Clear existing data
+        allNews = [];
+        allFilings = [];
+        
+        // Re-fetch data from Oracle
+        window.newsAPI.getHeadlines().then((headlines) => {
+            if (Array.isArray(headlines)) {
+                allNews = headlines;
+                console.log(`📰 [NEWS] Refreshed: ${allNews.length} headlines after hydration`);
+            }
+            render();
+        }).catch((e) => {
+            console.warn("📰 [NEWS] Failed to refresh headlines after hydration:", e);
+        });
+
+        window.filingAPI.getHeadlines().then((filings) => {
+            if (Array.isArray(filings)) {
+                allFilings = filings;
+                console.log(`📁 [NEWS] Refreshed: ${allFilings.length} filings after hydration`);
+            }
+            render();
+        }).catch((e) => {
+            console.warn("📁 [NEWS] Failed to refresh filings after hydration:", e);
+        });
+    });
 });
 
 // Sentiment analysis function (from active.js)

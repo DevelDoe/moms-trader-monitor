@@ -144,6 +144,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         displayedNewsKeys.clear();
         // Don't fetch news - only listen for deltas
     });
+
+    // Listen for Oracle hydration completion to refresh data
+    window.newsAPI.onHydrationComplete(() => {
+        console.log("🔄 [INFOBAR] Oracle hydration complete - clearing displayed news keys...");
+        
+        // Clear displayed news keys so we can show new items
+        displayedNewsKeys.clear();
+        
+        // Clear the news queue
+        newsQueue.length = 0;
+        
+        // Stop any currently displaying news
+        if (isNewsDisplaying) {
+            const container = document.querySelector(".bonus-list");
+            if (container) {
+                container.innerHTML = "";
+                isNewsDisplaying = false;
+            }
+        }
+        
+        // Restart the regular ticker
+        initTicker(".bonus-list", bonusItems);
+        
+        console.log("🔄 [INFOBAR] Cleared all news data and restarted ticker after hydration");
+    });
 });
 
 async function loadSettings() {

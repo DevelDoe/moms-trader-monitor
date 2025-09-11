@@ -265,6 +265,26 @@ async function initializeOracleNews() {
             // Filing display now handled in renderOracleNews() when UI updates
         }
     });
+
+    // Listen for Oracle hydration completion to refresh data
+    window.newsAPI.onHydrationComplete(() => {
+        console.log("🔄 [ACTIVE] Oracle hydration complete - refreshing news data...");
+        
+        // Clear existing data
+        allOracleNews = [];
+        
+        // Re-fetch data from Oracle
+        window.newsAPI.getHeadlines().then((headlines) => {
+            if (Array.isArray(headlines)) {
+                allOracleNews = headlines;
+                console.log(`📰 [ACTIVE] Refreshed: ${allOracleNews.length} headlines after hydration`);
+            }
+            // Re-render the active view with updated data
+            renderOracleNews();
+        }).catch((e) => {
+            console.warn("📰 [ACTIVE] Failed to refresh headlines after hydration:", e);
+        });
+    });
 }
 
     // Filing integration not needed - filings come from store.attachFilingToSymbol()

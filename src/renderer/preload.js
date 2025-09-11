@@ -182,6 +182,7 @@ contextBridge.exposeInMainWorld("newsAPI", {
     onHeadlines: (callback) => ipcRenderer.on("news-headlines", (_, data) => callback(data)),
     onDelta: (callback) => ipcRenderer.on("news-delta", (_, data) => callback(data)),
     onCount: (callback) => ipcRenderer.on("news-count", (_, data) => callback(data)),
+    onHydrationComplete: (callback) => ipcRenderer.on("oracle-hydration-complete", () => callback()),
 });
 
 contextBridge.exposeInMainWorld("filingAPI", {

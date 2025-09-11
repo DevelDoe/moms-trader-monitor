@@ -112,6 +112,29 @@ function broadcastXpData(type, data) {
     });
 }
 
+function broadcastRefreshSignal() {
+    // Broadcast refresh signal to all windows that consume news and filings data
+    const allTargets = [...new Set([...NEWS_BROADCAST_TARGETS, ...FILING_BROADCAST_TARGETS])];
+    
+    if (HYDRATION_DEBUG) {
+        log.log(`🔄 Broadcasting refresh signal to ${allTargets.length} windows after hydration completion`);
+    }
+    
+    allTargets.forEach((windowName) => {
+        const w = windows[windowName];
+        if (w?.webContents && !w.webContents.isDestroyed()) {
+            w.webContents.send("oracle-hydration-complete");
+            if (HYDRATION_DEBUG) {
+                log.log(`🔄 Sent refresh signal to ${windowName} window`);
+            }
+        } else {
+            if (HYDRATION_DEBUG) {
+                log.log(`⚠️ Window '${windowName}' not available for refresh signal (exists: ${!!w}, destroyed: ${w?.isDestroyed?.()})`);
+            }
+        }
+    });
+}
+
 async function pullUntil(target) {
     const goal = asNum(target, NaN);
     if (!Number.isFinite(goal)) return getLastAckCursor() || 0;
@@ -520,7 +543,9 @@ const createWebSocket = () => {
                 
                 // Store latest filings data
                 latestFilings = filings;
-                log.log(`📁 [ORACLE] HYDRATION: Stored ${filings.length} filings in latestFilings`);
+                if(HYDRATION_DEBUG) {
+                    log.log(`📁 [ORACLE] HYDRATION: Stored ${filings.length} filings in latestFilings`);
+                }
 
                 // Log filing object structure only once (from hydration or delta)
                 if (FILING_DEBUG && !hasLoggedFilingStructure && filings.length > 0) {
@@ -583,6 +608,10 @@ const createWebSocket = () => {
             
             // Mark news hydration as complete so news buffs will be computed going forward
             store.markNewsHydrationComplete();
+
+            // Broadcast refresh signal to all windows that consume news and filings data
+            // This ensures they refresh themselves to get the updated (potentially empty) data
+            broadcastRefreshSignal();
 
             return;
         }
