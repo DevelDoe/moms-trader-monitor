@@ -179,8 +179,8 @@ contextBridge.exposeInMainWorld("newsAPI", {
     // Oracle news functions
     getHeadlines: () => ipcRenderer.invoke("get-news-headlines"),
     getCount: () => ipcRenderer.invoke("get-news-count"),
-    onHeadlines: (callback) => ipcRenderer.on("news-headlines", (_, data) => callback(data)),
-    onDelta: (callback) => ipcRenderer.on("news-delta", (_, data) => callback(data)),
+    onHeadlines: (callback) => ipcRenderer.on("news-headlines", (_, data, metadata) => callback(data, metadata)),
+    onDelta: (callback) => ipcRenderer.on("news-delta", (_, data, metadata) => callback(data, metadata)),
     onCount: (callback) => ipcRenderer.on("news-count", (_, data) => callback(data)),
     onHydrationComplete: (callback) => ipcRenderer.on("oracle-hydration-complete", () => callback()),
 });
@@ -189,8 +189,8 @@ contextBridge.exposeInMainWorld("filingAPI", {
     // Oracle filing functions
     getHeadlines: () => ipcRenderer.invoke("get-filing-headlines"),
     getCount: () => ipcRenderer.invoke("get-filing-count"),
-    onHeadlines: (callback) => ipcRenderer.on("filing-headlines", (_, data) => callback(data)),
-    onDelta: (callback) => ipcRenderer.on("filing-delta", (_, data) => callback(data)),
+    onHeadlines: (callback) => ipcRenderer.on("filing-headlines", (_, data, metadata) => callback(data, metadata)),
+    onDelta: (callback) => ipcRenderer.on("filing-delta", (_, data, metadata) => callback(data, metadata)),
     onCount: (callback) => ipcRenderer.on("filing-count", (_, data) => callback(data)),
 });
 

@@ -516,19 +516,19 @@ const createWebSocket = () => {
                     log.log(`📰 [ORACLE] Attached news to ${attachmentCount} symbol instances`);
                 }
 
-                // Broadcast to all configured news target windows
-                let actualBroadcastCount = 0;
-                NEWS_BROADCAST_TARGETS.forEach((windowName) => {
-                    const w = windows[windowName];
-                    if (w?.webContents && !w.webContents.isDestroyed()) {
-                        w.webContents.send("news-headlines", headlines);
-                        actualBroadcastCount++;
-                    } else {
-                        if (NEWS_DEBUG) {
-                            log.log(`⚠️ News window '${windowName}' not available for headlines broadcast (exists: ${!!w}, destroyed: ${w?.isDestroyed?.()})`);
-                        }
+            // Broadcast to all configured news target windows with hydration flag
+            let actualBroadcastCount = 0;
+            NEWS_BROADCAST_TARGETS.forEach((windowName) => {
+                const w = windows[windowName];
+                if (w?.webContents && !w.webContents.isDestroyed()) {
+                    w.webContents.send("news-headlines", headlines, { isHydration: true });
+                    actualBroadcastCount++;
+                } else {
+                    if (NEWS_DEBUG) {
+                        log.log(`⚠️ News window '${windowName}' not available for headlines broadcast (exists: ${!!w}, destroyed: ${w?.isDestroyed?.()})`);
                     }
-                });
+                }
+            });
 
                 if (NEWS_DEBUG) {
                     log.log(`📤 Broadcasted ${headlines.length} headlines to ${actualBroadcastCount}/${NEWS_BROADCAST_TARGETS.length} windows`);
@@ -579,12 +579,12 @@ const createWebSocket = () => {
                     log.log(`📁 [ORACLE] Attached filings to ${filingAttachmentCount} symbol instances`);
                 }
 
-                // Broadcast to all configured filing target windows
+                // Broadcast to all configured filing target windows with hydration flag
                 let actualBroadcastCount = 0;
                 FILING_BROADCAST_TARGETS.forEach((windowName) => {
                     const w = windows[windowName];
                     if (w?.webContents && !w.webContents.isDestroyed()) {
-                        w.webContents.send("filing-headlines", filings);
+                        w.webContents.send("filing-headlines", filings, { isHydration: true });
                         actualBroadcastCount++;
                         log.log(`📁 [ORACLE] HYDRATION: Broadcasted ${filings.length} filings to ${windowName}`);
                     } else {
@@ -674,12 +674,12 @@ const createWebSocket = () => {
                 latestNewsHeadlines = [newsItem];
             }
 
-            // Broadcast delta update to all configured news target windows
+            // Broadcast delta update to all configured news target windows with delta flag
             let actualBroadcastCount = 0;
             NEWS_BROADCAST_TARGETS.forEach((windowName) => {
                 const w = windows[windowName];
                 if (w?.webContents && !w.webContents.isDestroyed()) {
-                    w.webContents.send("news-delta", newsItem);
+                    w.webContents.send("news-delta", newsItem, { isDelta: true });
                     actualBroadcastCount++;
                 } else {
                     if (NEWS_DEBUG) {
@@ -731,11 +731,11 @@ const createWebSocket = () => {
                 latestFilings = [filingItem];
             }
 
-            // Broadcast delta update to all configured filing target windows
+            // Broadcast delta update to all configured filing target windows with delta flag
             FILING_BROADCAST_TARGETS.forEach((windowName) => {
                 const w = windows[windowName];
                 if (w?.webContents && !w.webContents.isDestroyed()) {
-                    w.webContents.send("filing-delta", filingItem);
+                    w.webContents.send("filing-delta", filingItem, { isDelta: true });
                 }
             });
 
