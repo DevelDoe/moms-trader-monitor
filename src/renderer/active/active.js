@@ -1029,17 +1029,25 @@ function formatFilingTime(ts) {
 
 // Check if news item is older than 4 minutes (should be collapsed)
 function isNewsItemCollapsed(newsItem) {
-    // Use received_at timestamp for deltas, fallback to other timestamps for hydrated items
-    const ts = newsItem.received_at ?? newsItem.published_at ?? newsItem.created_at ?? newsItem.updated_at;
-    if (!ts) return true; // If no timestamp, treat as collapsed
+    // Use the same timestamp extraction logic as getNewsTimestamp for consistency
+    const timestampStr = newsItem.published_at || newsItem.received_at || newsItem.created_at || newsItem.updated_at;
+    if (!timestampStr) return true; // If no timestamp, treat as collapsed
     
-    const ms = parseTs(ts);
+    // Use the same parsing approach as getNewsTimestamp for consistency
+    const ms = new Date(timestampStr).getTime();
     if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
     const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
+    const ageInMs = now - ms;
+    const ageInMinutes = ageInMs / (60 * 1000);
     
-    return (now - ms) > fourMinutesInMs;
+    // Debug logging for items close to collapse threshold
+    if (ageInMinutes > 3.5 && ageInMinutes < 4.5) {
+        console.log(`📰 [ACTIVE] News item "${newsItem.headline?.substring(0, 50)}..." age: ${ageInMinutes.toFixed(1)}min, collapsed: ${ageInMs > fourMinutesInMs}`);
+    }
+    
+    return ageInMs > fourMinutesInMs;
 }
 
 // Timer to periodically re-render news items so they can collapse after 4 minutes
@@ -1051,13 +1059,13 @@ function startCollapseTimer() {
         clearInterval(collapseTimer);
     }
     
-    // Check every 30 seconds for items that need to collapse
+    // Check every 15 seconds for items that need to collapse (more frequent for better responsiveness)
     collapseTimer = setInterval(() => {
         // console.log("📰 [ACTIVE] Collapse timer: checking for items to collapse");
         renderOracleNews();
-    }, 30000); // 30 seconds
+    }, 15000); // 15 seconds (more frequent than 30s for better timing accuracy)
     
-    // console.log("📰 [ACTIVE] Collapse timer started: checking every 30 seconds");
+    // console.log("📰 [ACTIVE] Collapse timer started: checking every 15 seconds");
 }
 
 function stopCollapseTimer() {

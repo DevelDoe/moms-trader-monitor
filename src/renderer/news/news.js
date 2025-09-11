@@ -121,6 +121,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Start periodic re-render timer to collapse items after 4 minutes
     startCollapseTimer();
+    
+    // Clean up timer when window is closed or unloaded
+    window.addEventListener('beforeunload', () => {
+        stopCollapseTimer();
+    });
 
     // 2. SUBSCRIBE - Listen for Oracle news and filing updates
     window.newsAPI.onHeadlines((headlines) => {
@@ -135,13 +140,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     window.newsAPI.onDelta((newsItem) => {
-        // console.log(`📰 News delta event received:`, newsItem);
+        console.log(`📰 [NEWS] News delta event received:`, newsItem);
         if (newsItem) {
+            console.log(`📰 [NEWS] Delta news item details:`, {
+                symbol: newsItem.symbol,
+                headline: newsItem.headline?.substring(0, 50) + "...",
+                updated_at: newsItem.updated_at,
+                created_at: newsItem.created_at,
+                received_at: newsItem.received_at
+            });
             allNews.unshift(newsItem);
-            // console.log(`📰 Delta: +1 (total: ${allNews.length})`);
+            console.log(`📰 [NEWS] Delta: +1 (total: ${allNews.length})`);
             render();
         } else {
-            console.warn(`📰 News delta event failed: newsItem is falsy:`, newsItem);
+            console.warn(`📰 [NEWS] News delta event failed: newsItem is falsy:`, newsItem);
         }
     });
 
@@ -219,17 +231,25 @@ function getNewsSentimentClass(newsItem) {
 
 // Check if news item is older than 4 minutes
 function isNewsItemCollapsed(newsItem) {
-    // Use received_at timestamp for deltas, fallback to other timestamps for hydrated items
-    const ts = newsItem.received_at ?? newsItem.updated_at ?? newsItem.created_at;
+    // Use the same timestamp extraction logic as getTime() for consistency
+    const ts = newsItem.updated_at ?? newsItem.created_at ?? newsItem.received_at;
     if (!ts) return true; // If no timestamp, treat as collapsed
     
-    const ms = parseTs(ts);
-    if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
+    // Use the same parsing approach as getTime() for consistency
+    const ms = toMs(ts);
+    if (!ms || Number.isNaN(ms) || ms === 0) return true; // If invalid timestamp, treat as collapsed
     
     const now = Date.now();
     const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
+    const ageInMs = now - ms;
+    const ageInMinutes = ageInMs / (60 * 1000);
     
-    return (now - ms) > fourMinutesInMs;
+    // Debug logging for items close to collapse threshold
+    if (ageInMinutes > 3.5 && ageInMinutes < 4.5) {
+        console.log(`📰 [NEWS] News item "${newsItem.headline?.substring(0, 50)}..." age: ${ageInMinutes.toFixed(1)}min, collapsed: ${ageInMs > fourMinutesInMs}`);
+    }
+    
+    return ageInMs > fourMinutesInMs;
 }
 
 // 3. SORT & RENDER
@@ -244,25 +264,28 @@ function render() {
     
     // Add news items
     const blockList = window.newsSettings?.blockList || [];
-    // console.log(`📰 Filtering ${allNews.length} news items with block list:`, blockList);
+    console.log(`📰 [NEWS] Filtering ${allNews.length} news items with block list:`, blockList);
     const filteredNews = allNews.filter((newsItem) => {
         const headline = (newsItem.headline || "").toLowerCase();
         const isBlocked = blockList.some((blocked) => headline.includes(blocked.toLowerCase()));
-        // if (isBlocked) {
-        //     console.log(`🚫 News item blocked: "${headline}" (matched: "${blockList.find(blocked => headline.includes(blocked.toLowerCase()))}")`);
-        // }
+        if (isBlocked) {
+            console.log(`🚫 [NEWS] News item blocked: "${headline}" (matched: "${blockList.find(blocked => headline.includes(blocked.toLowerCase()))}")`);
+        }
         return !isBlocked;
     });
-    // console.log(`📰 After filtering: ${filteredNews.length} news items remaining`);
+    console.log(`📰 [NEWS] After filtering: ${filteredNews.length} news items remaining`);
     
     filteredNews.forEach(newsItem => {
         const timestamp = getTime(newsItem);
-        // console.log(`📰 Adding news item:`, {
-        //     headline: newsItem.headline?.substring(0, 50) + "...",
-        //     symbol: newsItem.symbol,
-        //     timestamp: timestamp,
-        //     timestampDate: new Date(timestamp).toISOString()
-        // });
+        console.log(`📰 [NEWS] Adding news item:`, {
+            headline: newsItem.headline?.substring(0, 50) + "...",
+            symbol: newsItem.symbol,
+            timestamp: timestamp,
+            timestampDate: new Date(timestamp).toISOString(),
+            updated_at: newsItem.updated_at,
+            created_at: newsItem.created_at,
+            received_at: newsItem.received_at
+        });
         allItems.push({
             type: 'news',
             data: newsItem,
@@ -564,11 +587,19 @@ function startCollapseTimer() {
         clearInterval(collapseTimer);
     }
     
-    // Check every 30 seconds for items that need to collapse
+    // Check every 15 seconds for items that need to collapse (more frequent for better responsiveness)
     collapseTimer = setInterval(() => {
-        // console.log("📰 Collapse timer: checking for items to collapse");
+        // console.log("📰 [NEWS] Collapse timer: checking for items to collapse");
         render();
-    }, 30000); // 30 seconds
+    }, 15000); // 15 seconds (more frequent than 30s for better timing accuracy)
     
-    // console.log("📰 Collapse timer started: checking every 30 seconds");
+    // console.log("📰 [NEWS] Collapse timer started: checking every 15 seconds");
+}
+
+function stopCollapseTimer() {
+    if (collapseTimer) {
+        clearInterval(collapseTimer);
+        collapseTimer = null;
+        // console.log("📰 [NEWS] Collapse timer stopped");
+    }
 }
