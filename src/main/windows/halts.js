@@ -1,18 +1,21 @@
-// ./src/main/windows/focus.js
+// ./src/main/windows/halts.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../utils/windowState");
 const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
-function createScrollStatsWindow(isDevelopment) {
-    const state = getWindowState("scrollStatsWindow");
+function createHaltsWindow(isDevelopment) {
+    const KEY = "haltsWindow";
+    const state = getWindowState(KEY) || {};
 
     const window = new BrowserWindow({
-        width: state.width || 850,
+        // ✅ restore both size and position
+        width:  state.width  || 850,
         height: state.height || 660,
-        x: state.x,
-        y: state.y,
+        x:      state.x,                // <- add
+        y:      state.y,                // <- add
+        frame: false,
         alwaysOnTop: false,
         resizable: true,
         roundedCorners: false,
@@ -29,7 +32,7 @@ function createScrollStatsWindow(isDevelopment) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/rating/stats.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/halts/halts.html"));
 
     if (isDevelopment) {
         window.webContents.once("did-finish-load", () => {
@@ -37,10 +40,12 @@ function createScrollStatsWindow(isDevelopment) {
         });
     }
 
+    // ✅ save to the same key
+    const save = () => setWindowBounds(KEY, window.getBounds());
     // Setup optimized bounds saving
-    setupWindowBoundsSaving(window, "scrollStatsWindow");
+    setupWindowBoundsSaving(window, "haltsWindow");
 
     return window;
 }
 
-module.exports = { createScrollStatsWindow };
+module.exports = { createHaltsWindow };

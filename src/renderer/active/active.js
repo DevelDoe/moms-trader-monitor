@@ -336,8 +336,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     // Initialize Oracle news integration
-    
     await initializeOracleNews();
+    
+    // Start the collapse timer to ensure news items collapse after 4 minutes
+    startCollapseTimer();
+
+    // Clean up timer when window is closed or unloaded
+    window.addEventListener('beforeunload', () => {
+        stopCollapseTimer();
+    });
 
     // Initialize UI with no symbol data
     updateUI(null); // Show "No active symbol" placeholder
@@ -1033,6 +1040,32 @@ function isNewsItemCollapsed(newsItem) {
     const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
     
     return (now - ms) > fourMinutesInMs;
+}
+
+// Timer to periodically re-render news items so they can collapse after 4 minutes
+let collapseTimer = null;
+
+function startCollapseTimer() {
+    // Clear any existing timer
+    if (collapseTimer) {
+        clearInterval(collapseTimer);
+    }
+    
+    // Check every 30 seconds for items that need to collapse
+    collapseTimer = setInterval(() => {
+        // console.log("📰 [ACTIVE] Collapse timer: checking for items to collapse");
+        renderOracleNews();
+    }, 30000); // 30 seconds
+    
+    // console.log("📰 [ACTIVE] Collapse timer started: checking every 30 seconds");
+}
+
+function stopCollapseTimer() {
+    if (collapseTimer) {
+        clearInterval(collapseTimer);
+        collapseTimer = null;
+        // console.log("📰 [ACTIVE] Collapse timer stopped");
+    }
 }
 
 /**

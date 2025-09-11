@@ -22,6 +22,7 @@ const { createScrollStatsWindow } = require("./windows/scrollStats");
 const { createScrollHodWindow } = require("./windows/scrollHOD");
 const { createNewsWindow } = require("./windows/news");
 const { createSessionHistoryWindow } = require("./windows/sessionHistory");
+const { createHaltsWindow } = require("./windows/halts");
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -95,6 +96,7 @@ async function restoreWindows() {
         scrollHod: "scrollHodWindow",
         news: "newsWindow",
         sessionHistory: "sessionHistoryWindow",
+        halts: "haltsWindow",
     };
 
     // First, restore all non-dependent windows
@@ -203,6 +205,8 @@ function createWindowByName(name) {
             return createNewsWindow(isDevelopment);
         case "sessionHistory":
             return createSessionHistoryWindow(isDevelopment);
+        case "halts":
+            return createHaltsWindow(isDevelopment);
         default:
             throw new Error(`No creator function for window: ${name}`);
     }

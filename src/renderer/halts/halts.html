@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+        <title>Trading Halts</title>
+        <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="./halts.css" />
+        <link rel="stylesheet" href="../flat.css" />
+    </head>
+    <body class="draggable">
+        <h2>🚨 Trading Halts Monitor</h2>
+        <div id="halts-container" class="no-drag">
+            <div class="halts-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Total Halts:</span>
+                    <span id="total-halts" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Currently Halted:</span>
+                    <span id="currently-halted" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Recent Events:</span>
+                    <span id="recent-events" class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="halts-list" id="halts-list">
+                <!-- Halt events will be populated here -->
+            </div>
+        </div>
+        <footer></footer>
+        <script src="./halts.js"></script>
+    </body>
+</html>

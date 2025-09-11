@@ -126,6 +126,9 @@ function initializeGeneralSection() {
     const showSessionHistoryToggle = document.getElementById("show-sessionHistory");
     showSessionHistoryToggle.checked = window.windowSettings.sessionHistoryWindow?.isOpen ?? false;
 
+    const showHaltsToggle = document.getElementById("show-halts");
+    showHaltsToggle.checked = window.windowSettings.haltsWindow?.isOpen ?? false;
+
     showEventsToggle.addEventListener("change", async (event) => {
         if (event.target.checked) {
             window.eventsAPI.activate();
@@ -256,6 +259,16 @@ function initializeGeneralSection() {
         }
 
         await window.windowSettingsAPI.setOpenState("sessionHistoryWindow", event.target.checked);
+    });
+
+    showHaltsToggle.addEventListener("change", async (event) => {
+        if (event.target.checked) {
+            window.haltAPI.activate();
+        } else {
+            window.haltAPI.deactivate();
+        }
+
+        await window.windowSettingsAPI.setOpenState("haltsWindow", event.target.checked);
     });
 
     // Reset All Windows Button

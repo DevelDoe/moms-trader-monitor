@@ -1,0 +1,220 @@
+/* halts.css - Trading Halts Monitor Styles */
+
+#halts-container {
+    padding: 10px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 8px;
+    margin: 5px;
+}
+
+.halts-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #ccc;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.halts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.halt-event {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px;
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.halt-event:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(2px);
+}
+
+/* Halt state specific colors */
+.halt-event.halted {
+    border-left-color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+}
+
+.halt-event.resumed {
+    border-left-color: #44ff44;
+    background: rgba(68, 255, 68, 0.1);
+}
+
+.halt-event.limit_state_enter {
+    border-left-color: #ffaa44;
+    background: rgba(255, 170, 68, 0.1);
+}
+
+.halt-event.limit_state_exit {
+    border-left-color: #44aaff;
+    background: rgba(68, 170, 255, 0.1);
+}
+
+.halt-event.unknown {
+    border-left-color: #888;
+    background: rgba(136, 136, 136, 0.1);
+}
+
+.halt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.halt-symbol {
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.halt-state {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.halt-state.halted {
+    background: #ff4444;
+    color: white;
+}
+
+.halt-state.resumed {
+    background: #44ff44;
+    color: black;
+}
+
+.halt-state.limit_state_enter {
+    background: #ffaa44;
+    color: black;
+}
+
+.halt-state.limit_state_exit {
+    background: #44aaff;
+    color: white;
+}
+
+.halt-state.unknown {
+    background: #888;
+    color: white;
+}
+
+.halt-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.halt-reason {
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.halt-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #999;
+}
+
+.halt-exchange {
+    font-weight: bold;
+}
+
+.halt-time {
+    font-family: monospace;
+}
+
+.halt-indicators {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #aaa;
+}
+
+.halt-indicators span {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 4px;
+}
+
+/* Animation for new halt events */
+@keyframes haltPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.halt-event.new {
+    animation: haltPulse 0.5s ease-in-out;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    color: #666;
+    padding: 40px 20px;
+    font-style: italic;
+}
+
+.empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .halts-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .stat-item {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .halt-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .halt-meta {
+        flex-direction: column;
+        gap: 4px;
+    }
+}

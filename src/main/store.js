@@ -528,6 +528,34 @@ class Store extends EventEmitter {
         this.recomputeBuffsForSymbol(symbol);
     }
 
+    attachHaltToSymbol(haltItem, symbol) {
+        const ticker = this.symbols.get(symbol);
+        if (!ticker) {
+            // log.log(`[attachHaltToSymbol] Symbol '${symbol}' not found in store`);
+            return;
+        }
+
+        // Attach halt to symbol
+        ticker.Halts = ticker.Halts || [];
+        // Use timestamp + state for deduplication
+        const haltKey = `${haltItem.timestamp}_${haltItem.state}`;
+        if (!ticker.Halts.some((h) => `${h.timestamp}_${h.state}` === haltKey)) {
+            ticker.Halts.push(haltItem);
+            
+            // Keep only the most recent 10 halts per symbol
+            if (ticker.Halts.length > 10) {
+                ticker.Halts = ticker.Halts.slice(-10);
+            }
+            
+            if (process.env.DEBUG === "true") {
+                log.log(`🚨 [STORE] Attached halt to ${symbol}: ${haltItem.state} - ${haltItem.reason?.substring(0, 50)}...`);
+            }
+        }
+
+        // Recompute all buffs for this symbol (including halt buff)
+        this.recomputeBuffsForSymbol(symbol);
+    }
+
     clearAllNews() {
         log.log("[clearAllNews] Clearing all news data from all symbols");
         let clearedCount = 0;
@@ -567,6 +595,23 @@ class Store extends EventEmitter {
         
         log.log(`[clearAllFilings] Cleared filings from ${clearedCount} symbols`);
         this.emit("filings-cleared");
+    }
+
+    clearAllHalts() {
+        log.log("[clearAllHalts] Clearing all halt data from all symbols");
+        let clearedCount = 0;
+        
+        for (const [symbol, ticker] of this.symbols) {
+            if (ticker.Halts && ticker.Halts.length > 0) {
+                ticker.Halts = [];
+                clearedCount++;
+                // Recompute buffs since halts affect sentiment
+                this.recomputeBuffsForSymbol(symbol);
+            }
+        }
+        
+        log.log(`[clearAllHalts] Cleared halts from ${clearedCount} symbols`);
+        this.emit("halts-cleared");
     }
 
     fetchNews() {

@@ -16,6 +16,7 @@ const FILING_DEBUG = DEBUG && true;    // Filing data logging
 const SESSION_DEBUG = DEBUG && false;   // Session data logging
 const SYMBOL_DEBUG = DEBUG && false;    // Symbol data logging
 const HYDRATION_DEBUG = DEBUG && true;    // Symbol data logging
+const HALT_DEBUG = DEBUG && true;       // Halt data logging
 
 if (XP_DEBUG) {
     log.log("🔍 XP Debug logging enabled - will show detailed XP data structures");
@@ -34,6 +35,9 @@ if (SESSION_DEBUG) {
 }
 if (SYMBOL_DEBUG) {
     log.log("🔔 Symbol Debug logging enabled - will show detailed symbol data structures");
+}
+if (HALT_DEBUG) {
+    log.log("🚨 Halt Debug logging enabled - will show detailed halt data structures");
 }
 
 const URL = "wss://oracle.arcanemonitor.com:8443/ws";
@@ -61,6 +65,11 @@ let latestNewsCount = 0;
 let latestFilings = null;
 let latestFilingCount = 0;
 let hasLoggedFilingStructure = false;
+
+// Store latest halt data for IPC requests
+let latestHalts = null;
+let latestHaltCount = 0;
+let hasLoggedHaltStructure = false;
 
 // Configure which windows should receive XP broadcasts
 const XP_BROADCAST_TARGETS = [
@@ -90,6 +99,13 @@ const NEWS_BROADCAST_TARGETS = [
 // Configure which windows should receive Filing broadcasts
 const FILING_BROADCAST_TARGETS = [
     "news",
+    "active",
+    "infobar",
+];
+
+// Configure which windows should receive Halt broadcasts
+const HALT_BROADCAST_TARGETS = [
+    "halts",
     "active",
     "infobar",
 ];
@@ -124,6 +140,16 @@ function broadcastChangeData(type, data) {
         const w = windows[windowName];
         if (w?.webContents && !w.webContents.isDestroyed()) {
             w.webContents.send(`change-${type}`, data);
+        }
+    });
+}
+
+function broadcastHaltData(type, data) {
+    // Broadcast to all configured halt target windows
+    HALT_BROADCAST_TARGETS.forEach((windowName) => {
+        const w = windows[windowName];
+        if (w?.webContents && !w.webContents.isDestroyed()) {
+            w.webContents.send(`halt-${type}`, data);
         }
     });
 }
@@ -501,17 +527,20 @@ const createWebSocket = () => {
                 log.log(`📊 Metadata: headlines_count=${metadata.headlines_count}, filings_count=${metadata.filings_count}`);
             }
 
-            // FRESH START: Clear all existing news and filings data before processing new data
+            // FRESH START: Clear all existing news, filings, and halts data before processing new data
             // This ensures we start clean on reconnects/rehydration
-            log.log("🧹 [ORACLE] Starting fresh - clearing all existing news and filings data");
+            log.log("🧹 [ORACLE] Starting fresh - clearing all existing news, filings, and halts data");
             store.clearAllNews();
             store.clearAllFilings();
+            store.clearAllHalts();
             
             // Clear local cached data as well
             latestNewsHeadlines = null;
             latestFilings = null;
+            latestHalts = null;
             latestNewsCount = 0;
             latestFilingCount = 0;
+            latestHaltCount = 0;
 
             // Handle headlines
             if (headlines.length > 0) {
@@ -773,6 +802,63 @@ const createWebSocket = () => {
             return;
         }
 
+        if (msg.type === "halt") {
+            // Handle real-time halt updates
+            const haltItem = msg.halt || msg;
+            if (HALT_DEBUG) {
+                log.log(`🚨 Received halt event: ${haltItem.symbol || "unknown"} - ${haltItem.state || "unknown"} - ${haltItem.reason || "no reason"}`);
+                
+                // Log halt object structure only once
+                if (HALT_DEBUG && !hasLoggedHaltStructure) {
+                    log.log(`🚨 Halt object structure (first time):`, JSON.stringify(haltItem, null, 2));
+                    hasLoggedHaltStructure = true;
+                }
+            }
+
+            // Enrich halt with local received_at timestamp
+            haltItem.received_at = new Date().toISOString();
+
+            // Attach halt to individual symbol
+            if (haltItem.symbol) {
+                store.attachHaltToSymbol(haltItem, haltItem.symbol);
+            }
+
+            // Add to existing halts (if we have them)
+            if (latestHalts && Array.isArray(latestHalts)) {
+                latestHalts.unshift(haltItem); // Add to beginning for latest first
+
+                // Keep only last 1000 halts to prevent memory bloat
+                if (latestHalts.length > 1000) {
+                    latestHalts = latestHalts.slice(0, 1000);
+                }
+            } else {
+                // Initialize with this single item
+                latestHalts = [haltItem];
+            }
+
+            // Update count
+            latestHaltCount = latestHalts.length;
+
+            // Broadcast delta update to all configured halt target windows with delta flag
+            let actualBroadcastCount = 0;
+            HALT_BROADCAST_TARGETS.forEach((windowName) => {
+                const w = windows[windowName];
+                if (w?.webContents && !w.webContents.isDestroyed()) {
+                    w.webContents.send("halt-delta", haltItem, { isDelta: true });
+                    actualBroadcastCount++;
+                } else {
+                    if (HALT_DEBUG) {
+                        log.log(`⚠️ Halt window '${windowName}' not available for broadcast (exists: ${!!w}, destroyed: ${w?.isDestroyed?.()})`);
+                    }
+                }
+            });
+
+            if (HALT_DEBUG) {
+                log.log(`📤 Broadcasted halt delta to ${actualBroadcastCount}/${HALT_BROADCAST_TARGETS.length} windows`);
+            }
+            return;
+        }
+
         if (msg.type === "news_count") {
             // Handle news count response
             const count = msg.count || 0;
@@ -999,6 +1085,35 @@ const getChangeActiveStocks = () => {
     return null;
 };
 
+// IPC handlers for Halt data requests
+const getHaltHeadlines = () => {
+    if (latestHalts) {
+        if (HALT_DEBUG) {
+            log.log(`🚨 IPC getHaltHeadlines: returning ${latestHalts.length} halts`);
+            if (latestHalts.length > 0) {
+                log.log(`🚨 First halt sample:`, {
+                    symbol: latestHalts[0].symbol,
+                    state: latestHalts[0].state,
+                    reason: latestHalts[0].reason?.substring(0, 50) + "...",
+                    timestamp: latestHalts[0].timestamp
+                });
+            }
+        }
+    } else {
+        if (HALT_DEBUG) {
+            log.log(`🚨 IPC getHaltHeadlines: no halts available`);
+        }
+    }
+    return latestHalts;
+};
+
+const getHaltCount = () => {
+    if (HALT_DEBUG) {
+        log.log(`📊 IPC getHaltCount: returning ${latestHaltCount} halts`);
+    }
+    return latestHaltCount;
+};
+
 module.exports = {
     oracle,
     getXpActiveStocks,
@@ -1009,6 +1124,8 @@ module.exports = {
     getFilingHeadlines,
     getFilingCount,
     getChangeActiveStocks,
+    getHaltHeadlines,
+    getHaltCount,
     requestHydration,
     requestHeadlines,
     requestNewsCount,

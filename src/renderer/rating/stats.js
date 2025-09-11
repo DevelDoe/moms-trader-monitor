@@ -120,10 +120,20 @@ class StatsScorer {
             : [];
 
         // Calculate scores for all active heroes
-        const scored = activeHeroes.map((h) => ({
-            ...h,
-            score: this.calculateScore(h.buffs, h.score || 0),
-        }));
+        const scored = activeHeroes.map((h) => {
+            const newScore = this.calculateScore(h.buffs, h.score || 0);
+            const oldScore = h.score || 0;
+            
+            // Log score changes for debugging
+            if (Math.abs(newScore - oldScore) > 0.1) {
+                console.log(`📊 [Rating] ${h.hero} score recalculated: ${oldScore.toFixed(1)} → ${newScore.toFixed(1)} (Δ${(newScore - oldScore).toFixed(1)})`);
+            }
+            
+            return {
+                ...h,
+                score: newScore,
+            };
+        });
 
         // Sort by score (descending) and limit to configured list length
         return scored
@@ -370,13 +380,14 @@ class StatsDataManager {
     handleHeroUpdate(payload) {
         const items = Array.isArray(payload) ? payload : [payload];
 
-        items.forEach(({ hero, buffs, xp, lv, price, firstXpTimestamp, lastEvent }) => {
-            if (!hero) return;
+        items.forEach(({ hero, symbol, buffs, xp, lv, price, firstXpTimestamp, lastEvent }) => {
+            const heroSymbol = hero || symbol;
+            if (!heroSymbol) return;
 
             // Initialize hero if doesn't exist
-            if (!this.state.heroes[hero]) {
-                this.state.heroes[hero] = {
-                    hero,
+            if (!this.state.heroes[heroSymbol]) {
+                this.state.heroes[heroSymbol] = {
+                    hero: heroSymbol,
                     xp: 0,
                     lv: 1,
                     buffs: {},
@@ -387,8 +398,21 @@ class StatsDataManager {
             }
 
             // Update hero data
-            const h = this.state.heroes[hero];
-            if (buffs) h.buffs = buffs;
+            const h = this.state.heroes[heroSymbol];
+            if (buffs) {
+                const oldBuffs = h.buffs;
+                h.buffs = buffs;
+                // Log buff changes for debugging
+                if (JSON.stringify(oldBuffs) !== JSON.stringify(buffs)) {
+                    console.log(`🔄 [Rating] ${heroSymbol} buffs updated:`, {
+                        old: Object.keys(oldBuffs || {}),
+                        new: Object.keys(buffs || {}),
+                        changed: Object.keys(buffs || {}).filter(key => 
+                            JSON.stringify(oldBuffs?.[key]) !== JSON.stringify(buffs?.[key])
+                        )
+                    });
+                }
+            }
             if (typeof xp === "number") h.xp = xp;
             if (typeof lv === "number") h.lv = lv;
             if (typeof price === "number") h.price = price;

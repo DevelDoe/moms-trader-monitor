@@ -200,6 +200,19 @@ contextBridge.exposeInMainWorld("filingAPI", {
     onCount: (callback) => ipcRenderer.on("filing-count", (_, data) => callback(data)),
 });
 
+contextBridge.exposeInMainWorld("haltAPI", {
+    activate: () => ipcRenderer.send("activate-halts"),
+    deactivate: () => ipcRenderer.send("deactivate-halts"),
+    
+    // Oracle halt functions
+    getHeadlines: () => ipcRenderer.invoke("get-halt-headlines"),
+    getCount: () => ipcRenderer.invoke("get-halt-count"),
+    onHeadlines: (callback) => ipcRenderer.on("halt-headlines", (_, data, metadata) => callback(data, metadata)),
+    onDelta: (callback) => ipcRenderer.on("halt-delta", (_, data, metadata) => callback(data, metadata)),
+    onCount: (callback) => ipcRenderer.on("halt-count", (_, data) => callback(data)),
+    onHydrationComplete: (callback) => ipcRenderer.on("oracle-hydration-complete", () => callback()),
+});
+
 contextBridge.exposeInMainWorld("sessionHistoryAPI", {
     activate: () => ipcRenderer.send("activate-sessionHistory"),
     deactivate: () => ipcRenderer.send("deactivate-sessionHistory"),

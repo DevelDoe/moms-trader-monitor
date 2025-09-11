@@ -101,7 +101,7 @@ const { hydrateAndApplySymbols } = require("./collectors/arcane_api");
 // const { startMockNews } = require("./collectors/news"); // Removed - news now handled by oracle.js
 const { getLastAckCursor, setLastAckCursor, setTop3, getTop3 } = require("./electronStores");
 const { chronos } = require("./collectors/chronos");
-const { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate, getNewsHeadlines, getNewsCount, getFilingHeadlines, getFilingCount, getChangeActiveStocks } = require("./collectors/oracle");
+const { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate, getNewsHeadlines, getNewsCount, getFilingHeadlines, getFilingCount, getChangeActiveStocks, getHaltHeadlines, getHaltCount } = require("./collectors/oracle");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -139,6 +139,7 @@ const { createProgressWindow } = require("./windows/progress");
 const { createWizardWindow } = require("./windows/wizard");
 
 const { createNewsWindow } = require("./windows/news");
+const { createHaltsWindow } = require("./windows/halts");
 
 const { createSessionHistoryWindow } = require("./windows/sessionHistory");
 
@@ -799,6 +800,10 @@ ipcMain.handle("get-news-count", () => getNewsCount());
 ipcMain.handle("get-filing-headlines", () => getFilingHeadlines());
 ipcMain.handle("get-filing-count", () => getFilingCount());
 
+// Oracle Halt handlers
+ipcMain.handle("get-halt-headlines", () => getHaltHeadlines());
+ipcMain.handle("get-halt-count", () => getHaltCount());
+
 // Events
 ipcMain.on("activate-events", () => {
     try {
@@ -1236,6 +1241,20 @@ ipcMain.on("activate-news", () => {
 
 ipcMain.on("deactivate-news", () => {
     destroyWindow("news");
+});
+
+// Halts
+ipcMain.on("activate-halts", () => {
+    try {
+        const win = createWindow("halts", () => createHaltsWindow(isDevelopment));
+        if (win) win.show();
+    } catch (err) {
+        log.error("Failed to activate halts window:", err.message);
+    }
+});
+
+ipcMain.on("deactivate-halts", () => {
+    destroyWindow("halts");
 });
 
 // Session History window
