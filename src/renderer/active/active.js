@@ -755,7 +755,13 @@ function formatNewsTime(ts) {
     const d = new Date(ms);
     const now = new Date();
 
-    const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    // Compare dates in ET timezone to ensure accurate same-day detection
+    const dET = new Date(d.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const nowET = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    
+    const sameDay = dET.getFullYear() === nowET.getFullYear() && 
+                    dET.getMonth() === nowET.getMonth() && 
+                    dET.getDate() === nowET.getDate();
 
     return sameDay
         ? d.toLocaleTimeString([], { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })
@@ -993,7 +999,13 @@ function formatFilingTime(ts) {
     const d = new Date(ms);
     const now = new Date();
 
-    const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    // Compare dates in ET timezone to ensure accurate same-day detection
+    const dET = new Date(d.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const nowET = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    
+    const sameDay = dET.getFullYear() === nowET.getFullYear() && 
+                    dET.getMonth() === nowET.getMonth() && 
+                    dET.getDate() === nowET.getDate();
 
     return sameDay
         ? d.toLocaleTimeString([], { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })
@@ -1010,7 +1022,8 @@ function formatFilingTime(ts) {
 
 // Check if news item is older than 4 minutes (should be collapsed)
 function isNewsItemCollapsed(newsItem) {
-    const ts = newsItem.published_at ?? newsItem.received_at ?? newsItem.created_at ?? newsItem.updated_at;
+    // Use received_at timestamp for deltas, fallback to other timestamps for hydrated items
+    const ts = newsItem.received_at ?? newsItem.published_at ?? newsItem.created_at ?? newsItem.updated_at;
     if (!ts) return true; // If no timestamp, treat as collapsed
     
     const ms = parseTs(ts);

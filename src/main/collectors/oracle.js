@@ -383,23 +383,26 @@ const createWebSocket = () => {
             // Store latest data and broadcast to windows (preserve original structure)
             latestActiveStocks = activeStocks;
 
-            // Send specific count to progress window BEFORE truncation
+            // Send specific count to progress window using symbols_sorted_by_net_xp
             const progressWindow = windows["progress"];
             if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
                 progressWindow.webContents.send("xp-active-stocks-count", {
-                    count: activeStocks.symbols?.length || 0,
+                    count: activeStocks.symbols_sorted_by_net_xp?.length || 0,
                     timestamp: Date.now()
                 });
             }
 
-            // Create truncated version for other windows (top 50 symbols)
-            const truncatedActiveStocks = {
+            // Create data for windows that need symbols_sorted_by_net_xp (scrollXp, sessionHistory, scrollStats)
+            const netXpSortedData = {
                 ...activeStocks,
-                symbols: activeStocks.symbols ? activeStocks.symbols.slice(0, 50) : []
+                symbols: activeStocks.symbols_sorted_by_net_xp ? activeStocks.symbols_sorted_by_net_xp.slice(0, 50) : []
             };
 
-            // Broadcast truncated data to other windows
-            broadcastXpData("active-stocks", truncatedActiveStocks);
+            // Broadcast net XP sorted data to scrollXp, sessionHistory, scrollStats
+            broadcastXpData("active-stocks", netXpSortedData);
+
+            // Note: Original symbols list (sorted by session_change_percent) is preserved in latestActiveStocks
+            // for future implementation of new view
 
             return;
         }
@@ -653,6 +656,9 @@ const createWebSocket = () => {
             // if (process.env.DEBUG === "true") {
             //     log.log(`📰 Received news delta: ${newsItem.symbol || "unknown"} - ${newsItem.headline || "no title"}`);
             // }
+
+            // Enrich delta with local received_at timestamp for collapse calculations
+            newsItem.received_at = new Date().toISOString();
 
             // Attach news to individual symbols
             if (newsItem.symbols && Array.isArray(newsItem.symbols)) {
