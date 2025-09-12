@@ -86,6 +86,7 @@ const XP_BROADCAST_TARGETS = [
 // Configure which windows should receive Change broadcasts (sorted by session_change_percent)
 const CHANGE_BROADCAST_TARGETS = [
     "scrollChange",
+    "sessionHistory",  // SessionHistory needs real-time change data for current session
     // Add more windows here as needed
 ];
 

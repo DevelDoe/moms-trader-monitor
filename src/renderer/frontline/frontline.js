@@ -203,9 +203,9 @@
     const getSymbolXpTrophy = (s) => {
         const sym = String(s || "").toUpperCase();
         const rank = window.xpRankMap?.get(sym) || 0;
-        if (rank === 1) return '<div class="trophy trophy-xp trophy-xp-gold" title="XP Rank 1"></div>';
-        if (rank === 2) return '<div class="trophy trophy-xp trophy-xp-silver" title="XP Rank 2"></div>';
-        if (rank === 3) return '<div class="trophy trophy-xp trophy-xp-bronze" title="XP Rank 3"></div>';
+        if (rank === 1) return '<span class="trophy trophy-xp trophy-xp-gold" title="XP Rank 1"></span>';
+        if (rank === 2) return '<span class="trophy trophy-xp trophy-xp-silver" title="XP Rank 2"></span>';
+        if (rank === 3) return '<span class="trophy trophy-xp trophy-xp-bronze" title="XP Rank 3"></span>';
         return '';
     };
 
@@ -233,7 +233,7 @@
         if (medalEl) medalEl.innerHTML = getSymbolMedal(sym);
         
         // Update trophy separately
-        const trophyEl = card.querySelector('.trophy');
+        const trophyEl = card.querySelector('.trophy:not(.trophy-xp)');
         if (trophyEl) {
             const trophy = getSymbolTrophy(sym);
             trophyEl.outerHTML = trophy;
@@ -242,6 +242,18 @@
             const badgesEl = card.querySelector('.symbol-badges');
             if (badgesEl) {
                 badgesEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+            }
+        }
+
+        // Update XP trophy separately
+        const xpTrophyEl = card.querySelector('.trophy-xp');
+        if (xpTrophyEl) {
+            xpTrophyEl.outerHTML = getSymbolXpTrophy(sym);
+        } else if (getSymbolXpTrophy(sym)) {
+            // Add XP trophy if it doesn't exist but should
+            const badgesEl = card.querySelector('.symbol-badges');
+            if (badgesEl) {
+                badgesEl.insertAdjacentHTML('beforeend', getSymbolXpTrophy(sym));
             }
         }
 
@@ -482,6 +494,11 @@
 
         __top3Unsub = window.changeTop3API.onUpdate?.(({ entries }) => {
             state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+            
+            // Update trophy data from change top3
+            window.trophyMap = new Map((entries || []).map((t) => [String(t.symbol || "").toUpperCase(), t.trophy]));
+            console.log("🏆 [FRONTLINE] Trophy update received from change top3:", window.trophyMap);
+            
             // medals and trophies updated next render; optionally patch visible cards:
             state.container?.querySelectorAll(".hero-card").forEach((card) => {
                 const sym = card.dataset.symbol?.toUpperCase();
@@ -490,7 +507,7 @@
                     medalEl.innerHTML = getSymbolMedal(sym);
                     
                     // Update trophy separately
-                    const trophyEl = card.querySelector('.trophy');
+                    const trophyEl = card.querySelector('.trophy:not(.trophy-xp)');
                     if (trophyEl) {
                         const trophy = getSymbolTrophy(sym);
                         trophyEl.outerHTML = trophy;
@@ -513,6 +530,8 @@
 
         __xpTop3Unsub = window.xpTop3API.onUpdate?.(({ entries }) => {
             window.xpRankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+            console.log("⚔️ [FRONTLINE] XP rank update received:", window.xpRankMap);
+            
             // Update XP swords on visible cards
             state.container?.querySelectorAll(".hero-card").forEach((card) => {
                 const sym = card.dataset.symbol?.toUpperCase();
@@ -617,13 +636,25 @@
         await initTop3();
         await initRatingTop3();
 
-        // Fetch trophy data from the change top3 store
-        const { entries: trophyData } = await window.changeTop3API.get();
-        window.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
+        // Initialize trophy data from the change top3 store
+        try {
+            const { entries: trophyData } = await window.changeTop3API.get();
+            window.trophyMap = new Map((trophyData || []).map((t) => [String(t.symbol || "").toUpperCase(), t.trophy]));
+            console.log("🏆 [FRONTLINE] Initial trophy data loaded:", window.trophyMap);
+        } catch (error) {
+            console.error("❌ [FRONTLINE] Failed to load initial trophy data:", error);
+            window.trophyMap = new Map();
+        }
 
-        // Fetch XP top3 data for sword trophies
-        const { entries: xpData } = await window.xpTop3API.get();
-        window.xpRankMap = new Map(xpData.map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+        // Initialize XP top3 data for sword trophies
+        try {
+            const { entries: xpData } = await window.xpTop3API.get();
+            window.xpRankMap = new Map((xpData || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+            console.log("⚔️ [FRONTLINE] Initial XP rank data loaded:", window.xpRankMap);
+        } catch (error) {
+            console.error("❌ [FRONTLINE] Failed to load initial XP rank data:", error);
+            window.xpRankMap = new Map();
+        }
 
         // Update medals and trophies separately
         state.container?.querySelectorAll(".hero-card").forEach((card) => {
@@ -633,7 +664,7 @@
                 medalEl.innerHTML = getSymbolMedal(sym);
                 
                 // Update trophy separately
-                const trophyEl = card.querySelector('.trophy');
+                const trophyEl = card.querySelector('.trophy:not(.trophy-xp)');
                 if (trophyEl) {
                     const trophy = getSymbolTrophy(sym);
                     trophyEl.outerHTML = trophy;
@@ -642,6 +673,18 @@
                     const badgesEl = card.querySelector('.symbol-badges');
                     if (badgesEl) {
                         badgesEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+                    }
+                }
+                
+                // Update XP trophy separately
+                const xpTrophyEl = card.querySelector('.trophy-xp');
+                if (xpTrophyEl) {
+                    xpTrophyEl.outerHTML = getSymbolXpTrophy(sym);
+                } else if (getSymbolXpTrophy(sym)) {
+                    // Add XP trophy if it doesn't exist but should
+                    const badgesEl = card.querySelector('.symbol-badges');
+                    if (badgesEl) {
+                        badgesEl.insertAdjacentHTML('beforeend', getSymbolXpTrophy(sym));
                     }
                 }
             }
