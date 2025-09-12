@@ -1,13 +1,13 @@
 // symbolColors moved to Symbol component
 
-// Trophy utility function - can be reused throughout the application
+// XP Sword trophy utility function - uses sword sprite
 function getTrophyIcon(rank) {
     if (rank === 1) {
-        return '<img src="./img/gold-cup.png" alt="Gold Trophy" class="trophy trophy-gold" width="24" height="24">';
+        return '<div class="trophy trophy-xp trophy-xp-gold" title="XP Rank 1"></div>';
     } else if (rank === 2) {
-        return '<img src="./img/silver-cup.png" alt="Silver Trophy" class="trophy trophy-silver" width="24" height="24">';
+        return '<div class="trophy trophy-xp trophy-xp-silver" title="XP Rank 2"></div>';
     } else if (rank === 3) {
-        return '<img src="./img/bronze-cup.png" alt="Bronze Trophy" class="trophy trophy-bronze" width="24" height="24">';
+        return '<div class="trophy trophy-xp trophy-xp-bronze" title="XP Rank 3"></div>';
     }
     return '';
 }

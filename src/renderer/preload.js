@@ -460,11 +460,11 @@ contextBridge.exposeInMainWorld("loggingHelpers", {
 contextBridge.exposeInMainWorld("top3API", {
     set: (list) => {
         // console.debug("[top3] preload -> set", list);
-        return ipcRenderer.invoke("top3:set", list); // ✅ invoke to hit ipcMain.handle
+        return ipcRenderer.invoke("rating-top3:set", list); // ✅ invoke to hit ipcMain.handle
     },
     get: () => {
         // console.debug("[top3] preload -> get()");
-        return ipcRenderer.invoke("top3:get");
+        return ipcRenderer.invoke("rating-top3:get");
     },
     subscribe: (cb) => {
         // console.debug("[top3] preload -> subscribe()");
@@ -472,9 +472,9 @@ contextBridge.exposeInMainWorld("top3API", {
             console.debug("[top3] preload <- change", data);
             cb?.(data);
         };
-        ipcRenderer.on("top3:change", handler);
-        ipcRenderer.send("top3:subscribe");
-        return () => ipcRenderer.removeListener("top3:change", handler);
+        ipcRenderer.on("rating-top3:change", handler);
+        ipcRenderer.send("rating-top3:subscribe");
+        return () => ipcRenderer.removeListener("rating-top3:change", handler);
     },
 });
 

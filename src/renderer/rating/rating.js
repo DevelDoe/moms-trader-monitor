@@ -127,6 +127,16 @@ class StatsScorer {
         const scored = activeHeroes.map((h) => {
             const newScore = this.calculateScore(h.buffs, h.score || 0);
             
+            // Debug VSTD specifically
+            if (h.hero === 'VSTD') {
+                console.log('[VSTD DEBUG] VSTD score calculation:', {
+                    hero: h.hero,
+                    baseScore: h.score,
+                    buffs: h.buffs,
+                    calculatedScore: newScore
+                });
+            }
+            
             return {
                 ...h,
                 score: newScore,
@@ -134,9 +144,19 @@ class StatsScorer {
         });
 
         // Sort by score (descending) and limit to configured list length
-        return scored
+        const ranked = scored
             .sort((a, b) => (b.score || 0) - (a.score || 0))
             .slice(0, this.state.getListLength());
+
+        // Debug: Show VSTD's position in rankings
+        const vstdRank = ranked.findIndex(h => h.hero === 'VSTD');
+        if (vstdRank !== -1) {
+            console.log(`[VSTD DEBUG] VSTD is ranked #${vstdRank + 1} with score ${ranked[vstdRank].score}`);
+        } else {
+            console.log('[VSTD DEBUG] VSTD is not in top rankings (score too low)');
+        }
+
+        return ranked;
     }
 }
 
@@ -174,23 +194,42 @@ class StatsRenderer {
         if (renderKey === this.state.renderKey) return;
         this.state.renderKey = renderKey;
 
-        // Generate HTML
+        // Create tiered ranking and update top3 data
+        const tieredRanking = this.updateTop3(rankedHeroes);
+
+        // Generate HTML with tiered ranking
         const now = Date.now();
         this.container.innerHTML = rankedHeroes
-            .map((hero, idx) => this.renderHeroRow(hero, idx, now))
+            .map((hero, idx) => this.renderHeroRow(hero, idx, now, tieredRanking))
             .join("");
-
-        // Update top 3 data
-        this.updateTop3(rankedHeroes);
 
         // Attach click handlers
         this.attachClickHandlers();
     }
 
-    // Render individual hero row
-    renderHeroRow(hero, idx, now) {
+    // Render individual hero row with tiered ranking
+    renderHeroRow(hero, idx, now, tieredRanking) {
         const displayScore = (hero.score / 10).toFixed(1);
-        const rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1 + ".";
+        
+        // Get tier information for this hero
+        const tierInfo = tieredRanking.find(t => t.symbol === hero.hero);
+        let rankIcon;
+        
+        if (tierInfo) {
+            // Use tier-based medals
+            if (tierInfo.tier === 1) {
+                rankIcon = "🥇"; // Gold for 1st tier
+            } else if (tierInfo.tier === 2) {
+                rankIcon = "🥈"; // Silver for 2nd tier  
+            } else if (tierInfo.tier === 3) {
+                rankIcon = "🥉"; // Bronze for 3rd tier
+            } else {
+                rankIcon = tierInfo.rank + "."; // Number for other tiers
+            }
+        } else {
+            // Fallback to old system if tier info not available
+            rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1 + ".";
+        }
         
         // Generate tooltip content
         const tooltipContent = this.generateScoreTooltip(hero);
@@ -209,23 +248,66 @@ class StatsRenderer {
             </div>`;
     }
 
-    // Update top 3 data for other components
+    // Update top 3 data for other components with tiered ranking
     updateTop3(rankedHeroes) {
-        const top3 = rankedHeroes.slice(0, 3).map((h, i) => ({
-            symbol: this.state.normalizeSymbol(h.hero),
-            rank: i + 1,
-            score: Number(h.score ?? 0),
-        }));
-
-        // Debounced update
+        // Create tiered ranking data for all heroes
+        const tieredRanking = this.createTieredRanking(rankedHeroes);
+        
+        // Send all tiered ranking data to the store
         clearTimeout(this.state.top3Debounce);
         this.state.top3Debounce = setTimeout(() => {
             try {
-                window.top3API?.set?.(top3);
+                window.top3API?.set?.(tieredRanking);
             } catch (error) {
-                console.error("Failed to update top3:", error);
+                console.error("Failed to update rating top3:", error);
             }
         }, TOP3_DEBOUNCE_MS);
+        
+        return tieredRanking;
+    }
+
+    // Create tiered ranking from ranked heroes
+    createTieredRanking(rankedHeroes) {
+        if (!rankedHeroes || rankedHeroes.length === 0) {
+            return [];
+        }
+
+        // Group by score to create tiers
+        const scoreGroups = {};
+        rankedHeroes.forEach((hero) => {
+            const score = Number(hero.score) || 0;
+            if (!scoreGroups[score]) {
+                scoreGroups[score] = [];
+            }
+            scoreGroups[score].push({
+                symbol: this.state.normalizeSymbol(hero.hero),
+                score: score
+            });
+        });
+
+        // Sort scores in descending order
+        const sortedScores = Object.keys(scoreGroups)
+            .map(Number)
+            .sort((a, b) => b - a);
+
+        // Assign ranks and tiers
+        const result = [];
+        let currentRank = 1;
+        
+        sortedScores.forEach((score, tierIndex) => {
+            const symbols = scoreGroups[score];
+            symbols.forEach((symbolData) => {
+                result.push({
+                    symbol: symbolData.symbol,
+                    rank: currentRank,
+                    score: symbolData.score,
+                    tier: tierIndex + 1 // 1st tier, 2nd tier, 3rd tier, etc.
+                });
+            });
+            currentRank += symbols.length; // Next rank starts after all symbols in this tier
+        });
+
+        return result;
     }
 
     // Generate score tooltip for a hero

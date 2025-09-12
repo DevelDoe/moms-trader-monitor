@@ -28,13 +28,24 @@ const state = {
     // medals
     rankMap: new Map(),
     trophyMap: new Map(),
+    ratingRankMap: new Map(), // For rating tiered medals
     top3Unsub: null,
+    ratingTop3Unsub: null,
 };
 
 /* ===== 2) Utils ===== */
 const medalForRank = (r) => (r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : "");
 const getSymbolMedal = (s) => {
     const sym = String(s || "").toUpperCase();
+    
+    // Check rating tiered medals first (takes priority)
+    const ratingTier = state.ratingRankMap.get(sym);
+    if (ratingTier) {
+        const medal = medalForRank(ratingTier);
+        return medal ? `<span class="medal">${medal}</span>` : '';
+    }
+    
+    // Fallback to change top3 medals
     const medal = medalForRank(state.rankMap.get(sym) || 0);
     return medal ? `<span class="medal">${medal}</span>` : '';
 };
@@ -414,7 +425,32 @@ async function initTop3() {
         });
     });
 }
-window.addEventListener("beforeunload", () => state.top3Unsub && state.top3Unsub());
+
+/* ===== 8.1) Rating Top3 medals (tiered ranking) ===== */
+async function initRatingTop3() {
+    try {
+        const { entries } = await window.top3API.get();
+        // Map symbols to their tier (1st tier = rank 1, 2nd tier = rank 2, etc.)
+        state.ratingRankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.tier) || 0]));
+    } catch {}
+    
+    state.ratingTop3Unsub = window.top3API.subscribe?.(({ entries }) => {
+        // Map symbols to their tier for tiered medals
+        state.ratingRankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.tier) || 0]));
+        
+        // Update all visible cards with new rating medals
+        state.container?.querySelectorAll(".ticker-card").forEach((card) => {
+            const sym = card.dataset.symbol?.toUpperCase();
+            const el = card.querySelector(".lv-medal");
+            if (sym && el) el.innerHTML = getSymbolMedal(sym);
+        });
+    });
+}
+
+window.addEventListener("beforeunload", () => {
+    if (state.top3Unsub) state.top3Unsub();
+    if (state.ratingTop3Unsub) state.ratingTop3Unsub();
+});
 
 /* ===== 9) Boot ===== */
 async function boot() {
@@ -524,6 +560,7 @@ async function boot() {
     });
 
     await initTop3();
+    await initRatingTop3();
 
     // Initialize trophy data from the change top3 store
     try {

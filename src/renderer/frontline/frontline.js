@@ -37,6 +37,7 @@
 
         // medals/top3
         rankMap: new Map(),
+        ratingRankMap: new Map(), // For rating tiered medals
     };
 
     /**************************************************************************
@@ -182,6 +183,15 @@
 
     const getSymbolMedal = (s) => {
         const sym = String(s || "").toUpperCase();
+        
+        // Check rating tiered medals first (takes priority)
+        const ratingTier = state.ratingRankMap.get(sym);
+        if (ratingTier) {
+            const medal = medalForRank(ratingTier);
+            return medal ? `<span class="medal">${medal}</span>` : '';
+        }
+        
+        // Fallback to change top3 medals
         const medal = medalForRank(state.rankMap.get(sym) || 0);
         return medal ? `<span class="medal">${medal}</span>` : '';
     };
@@ -190,6 +200,15 @@
         const sym = String(s || "").toUpperCase();
         const trophy = window.trophyMap?.get(sym) || '';
         return trophy ? `<span class="trophy">${trophy}</span>` : '';
+    };
+
+    const getSymbolXpTrophy = (s) => {
+        const sym = String(s || "").toUpperCase();
+        const rank = window.xpRankMap?.get(sym) || 0;
+        if (rank === 1) return '<div class="trophy trophy-xp trophy-xp-gold" title="XP Rank 1"></div>';
+        if (rank === 2) return '<div class="trophy trophy-xp trophy-xp-silver" title="XP Rank 2"></div>';
+        if (rank === 3) return '<div class="trophy trophy-xp trophy-xp-bronze" title="XP Rank 3"></div>';
+        return '';
     };
 
     // cheap per-card patch (kept minimal here — keep your existing visuals if needed)
@@ -249,6 +268,7 @@
                 <div class="symbol-badges">
                     <span class="medal">${getSymbolMedal(sym)}</span>
                     ${getSymbolTrophy(sym)}
+                    ${getSymbolXpTrophy(sym)}
                     <span class="price-badge">$${(hero.price ?? 0).toFixed(2)}</span>
                 </div>
             </div>
@@ -453,6 +473,9 @@
      * 6) Top3 subscription (kept same contract, but lighter)
      **************************************************************************/
     let __top3Unsub = null;
+    let __xpTop3Unsub = null;
+    let __ratingTop3Unsub = null;
+    
     async function initTop3() {
         try {
             const { entries } = await window.changeTop3API.get();
@@ -483,9 +506,59 @@
                 }
             });
         });
+
+        // XP Top3 subscription
+        try {
+            const { entries: xpEntries } = await window.xpTop3API.get();
+            window.xpRankMap = new Map((xpEntries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+        } catch {}
+
+        __xpTop3Unsub = window.xpTop3API.onUpdate?.(({ entries }) => {
+            window.xpRankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+            // Update XP swords on visible cards
+            state.container?.querySelectorAll(".hero-card").forEach((card) => {
+                const sym = card.dataset.symbol?.toUpperCase();
+                const xpTrophyEl = card.querySelector('.trophy-xp');
+                if (sym && xpTrophyEl) {
+                    xpTrophyEl.outerHTML = getSymbolXpTrophy(sym);
+                } else if (getSymbolXpTrophy(sym)) {
+                    // Add XP trophy if it doesn't exist but should
+                    const badgesEl = card.querySelector('.symbol-badges');
+                    if (badgesEl) {
+                        badgesEl.insertAdjacentHTML('beforeend', getSymbolXpTrophy(sym));
+                    }
+                }
+            });
+        });
     }
+
+    // Rating Top3 subscription (tiered ranking)
+    async function initRatingTop3() {
+        try {
+            const { entries } = await window.top3API.get();
+            // Map symbols to their tier (1st tier = rank 1, 2nd tier = rank 2, etc.)
+            state.ratingRankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.tier) || 0]));
+        } catch {}
+        
+        __ratingTop3Unsub = window.top3API.subscribe?.(({ entries }) => {
+            // Map symbols to their tier for tiered medals
+            state.ratingRankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.tier) || 0]));
+            
+            // Update all visible cards with new rating medals
+            state.container?.querySelectorAll(".hero-card").forEach((card) => {
+                const sym = card.dataset.symbol?.toUpperCase();
+                const medalEl = card.querySelector(".medal");
+                if (sym && medalEl) {
+                    medalEl.innerHTML = getSymbolMedal(sym);
+                }
+            });
+        });
+    }
+
     window.addEventListener("beforeunload", () => {
         if (__top3Unsub) __top3Unsub();
+        if (__xpTop3Unsub) __xpTop3Unsub();
+        if (__ratingTop3Unsub) __ratingTop3Unsub();
     });
 
     /**************************************************************************
@@ -544,10 +617,15 @@
 
         // top3 medals
         await initTop3();
+        await initRatingTop3();
 
         // Fetch trophy data from the change top3 store
         const { entries: trophyData } = await window.changeTop3API.get();
         window.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
+
+        // Fetch XP top3 data for sword trophies
+        const { entries: xpData } = await window.xpTop3API.get();
+        window.xpRankMap = new Map(xpData.map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
 
         // Update medals and trophies separately
         state.container?.querySelectorAll(".hero-card").forEach((card) => {

@@ -278,6 +278,48 @@ body::-webkit-scrollbar {
     z-index: 100;
 }
 
+/* XP Sword Trophy styles */
+.hero-card:nth-child(-n + 3) .trophy-xp {
+    background-image: url('../scrolls/Svärd_i_rad_och_korsvis-removebg-preview.png');
+    background-size: 48px 32px; /* 3 swords wide, 2 rows high */
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    transform: scale(2.25); /* Enlarge by 75% */
+    display: inline-block;
+    position: absolute;
+    left: 50px; /* To the right of trophies */
+    top: -3px;
+    z-index: 101;
+    pointer-events: none;
+}
+.hero-card:nth-child(n + 4) .trophy-xp {
+    background-image: url('../scrolls/Svärd_i_rad_och_korsvis-removebg-preview.png');
+    background-size: 48px 32px; /* 3 swords wide, 2 rows high */
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    transform: scale(1.25); /* Enlarge by 75% */
+    display: inline-block;
+    position: absolute;
+    left: 30px; /* To the right of trophies */
+    top: -4px;
+    z-index: 101;
+    pointer-events: none;
+}
+
+.trophy-xp-gold {
+    background-position: 0px 0px; /* Top left - Gold sword */
+}
+
+.trophy-xp-silver {
+    background-position: -16px 0px; /* Top middle - Silver sword */
+}
+
+.trophy-xp-bronze {
+    background-position: -32px 0px; /* Top right - Bronze sword */
+}
+
 /* Price Badge */
 .price-badge {
     position: absolute;

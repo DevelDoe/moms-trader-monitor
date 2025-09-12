@@ -29,7 +29,7 @@ function createScrollStatsWindow(isDevelopment) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/rating/stats.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/rating/rating.html"));
 
     if (isDevelopment) {
         window.webContents.once("did-finish-load", () => {

@@ -1185,6 +1185,118 @@ if (app && ipcMain && typeof app.on === "function" && !app.__hod_settings_ipc_re
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Rating Top3 store (persist + broadcast) - Tiered ranking system
+// ─────────────────────────────────────────────────────────────────────
+
+const ratingTop3Store = createStore("rating-top3-store", "rating.");
+const ratingTop3Bus = new EventEmitter();
+
+// Rating Top3 data - supports multiple symbols per tier
+let _ratingTop3Entries = ratingTop3Store.get("top3Entries", []); // [{symbol, rank, score, tier}]
+let _ratingTop3UpdatedAt = ratingTop3Store.get("top3UpdatedAt", 0);
+
+function getRatingTop3() {
+    return { entries: _ratingTop3Entries.slice(), updatedAt: _ratingTop3UpdatedAt };
+}
+
+function setRatingTop3(listOrEntries) {
+    const next = normalizeRatingTop3(listOrEntries);
+    const changed = JSON.stringify(next) !== JSON.stringify(_ratingTop3Entries);
+    
+    if (!changed) {
+        return false;
+    }
+
+    _ratingTop3Entries = next;
+    _ratingTop3UpdatedAt = Date.now();
+    ratingTop3Store.set("top3Entries", _ratingTop3Entries);
+    ratingTop3Store.set("top3UpdatedAt", _ratingTop3UpdatedAt);
+
+    const payload = getRatingTop3();
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("rating-top3:change", payload);
+        } catch (err) {
+            log.log("[rating-top3] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+// Helper function to normalize rating top3 data with tiered ranking
+function normalizeRatingTop3(input) {
+    if (!Array.isArray(input) || input.length === 0) {
+        return [];
+    }
+
+    // Group by score to create tiers
+    const scoreGroups = {};
+    input.forEach((entry, index) => {
+        const score = Number(entry.score) || 0;
+        if (!scoreGroups[score]) {
+            scoreGroups[score] = [];
+        }
+        scoreGroups[score].push({
+            symbol: String(entry.symbol || "").toUpperCase(),
+            score: score,
+            originalIndex: index
+        });
+    });
+
+    // Sort scores in descending order
+    const sortedScores = Object.keys(scoreGroups)
+        .map(Number)
+        .sort((a, b) => b - a);
+
+    // Assign ranks and tiers
+    const result = [];
+    let currentRank = 1;
+    
+    sortedScores.forEach((score, tierIndex) => {
+        const symbols = scoreGroups[score];
+        symbols.forEach((symbolData) => {
+            result.push({
+                symbol: symbolData.symbol,
+                rank: currentRank,
+                score: symbolData.score,
+                tier: tierIndex + 1 // 1st tier, 2nd tier, 3rd tier, etc.
+            });
+        });
+        currentRank += symbols.length; // Next rank starts after all symbols in this tier
+    });
+
+    return result;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__rating_top3_ipc_registered__) {
+    app.__rating_top3_ipc_registered__ = true;
+
+    ipcMain.removeHandler("rating-top3:get");
+    ipcMain.removeHandler("rating-top3:set");
+    
+    ipcMain.handle("rating-top3:get", () => {
+        return getRatingTop3();
+    });
+    
+    ipcMain.handle("rating-top3:set", (_e, listOrEntries) => {
+        return setRatingTop3(listOrEntries);
+    });
+
+    ipcMain.removeAllListeners("rating-top3:subscribe");
+    ipcMain.on("rating-top3:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("rating-top3:change", data);
+        push(getRatingTop3()); // prime immediately
+        ratingTop3Bus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[rating-top3] unsubscribe WC", wc.id);
+            ratingTop3Bus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Stats Settings store (persist + broadcast)
 // ─────────────────────────────────────────────────────────────────────
 
@@ -2006,6 +2118,10 @@ module.exports = {
     setHodTickVolume,
     getHodSymbolLength,
     setHodSymbolLength,
+    
+    // Rating Top-3 exports
+    getRatingTop3,
+    setRatingTop3,
     
     // Stats settings exports
     getStatsListLength,
