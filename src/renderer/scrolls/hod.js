@@ -338,6 +338,19 @@ function render() {
                 rankIndicator = '<span class="rank-indicator same" title="No change">•</span>';
             }
 
+            // Calculate font weight and color based on proximity to high
+            const fontWeight = atHigh ? '900' : within ? '700' : '400';
+            
+            // Simple color logic: white, light yellow, or gold
+            let priceColor;
+            if (atHigh) {
+                priceColor = GOLD_HEX; // Gold when at high of day
+            } else if (within) {
+                priceColor = '#ffff99'; // Light yellow when within HOD threshold
+            } else {
+                priceColor = 'white'; // White when far from high
+            }
+            
             return `
   <div class="xp-line ellipsis ${isMoving ? "moving" : ""} ${dirClass} ${animationClass}" data-ath="${atHigh ? 1 : 0}">
     <span class="rank ${rankClass}">${index + 1}</span>
@@ -348,7 +361,7 @@ function render() {
         onClick: true
     })}
     <span class="prices">
-      <span class="price now ${blinkClass}" style="color:${silverTone(pctBelowHigh)};">
+      <span class="price now ${blinkClass}" style="color: ${priceColor}; font-weight: ${fontWeight};">
         ${formatPrice(price)}
       </span>
       <span class="dot"> </span>
