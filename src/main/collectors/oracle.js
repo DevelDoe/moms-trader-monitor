@@ -418,19 +418,47 @@ const createWebSocket = () => {
             return;
         }
 
-        if (msg.type === "xp_active_stocks") {
-            // C backend sends data directly, not wrapped in payload
-            const activeStocks = msg;
+        if (msg.type === "xp_active_stocks" || msg.type === "top_list") {
+            // Debug: Log what we're receiving
+            console.log(`🔍 Received message type: ${msg.type}`);
+            if (msg.type === "top_list") {
+                console.log(`📊 top_list payload:`, JSON.stringify(msg.payload, null, 2));
+            } else {
+                console.log(`📊 xp_active_stocks data:`, JSON.stringify(msg, null, 2));
+            }
+            
+            // Handle both old and new message formats
+            let activeStocks;
+            let totalCount;
+            
+            if (msg.type === "top_list") {
+                // New format: data is in payload with total_count
+                const payload = msg.payload || {};
+                activeStocks = {
+                    symbols: payload.symbols || [],
+                    symbols_sorted_by_net_xp: payload.symbols || [],
+                    total_count: payload.total_count || 0,
+                    timestamp: payload.timestamp || Date.now()
+                };
+                // Always use total_count for top_list messages
+                totalCount = payload.total_count || 0;
+            } else {
+                // Old format: data is directly in msg
+                activeStocks = msg;
+                // For old format, check if total_count exists, otherwise count array
+                totalCount = activeStocks.total_count || activeStocks.symbols_sorted_by_net_xp?.length || 0;
+            }
 
             // Store latest data and broadcast to windows (preserve original structure)
             latestActiveStocks = activeStocks;
 
-            // Send specific count to progress window using symbols_sorted_by_net_xp
+            // Send specific count to progress window - use total_count if available, otherwise count array
             const progressWindow = windows["progress"];
             if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
+                console.log(`📤 Sending count to progress window: ${totalCount} (from ${msg.type})`);
                 progressWindow.webContents.send("xp-active-stocks-count", {
-                    count: activeStocks.symbols_sorted_by_net_xp?.length || 0,
-                    timestamp: Date.now()
+                    count: totalCount,
+                    timestamp: activeStocks.timestamp || Date.now()
                 });
             }
 
