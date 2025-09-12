@@ -184,16 +184,14 @@
     const getSymbolMedal = (s) => {
         const sym = String(s || "").toUpperCase();
         
-        // Check rating tiered medals first (takes priority)
+        // Only use rating tiered medals
         const ratingTier = state.ratingRankMap.get(sym);
         if (ratingTier) {
             const medal = medalForRank(ratingTier);
             return medal ? `<span class="medal">${medal}</span>` : '';
         }
         
-        // Fallback to change top3 medals
-        const medal = medalForRank(state.rankMap.get(sym) || 0);
-        return medal ? `<span class="medal">${medal}</span>` : '';
+        return '';
     };
 
     const getSymbolTrophy = (s) => {
