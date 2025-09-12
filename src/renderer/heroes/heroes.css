@@ -394,10 +394,10 @@ h2 {
 
 .lv-medal {
     position: absolute;
-    right: 0px;
-    top: -21px;
+    right: 38px;
+    top: -20px;
     background-color: transparent;
-    font-size: 16px;
+    font-size: 15px;
     z-index: 100;
     display: inline-flex;
     gap: 2px;
@@ -407,7 +407,7 @@ h2 {
 /* Trophy specific styling - absolutely positioned separately from medals */
 .ticker-symbol .trophy {
     position: absolute;
-    right: 12px; /* One fixed position to the left of medals */
+    right: 10px; /* One fixed position to the left of medals */
     top: -11px;
     background-color: transparent;
     font-size: 16px;
@@ -415,4 +415,36 @@ h2 {
     pointer-events: none;
     transform: scale(0.8);
     transform-origin: center;
+}
+
+/* Trophy specific styling - absolutely positioned separately from medals */
+.ticker-symbol .trophy-xp {
+    position: absolute;
+    right: 0px; /* One fixed position to the left of medals */
+    top: -17px;
+    background-color: transparent;
+    font-size: 16px;
+    z-index: 101;
+    pointer-events: none;
+    transform: scale(1.75);
+    transform-origin: center;
+    background-image: url('../scrolls/Svärd_i_rad_och_korsvis-removebg-preview.png');
+    background-size: 48px 32px; /* 3 swords wide, 2 rows high */
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}
+
+/* XP Trophy rank-specific background positions */
+.trophy-xp-gold {
+    background-position: 0px 0px; /* Top-left sword (rank 1) */
+}
+
+.trophy-xp-silver {
+    background-position: -16px 0px; /* Top-middle sword (rank 2) */
+}
+
+.trophy-xp-bronze {
+    background-position: -32px 0px; /* Top-right sword (rank 3) */
 }

@@ -31,6 +31,7 @@ const state = {
     ratingRankMap: new Map(), // For rating tiered medals
     top3Unsub: null,
     ratingTop3Unsub: null,
+    xpTop3Unsub: null,
 };
 
 /* ===== 2) Utils ===== */
@@ -38,22 +39,29 @@ const medalForRank = (r) => (r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "�
 const getSymbolMedal = (s) => {
     const sym = String(s || "").toUpperCase();
     
-    // Check rating tiered medals first (takes priority)
+    // Only use rating tiered medals
     const ratingTier = state.ratingRankMap.get(sym);
     if (ratingTier) {
         const medal = medalForRank(ratingTier);
         return medal ? `<span class="medal">${medal}</span>` : '';
     }
     
-    // Fallback to change top3 medals
-    const medal = medalForRank(state.rankMap.get(sym) || 0);
-    return medal ? `<span class="medal">${medal}</span>` : '';
+    return '';
 };
 
 const getSymbolTrophy = (s) => {
     const sym = String(s || "").toUpperCase();
     const trophy = state.trophyMap.get(sym) || '';
     return trophy ? `<span class="trophy">${trophy}</span>` : '';
+};
+
+const getSymbolXpTrophy = (s) => {
+    const sym = String(s || "").toUpperCase();
+    const rank = window.xpRankMap?.get(sym) || 0;
+    if (rank === 1) return '<span class="trophy trophy-xp trophy-xp-gold" title="XP Rank 1"></span>';
+    if (rank === 2) return '<span class="trophy trophy-xp trophy-xp-silver" title="XP Rank 2"></span>';
+    if (rank === 3) return '<span class="trophy trophy-xp trophy-xp-bronze" title="XP Rank 3"></span>';
+    return '';
 };
 
 function buffSignature(h) {
@@ -129,6 +137,7 @@ function createCard(h) {
           <span class="lv">
             <span class="lv-medal">${getSymbolMedal(h.hero)}</span>
             ${getSymbolTrophy(h.hero)}
+            ${getSymbolXpTrophy(h.hero)}
             <span class="lv-price">$${(h.price ?? 0).toFixed(2)}</span>
           </span>
         </div>
@@ -195,6 +204,18 @@ function patchCardDOM(sym, h) {
         const lvEl = card.querySelector('.lv');
         if (lvEl) {
             lvEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+        }
+    }
+
+    // Update XP trophy separately
+    const xpTrophyEl = card.querySelector('.trophy-xp');
+    if (xpTrophyEl) {
+        xpTrophyEl.outerHTML = getSymbolXpTrophy(sym);
+    } else if (getSymbolXpTrophy(sym)) {
+        // Add XP trophy if it doesn't exist but should
+        const lvEl = card.querySelector('.lv');
+        if (lvEl) {
+            lvEl.insertAdjacentHTML('beforeend', getSymbolXpTrophy(sym));
         }
     }
 
@@ -447,9 +468,36 @@ async function initRatingTop3() {
     });
 }
 
+/* ===== 8.2) XP Top3 medals ===== */
+async function initXpTop3() {
+    try {
+        const { entries: xpEntries } = await window.xpTop3API.get();
+        window.xpRankMap = new Map((xpEntries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+    } catch {}
+
+    state.xpTop3Unsub = window.xpTop3API.onUpdate?.(({ entries }) => {
+        window.xpRankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
+        // Update XP swords on visible cards
+        state.container?.querySelectorAll(".ticker-card").forEach((card) => {
+            const sym = card.dataset.symbol?.toUpperCase();
+            const xpTrophyEl = card.querySelector('.trophy-xp');
+            if (sym && xpTrophyEl) {
+                xpTrophyEl.outerHTML = getSymbolXpTrophy(sym);
+            } else if (getSymbolXpTrophy(sym)) {
+                // Add XP trophy if it doesn't exist but should
+                const lvEl = card.querySelector('.lv');
+                if (lvEl) {
+                    lvEl.insertAdjacentHTML('beforeend', getSymbolXpTrophy(sym));
+                }
+            }
+        });
+    });
+}
+
 window.addEventListener("beforeunload", () => {
     if (state.top3Unsub) state.top3Unsub();
     if (state.ratingTop3Unsub) state.ratingTop3Unsub();
+    if (state.xpTop3Unsub) state.xpTop3Unsub();
 });
 
 /* ===== 9) Boot ===== */
@@ -561,6 +609,7 @@ async function boot() {
 
     await initTop3();
     await initRatingTop3();
+    await initXpTop3();
 
     // Initialize trophy data from the change top3 store
     try {
