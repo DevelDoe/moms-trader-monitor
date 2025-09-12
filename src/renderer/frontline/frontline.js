@@ -455,11 +455,11 @@
     let __top3Unsub = null;
     async function initTop3() {
         try {
-            const { entries } = await window.top3API.get();
+            const { entries } = await window.changeTop3API.get();
             state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
         } catch {}
 
-        __top3Unsub = window.top3API.subscribe?.(({ entries }) => {
+        __top3Unsub = window.changeTop3API.onUpdate?.(({ entries }) => {
             state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
             // medals and trophies updated next render; optionally patch visible cards:
             state.container?.querySelectorAll(".hero-card").forEach((card) => {
@@ -545,8 +545,8 @@
         // top3 medals
         await initTop3();
 
-        // Fetch trophy data from the store
-        const trophyData = await window.storeAPI.getTrophyData();
+        // Fetch trophy data from the change top3 store
+        const { entries: trophyData } = await window.changeTop3API.get();
         window.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
 
         // Update medals and trophies separately

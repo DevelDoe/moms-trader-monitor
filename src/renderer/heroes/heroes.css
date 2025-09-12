@@ -408,11 +408,11 @@ h2 {
 .ticker-symbol .trophy {
     position: absolute;
     right: 10px; /* One fixed position to the left of medals */
-    top: -7px;
+    top: -11px;
     background-color: transparent;
     font-size: 16px;
     z-index: 101;
     pointer-events: none;
-    transform: scale(0.9);
+    transform: scale(0.75);
     transform-origin: center;
 }

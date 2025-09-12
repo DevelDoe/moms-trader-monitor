@@ -157,6 +157,10 @@ let _xpShowTotalVolume = xpSettingsStore.get("showTotalVolume", true); // Defaul
 let _xpShowLevel = xpSettingsStore.get("showLevel", true); // Default to visible
 let _xpShowSessionChange = xpSettingsStore.get("showSessionChange", true); // Default to visible
 
+// XP Top3 data
+let _xpTop3Entries = xpSettingsStore.get("top3Entries", []); // [{symbol, rank, trophy}]
+let _xpTop3UpdatedAt = xpSettingsStore.get("top3UpdatedAt", 0);
+
 function getXpListLength() {
     return _xpListLength;
 }
@@ -432,11 +436,44 @@ function setXpShowSessionChange(show) {
     return true;
 }
 
+// XP Top3 functions
+function getXpTop3() {
+    return { entries: _xpTop3Entries.slice(), updatedAt: _xpTop3UpdatedAt };
+}
+
+function setXpTop3(listOrEntries) {
+    const next = normalizeTop3(listOrEntries);
+    const changed =
+        next.length !== _xpTop3Entries.length || next.some((e, i) => !_xpTop3Entries[i] || e.symbol !== _xpTop3Entries[i].symbol || e.rank !== _xpTop3Entries[i].rank || (e.trophy ?? null) !== (_xpTop3Entries[i].trophy ?? null));
+    if (!changed) {
+        return false;
+    }
+
+    _xpTop3Entries = next;
+    _xpTop3UpdatedAt = Date.now();
+    xpSettingsStore.set("top3Entries", _xpTop3Entries);
+    xpSettingsStore.set("top3UpdatedAt", _xpTop3UpdatedAt);
+
+    const payload = getXpTop3();
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("xp-top3:change", payload);
+        } catch (err) {
+            log.log("[xp-top3] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
 if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_registered__) {
     app.__xp_settings_ipc_registered__ = true;
 
     ipcMain.removeHandler("xp-settings:get");
     ipcMain.removeHandler("xp-settings:set");
+    ipcMain.removeHandler("xp-top3:get");
+    ipcMain.removeHandler("xp-top3:set");
+    
     ipcMain.handle("xp-settings:get", () => {
         return { 
             listLength: getXpListLength(), 
@@ -451,6 +488,14 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
             showLevel: getXpShowLevel(),
             showSessionChange: getXpShowSessionChange()
         };
+    });
+    
+    ipcMain.handle("xp-top3:get", () => {
+        return getXpTop3();
+    });
+    
+    ipcMain.handle("xp-top3:set", (_e, listOrEntries) => {
+        return setXpTop3(listOrEntries);
     });
     ipcMain.handle("xp-settings:set", (_e, { listLength, showHeaders, showUpXp, showDownXp, showRatio, showTotal, showNet, showPrice, showTotalVolume, showLevel, showSessionChange }) => {
         let changed = false;
@@ -491,6 +536,8 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
     });
 
     ipcMain.removeAllListeners("xp-settings:subscribe");
+    ipcMain.removeAllListeners("xp-top3:subscribe");
+    
     ipcMain.on("xp-settings:subscribe", (e) => {
         const wc = e.sender;
         const push = (data) => wc.send("xp-settings:change", data);
@@ -513,6 +560,15 @@ if (app && ipcMain && typeof app.on === "function" && !app.__xp_settings_ipc_reg
             xpSettingsBus.removeListener("change", push);
         });
     });
+    
+    ipcMain.on("xp-top3:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("xp-top3:change", data);
+        push(getXpTop3()); // prime immediately
+        wc.once("destroyed", () => {
+            log.log("[xp-top3] unsubscribe WC", wc.id);
+        });
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -533,6 +589,10 @@ let _changeShowPrice = changeSettingsStore.get("showPrice", true); // Default to
 let _changeShowTotalVolume = changeSettingsStore.get("showTotalVolume", true); // Default to visible
 let _changeShowLevel = changeSettingsStore.get("showLevel", true); // Default to visible
 let _changeShowSessionChange = changeSettingsStore.get("showSessionChange", true); // Default to visible
+
+// Change Top3 data
+let _changeTop3Entries = changeSettingsStore.get("top3Entries", []); // [{symbol, rank, trophy}]
+let _changeTop3UpdatedAt = changeSettingsStore.get("top3UpdatedAt", 0);
 
 function getChangeListLength() {
     return _changeListLength;
@@ -809,11 +869,44 @@ function setChangeShowSessionChange(show) {
     return true;
 }
 
+// Change Top3 functions
+function getChangeTop3() {
+    return { entries: _changeTop3Entries.slice(), updatedAt: _changeTop3UpdatedAt };
+}
+
+function setChangeTop3(listOrEntries) {
+    const next = normalizeTop3(listOrEntries);
+    const changed =
+        next.length !== _changeTop3Entries.length || next.some((e, i) => !_changeTop3Entries[i] || e.symbol !== _changeTop3Entries[i].symbol || e.rank !== _changeTop3Entries[i].rank || (e.trophy ?? null) !== (_changeTop3Entries[i].trophy ?? null));
+    if (!changed) {
+        return false;
+    }
+
+    _changeTop3Entries = next;
+    _changeTop3UpdatedAt = Date.now();
+    changeSettingsStore.set("top3Entries", _changeTop3Entries);
+    changeSettingsStore.set("top3UpdatedAt", _changeTop3UpdatedAt);
+
+    const payload = getChangeTop3();
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("change-top3:change", payload);
+        } catch (err) {
+            log.log("[change-top3] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
 if (app && ipcMain && typeof app.on === "function" && !app.__change_settings_ipc_registered__) {
     app.__change_settings_ipc_registered__ = true;
 
     ipcMain.removeHandler("change-settings:get");
     ipcMain.removeHandler("change-settings:set");
+    ipcMain.removeHandler("change-top3:get");
+    ipcMain.removeHandler("change-top3:set");
+    
     ipcMain.handle("change-settings:get", () => {
         return { 
             listLength: getChangeListLength(), 
@@ -828,6 +921,14 @@ if (app && ipcMain && typeof app.on === "function" && !app.__change_settings_ipc
             showLevel: getChangeShowLevel(),
             showSessionChange: getChangeShowSessionChange()
         };
+    });
+    
+    ipcMain.handle("change-top3:get", () => {
+        return getChangeTop3();
+    });
+    
+    ipcMain.handle("change-top3:set", (_e, listOrEntries) => {
+        return setChangeTop3(listOrEntries);
     });
     ipcMain.handle("change-settings:set", (_e, { listLength, showHeaders, showUpXp, showDownXp, showRatio, showTotal, showNet, showPrice, showTotalVolume, showLevel, showSessionChange }) => {
         let changed = false;
@@ -868,6 +969,8 @@ if (app && ipcMain && typeof app.on === "function" && !app.__change_settings_ipc
     });
 
     ipcMain.removeAllListeners("change-settings:subscribe");
+    ipcMain.removeAllListeners("change-top3:subscribe");
+    
     ipcMain.on("change-settings:subscribe", (e) => {
         const wc = e.sender;
         const push = (data) => wc.send("change-settings:change", data);
@@ -888,6 +991,15 @@ if (app && ipcMain && typeof app.on === "function" && !app.__change_settings_ipc
         wc.once("destroyed", () => {
             log.log("[change-settings] unsubscribe WC", wc.id);
             changeSettingsBus.removeListener("change", push);
+        });
+    });
+    
+    ipcMain.on("change-top3:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("change-top3:change", data);
+        push(getChangeTop3()); // prime immediately
+        wc.once("destroyed", () => {
+            log.log("[change-top3] unsubscribe WC", wc.id);
         });
     });
 }
@@ -1131,23 +1243,20 @@ if (app && ipcMain && typeof app.on === "function" && !app.__stats_settings_ipc_
     });
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Top-3 store (persist + broadcast)
-// ─────────────────────────────────────────────────────────────────────
-
-const top3Store = createStore("top3-store", "top.");
-const top3Bus = new EventEmitter();
-
-let _entries = top3Store.get("entries", []); // [{symbol, rank, score}]
-let _updatedAt = top3Store.get("updatedAt", 0);
-
-// Boot visibility
-// log.log("[top3] boot", { entries: _entries, updatedAt: _updatedAt });
-
+// Helper function to normalize top3 data
 const up = (s) => String(s || "").toUpperCase();
 
-function normalize(input) {
-    const arr = (input || []).map((v, i) => (typeof v === "string" ? { symbol: up(v), rank: i + 1, score: null } : { symbol: up(v.symbol), rank: Number(v.rank) || i + 1, score: v.score ?? null }));
+function normalizeTop3(input) {
+    const arr = (input || []).map((v, i) => {
+        if (typeof v === "string") {
+            return { symbol: up(v), rank: i + 1, trophy: null };
+        }
+        return { 
+            symbol: up(v.symbol), 
+            rank: Number(v.rank) || i + 1, 
+            trophy: v.trophy || null 
+        };
+    });
 
     const seen = new Set();
     const out = [];
@@ -1161,72 +1270,6 @@ function normalize(input) {
 
     out.sort((a, b) => a.rank - b.rank);
     return out.map((e, i) => ({ ...e, rank: i + 1 }));
-}
-
-function getTop3() {
-    // log.log("[top3] getTop3()", { entries: _entries, updatedAt: _updatedAt });
-    return { entries: _entries.slice(), updatedAt: _updatedAt };
-}
-
-function setTop3(listOrEntries) {
-    // log.log("[top3] setTop3(request)", listOrEntries);
-    const next = normalize(listOrEntries);
-    const changed =
-        next.length !== _entries.length || next.some((e, i) => !_entries[i] || e.symbol !== _entries[i].symbol || e.rank !== _entries[i].rank || (e.score ?? null) !== (_entries[i].score ?? null));
-    if (!changed) {
-        // log.log("[top3] setTop3: no change; skipping persist/broadcast");
-        return false;
-    }
-
-    _entries = next;
-    _updatedAt = Date.now();
-    top3Store.set("entries", _entries);
-    top3Store.set("updatedAt", _updatedAt);
-
-    const payload = getTop3();
-    const targets = webContents.getAllWebContents();
-    // log.log("[top3] broadcasting", {
-    //     entries: payload.entries,
-    //     updatedAt: payload.updatedAt,
-    //     targets: targets.map((wc) => wc.id),
-    // });
-    top3Bus.emit("change", payload);
-    for (const wc of targets) {
-        try {
-            wc.send("top3:change", payload);
-        } catch (err) {
-            log.log("[top3] send failed", { target: wc.id, err: String(err) });
-        }
-    }
-    return true;
-}
-
-if (app && ipcMain && typeof app.on === "function" && !app.__top3_ipc_registered__) {
-    app.__top3_ipc_registered__ = true;
-
-    ipcMain.removeHandler("top3:get");
-    ipcMain.removeHandler("top3:set");
-    ipcMain.handle("top3:get", () => {
-        // log.log("[top3] IPC handle: top3:get");
-        return getTop3();
-    });
-    ipcMain.handle("top3:set", (_e, listOrEntries) => {
-        // log.log("[top3] IPC handle: top3:set", listOrEntries);
-        return setTop3(listOrEntries);
-    });
-
-    ipcMain.removeAllListeners("top3:subscribe");
-    ipcMain.on("top3:subscribe", (e) => {
-        const wc = e.sender;
-        // log.log("[top3] IPC on: top3:subscribe from WC", wc.id);
-        const push = (data) => wc.send("top3:change", data);
-        push(getTop3()); // prime immediately
-        top3Bus.on("change", push);
-        wc.once("destroyed", () => {
-            log.log("[top3] unsubscribe WC", wc.id);
-            top3Bus.removeListener("change", push);
-        });
-    });
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -1900,9 +1943,13 @@ module.exports = {
     setLastAckCursor,
     resetCursor,
 
-    // new exports (optional for other main modules)
-    getTop3,
-    setTop3,
+    // XP Top-3 exports
+    getXpTop3,
+    setXpTop3,
+    
+    // Change Top-3 exports
+    getChangeTop3,
+    setChangeTop3,
     
     // XP settings exports
     getXpListLength,

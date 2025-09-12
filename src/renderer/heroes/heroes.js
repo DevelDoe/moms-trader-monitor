@@ -389,10 +389,10 @@ function handleAlertEvent(evt) {
 /* ===== 8) Top3 medals ===== */
 async function initTop3() {
     try {
-        const { entries } = await window.top3API.get();
+        const { entries } = await window.changeTop3API.get();
         state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
     } catch {}
-    state.top3Unsub = window.top3API.subscribe?.(({ entries }) => {
+    state.top3Unsub = window.changeTop3API.onUpdate?.(({ entries }) => {
         state.rankMap = new Map((entries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));
         state.container?.querySelectorAll(".ticker-card").forEach((card) => {
             const sym = card.dataset.symbol?.toUpperCase();
@@ -525,18 +525,18 @@ async function boot() {
 
     await initTop3();
 
-    // Initialize trophy data from the store
+    // Initialize trophy data from the change top3 store
     try {
-        const trophyData = await window.storeAPI.getTrophyData();
+        const { entries: trophyData } = await window.changeTop3API.get();
         state.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
-        console.log("🏆 [HEROES] Initial trophy data loaded:", state.trophyMap);
+        console.log("🏆 [HEROES] Initial trophy data loaded from change top3:", state.trophyMap);
     } catch (error) {
         console.error("❌ [HEROES] Failed to load initial trophy data:", error);
     }
 
-    // Subscribe to trophy updates
-    window.storeAPI.onTrophyUpdate?.((trophyData) => {
-        console.log("🏆 [HEROES] Trophy update received:", trophyData);
+    // Subscribe to trophy updates from change top3
+    window.changeTop3API.onUpdate?.(({ entries: trophyData }) => {
+        console.log("🏆 [HEROES] Trophy update received from change top3:", trophyData);
         state.trophyMap = new Map(trophyData.map((t) => [t.symbol.toUpperCase(), t.trophy]));
         
         // Update visible cards with new trophies

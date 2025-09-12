@@ -223,8 +223,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Get initial session history data
         sessionHistoryData = await window.xpAPI.getSessionHistory();
         
-        // Get initial active stocks data
-        activeStocksData = await window.xpAPI.getActiveStocks();
+        // Get initial active stocks data (change-sorted)
+        activeStocksData = await window.changeAPI.getActiveStocks();
         
         if (sessionHistoryData) {
             renderSessionHistory();
@@ -252,8 +252,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Listen for active stocks updates (current session)
-    window.xpAPI.onActiveStocksUpdate((data) => {
+    // Listen for active stocks updates (current session - change-sorted)
+    window.changeAPI.onActiveStocksUpdate((data) => {
         activeStocksData = data;
         renderSessionHistory();
     });

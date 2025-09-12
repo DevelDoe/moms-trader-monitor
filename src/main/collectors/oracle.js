@@ -803,8 +803,8 @@ const createWebSocket = () => {
         }
 
         if (msg.type === "halt") {
-            // Handle real-time halt updates
-            const haltItem = msg.halt || msg;
+            // Handle real-time halt updates - new structure has data wrapper
+            const haltItem = msg.data || msg.halt || msg;
             if (HALT_DEBUG) {
                 log.log(`🚨 Received halt event: ${haltItem.symbol || "unknown"} - ${haltItem.state || "unknown"} - ${haltItem.reason || "no reason"}`);
                 

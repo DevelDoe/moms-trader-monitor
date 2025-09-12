@@ -79,15 +79,15 @@ async function refreshList() {
     // Only update if the symbols have changed
     if (currentTrophyHash !== lastTrophyHash) {
         try {
-            await window.storeAPI.updateTrophyData(top3Trophies);
-            console.log("🏆 Trophy data updated in store (Change View):", top3Trophies);
+            await window.changeTop3API.set(top3Trophies);
+            console.log("🏆 Change Top3 data updated in store:", top3Trophies);
             console.log("🔑 Trophy hash changed:", lastTrophyHash, "→", currentTrophyHash);
             lastTrophyHash = currentTrophyHash;
         } catch (error) {
-            console.error("❌ Failed to send trophy data to store:", error);
+            console.error("❌ Failed to send Change top3 data to store:", error);
         }
     } else {
-        console.log("🏆 Trophy symbols unchanged, skipping update:", currentTrophyHash);
+        console.log("🏆 Change Top3 symbols unchanged, skipping update:", currentTrophyHash);
     }
 
     const container = document.getElementById("change-scroll");

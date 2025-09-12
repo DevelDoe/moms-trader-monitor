@@ -2,6 +2,7 @@
 
 let allHalts = [];
 let currentlyHaltedSymbols = new Set();
+let symbolStates = new Map(); // Track current state for each symbol
 let maxHaltsLength = 100; // Keep last 100 halt events
 let settings = {};
 
@@ -52,9 +53,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (halts && Array.isArray(halts)) {
             console.log(`📊 Received ${halts.length} initial halts from Oracle`);
             allHalts = halts;
+            
+            // Sort halts by timestamp (newest first)
+            allHalts.sort((a, b) => {
+                const timeA = a.timestamp_et || a.timestamp || a.received_at;
+                const timeB = b.timestamp_et || b.timestamp || b.received_at;
+                // Compare timestamp strings directly (newest first)
+                return timeB.localeCompare(timeA);
+            });
+            
             updateHaltedSymbols();
             renderHalts();
-            updateStats();
         } else {
             console.log("📊 No initial halts available");
         }
@@ -71,30 +80,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// Update the set of currently halted symbols
+// Update the set of currently halted symbols and track symbol states
 function updateHaltedSymbols() {
     currentlyHaltedSymbols.clear();
+    symbolStates.clear();
     
     // Process halts in reverse chronological order to get latest state for each symbol
-    const sortedHalts = [...allHalts].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const sortedHalts = [...allHalts].sort((a, b) => {
+        // Use timestamp_et if available, otherwise fall back to timestamp or received_at
+        const timeA = a.timestamp_et || a.timestamp || a.received_at;
+        const timeB = b.timestamp_et || b.timestamp || b.received_at;
+        // Compare timestamp strings directly (newest first)
+        return timeB.localeCompare(timeA);
+    });
     
+    // Track the latest state for each symbol
     for (const halt of sortedHalts) {
-        if (!currentlyHaltedSymbols.has(halt.symbol)) {
+        if (!symbolStates.has(halt.symbol)) {
+            symbolStates.set(halt.symbol, {
+                state: halt.state,
+                reason: halt.reason,
+                timestamp: halt.timestamp_et || halt.timestamp || halt.received_at,
+                exchange: halt.tape_description,
+                high_price: halt.high_price,
+                low_price: halt.low_price
+            });
+            
+            // Add to halted symbols set if currently halted
             if (halt.state === 'HALTED') {
                 currentlyHaltedSymbols.add(halt.symbol);
             }
-            // Note: We don't remove from set on RESUMED because we want to track the latest state
-            // The set will be rebuilt each time
-        }
-    }
-    
-    // Now remove symbols that have been resumed
-    for (const halt of sortedHalts) {
-        if (halt.state === 'RESUMED') {
-            currentlyHaltedSymbols.delete(halt.symbol);
         }
     }
 }
+
 
 // Render halt events to the DOM
 function renderHalts() {
@@ -115,63 +134,69 @@ function renderHalts() {
     }
 
     // Sort halts by timestamp (newest first)
-    const sortedHalts = [...allHalts].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const sortedHalts = [...allHalts].sort((a, b) => {
+        const timeA = a.timestamp_et || a.timestamp || a.received_at;
+        const timeB = b.timestamp_et || b.timestamp || b.received_at;
+        // Compare timestamp strings directly (newest first)
+        return timeB.localeCompare(timeA);
+    });
     
     container.innerHTML = sortedHalts.map(halt => createHaltElement(halt)).join('');
 }
 
 // Create HTML element for a halt event
 function createHaltElement(halt) {
-    const timestamp = new Date(halt.timestamp);
-    const timeStr = timestamp.toLocaleTimeString();
-    const dateStr = timestamp.toLocaleDateString();
+    // Use timestamp_et if available, otherwise fall back to timestamp or received_at
+    const timestampStr = halt.timestamp_et || halt.timestamp || halt.received_at;
     
-    const stateClass = halt.state.toLowerCase().replace('_', '-');
-    const stateDisplay = halt.state.replace('_', ' ');
+    // Extract time directly from timestamp_et string (no Date conversion)
+    let timeStr;
+    if (timestampStr) {
+        // For ET timestamps, extract the time directly from the string
+        if (timestampStr.includes('T')) {
+            // Format: "2025-09-11T12:10:40.368613-04:00"
+            const timePart = timestampStr.split('T')[1];
+            const timeWithMs = timePart.split('-')[0]; // "12:10:40.368613" (keep milliseconds, remove timezone)
+            timeStr = timeWithMs; // Show time with milliseconds for precision
+        } else {
+            // For other formats, try to extract time without Date conversion
+            timeStr = 'Unknown';
+        }
+    } else {
+        timeStr = 'Unknown';
+    }
     
-    const indicatorsStr = halt.indicators && halt.indicators.length > 0 
-        ? halt.indicators.map(ind => `<span>${ind}</span>`).join('')
+    const stateClass = halt.state.toLowerCase().replace(/_/g, '-');
+    const stateDisplay = halt.state.replace(/_/g, ' ');
+    
+    // Get current symbol state for additional context
+    const currentState = symbolStates.get(halt.symbol);
+    const isCurrentState = currentState && currentState.timestamp === (halt.timestamp_et || halt.timestamp || halt.received_at);
+    
+    // Add price information if available
+    const priceInfo = halt.high_price && halt.low_price 
+        ? `<div class="halt-prices">Price Range: $${halt.low_price} - $${halt.high_price}</div>`
         : '';
 
     return `
-        <div class="halt-event ${stateClass}" data-symbol="${halt.symbol}" data-timestamp="${halt.timestamp}">
+        <div class="halt-event ${stateClass} ${isCurrentState ? 'current-state' : ''}" data-symbol="${halt.symbol}" data-timestamp="${halt.timestamp_et || halt.timestamp || halt.received_at}">
             <div class="halt-header">
                 <div class="halt-symbol">${halt.symbol}</div>
                 <div class="halt-state ${stateClass}">${stateDisplay}</div>
+                ${isCurrentState ? '<div class="current-indicator">CURRENT</div>' : ''}
             </div>
             <div class="halt-details">
                 <div class="halt-reason">${halt.reason || 'No reason provided'}</div>
                 <div class="halt-meta">
                     <div class="halt-exchange">${halt.tape_description || 'Unknown Exchange'}</div>
-                    <div class="halt-time">${dateStr} ${timeStr}</div>
+                    <div class="halt-time">${timeStr}</div>
                 </div>
-                ${indicatorsStr ? `<div class="halt-indicators">Indicators: ${indicatorsStr}</div>` : ''}
+                ${priceInfo}
             </div>
         </div>
     `;
 }
 
-// Update statistics display
-function updateStats() {
-    const totalHaltsEl = document.getElementById('total-halts');
-    const currentlyHaltedEl = document.getElementById('currently-halted');
-    const recentEventsEl = document.getElementById('recent-events');
-
-    if (totalHaltsEl) {
-        totalHaltsEl.textContent = allHalts.length;
-    }
-    
-    if (currentlyHaltedEl) {
-        currentlyHaltedEl.textContent = currentlyHaltedSymbols.size;
-    }
-    
-    if (recentEventsEl) {
-        // Count events from last hour
-        const oneHourAgo = Date.now() - (60 * 60 * 1000);
-        const recentCount = allHalts.filter(halt => halt.timestamp > oneHourAgo).length;
-        recentEventsEl.textContent = recentCount;
-    }
-}
 
 // Handle new halt delta from Oracle
 function handleHaltDelta(haltData, metadata = {}) {
@@ -182,8 +207,16 @@ function handleHaltDelta(haltData, metadata = {}) {
         return;
     }
 
-    // Add to beginning of array (newest first)
-    allHalts.unshift(haltData);
+    // Add new halt to array
+    allHalts.push(haltData);
+
+    // Sort halts by timestamp (newest first) and keep only the most recent
+    allHalts.sort((a, b) => {
+        const timeA = a.timestamp_et || a.timestamp || a.received_at;
+        const timeB = b.timestamp_et || b.timestamp || b.received_at;
+        // Compare timestamp strings directly (newest first)
+        return timeB.localeCompare(timeA);
+    });
 
     // Keep only the most recent halts
     if (allHalts.length > maxHaltsLength) {
@@ -195,11 +228,11 @@ function handleHaltDelta(haltData, metadata = {}) {
 
     // Re-render the display
     renderHalts();
-    updateStats();
 
     // Add visual indicator for new halt
     if (metadata.isDelta) {
-        const haltElement = document.querySelector(`[data-symbol="${haltData.symbol}"][data-timestamp="${haltData.timestamp}"]`);
+        const haltTimestamp = haltData.timestamp_et || haltData.timestamp || haltData.received_at;
+        const haltElement = document.querySelector(`[data-symbol="${haltData.symbol}"][data-timestamp="${haltTimestamp}"]`);
         if (haltElement) {
             haltElement.classList.add('new');
             setTimeout(() => {
@@ -209,7 +242,7 @@ function handleHaltDelta(haltData, metadata = {}) {
     }
 
     // Log structure for debugging
-    if (process.env.DEBUG === "true") {
+    if (window.appFlags?.eventsDebug) {
         logHaltStructure([haltData], "DELTA");
     }
 }
@@ -231,6 +264,14 @@ function handleHaltHeadlines(haltsData, metadata = {}) {
         allHalts = [...haltsData, ...allHalts];
     }
 
+    // Sort halts by timestamp (newest first)
+    allHalts.sort((a, b) => {
+        const timeA = a.timestamp_et || a.timestamp || a.received_at;
+        const timeB = b.timestamp_et || b.timestamp || b.received_at;
+        // Compare timestamp strings directly (newest first)
+        return timeB.localeCompare(timeA);
+    });
+
     // Keep only the most recent halts
     if (allHalts.length > maxHaltsLength) {
         allHalts = allHalts.slice(0, maxHaltsLength);
@@ -241,10 +282,9 @@ function handleHaltHeadlines(haltsData, metadata = {}) {
 
     // Re-render the display
     renderHalts();
-    updateStats();
 
     // Log structure for debugging
-    if (process.env.DEBUG === "true") {
+    if (window.appFlags?.eventsDebug) {
         logHaltStructure(haltsData, "HEADLINES");
     }
 }
@@ -264,9 +304,17 @@ function handleOracleHydrationComplete() {
         if (halts && Array.isArray(halts)) {
             console.log(`🔄 Refreshed with ${halts.length} halts after hydration`);
             allHalts = halts;
+            
+            // Sort halts by timestamp (newest first)
+            allHalts.sort((a, b) => {
+                const timeA = a.timestamp_et || a.timestamp || a.received_at;
+                const timeB = b.timestamp_et || b.timestamp || b.received_at;
+                // Compare timestamp strings directly (newest first)
+                return timeB.localeCompare(timeA);
+            });
+            
             updateHaltedSymbols();
             renderHalts();
-            updateStats();
         }
     }).catch(e => {
         console.error("❌ Failed to refresh halts after hydration:", e);
@@ -302,10 +350,17 @@ window.haltsAPI = {
     getAllHalts: () => allHalts,
     getCurrentlyHaltedSymbols: () => Array.from(currentlyHaltedSymbols),
     isSymbolHalted: (symbol) => currentlyHaltedSymbols.has(symbol),
+    getSymbolState: (symbol) => symbolStates.get(symbol),
+    getAllSymbolStates: () => Object.fromEntries(symbolStates),
     getHaltCount: () => allHalts.length,
     getRecentHalts: (minutes = 60) => {
         const cutoff = Date.now() - (minutes * 60 * 1000);
-        return allHalts.filter(halt => halt.timestamp > cutoff);
+        return allHalts.filter(halt => {
+            const haltTime = halt.timestamp_et || halt.timestamp || halt.received_at;
+            // Convert halt time to milliseconds for comparison
+            const haltTimeMs = new Date(haltTime).getTime();
+            return haltTimeMs > cutoff;
+        });
     }
 };
 

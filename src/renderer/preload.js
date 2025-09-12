@@ -86,6 +86,28 @@ contextBridge.exposeInMainWorld("storeAPI", {
     },
 });
 
+// XP Top-3 API
+contextBridge.exposeInMainWorld("xpTop3API", {
+    get: () => ipcRenderer.invoke("xp-top3:get"),
+    set: (top3Data) => ipcRenderer.invoke("xp-top3:set", top3Data),
+    onUpdate: (callback) => {
+        const handler = (_event, data) => callback(data);
+        ipcRenderer.on("xp-top3:change", handler);
+        return () => ipcRenderer.off("xp-top3:change", handler);
+    },
+});
+
+// Change Top-3 API
+contextBridge.exposeInMainWorld("changeTop3API", {
+    get: () => ipcRenderer.invoke("change-top3:get"),
+    set: (top3Data) => ipcRenderer.invoke("change-top3:set", top3Data),
+    onUpdate: (callback) => {
+        const handler = (_event, data) => callback(data);
+        ipcRenderer.on("change-top3:change", handler);
+        return () => ipcRenderer.off("change-top3:change", handler);
+    },
+});
+
 contextBridge.exposeInMainWorld("eventsAPI", {
     activate: () => ipcRenderer.send("activate-events"),
     deactivate: () => ipcRenderer.send("deactivate-events"),

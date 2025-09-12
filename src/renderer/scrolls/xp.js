@@ -83,15 +83,15 @@ async function refreshList() {
     // Only update if the symbols have changed
     if (currentTrophyHash !== lastTrophyHash) {
         try {
-            await window.storeAPI.updateTrophyData(top3Trophies);
-            console.log("🏆 Trophy data updated in store:", top3Trophies);
+            await window.xpTop3API.set(top3Trophies);
+            console.log("🏆 XP Top3 data updated in store:", top3Trophies);
             console.log("🔑 Trophy hash changed:", lastTrophyHash, "→", currentTrophyHash);
             lastTrophyHash = currentTrophyHash;
         } catch (error) {
-            console.error("❌ Failed to send trophy data to store:", error);
+            console.error("❌ Failed to send XP top3 data to store:", error);
         }
     } else {
-        console.log("🏆 Trophy symbols unchanged, skipping update:", currentTrophyHash);
+        console.log("🏆 XP Top3 symbols unchanged, skipping update:", currentTrophyHash);
     }
 
     const container = document.getElementById("xp-scroll");

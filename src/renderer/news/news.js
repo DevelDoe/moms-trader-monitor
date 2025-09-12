@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             //     });
             // }
         } else {
-            console.warn(`📰 News hydration failed: headlines is not an array:`, typeof headlines, headlines);
+            console.log(`📰 News hydration failed: headlines is not an array:`, typeof headlines, headlines);
         }
     } catch (e) {
         console.warn("News hydration failed:", e);
@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             allFilings = filings;
             console.log(`📁 [NEWS] Hydrated: ${allFilings.length} filings`);
         } else {
-            console.warn("📁 [NEWS] Filing headlines response is not an array:", typeof filings, filings);
+            console.log("📁 [NEWS] Filing headlines response is not an array:", typeof filings, filings);
             console.log("📁 [NEWS] This is expected if Oracle hasn't processed hydration yet - will wait for filing-headlines event");
         }
     } catch (e) {
@@ -137,12 +137,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     render();
 
-    // Start periodic re-render timer to collapse items after 4 minutes
-    // Timer removed for performance - collapse logic now handled on re-renders
+    // Start periodic auto-refresh timer to re-render every 4 minutes
+    let autoRefreshTimer = setInterval(() => {
+        console.log("🔄 [NEWS] Auto-refresh triggered (4 minutes)");
+        render();
+    }, 4 * 60 * 1000); // 4 minutes in milliseconds
     
     // Clean up timer when window is closed or unloaded
     window.addEventListener('beforeunload', () => {
-        // Timer cleanup removed - no longer needed
+        if (autoRefreshTimer) {
+            clearInterval(autoRefreshTimer);
+            console.log("🧹 [NEWS] Auto-refresh timer cleaned up");
+        }
     });
 
     // 2. SUBSCRIBE - Listen for Oracle news and filing updates
@@ -458,24 +464,17 @@ function renderFilingItem(filingItem, container) {
                 onClick: true
             })}
             <div class="filing-content">
-                <h3 class="filing-title-large ${filingItem.filing_url ? 'filing-title-clickable' : ''}">${filingItem.title}</h3>
+                <h3 class="filing-title-large ${filingItem.filing_url ? 'filing-title-clickable' : ''}">${symbol} has filed a form ${filingItem.form_type} ${filingItem.form_description || filingItem.title || "filing"}</h3>
                 ${filingItem.form_description ? `
                     <div class="filing-description"> ${filingItem.form_description}</div>
                 ` : ''}
                 ${filingItem.company_name || when ? `
                     <div class="filing-meta">
                         ${when ? `<div class="filing-time">${when}</div>` : ''}
-                        ${filingItem.company_name ? `<div class="filing-company">${filingItem.company_name}</div>` : ''}
+                       
                     </div>
                 ` : ''}
-                ${filingItem.summary ? `
-                    <div class="filing-summary">${filingItem.summary}</div>
-                ` : ''}
-                ${filingItem.accession_with_dashes ? `
-                    <div class="filing-details">
-                        Filed: ${filingDate} AccNo: ${filingItem.accession_with_dashes} Size: 6 KB
-                    </div>
-                ` : ''}
+               
             </div>
         `;
         
