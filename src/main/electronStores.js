@@ -15,15 +15,27 @@ const { EventEmitter } = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
 
-function createStore(name, keyPrefix = "") {
+function createStore(name, keyPrefix = "", memoryOnly = false) {
     const path = require("path");
     const useCwd = !app || typeof app.getPath !== "function";
-    const store = new Store({
-        name, // "<name>.json"
-        clearInvalidConfig: true,
-        // In tests (no Electron app), persist under a temp folder
-        ...(useCwd ? { cwd: path.join(process.cwd(), ".mtm-test-store") } : {}),
-    });
+    
+    let store;
+    if (memoryOnly) {
+        // Memory-only store - no persistence
+        store = {
+            get: (key, fallback) => fallback,
+            set: (key, value) => {}, // No-op
+            clear: () => {},
+            _isMemoryOnly: true
+        };
+    } else {
+        store = new Store({
+            name, // "<name>.json"
+            clearInvalidConfig: true,
+            // In tests (no Electron app), persist under a temp folder
+            ...(useCwd ? { cwd: path.join(process.cwd(), ".mtm-test-store") } : {}),
+        });
+    }
 
     // Coalescing buffer: key -> latest value
     let buffer = new Map();
@@ -40,8 +52,30 @@ function createStore(name, keyPrefix = "") {
     }
 
     function set(key, value) {
-        buffer.set(qualify(key), value);
+        const qualifiedKey = qualify(key);
+        buffer.set(qualifiedKey, value);
+        
+        // Skip persistence for memory-only dynamic data
+        if (memoryOnly || isMemoryOnlyKey(qualifiedKey)) {
+            return; // Don't schedule flush for memory-only data
+        }
+        
         scheduleFlush();
+    }
+    
+    function isMemoryOnlyKey(key) {
+        // These keys should be memory-only (dynamic rankings)
+        const memoryOnlyKeys = [
+            'top3Entries',
+            'top3UpdatedAt',
+            'rating.top3Entries', 
+            'rating.top3UpdatedAt',
+            'xp.top3Entries',
+            'xp.top3UpdatedAt',
+            'change.top3Entries',
+            'change.top3UpdatedAt'
+        ];
+        return memoryOnlyKeys.includes(key);
     }
 
     function scheduleFlush() {
@@ -60,13 +94,18 @@ function createStore(name, keyPrefix = "") {
             const snapshot = buffer;
             buffer = new Map();
 
-            // Build a single object for atomic store.set
+            // Build a single object for atomic store.set, excluding memory-only keys
             const batch = {};
             for (const [k, v] of snapshot.entries()) {
-                batch[k] = v;
+                if (!isMemoryOnlyKey(k)) {
+                    batch[k] = v;
+                }
             }
-            // electron-store set(object) merges keys in one synchronous write
-            store.set(batch);
+            
+            // Only write to store if there are persistent keys
+            if (Object.keys(batch).length > 0) {
+                store.set(batch);
+            }
         } catch (err) {
             console.error(`[${name}] ❌ Failed to persist batch:`, err);
         } finally {
@@ -84,9 +123,17 @@ function createStore(name, keyPrefix = "") {
         if (buffer.size === 0) return;
         try {
             const batch = {};
-            for (const [k, v] of buffer.entries()) batch[k] = v;
+            for (const [k, v] of buffer.entries()) {
+                if (!isMemoryOnlyKey(k)) {
+                    batch[k] = v;
+                }
+            }
             buffer.clear();
-            store.set(batch);
+            
+            // Only write to store if there are persistent keys
+            if (Object.keys(batch).length > 0) {
+                store.set(batch);
+            }
         } catch (err) {
             console.error(`[${name}] ❌ Failed sync flush:`, err);
         }
