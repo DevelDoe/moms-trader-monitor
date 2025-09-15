@@ -22,11 +22,11 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": false,
+    "enableHeroes": true,
     "autoClose": true,
-    "enableActiveChart": true,
+    "enableActiveChart": false,
     "autoCloseActive": true,
-    "headless": true
+    "headless": false
   },
   "news": {
     "filteredTickers": [],
