@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         initializeXpSettingsSection();
         initializeChangeSettingsSection();
         initializeStatsSettingsSection();
+        initializeFilingFiltersSection();
         
         // Set up settings update handler to reload test settings
         window.settingsAPI.onUpdate(async (updated) => {
@@ -1935,4 +1936,198 @@ function filterListItems(listElement, searchTerm) {
     } else if (emptyState) {
         emptyState.remove();
     }
+}
+
+function initializeFilingFiltersSection() {
+    console.log("Initializing Filing Filters Section");
+
+    // SEC Form Priority Mapping
+    const FORM_PRIORITIES = {
+        // High Priority (1)
+        '8-K': 1, '8-K/A': 1,
+        'S-3': 1, 'S-3/A': 1,
+        'S-1': 1, 'S-1/A': 1,
+        '424B1': 1, '424B2': 1, '424B3': 1, '424B4': 1, '424B5': 1,
+        '425': 1,  // Business combination transactions (mergers, acquisitions)
+        '10-Q': 1, '10-Q/A': 1,
+        '10-K': 1, '10-K/A': 1,
+        '6-K': 1, '20-F': 1, '40-F': 1,
+        
+        // Medium Priority (2)
+        '13D': 2, '13D/A': 2,
+        '13G': 2, '13G/A': 2,
+        '4': 2, '4/A': 2,
+        'DEF 14A': 2, 'DEFA14A': 2,
+        'F-1': 2, 'F-1/A': 2,
+        'F-3': 2, 'F-3/A': 2,
+        
+        // Low Priority (3) - will be filtered out at manager level
+        '11-K': 3, '144': 3, '144A': 3, '305B2': 3,
+        'SC TO-T': 3, 'SC 13E3': 3,
+        'N-Q': 3, 'N-CSR': 3, 'N-1A': 3,
+        'N-CSRS': 3, 'N-MFP': 3, 'N-MFP2': 3, 'N-MFP3': 3,
+    };
+
+    // Group forms by priority
+    const formsByPriority = { 1: [], 2: [], 3: [] };
+    Object.entries(FORM_PRIORITIES).forEach(([form, priority]) => {
+        formsByPriority[priority].push(form);
+    });
+
+    // Load initial filing filter settings
+    async function loadFilingFilterSettings() {
+        try {
+            const filingFilterSettings = await window.filingFilterSettingsAPI.get();
+            
+            // Set group toggles
+            document.getElementById('filing-group-1-enabled').checked = filingFilterSettings.group1Enabled !== false;
+            document.getElementById('filing-group-2-enabled').checked = filingFilterSettings.group2Enabled !== false;
+            document.getElementById('filing-group-3-enabled').checked = filingFilterSettings.group3Enabled !== false;
+            
+            // Set individual form toggles
+            formsByPriority[1].forEach(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                if (checkbox) {
+                    checkbox.checked = filingFilterSettings.group1Forms && filingFilterSettings.group1Forms[form] !== undefined 
+                        ? filingFilterSettings.group1Forms[form] 
+                        : true; // default to true for group 1
+                }
+            });
+            formsByPriority[2].forEach(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                if (checkbox) {
+                    checkbox.checked = filingFilterSettings.group2Forms && filingFilterSettings.group2Forms[form] !== undefined 
+                        ? filingFilterSettings.group2Forms[form] 
+                        : true; // default to true for group 2
+                }
+            });
+            formsByPriority[3].forEach(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                if (checkbox) {
+                    checkbox.checked = filingFilterSettings.group3Forms && filingFilterSettings.group3Forms[form] !== undefined 
+                        ? filingFilterSettings.group3Forms[form] 
+                        : true; // default to true for group 3
+                }
+            });
+            
+            console.log("✅ Loaded filing filter settings:", filingFilterSettings);
+        } catch (error) {
+            console.error("❌ Failed to load filing filter settings:", error);
+            // Set defaults
+            document.getElementById('filing-group-1-enabled').checked = true;
+            document.getElementById('filing-group-2-enabled').checked = true;
+            document.getElementById('filing-group-3-enabled').checked = false;
+        }
+    }
+
+    // Save filing filter settings
+    async function saveFilingFilterSettings() {
+        try {
+            const group1Enabled = document.getElementById('filing-group-1-enabled').checked;
+            const group2Enabled = document.getElementById('filing-group-2-enabled').checked;
+            const group3Enabled = document.getElementById('filing-group-3-enabled').checked;
+            
+            // Build the settings structure that matches electronStores.js
+            const settings = {
+                group1Enabled,
+                group2Enabled,
+                group3Enabled,
+                group1Forms: {},
+                group2Forms: {},
+                group3Forms: {}
+            };
+            
+            // Collect enabled forms from each group
+            formsByPriority[1].forEach(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                settings.group1Forms[form] = checkbox ? checkbox.checked : true;
+            });
+            formsByPriority[2].forEach(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                settings.group2Forms[form] = checkbox ? checkbox.checked : true;
+            });
+            formsByPriority[3].forEach(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                settings.group3Forms[form] = checkbox ? checkbox.checked : true;
+            });
+            
+            await window.filingFilterSettingsAPI.set(settings);
+            console.log("✅ Saved filing filter settings:", settings);
+        } catch (error) {
+            console.error("❌ Failed to save filing filter settings:", error);
+        }
+    }
+
+    // Create form checkboxes for each priority group
+    function createFormCheckboxes() {
+        Object.entries(formsByPriority).forEach(([priority, forms]) => {
+            const container = document.getElementById(`filing-forms-${priority}`);
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            forms.forEach(form => {
+                const formItem = document.createElement('div');
+                formItem.className = 'filing-form-item';
+                formItem.innerHTML = `
+                    <input type="checkbox" id="filing-form-${form}" class="filing-form-checkbox" ${priority === '1' || priority === '2' ? 'checked' : ''} />
+                    <label for="filing-form-${form}" class="filing-form-label">${form}</label>
+                `;
+                container.appendChild(formItem);
+                
+                // Add event listener for individual form checkbox
+                const checkbox = formItem.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', saveFilingFilterSettings);
+            });
+        });
+    }
+
+    // Handle group toggle changes
+    function handleGroupToggle(priority) {
+        const groupCheckbox = document.getElementById(`filing-group-${priority}-enabled`);
+        const isEnabled = groupCheckbox.checked;
+        
+        // Enable/disable all forms in this group
+        formsByPriority[priority].forEach(form => {
+            const formCheckbox = document.getElementById(`filing-form-${form}`);
+            if (formCheckbox) {
+                formCheckbox.checked = isEnabled;
+                formCheckbox.disabled = !isEnabled;
+                const formItem = formCheckbox.closest('.filing-form-item');
+                if (formItem) {
+                    formItem.classList.toggle('disabled', !isEnabled);
+                }
+            }
+        });
+        
+        saveFilingFilterSettings();
+    }
+
+    // Initialize the filing filters
+    createFormCheckboxes();
+    loadFilingFilterSettings();
+
+    // Add event listeners for group toggles
+    document.getElementById('filing-group-1-enabled').addEventListener('change', () => handleGroupToggle(1));
+    document.getElementById('filing-group-2-enabled').addEventListener('change', () => handleGroupToggle(2));
+    document.getElementById('filing-group-3-enabled').addEventListener('change', () => handleGroupToggle(3));
+
+    // Listen for updates from other windows
+    window.filingFilterSettingsAPI.onUpdate((updatedSettings) => {
+        if (updatedSettings) {
+            document.getElementById('filing-group-1-enabled').checked = updatedSettings.group1Enabled !== false;
+            document.getElementById('filing-group-2-enabled').checked = updatedSettings.group2Enabled !== false;
+            document.getElementById('filing-group-3-enabled').checked = updatedSettings.group3Enabled !== false;
+            
+            const enabledForms = updatedSettings.enabledForms || [];
+            Object.values(formsByPriority).flat().forEach(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                if (checkbox) {
+                    checkbox.checked = enabledForms.includes(form);
+                }
+            });
+            
+            console.log("✅ Filing filter settings updated from other window:", updatedSettings);
+        }
+    });
 }

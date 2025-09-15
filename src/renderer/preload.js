@@ -368,6 +368,20 @@ contextBridge.exposeInMainWorld("newsSettingsAPI", {
     },
 });
 
+// Filing Filter Settings API
+contextBridge.exposeInMainWorld("filingFilterSettingsAPI", {
+    get: () => ipcRenderer.invoke("filing-filter-settings:get"),
+    set: (filters) => ipcRenderer.invoke("filing-filter-settings:set", filters),
+    setGroupEnabled: (groupNumber, enabled) => ipcRenderer.invoke("filing-filter-settings:set-group-enabled", { groupNumber, enabled }),
+    setFormEnabled: (groupNumber, formType, enabled) => ipcRenderer.invoke("filing-filter-settings:set-form-enabled", { groupNumber, formType, enabled }),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("filing-filter-settings:change", handler);
+        ipcRenderer.send("filing-filter-settings:subscribe");
+        return () => ipcRenderer.removeListener("filing-filter-settings:change", handler);
+    },
+});
+
 // Window Settings API
 contextBridge.exposeInMainWorld("windowSettingsAPI", {
     getAll: () => ipcRenderer.invoke("window-settings:get"),

@@ -1669,6 +1669,137 @@ if (app && ipcMain && typeof app.on === "function" && !app.__news_settings_ipc_r
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Filing Filter Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const filingFilterSettingsStore = createStore("filing-filter-settings-store", "filing.");
+const filingFilterSettingsBus = new EventEmitter();
+
+// Default filing filter settings
+const DEFAULT_FILING_FILTERS = {
+    // High Priority (1) - enabled by default
+    group1Enabled: true,
+    group1Forms: {
+        '8-K': true, '8-K/A': true,
+        'S-3': true, 'S-3/A': true,
+        'S-1': true, 'S-1/A': true,
+        '424B1': true, '424B2': true, '424B3': true, '424B4': true, '424B5': true,
+        '425': true,
+        '10-Q': true, '10-Q/A': true,
+        '10-K': true, '10-K/A': true,
+        '6-K': true, '20-F': true, '40-F': true
+    },
+    
+    // Medium Priority (2) - enabled by default
+    group2Enabled: true,
+    group2Forms: {
+        '13D': true, '13D/A': true,
+        '13G': true, '13G/A': true,
+        '4': true, '4/A': true,
+        'DEF 14A': true, 'DEFA14A': true,
+        'F-1': true, 'F-1/A': true,
+        'F-3': true, 'F-3/A': true
+    },
+    
+    // Low Priority (3) - disabled by default (display: none)
+    group3Enabled: false,
+    group3Forms: {
+        '11-K': true, '144': true, '144A': true, '305B2': true,
+        'SC TO-T': true, 'SC 13E3': true,
+        'N-Q': true, 'N-CSR': true, 'N-1A': true,
+        'N-CSRS': true, 'N-MFP': true, 'N-MFP2': true, 'N-MFP3': true
+    }
+};
+
+let _filingFilters = filingFilterSettingsStore.get("filters", DEFAULT_FILING_FILTERS);
+
+function getFilingFilters() {
+    return { ..._filingFilters };
+}
+
+function setFilingFilters(filters) {
+    const newFilters = { ...DEFAULT_FILING_FILTERS, ...filters };
+    if (JSON.stringify(newFilters) === JSON.stringify(_filingFilters)) return false;
+    
+    _filingFilters = newFilters;
+    filingFilterSettingsStore.set("filters", _filingFilters);
+    
+    const payload = getFilingFilters();
+    filingFilterSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("filing-filter-settings:change", payload);
+        } catch (err) {
+            log.log("[filing-filter-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+function setFilingGroupEnabled(groupNumber, enabled) {
+    const groupKey = `group${groupNumber}Enabled`;
+    if (!_filingFilters[groupKey] !== enabled) {
+        const newFilters = { ..._filingFilters, [groupKey]: enabled };
+        return setFilingFilters(newFilters);
+    }
+    return false;
+}
+
+function setFilingFormEnabled(groupNumber, formType, enabled) {
+    const groupKey = `group${groupNumber}Forms`;
+    if (_filingFilters[groupKey] && _filingFilters[groupKey][formType] !== enabled) {
+        const newFilters = { 
+            ..._filingFilters, 
+            [groupKey]: { 
+                ..._filingFilters[groupKey], 
+                [formType]: enabled 
+            } 
+        };
+        return setFilingFilters(newFilters);
+    }
+    return false;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__filing_filter_settings_ipc_registered__) {
+    app.__filing_filter_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("filing-filter-settings:get");
+    ipcMain.removeHandler("filing-filter-settings:set");
+    ipcMain.removeHandler("filing-filter-settings:set-group-enabled");
+    ipcMain.removeHandler("filing-filter-settings:set-form-enabled");
+    
+    ipcMain.handle("filing-filter-settings:get", () => {
+        return getFilingFilters();
+    });
+    
+    ipcMain.handle("filing-filter-settings:set", (_e, filters) => {
+        return setFilingFilters(filters);
+    });
+    
+    ipcMain.handle("filing-filter-settings:set-group-enabled", (_e, { groupNumber, enabled }) => {
+        return setFilingGroupEnabled(groupNumber, enabled);
+    });
+    
+    ipcMain.handle("filing-filter-settings:set-form-enabled", (_e, { groupNumber, formType, enabled }) => {
+        return setFilingFormEnabled(groupNumber, formType, enabled);
+    });
+
+    ipcMain.removeAllListeners("filing-filter-settings:subscribe");
+    ipcMain.on("filing-filter-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("filing-filter-settings:change", data);
+        push(getFilingFilters()); // prime immediately
+        filingFilterSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[filing-filter-settings] unsubscribe WC", wc.id);
+            filingFilterSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Window Settings store (persist + broadcast)
 // ─────────────────────────────────────────────────────────────────────
 
@@ -2196,6 +2327,12 @@ module.exports = {
     setBullishList,
     getBearishList,
     setBearishList,
+    
+    // Filing filter settings exports
+    getFilingFilters,
+    setFilingFilters,
+    setFilingGroupEnabled,
+    setFilingFormEnabled,
     
     // For testing - expose IPC handlers and stores
     ipcMain: app && ipcMain ? ipcMain : undefined,

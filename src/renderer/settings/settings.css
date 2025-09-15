@@ -262,6 +262,76 @@ body::-webkit-scrollbar {
     padding: 20px;
 }
 
+/* Filing Filters Styling */
+#news .filing-filters-container {
+    margin-top: 30px;
+}
+
+#news .filing-group-section {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+#news .filing-group-header {
+    padding: 16px;
+    background-color: #333;
+    border-bottom: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#news .filing-group-header h4 {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+#news .filing-forms-list {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+#news .filing-form-item {
+    background-color: #3a3a3a;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    color: #e0e0e0;
+}
+
+#news .filing-form-item:hover {
+    background-color: #404040;
+    border-color: #666;
+}
+
+#news .filing-form-item.disabled {
+    opacity: 0.5;
+    background-color: #2a2a2a;
+    border-color: #333;
+}
+
+#news .filing-form-checkbox {
+    margin-right: 8px;
+    transform: scale(0.9);
+}
+
+#news .filing-form-label {
+    flex: 1;
+    font-weight: 500;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     #news .keyword-lists-container {
@@ -277,6 +347,16 @@ body::-webkit-scrollbar {
     #news .keyword-input-section select,
     #news .keyword-input-section input[type="text"] {
         min-width: auto;
+    }
+    
+    #news .filing-forms-list {
+        grid-template-columns: 1fr;
+    }
+    
+    #news .filing-group-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
 }
 

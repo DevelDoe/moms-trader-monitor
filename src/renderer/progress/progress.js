@@ -3,10 +3,10 @@ const CONFIG = {
     UPDATE_INTERVAL: 1000, // Update every second
     SESSION_TRANSITION_BUFFER: 5 * 60 * 1000, // 5 minutes buffer for session transitions
     MIN_VOLUME_THRESHOLD: 100, // Minimum volume to count as significant trade
-    HOT_MARKET_THRESHOLD: 0.40, // >35% more buying = hot market (bullish)
-    WARM_MARKET_THRESHOLD: 0.20, // >20% more buying = warm market
-    COOL_MARKET_THRESHOLD: 0.20, // >20% more selling = cool market
-    COLD_MARKET_THRESHOLD: 0.40, // >35% more selling = cold market (bearish)
+    HOT_MARKET_THRESHOLD: 0.30, // >35% more buying = hot market (bullish)
+    WARM_MARKET_THRESHOLD: 0.10, // >20% more buying = warm market
+    COOL_MARKET_THRESHOLD: 0.10, // >20% more selling = cool market
+    COLD_MARKET_THRESHOLD: 0.30, // >35% more selling = cold market (bearish)
     MAX_EVENTS_PER_BATCH: 50, // Maximum events to process in one batch
     MEMORY_CLEANUP_INTERVAL: 30000, // Clean up memory every 30 seconds
     DEBUG_LOGGING: false, // Disable excessive debug logging in production
