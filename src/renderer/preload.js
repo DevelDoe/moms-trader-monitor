@@ -372,7 +372,6 @@ contextBridge.exposeInMainWorld("newsSettingsAPI", {
 contextBridge.exposeInMainWorld("filingFilterSettingsAPI", {
     get: () => ipcRenderer.invoke("filing-filter-settings:get"),
     set: (filters) => ipcRenderer.invoke("filing-filter-settings:set", filters),
-    setGroupEnabled: (groupNumber, enabled) => ipcRenderer.invoke("filing-filter-settings:set-group-enabled", { groupNumber, enabled }),
     setFormEnabled: (groupNumber, formType, enabled) => ipcRenderer.invoke("filing-filter-settings:set-form-enabled", { groupNumber, formType, enabled }),
     onUpdate: (callback) => {
         const handler = (_e, data) => callback(data);

@@ -1678,7 +1678,6 @@ const filingFilterSettingsBus = new EventEmitter();
 // Default filing filter settings
 const DEFAULT_FILING_FILTERS = {
     // High Priority (1) - enabled by default
-    group1Enabled: true,
     group1Forms: {
         '8-K': true, '8-K/A': true,
         'S-3': true, 'S-3/A': true,
@@ -1691,7 +1690,6 @@ const DEFAULT_FILING_FILTERS = {
     },
     
     // Medium Priority (2) - enabled by default
-    group2Enabled: true,
     group2Forms: {
         '13D': true, '13D/A': true,
         '13G': true, '13G/A': true,
@@ -1702,12 +1700,11 @@ const DEFAULT_FILING_FILTERS = {
     },
     
     // Low Priority (3) - disabled by default (display: none)
-    group3Enabled: false,
     group3Forms: {
-        '11-K': true, '144': true, '144A': true, '305B2': true,
-        'SC TO-T': true, 'SC 13E3': true,
-        'N-Q': true, 'N-CSR': true, 'N-1A': true,
-        'N-CSRS': true, 'N-MFP': true, 'N-MFP2': true, 'N-MFP3': true
+        '11-K': false, '144': false, '144A': false, '305B2': false,
+        'SC TO-T': false, 'SC 13E3': false,
+        'N-Q': false, 'N-CSR': false, 'N-1A': false,
+        'N-CSRS': false, 'N-MFP': false, 'N-MFP2': false, 'N-MFP3': false
     }
 };
 
@@ -1738,14 +1735,6 @@ function setFilingFilters(filters) {
     return true;
 }
 
-function setFilingGroupEnabled(groupNumber, enabled) {
-    const groupKey = `group${groupNumber}Enabled`;
-    if (!_filingFilters[groupKey] !== enabled) {
-        const newFilters = { ..._filingFilters, [groupKey]: enabled };
-        return setFilingFilters(newFilters);
-    }
-    return false;
-}
 
 function setFilingFormEnabled(groupNumber, formType, enabled) {
     const groupKey = `group${groupNumber}Forms`;
@@ -1767,7 +1756,6 @@ if (app && ipcMain && typeof app.on === "function" && !app.__filing_filter_setti
 
     ipcMain.removeHandler("filing-filter-settings:get");
     ipcMain.removeHandler("filing-filter-settings:set");
-    ipcMain.removeHandler("filing-filter-settings:set-group-enabled");
     ipcMain.removeHandler("filing-filter-settings:set-form-enabled");
     
     ipcMain.handle("filing-filter-settings:get", () => {
@@ -1778,9 +1766,6 @@ if (app && ipcMain && typeof app.on === "function" && !app.__filing_filter_setti
         return setFilingFilters(filters);
     });
     
-    ipcMain.handle("filing-filter-settings:set-group-enabled", (_e, { groupNumber, enabled }) => {
-        return setFilingGroupEnabled(groupNumber, enabled);
-    });
     
     ipcMain.handle("filing-filter-settings:set-form-enabled", (_e, { groupNumber, formType, enabled }) => {
         return setFilingFormEnabled(groupNumber, formType, enabled);
@@ -2331,7 +2316,6 @@ module.exports = {
     // Filing filter settings exports
     getFilingFilters,
     setFilingFilters,
-    setFilingGroupEnabled,
     setFilingFormEnabled,
     
     // For testing - expose IPC handlers and stores

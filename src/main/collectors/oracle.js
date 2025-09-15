@@ -15,7 +15,7 @@ const NEWS_DEBUG = DEBUG && false;      // News data logging
 const FILING_DEBUG = DEBUG && true;    // Filing data logging
 const SESSION_DEBUG = DEBUG && false;   // Session data logging
 const SYMBOL_DEBUG = DEBUG && false;    // Symbol data logging
-const HYDRATION_DEBUG = DEBUG && true;    // Symbol data logging
+const HYDRATION_DEBUG = DEBUG && false;    // Symbol data logging
 const HALT_DEBUG = DEBUG && true;       // Halt data logging
 
 if (XP_DEBUG) {
@@ -421,11 +421,13 @@ const createWebSocket = () => {
 
         if (msg.type === "xp_active_stocks" || msg.type === "top_list") {
             // Debug: Log what we're receiving
-            console.log(`🔍 Received message type: ${msg.type}`);
-            if (msg.type === "top_list") {
-                console.log(`📊 top_list payload:`, JSON.stringify(msg.payload, null, 2));
-            } else {
-                console.log(`📊 xp_active_stocks data:`, JSON.stringify(msg, null, 2));
+            if(XP_DEBUG) {
+                console.log(`🔍 Received message type: ${msg.type}`);
+                if (msg.type === "top_list") {
+                    console.log(`📊 top_list payload:`, JSON.stringify(msg.payload, null, 2));
+                } else {
+                    console.log(`📊 xp_active_stocks data:`, JSON.stringify(msg, null, 2));
+                }
             }
             
             // Handle both old and new message formats
@@ -456,7 +458,9 @@ const createWebSocket = () => {
             // Send specific count to progress window - use total_count if available, otherwise count array
             const progressWindow = windows["progress"];
             if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
-                console.log(`📤 Sending count to progress window: ${totalCount} (from ${msg.type})`);
+                if(XP_DEBUG) {
+                    console.log(`📤 Sending count to progress window: ${totalCount} (from ${msg.type})`);
+                }
                 progressWindow.webContents.send("xp-active-stocks-count", {
                     count: totalCount,
                     timestamp: activeStocks.timestamp || Date.now()

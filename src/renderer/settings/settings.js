@@ -1977,38 +1977,60 @@ function initializeFilingFiltersSection() {
     // Load initial filing filter settings
     async function loadFilingFilterSettings() {
         try {
+            console.log("🔄 Loading filing filter settings...");
             const filingFilterSettings = await window.filingFilterSettingsAPI.get();
+            console.log("📥 Received filing filter settings:", filingFilterSettings);
             
-            // Set group toggles
-            document.getElementById('filing-group-1-enabled').checked = filingFilterSettings.group1Enabled !== false;
-            document.getElementById('filing-group-2-enabled').checked = filingFilterSettings.group2Enabled !== false;
-            document.getElementById('filing-group-3-enabled').checked = filingFilterSettings.group3Enabled !== false;
-            
-            // Set individual form toggles
+            // Set individual form toggles first
             formsByPriority[1].forEach(form => {
                 const checkbox = document.getElementById(`filing-form-${form}`);
                 if (checkbox) {
-                    checkbox.checked = filingFilterSettings.group1Forms && filingFilterSettings.group1Forms[form] !== undefined 
+                    const storedValue = filingFilterSettings.group1Forms && filingFilterSettings.group1Forms[form] !== undefined 
                         ? filingFilterSettings.group1Forms[form] 
                         : true; // default to true for group 1
+                    checkbox.checked = storedValue;
+                    console.log(`  📖 Loading Group 1 - ${form}: ${storedValue}`);
                 }
             });
             formsByPriority[2].forEach(form => {
                 const checkbox = document.getElementById(`filing-form-${form}`);
                 if (checkbox) {
-                    checkbox.checked = filingFilterSettings.group2Forms && filingFilterSettings.group2Forms[form] !== undefined 
+                    const storedValue = filingFilterSettings.group2Forms && filingFilterSettings.group2Forms[form] !== undefined 
                         ? filingFilterSettings.group2Forms[form] 
                         : true; // default to true for group 2
+                    checkbox.checked = storedValue;
+                    console.log(`  📖 Loading Group 2 - ${form}: ${storedValue}`);
                 }
             });
             formsByPriority[3].forEach(form => {
                 const checkbox = document.getElementById(`filing-form-${form}`);
                 if (checkbox) {
-                    checkbox.checked = filingFilterSettings.group3Forms && filingFilterSettings.group3Forms[form] !== undefined 
+                    const storedValue = filingFilterSettings.group3Forms && filingFilterSettings.group3Forms[form] !== undefined 
                         ? filingFilterSettings.group3Forms[form] 
-                        : true; // default to true for group 3
+                        : false; // default to false for group 3
+                    checkbox.checked = storedValue;
+                    console.log(`  📖 Loading Group 3 - ${form}: ${storedValue}`);
                 }
             });
+            
+            // Set group toggles based on whether ALL forms in each group are enabled
+            // Group toggle is ON if ALL forms in the group are enabled
+            const group1AllEnabled = formsByPriority[1].every(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                return checkbox && checkbox.checked;
+            });
+            const group2AllEnabled = formsByPriority[2].every(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                return checkbox && checkbox.checked;
+            });
+            const group3AllEnabled = formsByPriority[3].every(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                return checkbox && checkbox.checked;
+            });
+            
+            document.getElementById('filing-group-1-enabled').checked = group1AllEnabled;
+            document.getElementById('filing-group-2-enabled').checked = group2AllEnabled;
+            document.getElementById('filing-group-3-enabled').checked = group3AllEnabled;
             
             console.log("✅ Loaded filing filter settings:", filingFilterSettings);
         } catch (error) {
@@ -2023,15 +2045,8 @@ function initializeFilingFiltersSection() {
     // Save filing filter settings
     async function saveFilingFilterSettings() {
         try {
-            const group1Enabled = document.getElementById('filing-group-1-enabled').checked;
-            const group2Enabled = document.getElementById('filing-group-2-enabled').checked;
-            const group3Enabled = document.getElementById('filing-group-3-enabled').checked;
-            
             // Build the settings structure that matches electronStores.js
             const settings = {
-                group1Enabled,
-                group2Enabled,
-                group3Enabled,
                 group1Forms: {},
                 group2Forms: {},
                 group3Forms: {}
@@ -2070,16 +2085,42 @@ function initializeFilingFiltersSection() {
                 const formItem = document.createElement('div');
                 formItem.className = 'filing-form-item';
                 formItem.innerHTML = `
-                    <input type="checkbox" id="filing-form-${form}" class="filing-form-checkbox" ${priority === '1' || priority === '2' ? 'checked' : ''} />
+                    <input type="checkbox" id="filing-form-${form}" class="filing-form-checkbox" />
                     <label for="filing-form-${form}" class="filing-form-label">${form}</label>
                 `;
                 container.appendChild(formItem);
                 
                 // Add event listener for individual form checkbox
                 const checkbox = formItem.querySelector('input[type="checkbox"]');
-                checkbox.addEventListener('change', saveFilingFilterSettings);
+                checkbox.addEventListener('change', (event) => {
+                    console.log(`📝 Individual form ${form} changed to: ${event.target.checked}`);
+                    updateGroupToggleState(priority);
+                    saveFilingFilterSettings();
+                });
             });
         });
+    }
+
+    // Flag to prevent circular event loops
+    let isUpdatingGroupToggle = false;
+
+    // Update group toggle state based on individual form states
+    function updateGroupToggleState(priority) {
+        // Don't update group toggle if we're in the middle of a group toggle operation
+        if (isUpdatingGroupToggle) {
+            console.log(`  ⏭️ Skipping group toggle update for priority ${priority} (in group toggle operation)`);
+            return;
+        }
+        
+        const groupCheckbox = document.getElementById(`filing-group-${priority}-enabled`);
+        const allFormsEnabled = formsByPriority[priority].every(form => {
+            const formCheckbox = document.getElementById(`filing-form-${form}`);
+            return formCheckbox && formCheckbox.checked;
+        });
+        
+        console.log(`  🔄 Updating group ${priority} toggle to: ${allFormsEnabled}`);
+        // Update group toggle to reflect whether ALL forms in the group are enabled
+        groupCheckbox.checked = allFormsEnabled;
     }
 
     // Handle group toggle changes
@@ -2087,30 +2128,68 @@ function initializeFilingFiltersSection() {
         const groupCheckbox = document.getElementById(`filing-group-${priority}-enabled`);
         const isEnabled = groupCheckbox.checked;
         
-        // Enable/disable all forms in this group
+        console.log(`🔄 Group ${priority} toggle changed to: ${isEnabled}`);
+        console.log(`  Forms in group ${priority}:`, formsByPriority[priority]);
+        
+        // Set flag to prevent circular event loops
+        isUpdatingGroupToggle = true;
+        
+        // When group toggle is ON: select all forms in this group
+        // When group toggle is OFF: unselect all forms in this group
         formsByPriority[priority].forEach(form => {
             const formCheckbox = document.getElementById(`filing-form-${form}`);
             if (formCheckbox) {
+                console.log(`  Setting form ${form} to: ${isEnabled}`);
                 formCheckbox.checked = isEnabled;
-                formCheckbox.disabled = !isEnabled;
-                const formItem = formCheckbox.closest('.filing-form-item');
-                if (formItem) {
-                    formItem.classList.toggle('disabled', !isEnabled);
-                }
+                
+                // Force visual update by triggering change event
+                formCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                // Also try to trigger input event for better compatibility
+                formCheckbox.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Force a visual refresh by temporarily changing and restoring the checked state
+                const currentState = formCheckbox.checked;
+                formCheckbox.checked = !currentState;
+                formCheckbox.offsetHeight; // Force reflow
+                formCheckbox.checked = currentState;
+                
+                console.log(`  ✅ Form ${form} is now checked: ${formCheckbox.checked}`);
+            } else {
+                console.log(`  ❌ Form checkbox not found: filing-form-${form}`);
             }
         });
+        
+        // Clear flag after all forms are updated
+        isUpdatingGroupToggle = false;
         
         saveFilingFilterSettings();
     }
 
     // Initialize the filing filters
+    console.log("🚀 Initializing filing filters...");
     createFormCheckboxes();
-    loadFilingFilterSettings();
+    
+    // Load settings after checkboxes are created
+    loadFilingFilterSettings().then(() => {
+        console.log("✅ Filing filter initialization complete");
+    }).catch((error) => {
+        console.error("❌ Filing filter initialization failed:", error);
+    });
 
     // Add event listeners for group toggles
-    document.getElementById('filing-group-1-enabled').addEventListener('change', () => handleGroupToggle(1));
-    document.getElementById('filing-group-2-enabled').addEventListener('change', () => handleGroupToggle(2));
-    document.getElementById('filing-group-3-enabled').addEventListener('change', () => handleGroupToggle(3));
+    document.getElementById('filing-group-1-enabled').addEventListener('change', () => {
+        console.log("🔄 Group 1 toggle event fired");
+        handleGroupToggle(1);
+    });
+    document.getElementById('filing-group-2-enabled').addEventListener('change', () => {
+        console.log("🔄 Group 2 toggle event fired");
+        handleGroupToggle(2);
+    });
+    document.getElementById('filing-group-3-enabled').addEventListener('change', () => {
+        console.log("🔄 Group 3 toggle event fired");
+        handleGroupToggle(3);
+    });
 
     // Listen for updates from other windows
     window.filingFilterSettingsAPI.onUpdate((updatedSettings) => {
