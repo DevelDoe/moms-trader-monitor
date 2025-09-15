@@ -1,40 +1,42 @@
-/* halts.css - Trading Halts Monitor Styles */
+/* halts.css - Trading Halts Monitor Styles - Compact View */
 
 #halts-container {
     padding: 10px;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 50px);
     overflow-y: auto;
-    /* background: rgba(0, 0, 0, 0.8); */
-    border-radius: 8px;
-    margin: 5px;
+    border-radius: 4px;
+    margin: 2px;
 }
-
-
 
 .halts-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 2px;
 }
 
+/* Compact halt event styling */
 .halt-event {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 12px;
-    border-left: 4px solid;
-    transition: all 0.3s ease;
+    /* background: rgba(255, 255, 255, 0.05); */
+    /* border-radius: 3px; */
+    padding: 4px 6px;
+    /* border-left: 2px solid; */
+    transition: all 0.2s ease;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 28px;
 }
 
 .halt-event:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateX(2px);
+    /* background: rgba(255, 255, 255, 0.1); */
+    transform: translateX(1px);
 }
 
 /* Halt state specific colors */
 .halt-event.halted {
-    border-left-color: #ff4444;
-    background: rgba(255, 68, 68, 0.1);
+    /* border-left-color: #ff4444; */
+    /* background: rgba(255, 68, 68, 0.1); */
 }
 
 .halt-event.resumed {
@@ -57,26 +59,40 @@
     background: rgba(136, 136, 136, 0.1);
 }
 
-.halt-header {
+/* Compact layout - single line with 3 elements */
+.halt-content {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    position: relative;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
 }
 
-.halt-symbol {
-    font-size: 16px;
-    font-weight: bold;
-    color: #fff;
+.halt-symbol-container {
+    flex: 0 0 auto;
+    min-width: 60px;
 }
 
 .halt-state {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
+    flex: 1 1 auto;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 10px;
     font-weight: bold;
-    text-transform: uppercase;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.halt-time {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: #aaa;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: right;
 }
 
 .halt-state.halted {
@@ -104,72 +120,9 @@
     color: white;
 }
 
-.halt-details {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+/* Removed old detailed styles - using compact view only */
 
-.halt-reason {
-    color: #ccc;
-    font-size: 14px;
-    margin-bottom: 4px;
-}
-
-.halt-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: #999;
-}
-
-.halt-exchange {
-    font-weight: bold;
-}
-
-.halt-time {
-    font-family: monospace;
-}
-
-.halt-indicators {
-    margin-top: 4px;
-    font-size: 11px;
-    color: #aaa;
-}
-
-.halt-indicators span {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2px 6px;
-    border-radius: 3px;
-    margin-right: 4px;
-}
-
-/* Current state indicator */
-.current-indicator {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #00ff00;
-    color: black;
-    font-size: 10px;
-    font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 3px;
-    text-transform: uppercase;
-}
-
-.halt-event.current-state {
-    border: 2px solid #00ff00;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-}
-
-/* Price information */
-.halt-prices {
-    margin-top: 4px;
-    font-size: 12px;
-    color: #aaa;
-    font-family: monospace;
-}
+/* Removed current state indicator and price info for compact view */
 
 /* Animation for new halt events */
 @keyframes haltPulse {
@@ -182,30 +135,35 @@
     animation: haltPulse 0.5s ease-in-out;
 }
 
-/* Empty state */
+/* Empty state - compact */
 .empty-state {
     text-align: center;
     color: #666;
-    padding: 40px 20px;
+    padding: 20px 10px;
     font-style: italic;
+    font-size: 12px;
 }
 
 .empty-state .icon {
-    font-size: 48px;
-    margin-bottom: 16px;
+    font-size: 24px;
+    margin-bottom: 8px;
     opacity: 0.5;
 }
 
-/* Responsive design */
-@media (max-width: 600px) {
-    .halt-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+/* Responsive design for compact view */
+@media (max-width: 400px) {
+    .halt-content {
+        gap: 4px;
     }
     
-    .halt-meta {
-        flex-direction: column;
-        gap: 4px;
+    .halt-time {
+        font-size: 10px;
+        min-width: 60px;
+    }
+    
+    .halt-state {
+        font-size: 9px;
+        min-width: 40px;
+        padding: 1px 4px;
     }
 }

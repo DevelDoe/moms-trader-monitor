@@ -38,6 +38,18 @@ function logHaltStructure(halts, context = "") {
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚨 Halts: Initializing halt monitor...");
 
+    // Set up event delegation for symbol clicks (similar to sessionHistory)
+    document.addEventListener('click', function(event) {
+        const symbolElement = event.target.closest('.symbol[data-clickable="true"]');
+        if (symbolElement) {
+            const symbol = symbolElement.getAttribute('data-symbol');
+            if (symbol) {
+                console.log(`🖱️ [Halts] Symbol clicked: ${symbol}`);
+                window.handleSymbolClick(symbol, event);
+            }
+        }
+    });
+
     // Load settings
     try {
         settings = await window.settingsAPI.get();
@@ -124,9 +136,9 @@ function renderHalts() {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="icon">🚨</div>
-                <div>No halt events received yet</div>
-                <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">
-                    Waiting for trading halt data from Oracle...
+                <div>No halt events</div>
+                <div style="font-size: 10px; margin-top: 4px; opacity: 0.7;">
+                    Waiting for data...
                 </div>
             </div>
         `;
@@ -144,7 +156,7 @@ function renderHalts() {
     container.innerHTML = sortedHalts.map(halt => createHaltElement(halt)).join('');
 }
 
-// Create HTML element for a halt event
+// Create compact HTML element for a halt event
 function createHaltElement(halt) {
     // Use timestamp_et if available, otherwise fall back to timestamp or received_at
     const timestampStr = halt.timestamp_et || halt.timestamp || halt.received_at;
@@ -156,8 +168,9 @@ function createHaltElement(halt) {
         if (timestampStr.includes('T')) {
             // Format: "2025-09-11T12:10:40.368613-04:00"
             const timePart = timestampStr.split('T')[1];
-            const timeWithMs = timePart.split('-')[0]; // "12:10:40.368613" (keep milliseconds, remove timezone)
-            timeStr = timeWithMs; // Show time with milliseconds for precision
+            const timeWithoutTz = timePart.split('-')[0].split('+')[0]; // Remove timezone
+            // Get just HH:MM:SS (no milliseconds for compact view)
+            timeStr = timeWithoutTz.substring(0, 8); // "12:10:40"
         } else {
             // For other formats, try to extract time without Date conversion
             timeStr = 'Unknown';
@@ -167,31 +180,24 @@ function createHaltElement(halt) {
     }
     
     const stateClass = halt.state.toLowerCase().replace(/_/g, '-');
-    const stateDisplay = halt.state.replace(/_/g, ' ');
-    
-    // Get current symbol state for additional context
-    const currentState = symbolStates.get(halt.symbol);
-    const isCurrentState = currentState && currentState.timestamp === (halt.timestamp_et || halt.timestamp || halt.received_at);
-    
-    // Add price information if available
-    const priceInfo = halt.high_price && halt.low_price 
-        ? `<div class="halt-prices">Price Range: $${halt.low_price} - $${halt.high_price}</div>`
-        : '';
+    // Use reason for display, trim unnecessary "Halt/Pause" text
+    let haltTypeDisplay = halt.reason || halt.state.replace(/_/g, ' ');
+    // Remove redundant "Halt/Pause" text - we know these are halts
+    haltTypeDisplay = haltTypeDisplay.replace(/\s*Halt\/Pause\s*/gi, ' ').trim();
 
+    // Create compact layout with Symbol component, halt type, and time
     return `
-        <div class="halt-event ${stateClass} ${isCurrentState ? 'current-state' : ''}" data-symbol="${halt.symbol}" data-timestamp="${halt.timestamp_et || halt.timestamp || halt.received_at}">
-            <div class="halt-header">
-                <div class="halt-symbol">${halt.symbol}</div>
-                <div class="halt-state ${stateClass}">${stateDisplay}</div>
-                ${isCurrentState ? '<div class="current-indicator">CURRENT</div>' : ''}
-            </div>
-            <div class="halt-details">
-                <div class="halt-reason">${halt.reason || 'No reason provided'}</div>
-                <div class="halt-meta">
-                    <div class="halt-exchange">${halt.tape_description || 'Unknown Exchange'}</div>
-                    <div class="halt-time">${timeStr}</div>
+        <div class="halt-event ${stateClass}" data-symbol="${halt.symbol}" data-timestamp="${halt.timestamp_et || halt.timestamp || halt.received_at}">
+            <div class="halt-content">
+                <div class="halt-symbol-container">
+                    ${window.components.Symbol({ 
+                        symbol: halt.symbol, 
+                        size: "small",
+                        onClick: true
+                    })}
                 </div>
-                ${priceInfo}
+                <div class="halt-state ${stateClass}">${haltTypeDisplay}</div>
+                <div class="halt-time">${timeStr}</div>
             </div>
         </div>
     `;
