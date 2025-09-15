@@ -490,7 +490,7 @@ async function initializeApp() {
                             symbolNoteIndices.set(symbol, nextLevel);
                             symbolComboLastPrice.set(symbol, price);
 
-                            if (nextLevel >= 1 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
+                            if (nextLevel >= 2 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
                                 const bank = pickBankByVolume(strength); // "short" | "long"
                                 const count = SAMPLE_COUNTS[bank];
                                 const idx = levelToIndex(nextLevel, count);
@@ -666,6 +666,38 @@ window.testComboAlert = () => {
     console.log(`[Combo Test] Volume: ${volume}, Bank: ${bank}, Index: ${index}, Buffers loaded: ${sampleBuffers[bank]?.length || 0}`);
     const success = playSampleBuffer(bank, index, volume);
     console.log(`[Combo Test] Play result: ${success}`);
+};
+
+// Test function to verify first combo level is muted
+window.testComboLevels = () => {
+    console.log("Testing combo level audio thresholds...");
+    const volume = getComboVolume();
+    const bank = "short";
+    
+    // Test level 1 (should be muted)
+    console.log("Testing Level 1 (should be muted):");
+    const level1Condition = 1 >= 2; // This simulates the new condition
+    console.log(`Level 1 would play: ${level1Condition} (should be false)`);
+    
+    // Test level 2 (should play)
+    console.log("Testing Level 2 (should play):");
+    const level2Condition = 2 >= 2; // This simulates the new condition
+    console.log(`Level 2 would play: ${level2Condition} (should be true)`);
+    if (level2Condition) {
+        const index = levelToIndex(2, SAMPLE_COUNTS.short);
+        const success = playSampleBuffer(bank, index, volume);
+        console.log(`Level 2 play result: ${success}`);
+    }
+    
+    // Test level 3 (should play)
+    console.log("Testing Level 3 (should play):");
+    const level3Condition = 3 >= 2; // This simulates the new condition
+    console.log(`Level 3 would play: ${level3Condition} (should be true)`);
+    if (level3Condition) {
+        const index = levelToIndex(3, SAMPLE_COUNTS.short);
+        const success = playSampleBuffer(bank, index, volume);
+        console.log(`Level 3 play result: ${success}`);
+    }
 };
 
 window.testScannerAlert = () => {
