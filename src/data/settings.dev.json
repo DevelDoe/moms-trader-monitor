@@ -22,9 +22,9 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": true,
+    "enableHeroes": false,
     "autoClose": true,
-    "enableActiveChart": false,
+    "enableActiveChart": true,
     "autoCloseActive": true,
     "headless": false
   },

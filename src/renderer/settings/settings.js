@@ -333,8 +333,8 @@ function initializeGeneralSection() {
     } else if (traderviewSettings.enableActiveChart) {
         activeModeRadio.checked = true;
     } else {
-        // Default to heroes mode if neither is set but auto mode is enabled
-        heroesModeRadio.checked = autoModeEnabled;
+        // Default to active mode if neither is set but auto mode is enabled
+        activeModeRadio.checked = autoModeEnabled;
     }
     
     enableAutoCloseToggle.checked = traderviewSettings.autoClose ?? true;
@@ -371,12 +371,12 @@ function initializeGeneralSection() {
                 console.log("🗑️ Closed all TradingView windows (auto mode disabled)");
             }
         } else {
-            // When enabling auto mode, default to heroes mode
-            heroesModeRadio.checked = true;
+            // When enabling auto mode, default to active mode
+            activeModeRadio.checked = true;
             window.settings.traderview = { 
                 ...window.settings.traderview, 
-                enableHeroes: true, 
-                enableActiveChart: false 
+                enableHeroes: false, 
+                enableActiveChart: true 
             };
         }
         
