@@ -89,8 +89,16 @@
     min-width: 75px;
 }
 
+.buy-info {
+    min-width: 60px;
+}
+
+.sell-info {
+    min-width: 60px;
+}
+
 .vol-info {
-    min-width: 160px;
+    min-width: 60px;
 }
 
 .market-temp {
@@ -119,6 +127,20 @@
     color: #F5A623;
     /* background: rgba(245, 166, 35, 0.15); */
     border-color: rgba(245, 166, 35, 0.4);
+    border: none;
+}
+
+.buy-info .value {
+    color: #00ffa3;
+    /* background: rgba(0, 255, 163, 0.15); */
+    border-color: rgba(0, 255, 163, 0.4);
+    border: none;
+}
+
+.sell-info .value {
+    color: #ff4444;
+    /* background: rgba(255, 68, 68, 0.15); */
+    border-color: rgba(255, 68, 68, 0.4);
     border: none;
 }
 

@@ -79,7 +79,10 @@ const elements = {
     buyBar: null,
     sellBar: null,
     container: null,
+    buyInfo: null,
+    sellInfo: null,
     volInfo: null,
+    marketTemp: null,
     heroesCount: null,
     nyClock: null,
     countdownTimer: null
@@ -222,7 +225,10 @@ function initializeElements() {
     elements.buyBar = document.getElementById("flow-hp");
     elements.sellBar = document.getElementById("flow-dp");
     elements.container = document.querySelector(".sentiment-flow");
+    elements.buyInfo = document.getElementById("buy-info");
+    elements.sellInfo = document.getElementById("sell-info");
     elements.volInfo = document.getElementById("vol-info");
+    elements.marketTemp = document.getElementById("market-temp");
     elements.heroesCount = document.getElementById("heroes-count");
     elements.nyClock = document.getElementById("ny-clock");
     elements.countdownTimer = document.getElementById("countdown-timer");
@@ -419,14 +425,26 @@ function updateSessionDisplay() {
     updateDisplay(buyPercent, sellPercent, currentSession.name, totalVolume, tempColor);
     
     // Update banner elements
-    if (elements.volInfo) {
+    if (elements.buyInfo) {
         const buyVol = formatVolume(sessionData.buyVolume);
+        elements.buyInfo.textContent = buyVol;
+    }
+    
+    if (elements.sellInfo) {
         const sellVol = formatVolume(sessionData.sellVolume);
+        elements.sellInfo.textContent = sellVol;
+    }
+    
+    if (elements.volInfo) {
         const totalVol = formatVolume(totalVolume);
         const totalColor = getTotalVolumeColor(totalVolume);
-        
-        // Create colored HTML for the volume display with market temperature
-        elements.volInfo.innerHTML = `<span style="color: rgb(0, 255, 163)">${buyVol}</span>/<span style="color: rgb(255, 3, 0)">${sellVol}</span> (<span style="color: ${totalColor}">${totalVol}</span>) - <span style="color: ${tempColor}">${marketTemp}</span>`;
+        elements.volInfo.style.color = totalColor;
+        elements.volInfo.textContent = totalVol;
+    }
+    
+    if (elements.marketTemp) {
+        elements.marketTemp.textContent = marketTemp;
+        elements.marketTemp.style.color = tempColor;
     }
 }
 
