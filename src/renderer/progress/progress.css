@@ -71,18 +71,30 @@
     color: #ffffff;
     font-size: 12px;
     font-weight: 500;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     row-gap: 6px;
 }
 
 .heroes-count,
-.buy-info,
-.sell-info,
+.vol-info,
 .market-temp {
     display: flex;
     align-items: center;
     gap: 4px;
     white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.heroes-count {
+    min-width: 75px;
+}
+
+.vol-info {
+    min-width: 160px;
+}
+
+.market-temp {
+    min-width: 90px;
 }
 
 .label {
@@ -99,6 +111,8 @@
     border: 1px solid;
     font-size: 11px;
     min-width: fit-content;
+    text-align: left;
+    display: inline-block;
 }
 
 .heroes-count .value {
@@ -108,18 +122,12 @@
     border: none;
 }
 
-.buy-info .value {
-    color: #00ffa3;
-    /* background: rgba(0, 255, 163, 0.15); */
-    border-color: rgba(0, 255, 163, 0.4);
+.vol-info .value {
+    color: #ffffff;
+    /* background: rgba(255, 255, 255, 0.15); */
+    border-color: rgba(255, 255, 255, 0.3);
     border: none;
-}
-
-.sell-info .value {
-    color: #ff4444;
-    /* background: rgba(255, 68, 68, 0.15); */
-    border-color: rgba(255, 68, 68, 0.4);
-    border: none;
+    letter-spacing: 0.5px;
 }
 
 .market-temp .value {

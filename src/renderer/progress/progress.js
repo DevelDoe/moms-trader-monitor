@@ -3,10 +3,10 @@ const CONFIG = {
     UPDATE_INTERVAL: 1000, // Update every second
     SESSION_TRANSITION_BUFFER: 5 * 60 * 1000, // 5 minutes buffer for session transitions
     MIN_VOLUME_THRESHOLD: 100, // Minimum volume to count as significant trade
-    HOT_MARKET_THRESHOLD: 0.30, // >35% more buying = hot market (bullish)
-    WARM_MARKET_THRESHOLD: 0.10, // >20% more buying = warm market
-    COOL_MARKET_THRESHOLD: 0.10, // >20% more selling = cool market
-    COLD_MARKET_THRESHOLD: 0.30, // >35% more selling = cold market (bearish)
+    HOT_MARKET_THRESHOLD: 0.40, // >40% more buying = hot market (bullish)
+    WARM_MARKET_THRESHOLD: 0.10, // >10% more buying = warm market
+    COOL_MARKET_THRESHOLD: 0.10, // >10% more selling = cool market
+    COLD_MARKET_THRESHOLD: 0.40, // >40% more selling = cold market (bearish)
     MAX_EVENTS_PER_BATCH: 50, // Maximum events to process in one batch
     MEMORY_CLEANUP_INTERVAL: 30000, // Clean up memory every 30 seconds
     DEBUG_LOGGING: false, // Disable excessive debug logging in production
@@ -79,9 +79,7 @@ const elements = {
     buyBar: null,
     sellBar: null,
     container: null,
-    buyInfo: null,
-    sellInfo: null,
-    marketTemp: null,
+    volInfo: null,
     heroesCount: null,
     nyClock: null,
     countdownTimer: null
@@ -224,9 +222,7 @@ function initializeElements() {
     elements.buyBar = document.getElementById("flow-hp");
     elements.sellBar = document.getElementById("flow-dp");
     elements.container = document.querySelector(".sentiment-flow");
-    elements.buyInfo = document.getElementById("buy-info");
-    elements.sellInfo = document.getElementById("sell-info");
-    elements.marketTemp = document.getElementById("market-temp");
+    elements.volInfo = document.getElementById("vol-info");
     elements.heroesCount = document.getElementById("heroes-count");
     elements.nyClock = document.getElementById("ny-clock");
     elements.countdownTimer = document.getElementById("countdown-timer");
@@ -365,39 +361,72 @@ function updateSessionDisplay() {
     let tempColor = '#FFFFFF';
     
     if (buySellDiff > CONFIG.HOT_MARKET_THRESHOLD * 100) {
-        marketTemp = 'hot ';
+        marketTemp = 'hot market';
         tempColor = '#FF4444';
     } else if (buySellDiff > CONFIG.WARM_MARKET_THRESHOLD * 100) {
-        marketTemp = 'warm ';
+        marketTemp = 'warm market';
         tempColor = '#FF8844';
     } else if (buySellDiff < -CONFIG.COLD_MARKET_THRESHOLD * 100) {
-        marketTemp = 'cold ';
+        marketTemp = 'cold market';
         tempColor = '#4444FF';
     } else if (buySellDiff < -CONFIG.COOL_MARKET_THRESHOLD * 100) {
-        marketTemp = 'cool';
+        marketTemp = 'cool market';
         tempColor = '#4488FF';
+    } else {
+        marketTemp = 'balanced market';
+        tempColor = '#FFFFFF';
     }
     
     // Format volume for display
     const formatVolume = (vol) => {
+        if (vol >= 1000000000) return `${(vol / 1000000000).toFixed(1)}B`;
         if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
         if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
         return vol.toString();
     };
     
+    // Get color for total volume based on 0-1B range
+    const getTotalVolumeColor = (volume) => {
+        if (volume === 0) return '#888888'; // Gray for no volume
+        
+        const billion = 1000000000;
+        const ratio = Math.min(volume / billion, 1); // Cap at 1 for volumes over 1B
+        
+        if (ratio <= 0.25) {
+            // Gray to light blue (0-250M)
+            const t = ratio / 0.25;
+            const r = Math.round(136 + (135 - 136) * t); // 136 -> 135
+            const g = Math.round(136 + (206 - 136) * t); // 136 -> 206
+            const b = Math.round(136 + (235 - 136) * t); // 136 -> 235
+            return `rgb(${r}, ${g}, ${b})`;
+        } else if (ratio <= 0.5) {
+            // Light blue to dark blue (250M-500M)
+            const t = (ratio - 0.25) / 0.25;
+            const r = Math.round(135 + (0 - 135) * t); // 135 -> 0
+            const g = Math.round(206 + (100 - 206) * t); // 206 -> 100
+            const b = Math.round(235 + (200 - 235) * t); // 235 -> 200
+            return `rgb(${r}, ${g}, ${b})`;
+        } else {
+            // Dark blue to orange (500M-1B)
+            const t = (ratio - 0.5) / 0.5;
+            const r = Math.round(0 + (255 - 0) * t); // 0 -> 255
+            const g = Math.round(100 + (165 - 100) * t); // 100 -> 165
+            const b = Math.round(200 + (0 - 200) * t); // 200 -> 0
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+    };
+    
     updateDisplay(buyPercent, sellPercent, currentSession.name, totalVolume, tempColor);
     
     // Update banner elements
-    if (elements.buyInfo) {        elements.buyInfo.textContent = formatVolume(sessionData.buyVolume);
-    }
-    
-    if (elements.sellInfo) {
-        elements.sellInfo.textContent = formatVolume(sessionData.sellVolume);
-    }
-    
-    if (elements.marketTemp) {
-        elements.marketTemp.textContent = marketTemp;
-        elements.marketTemp.style.color = tempColor;
+    if (elements.volInfo) {
+        const buyVol = formatVolume(sessionData.buyVolume);
+        const sellVol = formatVolume(sessionData.sellVolume);
+        const totalVol = formatVolume(totalVolume);
+        const totalColor = getTotalVolumeColor(totalVolume);
+        
+        // Create colored HTML for the volume display with market temperature
+        elements.volInfo.innerHTML = `<span style="color: rgb(0, 255, 163)">${buyVol}</span>/<span style="color: rgb(255, 3, 0)">${sellVol}</span> (<span style="color: ${totalColor}">${totalVol}</span>) - <span style="color: ${tempColor}">${marketTemp}</span>`;
     }
 }
 
