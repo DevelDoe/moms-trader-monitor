@@ -184,13 +184,21 @@
     const getSymbolMedal = (s) => {
         const sym = String(s || "").toUpperCase();
         
+<<<<<<< Updated upstream
         // Only use rating tiered medals
+=======
+        // Only use rating tiered medals (new system)
+>>>>>>> Stashed changes
         const ratingTier = state.ratingRankMap.get(sym);
         if (ratingTier) {
             const medal = medalForRank(ratingTier);
             return medal ? `<span class="medal">${medal}</span>` : '';
         }
         
+<<<<<<< Updated upstream
+=======
+        // No fallback - only show rating medals
+>>>>>>> Stashed changes
         return '';
     };
 
@@ -486,6 +494,7 @@
     let __xpTop3Unsub = null;
     let __ratingTop3Unsub = null;
     
+<<<<<<< Updated upstream
     async function initTop3() {
         try {
             const { entries } = await window.changeTop3API.get();
@@ -523,6 +532,10 @@
         });
 
         // XP Top3 subscription
+=======
+    async function initXpTop3() {
+        // XP Top3 subscription (keep this for XP swords)
+>>>>>>> Stashed changes
         try {
             const { entries: xpEntries } = await window.xpTop3API.get();
             window.xpRankMap = new Map((xpEntries || []).map((e) => [String(e.symbol || "").toUpperCase(), Number(e.rank) || 0]));

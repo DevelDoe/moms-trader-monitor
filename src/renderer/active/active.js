@@ -82,6 +82,41 @@ let currentActiveSymbol = null;
 let newsSettings = {}; // Store news settings for sentiment analysis and filtering
 let filingFilterSettings = {}; // Store filing filter settings
 
+// TradingView settings
+let traderviewSettings = {};
+let currentActiveChartSymbol = null; // Track current active chart symbol
+
+// Function to handle TradingView chart updates for active symbol
+function handleActiveChartUpdate(symbol) {
+    console.log(`📊 [ACTIVE] handleActiveChartUpdate called with symbol: ${symbol}, enableActiveChart: ${traderviewSettings.enableActiveChart}`);
+    
+    if (!symbol || !traderviewSettings.enableActiveChart) {
+        console.log(`📊 [ACTIVE] Skipping chart update - symbol: ${!!symbol}, enabled: ${traderviewSettings.enableActiveChart}`);
+        return;
+    }
+    
+    // Auto-close previous active chart if enabled and different symbol
+    if (traderviewSettings.autoCloseActive && currentActiveChartSymbol && currentActiveChartSymbol !== symbol) {
+        console.log(`📊 [ACTIVE] Auto-closing previous TradingView chart for: ${currentActiveChartSymbol}`);
+        if (window.traderviewAPI?.closeTickerNow) {
+            window.traderviewAPI.closeTickerNow(currentActiveChartSymbol);
+        }
+    }
+    
+    console.log(`📊 [ACTIVE] Opening TradingView chart for active symbol: ${symbol}`);
+    
+    // Use the same API as heroes view to open TradingView window
+    if (window.traderviewAPI?.openTickersNow) {
+        console.log(`📊 [ACTIVE] Calling traderviewAPI.openTickersNow with: [${symbol}]`);
+        window.traderviewAPI.openTickersNow([symbol]);
+        currentActiveChartSymbol = symbol; // Track the current active chart
+        console.log(`📊 [ACTIVE] TradingView API call completed, tracking symbol: ${symbol}`);
+    } else {
+        console.warn("⚠️ [ACTIVE] traderviewAPI.openTickersNow not available");
+        console.log("Available traderviewAPI methods:", Object.keys(window.traderviewAPI || {}));
+    }
+}
+
 // Mock test data for testing purposes only (not used in dev mode)
 function createMockNewsData() {
     const now = Date.now();
@@ -361,6 +396,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         newsSettings = {}; // fallback
     }
 
+    // Load TradingView settings
+    traderviewSettings = window.settings.traderview || {};
+
+    // Listen for settings updates to refresh TradingView settings
+    window.settingsAPI.onUpdate((updatedSettings) => {
+        window.settings = updatedSettings || {};
+        traderviewSettings = window.settings.traderview || {};
+        
+        // If active chart is enabled and we have an active symbol, ensure chart is open
+        if (traderviewSettings.enableActiveChart && currentActiveSymbol) {
+            handleActiveChartUpdate(currentActiveSymbol);
+        }
+    });
+
     // Load filing filter settings
     try {
         filingFilterSettings = await window.filingFilterSettingsAPI.get();
@@ -424,6 +473,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     symbolKeys: Object.keys(symbolData)
                 });
                 updateUI(symbolData); // Update UI with symbol data
+                
+                // Handle TradingView chart update for active symbol
+                handleActiveChartUpdate(symbol);
             } else {
                 console.warn(`[ACTIVE] No data found for symbol: ${symbol}`);
                 updateUI(null); // Show "No active symbol" placeholder
@@ -933,12 +985,19 @@ function renderOracleNews(symbolData = null) {
     
     console.log(`📁 [ACTIVE] Filings: ${symbolFilings.length} total -> ${uniqueFilings.length} unique -> ${filteredFilings.length} after filtering`);
     
-    // Add filing items
-    filteredFilings.forEach(filingItem => {
+    // Group consecutive identical filings
+    const sortedFilings = filteredFilings.sort((a, b) => getFilingTimestamp(b) - getFilingTimestamp(a));
+    const groupedFilings = groupConsecutiveFilings(sortedFilings);
+    
+    console.log(`📁 [ACTIVE] Grouped ${filteredFilings.length} filings into ${groupedFilings.length} groups`);
+    
+    // Add filing items (using latest filing from each group)
+    groupedFilings.forEach(group => {
         allItems.push({
             type: 'filing',
-            data: filingItem,
-            timestamp: getFilingTimestamp(filingItem)
+            data: group.latestFiling,
+            timestamp: getFilingTimestamp(group.latestFiling),
+            count: group.count
         });
     });
     
@@ -1029,6 +1088,7 @@ function renderOracleNews(symbolData = null) {
             newsContainer.appendChild(itemDiv);
         } else if (item.type === 'filing') {
             const filingItem = item.data;
+            const count = item.count || 1;
             const ts = getFilingTimestamp(filingItem);
             const when = ts ? formatFilingTime(new Date(ts)) : "";
             
@@ -1043,12 +1103,16 @@ function renderOracleNews(symbolData = null) {
             const description = filingItem.form_description || '';
             const secLink = filingItem.filing_url ? 'SEC.gov' : '';
             
+            // Add count to title if there are multiple filings
+            const titleWithCount = count > 1 ? `Form ${title} (${count})` : `Form ${title}`;
+            
             itemDiv.innerHTML = `
-                <h5 class="filing-title-clickable" style="cursor: pointer;">Form ${title}</h5>
+                <h5 class="filing-title-clickable" style="cursor: pointer;">${titleWithCount}</h5>
                 ${description ? `<div class="filing-description">${description}</div>` : ''}
                 <div class="filing-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <div class="filing-meta-left">
                         ${when ? `<span class="filing-time">${when}</span>` : ''}
+                        ${count > 1 ? `<span class="filing-count" style="margin-left: 8px; opacity: 0.7;">Latest of ${count} Form ${formType} filings</span>` : ''}
                     </div>
                     ${secLink ? `<span class="filing-sec-link">${secLink}</span>` : ''}
                 </div>
@@ -1088,6 +1152,44 @@ function getFilingTimestamp(filingItem) {
     }
     
     return 0; // fallback
+}
+
+// Helper function to create filing group key for deduplication
+function getFilingGroupKey(filingItem) {
+    return `${filingItem.symbol}_${filingItem.form_type}`;
+}
+
+// Helper function to group consecutive identical filings
+function groupConsecutiveFilings(filings) {
+    if (!Array.isArray(filings) || filings.length === 0) return [];
+    
+    const grouped = [];
+    let currentGroup = null;
+    
+    for (const filing of filings) {
+        const groupKey = getFilingGroupKey(filing);
+        
+        if (!currentGroup || currentGroup.groupKey !== groupKey) {
+            // Start new group
+            currentGroup = {
+                groupKey,
+                filings: [filing],
+                latestFiling: filing,
+                count: 1
+            };
+            grouped.push(currentGroup);
+        } else {
+            // Add to existing group
+            currentGroup.filings.push(filing);
+            currentGroup.count++;
+            // Keep the latest filing (assuming filings are already sorted by timestamp)
+            if (getFilingTimestamp(filing) > getFilingTimestamp(currentGroup.latestFiling)) {
+                currentGroup.latestFiling = filing;
+            }
+        }
+    }
+    
+    return grouped;
 }
 
 // Helper function to format filing timestamps

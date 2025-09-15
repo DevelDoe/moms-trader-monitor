@@ -156,6 +156,20 @@ class StatsScorer {
             console.log('[VSTD DEBUG] VSTD is not in top rankings (score too low)');
         }
 
+        // Debug: Check what's being sent to the rating store
+        console.log('[RATING DEBUG] Top 10 ranked heroes being sent to store:', ranked.slice(0, 10).map(h => ({ symbol: h.hero, score: h.score })));
+        
+        // Debug: Check what's in the change top3 store (where VSTD might be getting its medal from)
+        window.changeTop3API?.get?.().then(data => {
+            console.log('[CHANGE TOP3 DEBUG] Current change top3 store data:', data);
+            const vstdInChangeStore = data?.entries?.find(e => e.symbol === 'VSTD');
+            if (vstdInChangeStore) {
+                console.log('[VSTD DEBUG] VSTD found in CHANGE store:', vstdInChangeStore);
+            } else {
+                console.log('[VSTD DEBUG] VSTD NOT found in CHANGE store');
+            }
+        });
+
         return ranked;
     }
 }

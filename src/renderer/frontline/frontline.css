@@ -303,7 +303,7 @@ body::-webkit-scrollbar {
     display: inline-block;
     position: absolute;
     left: 30px; /* To the right of trophies */
-    top: -4px;
+    top: -7px;
     z-index: 101;
     pointer-events: none;
 }

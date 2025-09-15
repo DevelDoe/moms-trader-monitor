@@ -156,29 +156,53 @@
                 <section id="section-traderview">
                     <h2>Trader's View</h2>
 
+                    <!-- Master Auto Mode Toggle -->
                     <div class="toggle-row">
                         <label class="switch">
-                            <input type="checkbox" id="enableHeroes" />
+                            <input type="checkbox" id="enableAutoMode" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Enable TradingView for Hero tickers</span>
+                        <span class="toggle-label">Enable Auto TradingView Mode</span>
                     </div>
 
-                    <div class="toggle-row">
-                        <label class="switch">
-                            <input type="checkbox" id="autoCloseTraderview" />
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="toggle-label">Auto-close TradingView windows</span>
-                    </div>
+                    <!-- Mode Selection (only visible when auto mode is enabled) -->
+                    <div id="traderview-mode-section" class="subsection" style="display: none; margin-left: 20px; margin-top: 15px; padding: 15px; border-left: 3px solid #555; background: rgba(255,255,255,0.02);">
+                        <h3 style="font-size: 14px; color: #ccc; margin-bottom: 15px;">Select Mode:</h3>
+                        
+                        <!-- Radio button mode selection -->
+                        <div style="margin-bottom: 15px;">
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="traderviewMode" id="heroesMode" value="heroes" style="margin-right: 10px;" />
+                                    <span class="toggle-label">Heroes Mode - Auto charts for top heroes</span>
+                                </label>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="traderviewMode" id="activeMode" value="active" style="margin-right: 10px;" />
+                                    <span class="toggle-label">Active Mode - Auto chart for active symbol</span>
+                                </label>
+                            </div>
+                        </div>
 
-                    <!-- <div class="toggle-row">
-                        <label class="switch">
-                            <input type="checkbox" id="enableFrontline" />
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="toggle-label">Enable TradingView for Frontline tickers</span>
-                    </div> -->
+                        <!-- Auto Close Toggle -->
+                        <div class="toggle-row" style="margin-top: 20px; border-top: 1px solid #333; padding-top: 15px;">
+                            <label class="switch">
+                                <input type="checkbox" id="enableAutoClose" />
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label">Auto-close windows when symbols change</span>
+                        </div>
+
+                        <!-- Headless Mode Toggle -->
+                        <div class="toggle-row" style="margin-top: 10px;">
+                            <label class="switch">
+                                <input type="checkbox" id="enableHeadless" />
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label">Headless mode (no title bar)</span>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="section-hall-of-legends">

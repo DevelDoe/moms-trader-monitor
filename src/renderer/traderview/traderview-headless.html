@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradingView Chart</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #1c1d23;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Drag handle - small tab at top */
+        .drag-handle {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 24px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(40, 40, 40, 0.8));
+            border-radius: 0 0 12px 12px;
+            cursor: move;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            -webkit-app-region: drag;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .drag-handle:hover {
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.9), rgba(60, 60, 60, 0.9));
+            transform: translateX(-50%) translateY(2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .drag-handle::before {
+            content: '⋮⋮⋮';
+            color: #888;
+            font-size: 14px;
+            letter-spacing: 3px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Auto-hide drag handle after 3 seconds */
+        .drag-handle.auto-hide {
+            opacity: 0.3;
+        }
+
+        .drag-handle.auto-hide:hover {
+            opacity: 1;
+        }
+
+        /* TradingView iframe with ultra-aggressive cropping */
+        #tradingview-iframe {
+            width: 100%;
+            border: none;
+            background: #1c1d23;
+            overflow: hidden;
+            
+            /* Ultra-aggressively crop ALL UI elements */
+            margin-top: -50px;     /* Hide top toolbar, timeframes, symbol info */
+            margin-bottom: -60px;  /* Hide bottom time axis, volume, status bar */
+            margin-left: -50px;    /* Hide left sidebar, drawing tools */
+            margin-right: 50px;  /* Hide right panels, watchlists, market data */
+            
+            width: calc(100% + 100px);    /* Compensate for left/right crops */
+            height: calc(100% + 120px);   /* Compensate for top/bottom crops */
+        }
+
+        /* Symbol display in drag handle */
+        .symbol-display {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #bbb;
+            font-size: 11px;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <!-- Draggable handle (only visible in headless mode) -->
+    <div class="drag-handle" id="dragHandle">
+        <span class="symbol-display" id="symbolDisplay"></span>
+    </div>
+
+    <!-- TradingView iframe -->
+    <iframe id="tradingview-iframe" src="about:blank"></iframe>
+
+    <script>
+        // Get symbol from URL parameter or default
+        const urlParams = new URLSearchParams(window.location.search);
+        const symbol = urlParams.get('symbol') || 'AAPL';
+        
+        console.log(`Loading TradingView for symbol: ${symbol}`);
+        
+        // Update symbol display
+        document.getElementById('symbolDisplay').textContent = symbol;
+        
+        // Load TradingView in iframe with proper URL
+        const iframe = document.getElementById('tradingview-iframe');
+        const encodedSymbol = encodeURIComponent(symbol);
+        
+        // TradingView widget URL with customizable parameters
+        // You can modify these parameters to trim/customize the content:
+        
+        const widgetParams = {
+            frameElementId: 'tradingview_widget',
+            symbol: encodedSymbol,
+            interval: '1',                    // Chart interval: 1, 5, 15, 30, 60, 240, D, W, M
+            
+            // === TOOLBAR CONTROLS ===
+            hidesidetoolbar: '1',            // 0=show, 1=hide side toolbar (drawing tools, etc.)
+            hidetoptoolbar: '1',             // 0=show, 1=hide top toolbar (doesn't always work)
+            
+            // === UI ELEMENTS ===
+            symboledit: '0',                 // 0=disable, 1=enable symbol search/edit
+            saveimage: '0',                  // 0=hide, 1=show save image button
+            withdateranges: '0',             // 0=hide, 1=show date range selector
+            showpopupbutton: '0',            // 0=hide, 1=show "open in new window" button
+            hide_top_toolbar: '1',           // Alternative parameter for hiding top toolbar
+            hide_side_toolbar: '1',          // Alternative parameter for hiding side toolbar
+            toolbar_bg: 'f1f3f6',            // Try different toolbar background
+            details: '0',                    // Hide details panel
+            hotlist: '0',                    // Hide hot list
+            calendar: '0',                   // Hide economic calendar
+            news: '0',                       // Hide news panel
+            
+            // === STYLING ===
+            theme: 'dark',                   // 'light' or 'dark'
+            style: '1',                      // 1=candles, 2=hollow_candles, 3=heikin_ashi, 8=line, 9=area, 0=bars
+            toolbarbg: '131722',             // Toolbar background color (hex without #)
+            
+            // === TIMEZONE & LOCALE ===
+            timezone: 'Etc/UTC',             // Timezone for chart
+            locale: 'en',                    // Language locale
+            
+            // === ADVANCED ===
+            studies: '[]',                   // Technical indicators (empty array = none)
+            overrides: '{}',                 // Style overrides (empty object = default)
+            enabled_features: '[]',          // Enable specific features
+            disabled_features: '[]',         // Disable specific features
+            
+            // === EXTENDED HOURS ===
+            session: 'extended',             // Show extended hours (pre/post market)
+            extended_session: '1',           // Alternative parameter for extended hours
+            show_extended_session: '1'       // Another parameter to ensure extended hours
+        };
+        
+        // Build URL from parameters
+        const paramString = Object.entries(widgetParams)
+            .map(([key, value]) => `${key}=${value}`)
+            .join('&');
+        
+        // Start with 1-minute range, but allow full zoom controls
+        const tradingViewUrl = `https://s.tradingview.com/embed-widget/advanced-chart/?symbol=${encodedSymbol}&interval=1&range=1m&theme=dark&style=1&timezone=Etc%2FUTC&session=extended&allow_symbol_change=false&save_image=false&calendar=false&hide_volume=false&support_host=https%3A%2F%2Fwww.tradingview.com&extended_hours=true&prepost=true&autosize=true&studies=%5B%5D&enable_publishing=false&withdateranges=true&hide_side_toolbar=false`;
+        
+        console.log(`Loading TradingView URL: ${tradingViewUrl}`);
+        iframe.src = tradingViewUrl;
+        
+        // Handle iframe load events
+        iframe.onload = function() {
+            console.log('TradingView iframe loaded successfully with auto-fit parameters');
+        };
+        
+        iframe.onerror = function(error) {
+            console.error('TradingView iframe failed to load:', error);
+        };
+        
+        // Auto-hide drag handle after 3 seconds
+        const dragHandle = document.getElementById('dragHandle');
+        let hideTimeout;
+        
+        function resetHideTimer() {
+            clearTimeout(hideTimeout);
+            dragHandle.classList.remove('auto-hide');
+            hideTimeout = setTimeout(() => {
+                dragHandle.classList.add('auto-hide');
+            }, 3000);
+        }
+        
+        // Show handle on mouse movement
+        document.addEventListener('mousemove', resetHideTimer);
+        dragHandle.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimeout);
+            dragHandle.classList.remove('auto-hide');
+        });
+        
+        // Start hide timer
+        resetHideTimer();
+        
+        // Prevent drag handle from interfering with iframe
+        dragHandle.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+        });
+        
+        console.log(`TradingView headless window initialized for symbol: ${symbol}`);
+    </script>
+</body>
+</html>

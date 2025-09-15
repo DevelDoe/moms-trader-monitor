@@ -183,6 +183,8 @@ contextBridge.exposeInMainWorld("traderviewAPI", {
     setVisibility: (enabled) => ipcRenderer.send("set-traderview-visibility", enabled),
     setTopTickers: (tickers) => ipcRenderer.send("set-top-tickers", tickers),
     openTickersNow: (tickers) => ipcRenderer.send("open-traderview-tickers", tickers),
+    closeTickerNow: (ticker) => ipcRenderer.send("close-traderview-ticker", ticker),
+    closeAllWindows: () => ipcRenderer.send("close-all-traderview-windows"),
 });
 
 contextBridge.exposeInMainWorld("progressAPI", {

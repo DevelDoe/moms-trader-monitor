@@ -114,7 +114,7 @@ const buffManager = require("./data/buffsManager");
 
 ////////////////////////////////////////////////////////////////////////////////////// WINDOWS
 
-const { createWindow, destroyWindow, restoreWindows, registerTradingViewWindow, destroyTradingViewWindows, updateTradingViewWindows, getWindow } = require("./windowManager");
+const { createWindow, destroyWindow, restoreWindows, registerTradingViewWindow, destroyTradingViewWindow, destroyTradingViewWindows, updateTradingViewWindows, getOpenTradingViewSymbols, getWindow } = require("./windowManager");
 
 const { getWindowState, saveWindowState } = require("./utils/windowState");
 
@@ -650,14 +650,14 @@ ipcMain.handle("get-settings", () => {
 ipcMain.on("update-settings", (event, newSettings) => {
     const now = Date.now();
 
-    log.log("Updating Settings...");
+    // log.log("Updating Settings...");
 
     // ✅ Ensure `appSettings` exists
     if (!appSettings || typeof appSettings !== "object") {
         appSettings = { ...DEFAULT_SETTINGS };
     }
 
-    log.log(appSettings);
+    // log.log(appSettings);
 
     // ✅ Merge all new settings dynamically
     Object.keys(newSettings).forEach((key) => {
@@ -1147,6 +1147,38 @@ ipcMain.on("set-top-tickers", (event, newTickers) => {
     applyTopTickers(newTickers);
 });
 
+ipcMain.on("open-traderview-tickers", (event, tickers) => {
+    if (!Array.isArray(tickers) || tickers.length === 0) {
+        log.log("[Traderview] openTickersNow called with empty or invalid tickers array");
+        return;
+    }
+    
+    log.log(`[Traderview] Opening TradingView windows for tickers: ${tickers.join(', ')}`);
+    
+    // Open TradingView window for each ticker
+    tickers.forEach((symbol) => {
+        if (symbol && typeof symbol === 'string') {
+            registerTradingViewWindow(symbol.toUpperCase(), isDevelopment);
+        }
+    });
+});
+
+ipcMain.on("close-traderview-ticker", (event, ticker) => {
+    if (!ticker || typeof ticker !== 'string') {
+        log.log("[Traderview] closeTickerNow called with invalid ticker");
+        return;
+    }
+    
+    const symbol = ticker.toUpperCase();
+    log.log(`[Traderview] Closing TradingView window for ticker: ${symbol}`);
+    destroyTradingViewWindow(symbol);
+});
+
+ipcMain.on("close-all-traderview-windows", (event) => {
+    log.log("[Traderview] Closing all TradingView windows");
+    destroyTradingViewWindows();
+});
+
 ipcMain.on("set-enable-heroes", (event, enabled) => {
     const settings = loadSettings();
     settings.traderview = {
@@ -1174,7 +1206,7 @@ function applyTopTickers(newTickers) {
 
     if (!enableHeroes) return;
 
-    const openSymbols = Object.keys(global.traderviewWindowRefs || {}).filter((s) => global.traderviewWindowRefs[s]);
+    const openSymbols = getOpenTradingViewSymbols();
     const openSet = new Set(openSymbols);
     const desiredSet = new Set(newTickers);
 
@@ -1182,6 +1214,7 @@ function applyTopTickers(newTickers) {
         // Close windows for tickers no longer in the list
         openSymbols.forEach((symbol) => {
             if (!desiredSet.has(symbol)) {
+                log.log(`[Traderview] Auto-closing TradingView window for removed hero: ${symbol}`);
                 destroyTradingViewWindow(symbol);
             }
         });
@@ -1189,7 +1222,8 @@ function applyTopTickers(newTickers) {
 
     // Open windows for new tickers not yet displayed
     newTickers.forEach((symbol) => {
-        if (!global.traderviewWindowRefs?.[symbol]) {
+        if (!openSet.has(symbol)) {
+            log.log(`[Traderview] Opening TradingView window for new hero: ${symbol}`);
             registerTradingViewWindow(symbol, isDevelopment);
         }
     });

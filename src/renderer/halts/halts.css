@@ -1,7 +1,7 @@
 /* halts.css - Trading Halts Monitor Styles - Compact View */
 
 #halts-container {
-    padding: 10px;
+    padding: 0px;
     height: calc(100vh - 50px);
     overflow-y: auto;
     border-radius: 4px;
@@ -18,7 +18,7 @@
 .halt-event {
     /* background: rgba(255, 255, 255, 0.05); */
     /* border-radius: 3px; */
-    padding: 4px 6px;
+    padding: 4px 0px;
     /* border-left: 2px solid; */
     transition: all 0.2s ease;
     cursor: pointer;
@@ -75,7 +75,7 @@
 
 .halt-state {
     flex: 1 1 auto;
-    padding: 2px 6px;
+    padding: 2px 0px;
     border-radius: 2px;
     font-size: 10px;
     font-weight: bold;

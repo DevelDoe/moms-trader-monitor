@@ -236,14 +236,20 @@ function registerTradingViewWindow(symbol = "AAPL", isDev = false) {
     let win = tradingViewWindows.get(symbol);
     if (win && !win.isDestroyed()) return win;
 
-    const key = `traderviewWindow_${symbol}`;
-    const state = getWindowState(key);
+    // Use shared position for all TradingView windows instead of per-symbol
+    const sharedKey = "traderviewWindow_shared";
+    const state = getWindowState(sharedKey) || {}; // Ensure state is never null
+    
+    // Load settings to check headless mode
+    const settings = loadSettings();
+    const isHeadless = settings.traderview?.headless ?? false;
 
     win = new BrowserWindow({
         width: state.width || 850,
         height: state.height || 660,
         x: state.x,
         y: state.y,
+        frame: !isHeadless, // No frame if headless mode is enabled
         backgroundColor: "#00000000",
         webPreferences: {
             preload: path.join(__dirname, "../renderer/preload.js"),
@@ -253,12 +259,21 @@ function registerTradingViewWindow(symbol = "AAPL", isDev = false) {
     });
 
     const encoded = encodeURIComponent(symbol);
-    win.loadURL(`https://www.tradingview.com/chart/?symbol=${encoded}`);
+    
+    if (isHeadless) {
+        // Load custom headless HTML with drag handle
+        const headlessPath = path.join(__dirname, "../renderer/traderview/traderview-headless.html");
+        win.loadFile(headlessPath, { query: { symbol: symbol } });
+    } else {
+        // Load TradingView directly
+        win.loadURL(`https://www.tradingview.com/chart/?symbol=${encoded}`);
+    }
+    
     win.symbolLoaded = symbol;
 
     const debouncedSetBounds = debounce(() => {
         if (!win.isDestroyed()) {
-            setWindowBounds(key, win.getBounds());
+            setWindowBounds(sharedKey, win.getBounds()); // Save to shared position
         }
     }, 300); // Adjust delay if needed
 
@@ -267,20 +282,44 @@ function registerTradingViewWindow(symbol = "AAPL", isDev = false) {
 
     win.on("closed", () => {
         tradingViewWindows.delete(symbol);
-        setWindowState(key, false); // 👈 Visibility off on close
+        // Save final position when window closes
+        if (!win.isDestroyed()) {
+            setWindowBounds(sharedKey, win.getBounds());
+        }
+        // Don't set visibility to false for shared key since other windows might still be open
     });
 
     tradingViewWindows.set(symbol, win);
-    setWindowState(key, true); // 👈 Visibility on after create
 
     return win;
 }
 
+function destroyTradingViewWindow(symbol) {
+    const win = tradingViewWindows.get(symbol);
+    if (win && !win.isDestroyed()) {
+        // Save position before destroying
+        const sharedKey = "traderviewWindow_shared";
+        setWindowBounds(sharedKey, win.getBounds());
+        win.destroy();
+    }
+    tradingViewWindows.delete(symbol);
+}
+
 function destroyTradingViewWindows() {
+    const sharedKey = "traderviewWindow_shared";
+    let lastBounds = null;
+    
     for (const [symbol, win] of tradingViewWindows.entries()) {
         if (!win.isDestroyed()) {
+            // Save the last valid window bounds before destroying
+            lastBounds = win.getBounds();
             win.destroy();
         }
+    }
+    
+    // Save the last position for future windows
+    if (lastBounds) {
+        setWindowBounds(sharedKey, lastBounds);
     }
 
     tradingViewWindows.clear();
@@ -293,10 +332,16 @@ function destroyTradingViewWindows() {
 }
 
 function updateTradingViewWindows(symbols = []) {
+    const sharedKey = "traderviewWindow_shared";
+    
     // Close windows that are no longer in top list
     for (const [symbol, win] of tradingViewWindows.entries()) {
         if (!symbols.includes(symbol)) {
-            if (win && !win.isDestroyed()) win.destroy();
+            if (win && !win.isDestroyed()) {
+                // Save position before destroying
+                setWindowBounds(sharedKey, win.getBounds());
+                win.destroy();
+            }
             tradingViewWindows.delete(symbol);
         }
     }
@@ -307,9 +352,18 @@ function updateTradingViewWindows(symbols = []) {
     }
 }
 
+function getOpenTradingViewSymbols() {
+    return Array.from(tradingViewWindows.keys()).filter(symbol => {
+        const win = tradingViewWindows.get(symbol);
+        return win && !win.isDestroyed();
+    });
+}
+
 module.exports = {
     ...module.exports,
     registerTradingViewWindow, // ✅
+    destroyTradingViewWindow, // ✅ New individual destroy function
     destroyTradingViewWindows,
     updateTradingViewWindows,
+    getOpenTradingViewSymbols, // ✅ New helper function
 };

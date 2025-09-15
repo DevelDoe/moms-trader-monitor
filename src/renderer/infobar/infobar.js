@@ -10,6 +10,10 @@ let lastJFlashTime = 0;
 let lastActivePush = 0;
 const ACTIVE_PUSH_COOLDOWN = 8000; // ms
 
+// Filing debounce tracking
+const filingDebounceMap = new Map(); // key: "symbol_formType", value: timestamp
+const FILING_DEBOUNCE_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 function maybeActivateFromSymbols(symbols) {
     if (!Array.isArray(symbols) || !symbols.length) return;
     const sym = String(symbols[0] || "").toUpperCase();
@@ -105,6 +109,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Check if filing is allowed based on filter settings
             if (!isFilingAllowed(filingItem)) {
                 console.log("📁 Filing filtered out:", filingItem.form_type, filingItem.symbol);
+                return;
+            }
+            
+            // Check if filing should be debounced (5-minute cooldown for same filing type)
+            if (shouldDebounceFiling(filingItem)) {
                 return;
             }
             
@@ -255,6 +264,33 @@ function isFilingAllowed(filingItem) {
 
     // Unknown form type - allow by default
     return true;
+}
+
+// Helper function to check if filing should be debounced
+function shouldDebounceFiling(filingItem) {
+    const symbol = filingItem.symbol;
+    const formType = filingItem.form_type;
+    const debounceKey = `${symbol}_${formType}`;
+    const now = Date.now();
+    
+    const lastSeenTime = filingDebounceMap.get(debounceKey);
+    
+    if (lastSeenTime && (now - lastSeenTime) < FILING_DEBOUNCE_TIME) {
+        console.log(`📁 [INFOBAR] Filing debounced: ${symbol} ${formType} (last seen ${Math.round((now - lastSeenTime) / 1000)}s ago)`);
+        return true; // Should be debounced
+    }
+    
+    // Update the last seen time
+    filingDebounceMap.set(debounceKey, now);
+    
+    // Clean up old entries to prevent memory leaks
+    for (const [key, timestamp] of filingDebounceMap.entries()) {
+        if (now - timestamp > FILING_DEBOUNCE_TIME * 2) { // Clean up entries older than 10 minutes
+            filingDebounceMap.delete(key);
+        }
+    }
+    
+    return false; // Should not be debounced
 }
 
 /**

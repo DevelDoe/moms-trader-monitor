@@ -372,26 +372,36 @@ function render() {
     });
     console.log(`📁 [NEWS] After filtering: ${filteredFilings.length} filings remaining`);
     
-    filteredFilings.forEach((filingItem, index) => {
-        // Debug: Log the structure of the first few filings
+    // Group consecutive identical filings
+    const sortedFilings = filteredFilings.sort((a, b) => getFilingTime(b) - getFilingTime(a));
+    const groupedFilings = groupConsecutiveFilings(sortedFilings);
+    
+    console.log(`📁 [NEWS] Grouped ${filteredFilings.length} filings into ${groupedFilings.length} groups`);
+    
+    groupedFilings.forEach((group, index) => {
+        // Debug: Log the structure of the first few filing groups
         if (index < 3) {
-            console.log(`📁 [NEWS] Filing ${index} structure:`, {
-                symbol: filingItem.symbol,
-                symbols: filingItem.symbols,
-                form_type: filingItem.form_type,
-                filing_date: filingItem.filing_date,
-                filed_at: filingItem.filed_at,
-                allKeys: Object.keys(filingItem)
+            console.log(`📁 [NEWS] Filing group ${index} structure:`, {
+                groupKey: group.groupKey,
+                count: group.count,
+                latestFiling: {
+                    symbol: group.latestFiling.symbol,
+                    symbols: group.latestFiling.symbols,
+                    form_type: group.latestFiling.form_type,
+                    filing_date: group.latestFiling.filing_date,
+                    filed_at: group.latestFiling.filed_at
+                }
             });
         }
         
-        const timestamp = getFilingTime(filingItem);
-        const symbol = filingItem.symbol || (filingItem.symbols && filingItem.symbols[0]);
-        console.log(`📁 [NEWS] Adding filing: ${symbol} - ${filingItem.form_type} - timestamp: ${timestamp}`);
+        const timestamp = getFilingTime(group.latestFiling);
+        const symbol = group.latestFiling.symbol || (group.latestFiling.symbols && group.latestFiling.symbols[0]);
+        console.log(`📁 [NEWS] Adding filing group: ${symbol} - ${group.latestFiling.form_type} - count: ${group.count} - timestamp: ${timestamp}`);
         allItems.push({
             type: 'filing',
-            data: filingItem,
-            timestamp: timestamp
+            data: group.latestFiling,
+            timestamp: timestamp,
+            count: group.count
         });
     });
     
@@ -410,7 +420,7 @@ function render() {
         if (item.type === 'news') {
             renderNewsItem(item.data, container);
         } else if (item.type === 'filing') {
-            renderFilingItem(item.data, container);
+            renderFilingItem(item.data, container, item.count);
         }
     });
     
@@ -468,10 +478,10 @@ function renderNewsItem(newsItem, container) {
     container.appendChild(itemDiv);
 }
 
-function renderFilingItem(filingItem, container) {
+function renderFilingItem(filingItem, container, count = 1) {
     const symbol = filingItem.symbol || (filingItem.symbols && filingItem.symbols[0]);
     const filingDate = filingItem.filing_date || filingItem.filed_at;
-    console.log(`📁 [NEWS] Rendering filing: ${symbol} - ${filingDate}`);
+    console.log(`📁 [NEWS] Rendering filing: ${symbol} - ${filingDate} - count: ${count}`);
     
     const isCollapsed = isFilingItemCollapsed(filingItem);
     const when = filingDate ? formatFilingTime(filingDate) : "";
@@ -486,7 +496,8 @@ function renderFilingItem(filingItem, container) {
         // Collapsed view: Use the same format as infobar
         const formType = filingItem.form_type;
         const description = filingItem.form_description || filingItem.title || "filing";
-        const filingText = `${symbol} has filed a form ${formType} ${description}`;
+        const countText = count > 1 ? ` (${count})` : '';
+        const filingText = `${symbol} has filed${countText} form ${formType} ${description}`;
         
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
@@ -510,6 +521,9 @@ function renderFilingItem(filingItem, container) {
         }
     } else {
         // Expanded view: Symbol + Full Title + Company + Time + URL
+        const countText = count > 1 ? ` (${count})` : '';
+        const titleText = `${symbol} has filed${countText} form ${filingItem.form_type} ${filingItem.form_description || filingItem.title || "filing"}`;
+        
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
                 symbol: symbol, 
@@ -517,14 +531,14 @@ function renderFilingItem(filingItem, container) {
                 onClick: true
             })}
             <div class="filing-content">
-                <h3 class="filing-title-large ${filingItem.filing_url ? 'filing-title-clickable' : ''}">${symbol} has filed a form ${filingItem.form_type} ${filingItem.form_description || filingItem.title || "filing"}</h3>
+                <h3 class="filing-title-large ${filingItem.filing_url ? 'filing-title-clickable' : ''}">${titleText}</h3>
                 ${filingItem.form_description ? `
                     <div class="filing-description"> ${filingItem.form_description}</div>
                 ` : ''}
-                ${filingItem.company_name || when ? `
+                ${filingItem.company_name || when || count > 1 ? `
                     <div class="filing-meta">
                         ${when ? `<div class="filing-time">${when}</div>` : ''}
-                       
+                        ${count > 1 ? `<div class="filing-count-info" style="font-size: 0.9em; opacity: 0.7; margin-top: 4px;">Latest of ${count} Form ${filingItem.form_type} filings</div>` : ""}
                     </div>
                 ` : ''}
                
@@ -557,6 +571,45 @@ function getFilingTime(filingItem) {
     const timestamp = Number.isFinite(date.getTime()) ? date.getTime() : 0;
     console.log(`📁 [NEWS] Filing ${filingItem.symbol} filing_date: ${filingDate} -> timestamp: ${timestamp}`);
     return timestamp;
+}
+
+// Helper function to create filing group key for deduplication
+function getFilingGroupKey(filingItem) {
+    const symbol = filingItem.symbol || (filingItem.symbols && filingItem.symbols[0]);
+    return `${symbol}_${filingItem.form_type}`;
+}
+
+// Helper function to group consecutive identical filings
+function groupConsecutiveFilings(filings) {
+    if (!Array.isArray(filings) || filings.length === 0) return [];
+    
+    const grouped = [];
+    let currentGroup = null;
+    
+    for (const filing of filings) {
+        const groupKey = getFilingGroupKey(filing);
+        
+        if (!currentGroup || currentGroup.groupKey !== groupKey) {
+            // Start new group
+            currentGroup = {
+                groupKey,
+                filings: [filing],
+                latestFiling: filing,
+                count: 1
+            };
+            grouped.push(currentGroup);
+        } else {
+            // Add to existing group
+            currentGroup.filings.push(filing);
+            currentGroup.count++;
+            // Keep the latest filing (assuming filings are already sorted by timestamp)
+            if (getFilingTime(filing) > getFilingTime(currentGroup.latestFiling)) {
+                currentGroup.latestFiling = filing;
+            }
+        }
+    }
+    
+    return grouped;
 }
 
 function formatFilingTime(filingDate) {

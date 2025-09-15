@@ -8,7 +8,7 @@
     "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
-    "frontlineListLength": 10,
+    "frontlineListLength": 8,
     "heroesListLength": 3
   },
   "scanner": {
@@ -23,7 +23,10 @@
   "traderview": {
     "visibility": false,
     "enableHeroes": false,
-    "autoClose": true
+    "autoClose": true,
+    "enableActiveChart": true,
+    "autoCloseActive": true,
+    "headless": true
   },
   "news": {
     "filteredTickers": [],

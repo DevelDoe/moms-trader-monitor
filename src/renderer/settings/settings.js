@@ -313,38 +313,134 @@ function initializeGeneralSection() {
         }
     });
 
-    // 🪞 Trader's View Subsettings
-    const enableHeroesToggle = document.getElementById("enableHeroes");
-    // const enableFrontlineToggle = document.getElementById("enableFrontline");
-    const autoCloseTraderviewToggle = document.getElementById("autoCloseTraderview");
+    // 🪞 Trader's View Subsettings - Exclusive Mode Selection
+    const enableAutoModeToggle = document.getElementById("enableAutoMode");
+    const traderviewModeSection = document.getElementById("traderview-mode-section");
+    const heroesModeRadio = document.getElementById("heroesMode");
+    const activeModeRadio = document.getElementById("activeMode");
+    const enableAutoCloseToggle = document.getElementById("enableAutoClose");
+    const enableHeadlessToggle = document.getElementById("enableHeadless");
 
-    enableHeroesToggle.checked = window.settings.traderview?.enableHeroes ?? true;
-    // enableFrontlineToggle.checked = window.settings.traderview?.enableFrontline ?? false;
-    autoCloseTraderviewToggle.checked = window.settings.traderview?.autoClose ?? true;
+    // Initialize values from settings
+    const traderviewSettings = window.settings.traderview || {};
+    const autoModeEnabled = traderviewSettings.enableHeroes || traderviewSettings.enableActiveChart;
+    
+    enableAutoModeToggle.checked = autoModeEnabled;
+    
+    // Set radio button based on which mode is enabled (exclusive)
+    if (traderviewSettings.enableHeroes) {
+        heroesModeRadio.checked = true;
+    } else if (traderviewSettings.enableActiveChart) {
+        activeModeRadio.checked = true;
+    } else {
+        // Default to heroes mode if neither is set but auto mode is enabled
+        heroesModeRadio.checked = autoModeEnabled;
+    }
+    
+    enableAutoCloseToggle.checked = traderviewSettings.autoClose ?? true;
+    enableHeadlessToggle.checked = traderviewSettings.headless ?? false;
 
-    enableHeroesToggle.addEventListener("change", async (e) => {
-        const enableHeroes = e.target.checked;
-        window.settings.traderview = { ...window.settings.traderview, enableHeroes };
-        await window.settingsAPI.update(window.settings);
-
-        if (enableHeroes && window.heroesAPI?.getCurrentHeroes) {
-            const currentHeroes = await window.heroesAPI.getCurrentHeroes();
-            if (Array.isArray(currentHeroes) && currentHeroes.length > 0) {
-                window.traderviewAPI.openTickersNow(currentHeroes);
-            } else {
-                console.warn("⚠️ No current heroes available when toggling enableHeroes.");
-            }
+    // Show/hide mode section based on auto mode toggle
+    function toggleModeSection() {
+        if (enableAutoModeToggle.checked) {
+            traderviewModeSection.style.display = 'block';
+        } else {
+            traderviewModeSection.style.display = 'none';
         }
+    }
+    
+    toggleModeSection(); // Initial state
+
+    // Auto Mode Toggle - Master switch
+    enableAutoModeToggle.addEventListener("change", async (e) => {
+        const autoModeEnabled = e.target.checked;
+        
+        if (!autoModeEnabled) {
+            // Disable all modes when auto mode is turned off
+            window.settings.traderview = { 
+                ...window.settings.traderview, 
+                enableHeroes: false, 
+                enableActiveChart: false 
+            };
+            heroesModeRadio.checked = false;
+            activeModeRadio.checked = false;
+            
+            // Close all TradingView windows when disabling auto mode
+            if (window.traderviewAPI?.closeAllWindows) {
+                window.traderviewAPI.closeAllWindows();
+                console.log("🗑️ Closed all TradingView windows (auto mode disabled)");
+            }
+        } else {
+            // When enabling auto mode, default to heroes mode
+            heroesModeRadio.checked = true;
+            window.settings.traderview = { 
+                ...window.settings.traderview, 
+                enableHeroes: true, 
+                enableActiveChart: false 
+            };
+        }
+        
+        toggleModeSection();
+        await window.settingsAPI.update(window.settings);
+        console.log(`🔧 Auto TradingView Mode ${autoModeEnabled ? 'enabled' : 'disabled'}`);
     });
 
-    // enableFrontlineToggle.addEventListener("change", async (e) => {
-    //     window.settings.traderview = { ...window.settings.traderview, enableFrontline: e.target.checked };
-    //     await window.settingsAPI.update(window.settings);
-    // });
+    // Mode selection - Exclusive radio buttons
+    function handleModeChange() {
+        const isHeroesMode = heroesModeRadio.checked;
+        const isActiveMode = activeModeRadio.checked;
+        
+        // Update settings with exclusive selection
+        window.settings.traderview = { 
+            ...window.settings.traderview, 
+            enableHeroes: isHeroesMode, 
+            enableActiveChart: isActiveMode 
+        };
+        
+        window.settingsAPI.update(window.settings);
+        
+        if (isHeroesMode) {
+            console.log(`🦸 Switched to Heroes TradingView Mode`);
+            // Trigger heroes charts if available
+            if (window.heroesAPI?.getCurrentHeroes) {
+                window.heroesAPI.getCurrentHeroes().then(currentHeroes => {
+                    if (Array.isArray(currentHeroes) && currentHeroes.length > 0) {
+                        window.traderviewAPI.openTickersNow(currentHeroes);
+                    }
+                });
+            }
+        } else if (isActiveMode) {
+            console.log(`🎯 Switched to Active TradingView Mode`);
+        }
+    }
 
-    autoCloseTraderviewToggle.addEventListener("change", async (e) => {
-        window.settings.traderview = { ...window.settings.traderview, autoClose: e.target.checked };
+    heroesModeRadio.addEventListener("change", handleModeChange);
+    activeModeRadio.addEventListener("change", handleModeChange);
+
+    // Auto Close Toggle - Applies to both modes
+    enableAutoCloseToggle.addEventListener("change", async (e) => {
+        const autoClose = e.target.checked;
+        window.settings.traderview = { 
+            ...window.settings.traderview, 
+            autoClose, 
+            autoCloseActive: autoClose // Use same setting for both
+        };
         await window.settingsAPI.update(window.settings);
+        console.log(`🗑️ Auto-close TradingView windows ${autoClose ? 'enabled' : 'disabled'}`);
+    });
+
+    // Headless Mode Toggle
+    enableHeadlessToggle.addEventListener("change", async (e) => {
+        const headless = e.target.checked;
+        window.settings.traderview = { 
+            ...window.settings.traderview, 
+            headless 
+        };
+        await window.settingsAPI.update(window.settings);
+        console.log(`🎭 Headless TradingView windows ${headless ? 'enabled' : 'disabled'}`);
+        
+        // Note: Headless setting will apply to newly opened windows
+        // Existing windows will keep their current frame style
     });
 
     // elements
