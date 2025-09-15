@@ -490,6 +490,16 @@ async function initializeApp() {
                             symbolNoteIndices.set(symbol, nextLevel);
                             symbolComboLastPrice.set(symbol, price);
 
+                            // 🎯 Auto-set as active ticker when reaching level 4 combo
+                            if (nextLevel >= 4) {
+                                if (window.activeAPI?.setActiveTicker) {
+                                    window.activeAPI.setActiveTicker(symbol);
+                                    console.log(`🎯 [EVENTS] Auto-set active ticker (LV${nextLevel} combo): ${symbol}`);
+                                } else {
+                                    console.warn(`⚠️ [EVENTS] Could not set active ticker - activeAPI not available: ${symbol}`);
+                                }
+                            }
+
                             if (nextLevel >= 2 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
                                 const bank = pickBankByVolume(strength); // "short" | "long"
                                 const count = SAMPLE_COUNTS[bank];
