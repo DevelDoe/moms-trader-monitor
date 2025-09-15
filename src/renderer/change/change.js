@@ -147,31 +147,33 @@ async function refreshList() {
             ${headersHtml}
             <tbody>
                 ${sortedList.map((h, i) => {
+                    const isFirstRow = i === 0;
+                    const firstRowPadding = isFirstRow ? 'padding: 10px 8px 6px 8px;' : 'padding: 6px 8px;';
                     return `
-                        <tr style="border-bottom: 1px solid #222; transition: all 0.2s ease;">
-                            <td style="padding: 6px 8px; color: #666; text-align: right;" title="Rank Position">
+                        <tr style=" transition: all 0.2s ease;">
+                            <td style="${firstRowPadding} color: #666; text-align: right;" title="Rank Position">
                                 <div class="rank-cell">
                                     ${i < 3 ? getTrophyIcon(i + 1) : `<span>${i + 1}</span>`}
                                 </div>
                             </td>
-                            <td style="padding: 6px 8px;" title="Symbol">
+                            <td style="${firstRowPadding}" title="Symbol">
                                 ${window.components.Symbol({ 
                                     symbol: h.hero, 
                                     size: "medium",
                                     onClick: true
                                 })}
                             </td>
-                            ${window.changeSettings?.showSessionChange !== false ? `<td style="padding: 6px 8px; text-align: center; color: ${h.sessionChangePercent > 0 ? '#00ff00' : h.sessionChangePercent < 0 ? '#ff0000' : '#666'};" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
-                            ${window.changeSettings?.showUpXp !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00ff00;" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
-                            ${window.changeSettings?.showDownXp !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ff0000;" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
-                            ${window.changeSettings?.showRatio !== false ? `<td style="padding: 6px 8px; text-align: center;" title="Up/Down XP Ratio">
+                            ${window.changeSettings?.showSessionChange !== false ? `<td style="${firstRowPadding} text-align: center; color: ${h.sessionChangePercent > 0 ? '#00ff00' : h.sessionChangePercent < 0 ? '#ff0000' : '#666'};" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
+                            ${window.changeSettings?.showUpXp !== false ? `<td style="${firstRowPadding} text-align: center; color: #00ff00;" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
+                            ${window.changeSettings?.showDownXp !== false ? `<td style="${firstRowPadding} text-align: center; color: #ff0000;" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
+                            ${window.changeSettings?.showRatio !== false ? `<td style="${firstRowPadding} text-align: center;" title="Up/Down XP Ratio">
                                 <span style="color: ${h.up > h.down ? '#00ff00' : '#ff0000'};">${h.up + h.down > 0 ? Math.round(((h.up - h.down) / (h.up + h.down)) * 100) : 0}%</span>
                             </td>` : ''}
-                            ${window.changeSettings?.showTotal !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00aeff;" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
-                            ${window.changeSettings?.showNet !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ffff00;" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
-                            ${window.changeSettings?.showTotalVolume !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00ff00;" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
-                            ${window.changeSettings?.showLevel !== false ? `<td style="padding: 6px 8px; text-align: center; color: #00aeff;" title="Level">${h.level}</td>` : ''}
-                            ${window.changeSettings?.showPrice !== false ? `<td style="padding: 6px 8px; text-align: center; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
+                            ${window.changeSettings?.showTotal !== false ? `<td style="${firstRowPadding} text-align: center; color: #00aeff;" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
+                            ${window.changeSettings?.showNet !== false ? `<td style="${firstRowPadding} text-align: center; color: #ffff00;" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
+                            ${window.changeSettings?.showTotalVolume !== false ? `<td style="${firstRowPadding} text-align: center; color: #00ff00;" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
+                            ${window.changeSettings?.showLevel !== false ? `<td style="${firstRowPadding} text-align: center; color: #00aeff;" title="Level">${h.level}</td>` : ''}
+                            ${window.changeSettings?.showPrice !== false ? `<td style="${firstRowPadding} text-align: center; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
                         </tr>
                     `;
                 }).join('')}

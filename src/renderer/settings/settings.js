@@ -440,7 +440,7 @@ function initializeGeneralSection() {
     // HOD symbol length input
     if (hodSymbolLengthInput) {
         hodSymbolLengthInput.addEventListener("input", async (e) => {
-            const v = Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 10));
+            const v = Math.max(1, Math.min(100, parseInt(e.target.value, 10) || 10));
             await window.hodSettingsAPI.set({ symbolLength: v });
         });
     }
@@ -614,7 +614,7 @@ function initializeScannerSection() {
     directionSelect.value = window.settings.scanner.direction ?? "";
     minChangePercentInput.value = window.settings.scanner.minChangePercent ?? "";
     minVolumeInput.value = window.settings.scanner.minVolume ?? "";
-    maxAlertsInput.value = window.settings.scanner.maxAlerts ?? 50;
+    maxAlertsInput.value = window.settings.scanner.maxAlerts ?? 100;
     volumeSlider.value = window.settings.scanner.scannerVolume ?? 1;
 
     async function updateScannerSettings() {
@@ -634,7 +634,7 @@ function initializeScannerSection() {
                     direction: directionSelect.value || null,
                     minChangePercent: parseFloat(minChangePercentInput.value) || 0,
                     minVolume: parseInt(minVolumeInput.value, 10) || 0,
-                    maxAlerts: parseInt(maxAlertsInput.value, 10) || 50,
+                    maxAlerts: parseInt(maxAlertsInput.value, 10) || 100,
                     scannerVolume: parseFloat(volumeSlider.value) ?? 0.5, // ✅ Volume setting added
                 },
             };
@@ -899,7 +899,7 @@ function initializeNewsSection() {
         async function loadNewsSettings() {
             try {
                 const newsSettings = await window.newsSettingsAPI.get();
-                newsListLengthInput.value = newsSettings.listLength || 50;
+                newsListLengthInput.value = newsSettings.listLength || 100;
                 
                 // Update the lists from news store
                 updateLists(newsSettings);
@@ -907,14 +907,14 @@ function initializeNewsSection() {
                 console.log("✅ Loaded News settings:", newsSettings);
             } catch (error) {
                 console.error("❌ Failed to load News settings:", error);
-                newsListLengthInput.value = 50; // fallback
+                newsListLengthInput.value = 100; // fallback
             }
         }
 
         // Save news settings
         async function saveNewsSettings() {
             try {
-                const newLength = parseInt(newsListLengthInput.value, 10) || 50;
+                const newLength = parseInt(newsListLengthInput.value, 10) || 100;
                 const clampedLength = Math.max(1, Math.min(200, newLength));
                 
                 if (clampedLength !== newLength) {
@@ -1223,7 +1223,7 @@ function initializeXpSettingsSection() {
     async function saveXpSettings() {
         try {
             const newLength = parseInt(xpListLengthInput.value, 10) || 25;
-            const clampedLength = Math.max(1, Math.min(50, newLength));
+            const clampedLength = Math.max(1, Math.min(100, newLength));
             
             if (clampedLength !== newLength) {
                 xpListLengthInput.value = clampedLength;
@@ -1369,7 +1369,7 @@ function initializeXpSettingsSection() {
     async function saveHodSettings() {
         try {
             const newLength = parseInt(hodListLengthInput.value, 10) || 10;
-            const clampedLength = Math.max(1, Math.min(50, newLength));
+            const clampedLength = Math.max(1, Math.min(100, newLength));
             
             if (clampedLength !== newLength) {
                 hodListLengthInput.value = clampedLength;
@@ -1621,7 +1621,7 @@ function initializeChangeSettingsSection() {
     async function saveChangeSettings() {
         try {
             const newLength = parseInt(changeListLengthInput.value, 10) || 25;
-            const clampedLength = Math.max(1, Math.min(50, newLength));
+            const clampedLength = Math.max(1, Math.min(100, newLength));
             
             if (clampedLength !== newLength) {
                 changeListLengthInput.value = clampedLength;
@@ -1839,18 +1839,18 @@ function initializeStatsSettingsSection() {
     async function loadStatsSettings() {
         try {
             const statsSettings = await window.statsSettingsAPI.get();
-            statsListLengthInput.value = statsSettings.listLength || 50;
+            statsListLengthInput.value = statsSettings.listLength || 100;
             console.log("✅ Loaded Stats settings:", statsSettings);
         } catch (error) {
             console.error("❌ Failed to load Stats settings:", error);
-            statsListLengthInput.value = 50; // fallback
+            statsListLengthInput.value = 100; // fallback
         }
     }
 
     // Save Stats settings
     async function saveStatsSettings() {
         try {
-            const newLength = parseInt(statsListLengthInput.value, 10) || 50;
+            const newLength = parseInt(statsListLengthInput.value, 10) || 100;
             const clampedLength = Math.max(1, Math.min(100, newLength));
             
             if (clampedLength !== newLength) {

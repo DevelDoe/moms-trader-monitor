@@ -44,16 +44,23 @@
             }
             td {
                 padding: 6px 8px;
-                border-bottom: 1px solid #222;
+                padding-bottom: 0px !important;
+                padding-top: 3px !important;
                 color: #ccc;
+            }
+            td:nth-child(1) {
+                padding-top: 0px !important;
             }
             tbody tr {
                 transition: all 0.2s ease;
             }
             
-            tr:hover {
-                background: rgba(255, 255, 255, 0.1);
+            /* Add space between header and first body row */
+            tbody tr:first-child td {
+                padding-top: 10px !important;
             }
+            
+            /* Removed tbody::before - too much spacing */
             .sort-icon {
                 margin-left: 4px;
                 font-size: 14px;
@@ -78,7 +85,6 @@
                 vertical-align: middle;
                 margin-right: -3px;
             }
-
             
             .rank-cell {
                 display: flex;
