@@ -21,6 +21,7 @@ function createScrollXpWindow(isDevelopment) {
         frame: false, // no OS frame
         transparent: true, // fully transparent background
         hasShadow: false, // Electron hint to remove shadow
+        skipTaskbar: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,
@@ -29,7 +30,7 @@ function createScrollXpWindow(isDevelopment) {
         },
     });
 
-    window.loadFile(path.join(__dirname, "../../renderer/scrolls/xp.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/xp/xp.html"));
 
     if (isDevelopment) {
         window.webContents.once("did-finish-load", () => {

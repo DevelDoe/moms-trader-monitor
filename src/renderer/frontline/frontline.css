@@ -280,7 +280,7 @@ body::-webkit-scrollbar {
 
 /* XP Sword Trophy styles */
 .hero-card:nth-child(-n + 3) .trophy-xp {
-    background-image: url('../scrolls/Svärd_i_rad_och_korsvis-removebg-preview.png');
+    background-image: url('../xp/img/Svärd_i_rad_och_korsvis-removebg-preview.png');
     background-size: 48px 32px; /* 3 swords wide, 2 rows high */
     background-repeat: no-repeat;
     width: 16px;
@@ -294,7 +294,7 @@ body::-webkit-scrollbar {
     pointer-events: none;
 }
 .hero-card:nth-child(n + 4) .trophy-xp {
-    background-image: url('../scrolls/Svärd_i_rad_och_korsvis-removebg-preview.png');
+    background-image: url('../xp/img/Svärd_i_rad_och_korsvis-removebg-preview.png');
     background-size: 48px 32px; /* 3 swords wide, 2 rows high */
     background-repeat: no-repeat;
     width: 16px;

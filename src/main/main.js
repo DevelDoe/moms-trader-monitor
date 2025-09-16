@@ -1109,6 +1109,18 @@ ipcMain.handle("get-hod-top-list", () => {
     return tickerStore.getHodTopList();
 });
 
+// TradingView fullscreen handler
+ipcMain.handle("tradingview-fullscreen", async (event, symbol, fullscreen = true, delayMs = 2000) => {
+    const { setTradingViewFullscreen } = require("./windowManager");
+    try {
+        const result = await setTradingViewFullscreen(symbol, fullscreen, delayMs);
+        return { success: result, symbol, fullscreen };
+    } catch (error) {
+        log.error(`Failed to set TradingView fullscreen for ${symbol}:`, error);
+        return { success: false, error: error.message, symbol, fullscreen };
+    }
+});
+
 // Forward trophy updates to all windows
 tickerStore.on("trophy-updated", (trophyData) => {
     // log.log(`[IPC] Broadcasting trophy update to all windows:`, trophyData);
@@ -1153,7 +1165,7 @@ ipcMain.on("open-traderview-tickers", (event, tickers) => {
         return;
     }
     
-    log.log(`[Traderview] Opening TradingView windows for tickers: ${tickers.join(', ')}`);
+    // log.log(`[Traderview] Opening TradingView windows for tickers: ${tickers.join(', ')}`);
     
     // Open TradingView window for each ticker
     tickers.forEach((symbol) => {

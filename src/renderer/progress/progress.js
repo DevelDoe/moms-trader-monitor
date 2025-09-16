@@ -367,19 +367,19 @@ function updateSessionDisplay() {
     let tempColor = '#FFFFFF';
     
     if (buySellDiff > CONFIG.HOT_MARKET_THRESHOLD * 100) {
-        marketTemp = 'hot market';
+        marketTemp = 'hot';
         tempColor = '#FF4444';
     } else if (buySellDiff > CONFIG.WARM_MARKET_THRESHOLD * 100) {
-        marketTemp = 'warm market';
+        marketTemp = 'warm';
         tempColor = '#FF8844';
     } else if (buySellDiff < -CONFIG.COLD_MARKET_THRESHOLD * 100) {
-        marketTemp = 'cold market';
+        marketTemp = 'cold';
         tempColor = '#4444FF';
     } else if (buySellDiff < -CONFIG.COOL_MARKET_THRESHOLD * 100) {
-        marketTemp = 'cool market';
+        marketTemp = 'cool';
         tempColor = '#4488FF';
     } else {
-        marketTemp = 'balanced market';
+        marketTemp = 'balanced';
         tempColor = '#FFFFFF';
     }
     
@@ -669,9 +669,15 @@ window.addEventListener('unload', cleanup);
 
 // Start the application when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initialize);
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initialize();
+        await AudioManager.initialize();
+    });
 } else {
-    initialize();
+    (async () => {
+        await initialize();
+        await AudioManager.initialize();
+    })();
 }
 
 // Export for testing if needed
@@ -683,4 +689,259 @@ if (typeof module !== 'undefined' && module.exports) {
         getCurrentSession,
         SESSIONS 
     };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CENTRALIZED AUDIO MANAGER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const AudioManager = (() => {
+    let audioSettings = {
+        comboVolume: 0.55,
+        newsVolume: 1.0,
+        hodChimeVolume: 0.05
+    };
+    
+    // Audio instances cache
+    const audioCache = {
+        newsAlert: null,
+        hodChime: null,
+        eventsAudioContext: null,
+        eventsBuffers: { short: [], long: [] }
+    };
+    
+    // Initialize audio manager
+    async function initialize() {
+        try {
+            // Load audio settings
+            audioSettings = await window.audioSettingsAPI.get();
+            console.log("🎵 Audio Manager initialized with settings:", audioSettings);
+            
+            // Subscribe to audio settings changes
+            window.audioSettingsAPI.onUpdate((newSettings) => {
+                audioSettings = newSettings;
+                console.log("🎵 Audio settings updated:", audioSettings);
+            });
+            
+            // Preload audio files
+            await preloadAudioFiles();
+            
+        } catch (error) {
+            console.error("❌ Failed to initialize Audio Manager:", error);
+            // Use fallback settings
+            audioSettings = {
+                comboVolume: 0.55,
+                newsVolume: 1.0,
+                hodChimeVolume: 0.05
+            };
+        }
+    }
+    
+    // Preload audio files for better performance
+    async function preloadAudioFiles() {
+        try {
+            // Preload news alert audio
+            audioCache.newsAlert = new Audio("./audio/metal.wav");
+            audioCache.newsAlert.preload = "auto";
+            
+            // Preload HOD chime audio
+            audioCache.hodChime = new Audio("./audio/magic.mp3");
+            audioCache.hodChime.preload = "auto";
+            
+            // Initialize Web Audio Context for events
+            audioCache.eventsAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Preload events audio buffers
+            await preloadEventsAudio();
+            
+            console.log("🎵 Audio files preloaded successfully");
+        } catch (error) {
+            console.error("❌ Failed to preload audio files:", error);
+        }
+    }
+    
+    // Preload events audio (combo alerts)
+    async function preloadEventsAudio() {
+        const AUDIO_BASE = "./audio/events/";
+        const SHORT_COUNT = 32;
+        const LONG_COUNT = 32;
+        
+        try {
+            // Load short samples
+            for (let i = 1; i <= SHORT_COUNT; i++) {
+                const url = `${AUDIO_BASE}short/${i}.mp3`;
+                const buffer = await loadAudioBuffer(url);
+                if (buffer) audioCache.eventsBuffers.short.push(buffer);
+            }
+            
+            // Load long samples
+            for (let i = 1; i <= LONG_COUNT; i++) {
+                const url = `${AUDIO_BASE}long/${i}.mp3`;
+                const buffer = await loadAudioBuffer(url);
+                if (buffer) audioCache.eventsBuffers.long.push(buffer);
+            }
+            
+            console.log(`🎵 Events audio loaded: ${audioCache.eventsBuffers.short.length} short, ${audioCache.eventsBuffers.long.length} long`);
+        } catch (error) {
+            console.error("❌ Failed to preload events audio:", error);
+        }
+    }
+    
+    // Load audio buffer from URL
+    async function loadAudioBuffer(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await audioCache.eventsAudioContext.decodeAudioData(arrayBuffer);
+            return audioBuffer;
+        } catch (error) {
+            console.warn(`⚠️ Failed to load audio: ${url}`, error);
+            return null;
+        }
+    }
+    
+    // Play news alert audio
+    function playNewsAlert() {
+        try {
+            if (!audioCache.newsAlert) {
+                console.warn("⚠️ News alert audio not loaded");
+                return;
+            }
+            
+            // Clone audio for multiple simultaneous plays
+            const audio = audioCache.newsAlert.cloneNode();
+            audio.volume = audioSettings.newsVolume;
+            audio.play().catch(e => console.warn("⚠️ Failed to play news alert:", e));
+            
+            console.log(`🎵 Playing news alert (volume: ${Math.round(audioSettings.newsVolume * 100)}%)`);
+        } catch (error) {
+            console.error("❌ Failed to play news alert:", error);
+        }
+    }
+    
+    // Play HOD chime audio
+    function playHodChime() {
+        try {
+            if (!audioCache.hodChime) {
+                console.warn("⚠️ HOD chime audio not loaded");
+                return;
+            }
+            
+            // Clone audio for multiple simultaneous plays
+            const audio = audioCache.hodChime.cloneNode();
+            audio.volume = audioSettings.hodChimeVolume;
+            audio.play().catch(e => console.warn("⚠️ Failed to play HOD chime:", e));
+            
+            console.log(`🎵 Playing HOD chime (volume: ${Math.round(audioSettings.hodChimeVolume * 100)}%)`);
+        } catch (error) {
+            console.error("❌ Failed to play HOD chime:", error);
+        }
+    }
+    
+    // Play events combo audio - replicates original playSampleBuffer function exactly
+    function playEventsCombo(strength = 0, isLongAlert = false, comboLevel = 2) {
+        try {
+            if (!audioCache.eventsAudioContext || audioCache.eventsAudioContext.state === "closed") {
+                console.warn("⚠️ Events audio context not available");
+                return;
+            }
+            
+            // Resume context if suspended
+            if (audioCache.eventsAudioContext.state === "suspended") {
+                audioCache.eventsAudioContext.resume();
+            }
+            
+            // Replicate original logic exactly
+            const bank = isLongAlert ? "long" : "short";
+            const count = 32; // SAMPLE_COUNTS[bank]
+            const index = Math.max(0, comboLevel | 0) % Math.max(1, count); // levelToIndex(comboLevel, count)
+            const volume = Math.max(0.1, audioSettings.comboVolume); // getComboVolume() equivalent
+            
+            const buffers = bank === "long" ? audioCache.eventsBuffers.long : audioCache.eventsBuffers.short;
+            if (buffers.length === 0) {
+                console.warn("⚠️ No events audio buffers loaded");
+                return;
+            }
+            
+            const buffer = buffers[index];
+            if (!buffer) {
+                console.warn(`⚠️ Buffer not found: ${bank}[${index}]`);
+                return;
+            }
+            
+            // Create audio source - exactly like original playSampleBuffer
+            const source = audioCache.eventsAudioContext.createBufferSource();
+            const gain = audioCache.eventsAudioContext.createGain();
+            
+            gain.gain.value = Math.max(0.001, Math.min(1, volume));
+            source.buffer = buffer;
+            source.connect(gain).connect(audioCache.eventsAudioContext.destination);
+            source.start();
+        } catch (error) {
+            console.error("❌ Failed to play events combo:", error);
+        }
+    }
+    
+    // Test functions for settings
+    function testNewsAlert() {
+        console.log("🧪 Testing news alert audio");
+        playNewsAlert();
+    }
+    
+    function testHodChime() {
+        console.log("🧪 Testing HOD chime audio");
+        playHodChime();
+    }
+    
+    function testEventsCombo() {
+        console.log("🧪 Testing events combo audio");
+        playEventsCombo(1000, false); // Simple test
+    }
+    
+    // Expose public API
+    return {
+        initialize,
+        playNewsAlert,
+        playHodChime,
+        playEventsCombo,
+        testNewsAlert,
+        testHodChime,
+        testEventsCombo
+    };
+})();
+
+// Initialize audio manager when progress window loads
+window.audioManager = AudioManager;
+
+// Listen for audio commands from other windows via IPC
+if (window.electronAPI?.ipc) {
+    
+    // Playback commands
+    window.electronAPI.ipc.on("audio-command:play-news-alert", () => {
+        AudioManager.playNewsAlert();
+    });
+    
+    window.electronAPI.ipc.on("audio-command:play-hod-chime", () => {
+        AudioManager.playHodChime();
+    });
+    
+    window.electronAPI.ipc.on("audio-command:play-events-combo", (_event, { strength, isLongAlert, comboLevel } = {}) => {
+        AudioManager.playEventsCombo(strength, isLongAlert, comboLevel);
+    });
+    
+    // Test commands (3 total: combo, news, hod)
+    window.electronAPI.ipc.on("audio-command:test-news-alert", () => {
+        AudioManager.testNewsAlert();
+    });
+    
+    window.electronAPI.ipc.on("audio-command:test-hod-chime", () => {
+        AudioManager.testHodChime();
+    });
+    
+    window.electronAPI.ipc.on("audio-command:test-events-combo", () => {
+        AudioManager.testEventsCombo();
+    });
 }

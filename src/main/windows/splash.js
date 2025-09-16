@@ -41,6 +41,7 @@ function createSplashWindow(isDevelopment) {
         show: false, // show after ready-to-show to avoid flash
         backgroundColor: "#000000", // solid bg behind your image
         useContentSize: true,
+        skipTaskbar: true,// hide title bar
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,

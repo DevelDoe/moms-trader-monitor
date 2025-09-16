@@ -34,6 +34,9 @@
         // settings + buffs
         settings: {},
         buffs: [],
+        
+        // frontline-specific settings
+        frontlineSettings: { listLength: 10 }, // Default fallback
 
         // medals/top3
         rankMap: new Map(),
@@ -315,7 +318,7 @@
     function render() {
         if (!state.container) return;
 
-        const topN = state.settings?.top?.frontlineListLength ?? 8;
+        const topN = state.frontlineSettings?.listLength ?? 10;
 
         // compute the top, deterministically
         const heroesArr = Object.values(state.heroes);
@@ -438,7 +441,7 @@
         }
 
         // shrink scales if everything is below threshold
-        const topN = state.settings?.top?.frontlineListLength ?? 8;
+        const topN = state.frontlineSettings?.listLength ?? 10;
         const top = Object.values(state.heroes)
             .filter((x) => x.score > 0)
             .sort((a, b) => b.score - a.score)
@@ -561,6 +564,11 @@
             window.buffs = state.buffs; // keep legacy path alive for calculateImpact()
         } catch {}
         
+        // frontline settings
+        try {
+            state.frontlineSettings = await window.electronAPI.ipc.invoke("frontline-settings:get");
+        } catch {}
+        
         window.electronAPI.onBuffsUpdate?.((b) => {
             state.buffs = b || [];
             window.buffs = state.buffs; // keep OG compatibility
@@ -572,6 +580,14 @@
             state.settings = s || {};
             markDirty();
         });
+        
+        // frontline settings listener
+        window.electronAPI.ipc?.send("frontline-settings:subscribe");
+        window.electronAPI.ipc?.on("frontline-settings:change", (_event, frontlineSettings) => {
+            state.frontlineSettings = frontlineSettings || { listLength: 14 };
+            markDirty();
+        });
+        
         window.electronAPI.onBuffsUpdate?.((b) => {
             state.buffs = b || [];
             markDirty();

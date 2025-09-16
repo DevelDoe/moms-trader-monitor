@@ -1077,8 +1077,9 @@ const getNewsHeadlines = () => {
 };
 
 const getNewsCount = () => {
-    if (NEWS_DEBUG) {
-        log.log(`📊 IPC getNewsCount: returning ${latestNewsCount} headlines`);
+    // Only log every 100th call to avoid performance issues
+    if (NEWS_DEBUG && ++newsCountLogCounter % 100 === 0) {
+        log.log(`📊 IPC getNewsCount: returning ${latestNewsCount} headlines (called ${newsCountLogCounter} times)`);
     }
     return latestNewsCount;
 };
@@ -1100,8 +1101,9 @@ const getFilingHeadlines = () => {
 };
 
 const getFilingCount = () => {
-    if (FILING_DEBUG) {
-        log.log(`📊 IPC getFilingCount: returning ${latestFilingCount} filings`);
+    // Only log every 100th call to avoid performance issues
+    if (FILING_DEBUG && ++filingCountLogCounter % 100 === 0) {
+        log.log(`📊 IPC getFilingCount: returning ${latestFilingCount} filings (called ${filingCountLogCounter} times)`);
     }
     return latestFilingCount;
 };
@@ -1140,9 +1142,15 @@ const getHaltHeadlines = () => {
     return latestHalts;
 };
 
+// Counters to throttle logging frequency for frequently called IPC functions
+let haltCountLogCounter = 0;
+let newsCountLogCounter = 0;
+let filingCountLogCounter = 0;
+
 const getHaltCount = () => {
-    if (HALT_DEBUG) {
-        log.log(`📊 IPC getHaltCount: returning ${latestHaltCount} halts`);
+    // Only log every 100th call to avoid performance issues
+    if (HALT_DEBUG && ++haltCountLogCounter % 100 === 0) {
+        log.log(`📊 IPC getHaltCount: returning ${latestHaltCount} halts (called ${haltCountLogCounter} times)`);
     }
     return latestHaltCount;
 };

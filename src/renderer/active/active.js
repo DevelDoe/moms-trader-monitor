@@ -1408,3 +1408,15 @@ function getSymbolColor(symbol) {
     }
     return symbolColors[symbol];
 }
+
+function getSymbolColor(symbol) {
+    if (!symbolColors[symbol]) {
+        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hue = (hash * 37) % 360;
+        const saturation = 80;
+        const lightness = 50;
+        const alpha = 0.5;
+        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    }
+    return symbolColors[symbol];
+}

@@ -23,6 +23,7 @@ function createHaltsWindow(isDevelopment) {
         useContentSize: true,
         transparent: true, // fully transparent background
         hasShadow: false, // Electron hint to remove shadow
+        skipTaskbar: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,

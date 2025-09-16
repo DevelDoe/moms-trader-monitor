@@ -21,6 +21,7 @@ function createScrollHodWindow(isDevelopment) {
         frame: false, // no OS frame
         transparent: true, // fully transparent background
         hasShadow: false, // Electron hint to remove shadow
+        skipTaskbar: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,
@@ -34,7 +35,7 @@ function createScrollHodWindow(isDevelopment) {
     // Set window name for broadcast utility
     window.windowName = "scrollHod";
 
-    window.loadFile(path.join(__dirname, "../../renderer/scrolls/hod.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/hod/hod.html"));
 
 // window.webContents.once("did-finish-load", () => {
 //     if (!window.__hodReloadedOnce) {

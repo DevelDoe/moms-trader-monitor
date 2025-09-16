@@ -19,6 +19,12 @@ const state = {
     renderKey: "",
     maxHP: BASE_MAX_HP,
 
+    // heroes-specific settings
+    heroesSettings: { listLength: 3 }, // Default fallback
+    
+    // traderview settings
+    traderviewSettings: {}, // Default fallback
+
     // rotation & TradingView sync
     lastTopSymbolsKey: "",
     currentActiveTicker: null,
@@ -255,7 +261,7 @@ function patchCardDOM(sym, h) {
 function render() {
     if (!state.container) return;
 
-    const topN = state.settings?.top?.heroesListLength ?? 10;
+    const topN = state.heroesSettings?.listLength ?? 3;
     const list = Object.values(state.heroes)
         .filter((h) => (h.score || 0) > 0)
         .sort((a, b) => b.score - a.score)
@@ -301,7 +307,7 @@ function render() {
     if (topKey !== state.lastTopSymbolsKey) {
         state.lastTopSymbolsKey = topKey;
         if (window.traderviewAPI?.setTopTickers && now - state.lastTickerSetAt > MIN_UPDATE_INTERVAL) {
-            const n = state.settings?.top?.traderviewWindowCount ?? 3;
+            const n = state.heroesSettings?.listLength ?? 3;
             window.traderviewAPI.setTopTickers(topSymbols.slice(0, n));
             state.lastTickerSetAt = now;
         }
@@ -327,7 +333,7 @@ function startScoreDecay() {
         }
         if (!changed) return;
 
-        const topN = state.settings?.top?.heroesListLength ?? 10;
+        const topN = state.heroesSettings?.listLength ?? 3;
         const top = vals
             .filter((x) => x.score > 0)
             .sort((a, b) => b.score - a.score)
@@ -515,6 +521,16 @@ async function boot() {
             markDirty();
         });
     } catch {}
+    
+    // heroes settings
+    try {
+        state.heroesSettings = await window.electronAPI.ipc.invoke("heroes-settings:get");
+    } catch {}
+    
+    // traderview settings
+    try {
+        state.traderviewSettings = await window.electronAPI.ipc.invoke("traderview-settings:get");
+    } catch {}
 
     // seed from store
     try {
@@ -545,6 +561,20 @@ async function boot() {
     // settings + alerts + store updates
     window.settingsAPI.onUpdate((s) => {
         state.settings = s || {};
+        markDirty();
+    });
+    
+    // heroes settings listener
+    window.electronAPI.ipc?.send("heroes-settings:subscribe");
+    window.electronAPI.ipc?.on("heroes-settings:change", (_event, heroesSettings) => {
+        state.heroesSettings = heroesSettings || { listLength: 3 };
+        markDirty();
+    });
+    
+    // traderview settings listener
+    window.electronAPI.ipc?.send("traderview-settings:subscribe");
+    window.electronAPI.ipc?.on("traderview-settings:change", (_event, traderviewSettings) => {
+        state.traderviewSettings = traderviewSettings || {};
         markDirty();
     });
 

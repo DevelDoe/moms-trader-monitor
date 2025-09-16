@@ -433,13 +433,15 @@ function playFlash() {
     }
     lastJFlashTime = now;
 
-    const audio = new Audio("./metal.wav");
-    audio.volume = getNewsAlertVolume(); // 🎚 hook to settings.events.newsAlertVolume
-
-    audio
-        .play()
-        .then(() => console.log("Sound played successfully."))
-        .catch((error) => console.error("Error playing sound:", error));
+    // Use centralized audio system instead of local audio
+    if (window.audioAPI) {
+        window.audioAPI.playNewsAlert().catch((error) => {
+            console.error("Error playing news alert via centralized system:", error);
+        });
+        console.log("🎵 News alert triggered via centralized audio system");
+    } else {
+        console.warn("⚠️ Centralized audio API not available, skipping news alert");
+    }
 }
 
 const bonusItems = [
@@ -478,12 +480,14 @@ const bonusItems = [
 // Show regular ticker
 initTicker(".bonus-list", bonusItems);
 
-// Test function for news alerts
+// Test function for news alerts - forward to centralized system
 window.testNewsAlert = () => {
-    console.log("Testing news alert sound...");
-    console.log(`[News Test] Current volume: ${getNewsAlertVolume()}`);
-    console.log(`[News Test] Audio file path: ./metal.wav`);
-    playFlash();
+    console.log("🎧 Infobar forwarding news alert test to centralized audio system...");
+    if (window.audioAPI) {
+        window.audioAPI.testNewsAlert();
+    } else {
+        console.warn("⚠️ Centralized audio API not available");
+    }
 };
 
 // Test function for news integration

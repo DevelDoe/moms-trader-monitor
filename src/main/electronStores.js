@@ -1785,6 +1785,427 @@ if (app && ipcMain && typeof app.on === "function" && !app.__filing_filter_setti
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Frontline Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const frontlineSettingsStore = createStore("frontline-settings-store", "frontline.");
+const frontlineSettingsBus = new EventEmitter();
+
+let _frontlineListLength = frontlineSettingsStore.get("listLength", 14); // Default to 14 (matches legacy default)
+
+function getFrontlineListLength() {
+    return _frontlineListLength;
+}
+
+function setFrontlineListLength(length) {
+    const newLength = Math.max(1, Number(length) || 14);
+    if (newLength === _frontlineListLength) return false;
+    
+    _frontlineListLength = newLength;
+    frontlineSettingsStore.set("listLength", _frontlineListLength);
+    
+    const payload = { listLength: _frontlineListLength };
+    frontlineSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("frontline-settings:change", payload);
+        } catch (err) {
+            log.log("[frontline-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__frontline_settings_ipc_registered__) {
+    app.__frontline_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("frontline-settings:get");
+    ipcMain.removeHandler("frontline-settings:set");
+    
+    ipcMain.handle("frontline-settings:get", () => {
+        return { listLength: getFrontlineListLength() };
+    });
+    
+    ipcMain.handle("frontline-settings:set", (_e, { listLength }) => {
+        return setFrontlineListLength(listLength);
+    });
+
+    ipcMain.removeAllListeners("frontline-settings:subscribe");
+    ipcMain.on("frontline-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("frontline-settings:change", data);
+        push({ listLength: getFrontlineListLength() }); // prime immediately
+        frontlineSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[frontline-settings] unsubscribe WC", wc.id);
+            frontlineSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Heroes Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const heroesSettingsStore = createStore("heroes-settings-store", "heroes.");
+const heroesSettingsBus = new EventEmitter();
+
+let _heroesListLength = heroesSettingsStore.get("listLength", 3); // Default to 3 (matches legacy default)
+
+function getHeroesListLength() {
+    return _heroesListLength;
+}
+
+function setHeroesListLength(length) {
+    const newLength = Math.max(1, Number(length) || 3);
+    if (newLength === _heroesListLength) return false;
+    
+    _heroesListLength = newLength;
+    heroesSettingsStore.set("listLength", _heroesListLength);
+    
+    const payload = { listLength: _heroesListLength };
+    heroesSettingsBus.emit("change", payload);
+    
+    const targets = webContents.getAllWebContents();
+    for (const wc of targets) {
+        try {
+            wc.send("heroes-settings:change", payload);
+        } catch (err) {
+            log.log("[heroes-settings] send failed", { target: wc.id, err: String(err) });
+        }
+    }
+    return true;
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__heroes_settings_ipc_registered__) {
+    app.__heroes_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("heroes-settings:get");
+    ipcMain.removeHandler("heroes-settings:set");
+    
+    ipcMain.handle("heroes-settings:get", () => {
+        return { listLength: getHeroesListLength() };
+    });
+    
+    ipcMain.handle("heroes-settings:set", (_e, { listLength }) => {
+        return setHeroesListLength(listLength);
+    });
+
+    ipcMain.removeAllListeners("heroes-settings:subscribe");
+    ipcMain.on("heroes-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("heroes-settings:change", data);
+        push({ listLength: getHeroesListLength() }); // prime immediately
+        heroesSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[heroes-settings] unsubscribe WC", wc.id);
+            heroesSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Traderview Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const traderviewSettingsStore = createStore("traderview-settings-store", "traderview.");
+const traderviewSettingsBus = new EventEmitter();
+
+let _traderviewVisibility = traderviewSettingsStore.get("visibility", false);
+let _traderviewEnableHeroes = traderviewSettingsStore.get("enableHeroes", false);
+let _traderviewAutoClose = traderviewSettingsStore.get("autoClose", true);
+let _traderviewEnableActiveChart = traderviewSettingsStore.get("enableActiveChart", true);
+let _traderviewAutoCloseActive = traderviewSettingsStore.get("autoCloseActive", true);
+
+function getTraderviewSettings() {
+    return {
+        visibility: _traderviewVisibility,
+        enableHeroes: _traderviewEnableHeroes,
+        autoClose: _traderviewAutoClose,
+        enableActiveChart: _traderviewEnableActiveChart,
+        autoCloseActive: _traderviewAutoCloseActive
+    };
+}
+
+function setTraderviewSettings(settings) {
+    let changed = false;
+    
+    if (settings.visibility !== undefined && settings.visibility !== _traderviewVisibility) {
+        _traderviewVisibility = Boolean(settings.visibility);
+        traderviewSettingsStore.set("visibility", _traderviewVisibility);
+        changed = true;
+    }
+    
+    if (settings.enableHeroes !== undefined && settings.enableHeroes !== _traderviewEnableHeroes) {
+        _traderviewEnableHeroes = Boolean(settings.enableHeroes);
+        traderviewSettingsStore.set("enableHeroes", _traderviewEnableHeroes);
+        changed = true;
+    }
+    
+    if (settings.autoClose !== undefined && settings.autoClose !== _traderviewAutoClose) {
+        _traderviewAutoClose = Boolean(settings.autoClose);
+        traderviewSettingsStore.set("autoClose", _traderviewAutoClose);
+        changed = true;
+    }
+    
+    if (settings.enableActiveChart !== undefined && settings.enableActiveChart !== _traderviewEnableActiveChart) {
+        _traderviewEnableActiveChart = Boolean(settings.enableActiveChart);
+        traderviewSettingsStore.set("enableActiveChart", _traderviewEnableActiveChart);
+        changed = true;
+    }
+    
+    if (settings.autoCloseActive !== undefined && settings.autoCloseActive !== _traderviewAutoCloseActive) {
+        _traderviewAutoCloseActive = Boolean(settings.autoCloseActive);
+        traderviewSettingsStore.set("autoCloseActive", _traderviewAutoCloseActive);
+        changed = true;
+    }
+    
+    if (changed) {
+        const payload = getTraderviewSettings();
+        traderviewSettingsBus.emit("change", payload);
+        
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("traderview-settings:change", payload);
+            } catch (err) {
+                log.log("[traderview-settings] send failed", { target: wc.id, err: String(err) });
+            }
+        }
+    }
+    
+    return changed;
+}
+
+// Individual setters for convenience
+function setTraderviewVisibility(visibility) {
+    return setTraderviewSettings({ visibility });
+}
+
+function setTraderviewEnableHeroes(enableHeroes) {
+    return setTraderviewSettings({ enableHeroes });
+}
+
+function setTraderviewAutoClose(autoClose) {
+    return setTraderviewSettings({ autoClose });
+}
+
+function setTraderviewEnableActiveChart(enableActiveChart) {
+    return setTraderviewSettings({ enableActiveChart });
+}
+
+function setTraderviewAutoCloseActive(autoCloseActive) {
+    return setTraderviewSettings({ autoCloseActive });
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__traderview_settings_ipc_registered__) {
+    app.__traderview_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("traderview-settings:get");
+    ipcMain.removeHandler("traderview-settings:set");
+    
+    ipcMain.handle("traderview-settings:get", () => {
+        return getTraderviewSettings();
+    });
+    
+    ipcMain.handle("traderview-settings:set", (_e, settings) => {
+        return setTraderviewSettings(settings);
+    });
+
+    ipcMain.removeAllListeners("traderview-settings:subscribe");
+    ipcMain.on("traderview-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("traderview-settings:change", data);
+        push(getTraderviewSettings()); // prime immediately
+        traderviewSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[traderview-settings] unsubscribe WC", wc.id);
+            traderviewSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Audio Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const audioSettingsStore = createStore("audio-settings-store", "audio.");
+const audioSettingsBus = new EventEmitter();
+
+let _audioComboVolume = audioSettingsStore.get("comboVolume", 0.55);
+let _audioNewsVolume = audioSettingsStore.get("newsVolume", 1.0);
+let _audioHodChimeVolume = audioSettingsStore.get("hodChimeVolume", 0.05);
+
+function getAudioSettings() {
+    return {
+        comboVolume: _audioComboVolume,
+        newsVolume: _audioNewsVolume,
+        hodChimeVolume: _audioHodChimeVolume
+    };
+}
+
+function setAudioSettings(settings) {
+    let changed = false;
+    
+    if (settings.comboVolume !== undefined && settings.comboVolume !== _audioComboVolume) {
+        _audioComboVolume = Math.max(0, Math.min(1, Number(settings.comboVolume) || 0.55));
+        audioSettingsStore.set("comboVolume", _audioComboVolume);
+        changed = true;
+    }
+    
+    if (settings.newsVolume !== undefined && settings.newsVolume !== _audioNewsVolume) {
+        _audioNewsVolume = Math.max(0, Math.min(1, Number(settings.newsVolume) || 1.0));
+        audioSettingsStore.set("newsVolume", _audioNewsVolume);
+        changed = true;
+    }
+    
+    if (settings.hodChimeVolume !== undefined && settings.hodChimeVolume !== _audioHodChimeVolume) {
+        _audioHodChimeVolume = Math.max(0, Math.min(1, Number(settings.hodChimeVolume) || 0.05));
+        audioSettingsStore.set("hodChimeVolume", _audioHodChimeVolume);
+        changed = true;
+    }
+    
+    if (changed) {
+        const payload = getAudioSettings();
+        audioSettingsBus.emit("change", payload);
+        
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("audio-settings:change", payload);
+            } catch (err) {
+                log.log("[audio-settings] send failed", { target: wc.id, err: String(err) });
+            }
+        }
+    }
+    
+    return changed;
+}
+
+// Individual setters for convenience
+function setAudioComboVolume(volume) {
+    return setAudioSettings({ comboVolume: volume });
+}
+
+function setAudioNewsVolume(volume) {
+    return setAudioSettings({ newsVolume: volume });
+}
+
+function setAudioHodChimeVolume(volume) {
+    return setAudioSettings({ hodChimeVolume: volume });
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__audio_settings_ipc_registered__) {
+    app.__audio_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("audio-settings:get");
+    ipcMain.removeHandler("audio-settings:set");
+    
+    ipcMain.handle("audio-settings:get", () => {
+        return getAudioSettings();
+    });
+    
+    ipcMain.handle("audio-settings:set", (_e, settings) => {
+        return setAudioSettings(settings);
+    });
+
+    ipcMain.removeAllListeners("audio-settings:subscribe");
+    ipcMain.on("audio-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("audio-settings:change", data);
+        push(getAudioSettings()); // prime immediately
+        audioSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[audio-settings] unsubscribe WC", wc.id);
+            audioSettingsBus.removeListener("change", push);
+        });
+    });
+    
+    // Audio playback IPC handlers - forward to progress window
+    ipcMain.removeHandler("audio:play-news-alert");
+    ipcMain.removeHandler("audio:play-hod-chime");
+    ipcMain.removeHandler("audio:play-events-combo");
+    ipcMain.removeHandler("audio:test-news-alert");
+    ipcMain.removeHandler("audio:test-hod-chime");
+    ipcMain.removeHandler("audio:test-events-combo");
+    
+    ipcMain.handle("audio:play-news-alert", () => {
+        // Find progress window and send audio command
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("audio-command:play-news-alert");
+            } catch (err) {
+                // Ignore errors for closed windows
+            }
+        }
+        return true;
+    });
+    
+    ipcMain.handle("audio:play-hod-chime", () => {
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("audio-command:play-hod-chime");
+            } catch (err) {
+                // Ignore errors for closed windows
+            }
+        }
+        return true;
+    });
+    
+    ipcMain.handle("audio:play-events-combo", (_e, { strength = 0, isLongAlert = false, comboLevel = 2 } = {}) => {
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("audio-command:play-events-combo", { strength, isLongAlert, comboLevel });
+            } catch (err) {
+                // Ignore errors for closed windows
+            }
+        }
+        return true;
+    });
+    
+    ipcMain.handle("audio:test-news-alert", () => {
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("audio-command:test-news-alert");
+            } catch (err) {
+                // Ignore errors for closed windows
+            }
+        }
+        return true;
+    });
+    
+    ipcMain.handle("audio:test-hod-chime", () => {
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("audio-command:test-hod-chime");
+            } catch (err) {
+                // Ignore errors for closed windows
+            }
+        }
+        return true;
+    });
+    
+    ipcMain.handle("audio:test-events-combo", () => {
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("audio-command:test-events-combo");
+            } catch (err) {
+                // Ignore errors for closed windows
+            }
+        }
+        return true;
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Window Settings store (persist + broadcast)
 // ─────────────────────────────────────────────────────────────────────
 
@@ -2317,6 +2738,30 @@ module.exports = {
     getFilingFilters,
     setFilingFilters,
     setFilingFormEnabled,
+    
+    // Frontline settings exports
+    getFrontlineListLength,
+    setFrontlineListLength,
+    
+    // Heroes settings exports
+    getHeroesListLength,
+    setHeroesListLength,
+    
+    // Traderview settings exports
+    getTraderviewSettings,
+    setTraderviewSettings,
+    setTraderviewVisibility,
+    setTraderviewEnableHeroes,
+    setTraderviewAutoClose,
+    setTraderviewEnableActiveChart,
+    setTraderviewAutoCloseActive,
+    
+    // Audio settings exports
+    getAudioSettings,
+    setAudioSettings,
+    setAudioComboVolume,
+    setAudioNewsVolume,
+    setAudioHodChimeVolume,
     
     // For testing - expose IPC handlers and stores
     ipcMain: app && ipcMain ? ipcMain : undefined,

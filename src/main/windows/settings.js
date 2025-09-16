@@ -21,6 +21,7 @@ function createSettingsWindow(isDevelopment) {
         roundedCorners: false,
         backgroundColor: "#00000000",
         useContentSize: true,
+        skipTaskbar: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,

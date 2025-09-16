@@ -8,7 +8,7 @@
     "maxScore": 0,
     "minVolume": 0,
     "maxVolume": 0,
-    "frontlineListLength": 8,
+    "frontlineListLength": 14,
     "heroesListLength": 3
   },
   "scanner": {
@@ -22,40 +22,13 @@
   },
   "traderview": {
     "visibility": false,
-    "enableHeroes": true,
+    "enableHeroes": false,
     "autoClose": true,
-    "enableActiveChart": false,
-    "autoCloseActive": true,
-    "headless": false
+    "enableActiveChart": true,
+    "autoCloseActive": true
   },
   "news": {
     "filteredTickers": [],
-    "blockList": [
-      "nasdaq surges",
-      "Shares halted",
-      "shares resume",
-      "stocks moving in",
-      "earnings scheduled",
-      "Says experts",
-      "us stocks",
-      "futures waver",
-      "shares are trading",
-      "trading halt",
-      "crude oil moves lower",
-      "Market-moving news",
-      "is gaining today"
-    ],
-    "bullishList": [
-      "FDA Approves",
-      "Clinical Trials",
-      "Noteworthy Insider Activity",
-      "equity purchase facility"
-    ],
-    "bearishList": [
-      "Sell Alert",
-      "Stock Downgrade",
-      "Downgrades to Sell"
-    ],
     "showTrackedTickers": false,
     "allowMultiSymbols": false
   },

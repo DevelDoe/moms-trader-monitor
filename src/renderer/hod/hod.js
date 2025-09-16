@@ -57,14 +57,9 @@ function hodThresholdUSDFromPrice(price) {
 
 /* 3) Audio (volumes from settings) */
 let audioReady = false;
-let magicBase, ticksBase;
-
-// Tick loudness shaping
-const TICK_VOL_FLOOR = 0.15; // 0..1 fraction of user volume at the window edge
-const TICK_VOL_EASE = 0.6; // <1 = earlier loudness (perceptual boost)
+let magicBase;
 
 const HOD_CHIME_VOL_DEFAULT = 0.5;
-const TICK_VOL_DEFAULT = 0.06;
 
 // --- Chime limiter ---
 const HOD_CHIME_COOLDOWN_MS = 2000; // per-symbol: same symbol max 1 per 2s
@@ -101,46 +96,18 @@ function shouldPlayHodChime(sym) {
     return true;
 }
 
-// ---- Tick limiter (bursty but bounded) ----
-const TICK_COOLDOWN_MS = 120; // per-symbol min gap
-const TICK_BURST_WINDOW_MS = 500; // global burst window
-const TICK_BURST_MAX = 6; // max ticks allowed in window
-
-const lastTickAt = new Map(); // per-symbol last tick time
-const tickBurstTimes = []; // global sliding window (most-recent-first)
-
-function canEmitTickBurst(now) {
-    while (tickBurstTimes.length && now - tickBurstTimes[tickBurstTimes.length - 1] > TICK_BURST_WINDOW_MS) {
-        tickBurstTimes.pop();
-    }
-    if (tickBurstTimes.length >= TICK_BURST_MAX) return false;
-    tickBurstTimes.unshift(now);
-    return true;
-}
-
-function shouldPlayTick(sym) {
-    const now = Date.now();
-    if (!canEmitTickBurst(now)) return false; // global burst control
-    const last = lastTickAt.get(sym) || 0; // per-symbol cooldown
-    if (now - last < TICK_COOLDOWN_MS) return false;
-    lastTickAt.set(sym, now);
-    return true;
-}
 
 function setupAudio() {
-    if (magicBase && ticksBase) return;
+    if (magicBase) return;
     magicBase = new Audio("./magic.mp3");
-    ticksBase = new Audio("./ticks.mp3");
-    [magicBase, ticksBase].forEach((a) => {
-        a.preload = "auto";
-        a.addEventListener("error", () => {});
-        a.addEventListener("canplaythrough", () => {});
-    });
+    magicBase.preload = "auto";
+    magicBase.addEventListener("error", () => {});
+    magicBase.addEventListener("canplaythrough", () => {});
     audioReady = true;
 
     // Optimized warm-up without setTimeout
     try {
-        const warm = ticksBase.cloneNode();
+        const warm = magicBase.cloneNode();
         warm.muted = true;
         warm.currentTime = 0;
         warm.play()
@@ -162,10 +129,6 @@ function setupAudio() {
 function getChimeVol(settings) {
     const v = Number(settings?.chimeVolume);
     return Number.isFinite(v) ? v : HOD_CHIME_VOL_DEFAULT;
-}
-function getTickVol(settings) {
-    const v = Number(settings?.tickVolume);
-    return Number.isFinite(v) ? v : TICK_VOL_DEFAULT;
 }
 function play(base, vol) {
     if (!audioReady) return;
@@ -580,15 +543,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Simple audio handling based on alert data
         const isHOD = p.isHighOfDay === true;
-        const isUptick = Number.isFinite(p.hp) && p.hp > 0;
         
         if (isHOD && shouldPlayHodChime(sym)) {
-            play(magicBase, getChimeVol(state.settings));
-        } else if (isUptick && shouldPlayTick(sym)) {
-            // Use a default proximity for tick volume
-            const user = clamp(getTickVol(state.settings), 0, 1);
-            const vol = clamp(user * 0.5, 0, 1); // Default 50% volume for ticks
-            play(ticksBase, vol);
+            // Use centralized audio system for HOD chime
+            if (window.audioAPI) {
+                window.audioAPI.playHodChime().catch((error) => {
+                    console.error("Error playing HOD chime via centralized system:", error);
+                });
+            } else {
+                console.warn("⚠️ Centralized audio API not available, skipping HOD chime");
+            }
         }
     });
 
@@ -608,29 +572,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 /* 8) Production helpers */
 // Minimal test functions for production use
-window.hodTickTest = (p = 0.0) => {
-    const user = clamp(getTickVol(state.settings), 0, 1);
-    const eased = Math.pow(clamp(p, 0, 1), TICK_VOL_EASE);
-    const shaped = TICK_VOL_FLOOR + (1 - TICK_VOL_FLOOR) * eased;
-    const vol = clamp(user * shaped, 0, 1);
-    play(ticksBase, vol);
-};
 
 window.hodChimeTest = () => {
-    const vol = getChimeVol(state.settings);
-    play(magicBase, vol);
+    console.log("🎧 HOD view forwarding chime test to centralized audio system...");
+    if (window.audioAPI) {
+        window.audioAPI.testHodChime();
+    } else {
+        console.warn("⚠️ Centralized audio API not available");
+    }
 };
 
-// IPC listeners for audio test commands
-if (window.ipcListenerAPI) {
-    window.ipcListenerAPI.onTestChimeAlert(() => {
-        window.hodChimeTest();
-    });
-
-    window.ipcListenerAPI.onTestTickAlert(() => {
-        window.hodTickTest(0.5);
-    });
-}
+// IPC listeners removed - now using centralized audio system
 
 // Test function for price updates - call from browser console
 window.testHodPriceUpdate = (symbol, newPrice) => {

@@ -98,8 +98,10 @@ const symbolDowntickTimers = new Map();
 const symbolDownNoteIndices = new Map();
 const symbolComboLastPrice = new Map();
 const symbolDownComboLastPrice = new Map();
+const symbolActiveTickerLastSet = new Map(); // Track when each symbol was last set as active ticker
 
 const UPTICK_WINDOW_MS = 60_000;
+const ACTIVE_TICKER_DEBOUNCE_MS = 30_000; // 30 seconds debounce for setting active ticker
 
 // Minimum volume required to reach each combo leve
 const COMBO_VOLUME_REQUIREMENTS = [
@@ -117,71 +119,15 @@ const SAMPLE_COUNTS = { short: 32, long: 32 }; // your folders
 const SAMPLE_BASE = new URL(".", window.location.href).toString();
 const LONG_THRESHOLD_DEFAULT = 10_000; // volume cutoff for long pack
 
-let audioCtx = null;
-function getAudioCtx() {
-    if (!audioCtx || audioCtx.state === "closed") {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    } else if (audioCtx.state === "suspended") {
-        audioCtx.resume();
-    }
-    return audioCtx;
-}
-
-// Buffers: { short: AudioBuffer[], long: AudioBuffer[] }
-const sampleBuffers = { short: [], long: [] };
-
-async function loadSampleToBuffer(url) {
-    const ctx = getAudioCtx();
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch ${url}`);
-    const arr = await res.arrayBuffer();
-    return await ctx.decodeAudioData(arr);
-}
-
-async function preloadBank(bank, count) {
-    const jobs = [];
-    for (let i = 1; i <= count; i++) {
-        const url = `${SAMPLE_BASE}/${bank}/${i}.mp3`;
-        jobs.push(
-            loadSampleToBuffer(url)
-                .then((buf) => (sampleBuffers[bank][i - 1] = buf))
-                .catch((e) => console.warn("Audio load failed:", url, e))
-        );
-    }
-    await Promise.all(jobs);
-}
-
-async function preloadAllSamples() {
-    await Promise.all([preloadBank("short", SAMPLE_COUNTS.short), preloadBank("long", SAMPLE_COUNTS.long)]);
-    if (debugMode)
-        console.log("🎧 Sample packs ready:", {
-            short: sampleBuffers.short.filter(Boolean).length,
-            long: sampleBuffers.long.filter(Boolean).length,
-        });
-}
+// Audio loading removed - now using centralized audio system in progress window
 
 function levelToIndex(level, count) {
     const lv = Math.max(0, level | 0);
     return lv % Math.max(1, count);
 }
 
-function pickBankByVolume(strength) {
-    const threshold = Number(window?.settings?.events?.longSampleThreshold) || LONG_THRESHOLD_DEFAULT;
-    return strength >= threshold ? "long" : "short";
-}
 
-function playSampleBuffer(bank, index, volume = 1.0) {
-    const ctx = getAudioCtx();
-    const buf = sampleBuffers[bank][index];
-    if (!buf) return false;
-    const src = ctx.createBufferSource();
-    const gain = ctx.createGain();
-    gain.gain.value = Math.max(0.001, Math.min(1, volume));
-    src.buffer = buf;
-    src.connect(gain).connect(ctx.destination);
-    src.start();
-    return true;
-}
+// playSampleBuffer removed - now using centralized audio system
 
 // ============================
 // Utility: Parse Volume String
@@ -214,10 +160,10 @@ function abbreviatedValues(num) {
     return (num / 1_000_000).toFixed(1) + "M";
 }
 
-function getComboVolume() {
-    const v = Number(window?.settings?.events?.comboVolume);
-    if (!Number.isFinite(v)) return 0.5;
-    return Math.min(1, Math.max(0, v)); // clamp 0..1
+// Determine if we should use long or short combo alerts based on volume strength
+function shouldUseLongAlert(strength) {
+    const threshold = Number(window?.settings?.events?.longSampleThreshold) || LONG_THRESHOLD_DEFAULT;
+    return strength >= threshold;
 }
 
 function comboPercentFromLevel(level) {
@@ -241,7 +187,7 @@ async function initializeApp() {
     
     // DOM is already loaded, proceed with initialization
     window.settings = await window.settingsAPI.get();
-    await preloadAllSamples();
+    // Audio preloading removed - now handled by centralized system
 
     window.settingsAPI.onUpdate(async (updatedSettings) => {
         console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
@@ -402,6 +348,7 @@ async function initializeApp() {
             symbolUptickTimers.delete(symbol);
             symbolNoteIndices.delete(symbol);
             symbolComboLastPrice.delete(symbol);
+            // Note: We don't delete symbolActiveTickerLastSet here as it should persist across combo resets
         }
 
         // Use more efficient selector and batch DOM operations
@@ -490,28 +437,45 @@ async function initializeApp() {
                             symbolNoteIndices.set(symbol, nextLevel);
                             symbolComboLastPrice.set(symbol, price);
 
-                            // 🎯 Auto-set as active ticker when reaching level 4 combo
+                            // 🎯 Auto-set as active ticker when reaching level 4 combo (with debouncing)
                             if (nextLevel >= 4) {
-                                if (window.activeAPI?.setActiveTicker) {
-                                    window.activeAPI.setActiveTicker(symbol);
-                                    console.log(`🎯 [EVENTS] Auto-set active ticker (LV${nextLevel} combo): ${symbol}`);
+                                const lastSetTime = symbolActiveTickerLastSet.get(symbol) || 0;
+                                const timeSinceLastSet = now - lastSetTime;
+                                
+                                if (timeSinceLastSet >= ACTIVE_TICKER_DEBOUNCE_MS) {
+                                    if (window.activeAPI?.setActiveTicker) {
+                                        window.activeAPI.setActiveTicker(symbol);
+                                        symbolActiveTickerLastSet.set(symbol, now);
+                                        console.log(`🎯 [EVENTS] Auto-set active ticker (LV${nextLevel} combo): ${symbol}`);
+                                    } else {
+                                        console.warn(`⚠️ [EVENTS] Could not set active ticker - activeAPI not available: ${symbol}`);
+                                    }
                                 } else {
-                                    console.warn(`⚠️ [EVENTS] Could not set active ticker - activeAPI not available: ${symbol}`);
+                                    const remainingTime = Math.ceil((ACTIVE_TICKER_DEBOUNCE_MS - timeSinceLastSet) / 1000);
+                                    if (debugMode && debugCombo) {
+                                        console.log(`⏳ [EVENTS] Active ticker debounced for ${symbol} (${remainingTime}s remaining)`);
+                                    }
                                 }
                             }
 
                             if (nextLevel >= 2 && !quietTime && now - lastAudioTime >= MIN_AUDIO_INTERVAL_MS) {
-                                const bank = pickBankByVolume(strength); // "short" | "long"
-                                const count = SAMPLE_COUNTS[bank];
-                                const idx = levelToIndex(nextLevel, count);
-                                const vol = Math.max(0.1, getComboVolume()); // 0..1
-
-                                playSampleBuffer(bank, idx, vol); // fire-and-forget
+                                // Emit audio event to centralized audio system
+                                const isLongAlert = shouldUseLongAlert(strength);
+                                
+                                // Use centralized audio API - pass combo level and strength
+                                if (window.audioAPI) {
+                                    window.audioAPI.playEventsCombo(strength, isLongAlert, nextLevel).catch(error => {
+                                        console.error("❌ Failed to play combo audio:", error);
+                                    });
+                                } else {
+                                    console.warn("⚠️ Centralized audio API not available, skipping audio");
+                                }
+                                
                                 lastAudioTime = now;
                                 performanceStats.audioPlayed++;
 
                                 if (debugMode && debugCombo) {
-                                    console.log(`🎧 ${symbol} ${bank}#${idx + 1} (LV${nextLevel}, vol=${vol.toFixed(2)})`);
+                                    console.log(`🎧 ${symbol} ${isLongAlert ? 'long' : 'short'} (LV${nextLevel}, strength=${strength})`);
                                 }
                             }
 
@@ -634,6 +598,7 @@ function performCleanup() {
         symbolDownNoteIndices.delete(symbol);
         symbolComboLastPrice.delete(symbol);
         symbolDownComboLastPrice.delete(symbol);
+        symbolActiveTickerLastSet.delete(symbol);
     });
     
     performanceStats.lastCleanup = now;
@@ -653,10 +618,7 @@ window.getEventsPerformanceStats = () => {
         ...performanceStats,
         activeSymbols: symbolUptickTimers.size + symbolDowntickTimers.size,
         domElements: logElement ? logElement.children.length : 0,
-        audioBuffersLoaded: {
-            short: sampleBuffers.short.filter(Boolean).length,
-            long: sampleBuffers.long.filter(Boolean).length
-        },
+        audioBuffersLoaded: "handled by centralized system",
         blinkManager: {
             currentBlinkType: blinkManager.currentBlinkType || 'none',
             activeElements: blinkManager.activeElements.size,
@@ -667,58 +629,14 @@ window.getEventsPerformanceStats = () => {
     return stats;
 };
 
-// Test functions for audio alerts
+// Test function for combo alerts - forward to centralized system
 window.testComboAlert = () => {
-    console.log("Testing combo alert sound...");
-    const volume = getComboVolume();
-    const bank = "short"; // Use short samples for testing
-    const index = levelToIndex(3, SAMPLE_COUNTS.short); // Test with level 3
-    console.log(`[Combo Test] Volume: ${volume}, Bank: ${bank}, Index: ${index}, Buffers loaded: ${sampleBuffers[bank]?.length || 0}`);
-    const success = playSampleBuffer(bank, index, volume);
-    console.log(`[Combo Test] Play result: ${success}`);
-};
-
-// Test function to verify first combo level is muted
-window.testComboLevels = () => {
-    console.log("Testing combo level audio thresholds...");
-    const volume = getComboVolume();
-    const bank = "short";
-    
-    // Test level 1 (should be muted)
-    console.log("Testing Level 1 (should be muted):");
-    const level1Condition = 1 >= 2; // This simulates the new condition
-    console.log(`Level 1 would play: ${level1Condition} (should be false)`);
-    
-    // Test level 2 (should play)
-    console.log("Testing Level 2 (should play):");
-    const level2Condition = 2 >= 2; // This simulates the new condition
-    console.log(`Level 2 would play: ${level2Condition} (should be true)`);
-    if (level2Condition) {
-        const index = levelToIndex(2, SAMPLE_COUNTS.short);
-        const success = playSampleBuffer(bank, index, volume);
-        console.log(`Level 2 play result: ${success}`);
+    console.log("🎧 Events view forwarding combo test to centralized audio system...");
+    if (window.audioAPI) {
+        window.audioAPI.testEventsCombo();
+    } else {
+        console.warn("⚠️ Centralized audio API not available");
     }
-    
-    // Test level 3 (should play)
-    console.log("Testing Level 3 (should play):");
-    const level3Condition = 3 >= 2; // This simulates the new condition
-    console.log(`Level 3 would play: ${level3Condition} (should be true)`);
-    if (level3Condition) {
-        const index = levelToIndex(3, SAMPLE_COUNTS.short);
-        const success = playSampleBuffer(bank, index, volume);
-        console.log(`Level 3 play result: ${success}`);
-    }
-};
-
-window.testScannerAlert = () => {
-    console.log("Testing scanner alert sound...");
-    // For scanner alerts, we can use a different sample or the same combo sound
-    const volume = getComboVolume();
-    const bank = "short";
-    const index = levelToIndex(1, SAMPLE_COUNTS.short); // Test with level 1
-    console.log(`[Scanner Test] Volume: ${volume}, Bank: ${bank}, Index: ${index}, Buffers loaded: ${sampleBuffers[bank]?.length || 0}`);
-    const success = playSampleBuffer(bank, index, volume);
-    console.log(`[Scanner Test] Play result: ${success}`);
 };
 
 // Test function for blink animation system
@@ -748,6 +666,30 @@ window.testBlinkAnimations = () => {
         }, 1000);
     } else {
         console.log("No alert elements found for testing");
+    }
+};
+
+// Test function for active ticker debouncing
+window.testActiveTickerDebouncing = (symbol = 'TEST') => {
+    console.log(`🧪 Testing active ticker debouncing for ${symbol}`);
+    console.log(`Current debounce map:`, Object.fromEntries(symbolActiveTickerLastSet));
+    
+    const now = Date.now();
+    const lastSetTime = symbolActiveTickerLastSet.get(symbol) || 0;
+    const timeSinceLastSet = now - lastSetTime;
+    const remainingTime = Math.ceil((ACTIVE_TICKER_DEBOUNCE_MS - timeSinceLastSet) / 1000);
+    
+    console.log(`Last set time: ${new Date(lastSetTime).toLocaleTimeString()}`);
+    console.log(`Time since last set: ${Math.ceil(timeSinceLastSet / 1000)}s`);
+    console.log(`Remaining debounce time: ${Math.max(0, remainingTime)}s`);
+    console.log(`Can set active ticker: ${timeSinceLastSet >= ACTIVE_TICKER_DEBOUNCE_MS}`);
+    
+    // Simulate setting the active ticker
+    if (timeSinceLastSet >= ACTIVE_TICKER_DEBOUNCE_MS) {
+        symbolActiveTickerLastSet.set(symbol, now);
+        console.log(`✅ Would set active ticker for ${symbol}`);
+    } else {
+        console.log(`⏳ Debounced - would not set active ticker for ${symbol}`);
     }
 };
 

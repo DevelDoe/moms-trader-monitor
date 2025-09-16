@@ -182,16 +182,17 @@
                         <div style="margin-bottom: 15px;">
                             <div style="margin-bottom: 10px;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="radio" name="traderviewMode" id="heroesMode" value="heroes" style="margin-right: 10px;" />
-                                    <span class="toggle-label">Heroes Mode - Auto charts for top heroes</span>
-                                </label>
-                            </div>
-                            <div style="margin-bottom: 10px;">
-                                <label style="display: flex; align-items: center; cursor: pointer;">
                                     <input type="radio" name="traderviewMode" id="activeMode" value="active" style="margin-right: 10px;" />
                                     <span class="toggle-label">Active Mode - Auto chart for active symbol</span>
                                 </label>
                             </div>
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="traderviewMode" id="heroesMode" value="heroes" style="margin-right: 10px;" />
+                                    <span class="toggle-label">Heroes Mode - Auto charts for top heroes</span>
+                                </label>
+                            </div>
+                           
                         </div>
 
                         <!-- Auto Close Toggle -->
@@ -203,16 +204,6 @@
                             <span class="toggle-label">Auto-close windows when symbols change</span>
                         </div>
 
-                        <!-- Headless Mode Toggle -->
-                        <div class="toggle-row" style="margin-top: 10px;">
-                            <label class="switch">
-                                <input type="checkbox" id="enableHeadless" />
-                                <span class="slider round"></span>
-                            </label>
-                            <span class="toggle-label">Headless mode (no title bar) 
-                                <span style="color: #ff9800; font-size: 10px; font-style: italic;">- Highly experimental & hacky 🧪</span>
-                            </span>
-                        </div>
                     </div>
                 </section>
 
@@ -296,24 +287,15 @@
                     </label>
                 </section>
 
+
                 <section id="section-audio">
                     <h2>Audio</h2>
-                    
-                                         <!-- Audio Test Requirements Notice -->
-                     <div style="background-color: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 12px; margin-bottom: 20px; font-size: 13px;">
-                         <strong>⚠️ Audio Test Requirements:</strong><br/>
-                         The test buttons below will only work when the corresponding windows are open:<br/>
-                         • <strong>Test Combo:</strong> Requires "Chronicle Feed" window to be open<br/>
-                         • <strong>Test News:</strong> Requires "Notice Board" window to be open<br/>
-                         • <strong>Test Chime:</strong> Requires "Ledger of Summits" window to be open<br/>
-                         • <strong>Test Tick:</strong> Requires "Ledger of Summits" window to be open
-                     </div>
 
                     <label for="events-combo-volume">
                         Events combo volume:
                         <input type="range" id="events-combo-volume" min="0" max="1" step="0.05" />
                         <span id="events-combo-volume-value">50%</span>
-                        <button id="test-combo-btn" style="margin-left: 10px;" title="Test Events combo sound (requires Chronicle Feed window to be open)">Test Combo</button>
+                        <button id="test-combo-btn" style="margin-left: 10px;" title="Test Events combo sound">Test Combo</button>
                     </label>
 
                     
@@ -321,22 +303,16 @@
                         News alert volume:
                         <input type="range" id="news-alert-volume" min="0" max="1" step="0.05" />
                         <span id="news-alert-volume-value">50%</span>
-                        <button id="test-news-btn" style="margin-left: 10px;" title="Test News alert sound (requires Notice Board window to be open)">Test News</button>
+                        <button id="test-news-btn" style="margin-left: 10px;" title="Test News alert sound">Test News</button>
                     </label>
 
                     <label for="hod-chime-volume">
                         High of day chime volume:
                         <input type="range" id="hod-chime-volume" min="0" max="1" step="0.05" />
                         <span id="hod-chime-volume-value">50%</span>
-                        <button id="test-chime-btn" style="margin-left: 10px;" title="Test HOD chime sound (requires Ledger of Summits window to be open)">Test Chime</button>
+                        <button id="test-chime-btn" style="margin-left: 10px;" title="Test HOD chime sound">Test Chime</button>
                     </label>
 
-                    <label for="hod-tick-volume">
-                        High of day tick volume:
-                        <input type="range" id="hod-tick-volume" min="0" max="1" step="0.05" />
-                        <span id="hod-tick-volume-value">50%</span>
-                        <button id="test-tick-btn" style="margin-left: 10px;" title="Test HOD tick sound (requires Ledger of Summits window to be open)">Test Tick</button>
-                    </label>
                 </section>
             </div>
 
@@ -375,11 +351,6 @@
                             >Max Alerts:
                             <input type="number" id="max-alerts" step="1" placeholder="100" />
                         </label>
-                        <label for="scanner-volume"
-                            >Scanner Volume:
-                            <input type="range" id="scanner-volume" min="0" max="1" step="0.05" />
-                            <span id="scanner-volume-value">50%</span>
-                        </label>
                     </div>
                 </section>
             </div>
@@ -403,13 +374,6 @@
                     <label title="Enter 0 to disable limit"> Max Score: <input type="number" id="max-score" step="1" /> </label>
                 </section>
 
-                <div class="filter-section">
-                    <label> Max Frontline Entries : <input type="number" id="frontline-length" min="1" step="1" /> </label>
-                </div>
-
-                <div class="filter-section">
-                    <label> Max Heroes Entries: <input type="number" id="heroes-length" min="1" step="1" /> </label>
-                </div>
 
             </div>
 

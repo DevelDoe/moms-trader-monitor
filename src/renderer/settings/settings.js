@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.windowSettings = await window.windowSettingsAPI.getAll();
         console.log("Retrieved window settings:", window.windowSettings);
 
-        initializeGeneralSection();
+        await initializeGeneralSection();
         initializeScannerSection();
         initializeTopSection();
         initializeNewsSection();
@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.windowSettingsAPI.onUpdate(async (updated) => {
             window.windowSettings = updated || {};
             // Re-initialize general section to update window toggles
-            initializeGeneralSection();
+            await initializeGeneralSection();
         });
 
         const defaultTab = document.querySelector(".tablinks.active");
@@ -85,7 +85,7 @@ function clamp(n, lo, hi) {
     return Math.max(lo, Math.min(hi, n));
 }
 
-function initializeGeneralSection() {
+async function initializeGeneralSection() {
     console.log("Initializing General Section");
 
     // document.getElementById("show-bonuses-legend-board").addEventListener("click", () => {
@@ -319,26 +319,45 @@ function initializeGeneralSection() {
     const heroesModeRadio = document.getElementById("heroesMode");
     const activeModeRadio = document.getElementById("activeMode");
     const enableAutoCloseToggle = document.getElementById("enableAutoClose");
-    const enableHeadlessToggle = document.getElementById("enableHeadless");
 
-    // Initialize values from settings
-    const traderviewSettings = window.settings.traderview || {};
-    const autoModeEnabled = traderviewSettings.enableHeroes || traderviewSettings.enableActiveChart;
+    // Load initial values from traderview electron store
+    let traderviewSettings = {};
     
-    enableAutoModeToggle.checked = autoModeEnabled;
-    
-    // Set radio button based on which mode is enabled (exclusive)
-    if (traderviewSettings.enableHeroes) {
-        heroesModeRadio.checked = true;
-    } else if (traderviewSettings.enableActiveChart) {
-        activeModeRadio.checked = true;
-    } else {
-        // Default to active mode if neither is set but auto mode is enabled
-        activeModeRadio.checked = autoModeEnabled;
+    async function loadTraderviewSettings() {
+        try {
+            traderviewSettings = await window.traderviewSettingsAPI.get();
+            const autoModeEnabled = traderviewSettings.enableHeroes || traderviewSettings.enableActiveChart;
+            
+            enableAutoModeToggle.checked = autoModeEnabled;
+            
+            // Set radio button based on which mode is enabled (exclusive)
+            if (traderviewSettings.enableHeroes) {
+                heroesModeRadio.checked = true;
+            } else if (traderviewSettings.enableActiveChart) {
+                activeModeRadio.checked = true;
+            } else {
+                // Default to active mode if neither is set but auto mode is enabled
+                activeModeRadio.checked = autoModeEnabled;
+            }
+            
+            enableAutoCloseToggle.checked = traderviewSettings.autoClose ?? true;
+            
+            console.log("✅ Loaded Traderview settings:", traderviewSettings);
+        } catch (error) {
+            console.error("❌ Failed to load Traderview settings:", error);
+            // Fallback to defaults
+            traderviewSettings = {
+                visibility: false,
+                enableHeroes: false,
+                autoClose: true,
+                enableActiveChart: true,
+                autoCloseActive: true
+            };
+        }
     }
     
-    enableAutoCloseToggle.checked = traderviewSettings.autoClose ?? true;
-    enableHeadlessToggle.checked = traderviewSettings.headless ?? false;
+    // Load initial settings
+    loadTraderviewSettings();
 
     // Show/hide mode section based on auto mode toggle
     function toggleModeSection() {
@@ -355,49 +374,51 @@ function initializeGeneralSection() {
     enableAutoModeToggle.addEventListener("change", async (e) => {
         const autoModeEnabled = e.target.checked;
         
-        if (!autoModeEnabled) {
-            // Disable all modes when auto mode is turned off
-            window.settings.traderview = { 
-                ...window.settings.traderview, 
-                enableHeroes: false, 
-                enableActiveChart: false 
-            };
-            heroesModeRadio.checked = false;
-            activeModeRadio.checked = false;
-            
-            // Close all TradingView windows when disabling auto mode
-            if (window.traderviewAPI?.closeAllWindows) {
-                window.traderviewAPI.closeAllWindows();
-                console.log("🗑️ Closed all TradingView windows (auto mode disabled)");
+        try {
+            if (!autoModeEnabled) {
+                // Disable all modes when auto mode is turned off
+                await window.traderviewSettingsAPI.set({
+                    enableHeroes: false,
+                    enableActiveChart: false
+                });
+                heroesModeRadio.checked = false;
+                activeModeRadio.checked = false;
+                
+                // Close all TradingView windows when disabling auto mode
+                if (window.traderviewAPI?.closeAllWindows) {
+                    window.traderviewAPI.closeAllWindows();
+                    console.log("🗑️ Closed all TradingView windows (auto mode disabled)");
+                }
+            } else {
+                // When enabling auto mode, default to active mode
+                activeModeRadio.checked = true;
+                await window.traderviewSettingsAPI.set({
+                    enableHeroes: false,
+                    enableActiveChart: true
+                });
             }
-        } else {
-            // When enabling auto mode, default to active mode
-            activeModeRadio.checked = true;
-            window.settings.traderview = { 
-                ...window.settings.traderview, 
-                enableHeroes: false, 
-                enableActiveChart: true 
-            };
+            
+            toggleModeSection();
+        } catch (error) {
+            console.error("❌ Failed to save Traderview auto mode setting:", error);
         }
-        
-        toggleModeSection();
-        await window.settingsAPI.update(window.settings);
         console.log(`🔧 Auto TradingView Mode ${autoModeEnabled ? 'enabled' : 'disabled'}`);
     });
 
     // Mode selection - Exclusive radio buttons
-    function handleModeChange() {
+    async function handleModeChange() {
         const isHeroesMode = heroesModeRadio.checked;
         const isActiveMode = activeModeRadio.checked;
         
-        // Update settings with exclusive selection
-        window.settings.traderview = { 
-            ...window.settings.traderview, 
-            enableHeroes: isHeroesMode, 
-            enableActiveChart: isActiveMode 
-        };
-        
-        window.settingsAPI.update(window.settings);
+        try {
+            // Update settings with exclusive selection
+            await window.traderviewSettingsAPI.set({
+                enableHeroes: isHeroesMode,
+                enableActiveChart: isActiveMode
+            });
+        } catch (error) {
+            console.error("❌ Failed to save Traderview mode setting:", error);
+        }
         
         if (isHeroesMode) {
             console.log(`🦸 Switched to Heroes TradingView Mode`);
@@ -420,34 +441,22 @@ function initializeGeneralSection() {
     // Auto Close Toggle - Applies to both modes
     enableAutoCloseToggle.addEventListener("change", async (e) => {
         const autoClose = e.target.checked;
-        window.settings.traderview = { 
-            ...window.settings.traderview, 
-            autoClose, 
-            autoCloseActive: autoClose // Use same setting for both
-        };
-        await window.settingsAPI.update(window.settings);
-        console.log(`🗑️ Auto-close TradingView windows ${autoClose ? 'enabled' : 'disabled'}`);
+        
+        try {
+            await window.traderviewSettingsAPI.set({
+                autoClose,
+                autoCloseActive: autoClose // Use same setting for both
+            });
+            console.log(`🗑️ Auto-close TradingView windows ${autoClose ? 'enabled' : 'disabled'}`);
+        } catch (error) {
+            console.error("❌ Failed to save Traderview auto-close setting:", error);
+        }
     });
 
-    // Headless Mode Toggle
-    enableHeadlessToggle.addEventListener("change", async (e) => {
-        const headless = e.target.checked;
-        window.settings.traderview = { 
-            ...window.settings.traderview, 
-            headless 
-        };
-        await window.settingsAPI.update(window.settings);
-        console.log(`🎭 Headless TradingView windows ${headless ? 'enabled' : 'disabled'}`);
-        
-        // Note: Headless setting will apply to newly opened windows
-        // Existing windows will keep their current frame style
-    });
 
     // elements
     const hodChimeVolumeSlider = document.getElementById("hod-chime-volume");
-    const hodTickVolumeSlider = document.getElementById("hod-tick-volume");
     const hodChimeValue = document.getElementById("hod-chime-volume-value");
-    const hodTickValue = document.getElementById("hod-tick-volume-value");
     const hodSymbolLengthInput = document.getElementById("hod-symbol-length");
     const eventsComboVolumeSlider = document.getElementById("events-combo-volume");
     const eventsComboValue = document.getElementById("events-combo-volume-value");
@@ -455,12 +464,10 @@ function initializeGeneralSection() {
     const newsAlertValue = document.getElementById("news-alert-volume-value");
 
     // Ensure all elements exist before proceeding
-    if (!hodChimeVolumeSlider || !hodTickVolumeSlider || !hodChimeValue || !hodTickValue || !eventsComboVolumeSlider || !eventsComboValue || !newsAlertVolumeSlider || !newsAlertValue) {
+    if (!hodChimeVolumeSlider || !hodChimeValue || !eventsComboVolumeSlider || !eventsComboValue || !newsAlertVolumeSlider || !newsAlertValue) {
         console.error("❌ Audio control elements not found:", {
             hodChimeVolumeSlider,
-            hodTickVolumeSlider,
             hodChimeValue,
-            hodTickValue,
             eventsComboVolumeSlider,
             eventsComboValue,
             newsAlertVolumeSlider,
@@ -469,69 +476,67 @@ function initializeGeneralSection() {
         return;
     }
 
-    // ensure events settings structure + defaults
-    window.settings ||= {};
-    const before = JSON.stringify(window.settings);
-
-    window.settings.events ||= {}; // ✅ this was missing
-
-    if (typeof window.settings.events.comboVolume !== "number") window.settings.events.comboVolume = 0.5;
-
-    if (typeof window.settings.events.newsAlertVolume !== "number") window.settings.events.newsAlertVolume = 0.5;
-
-    const after = JSON.stringify(window.settings);
-    if (before !== after) {
-        // only write if we actually added defaults
-        window.settingsAPI.update(window.settings).catch(() => {});
+    // Audio settings now managed by centralized audio store
+    let audioSettings = {};
+    
+    async function loadAudioSettings() {
+        try {
+            audioSettings = await window.audioSettingsAPI.get();
+            console.log("🎵 Loaded audio settings:", audioSettings);
+        } catch (error) {
+            console.error("❌ Failed to load audio settings:", error);
+            // Use fallback settings
+            audioSettings = {
+                comboVolume: 0.55,
+                newsVolume: 0.8,
+                hodChimeVolume: 0.05
+            };
+        }
     }
+    
+    // Load initial audio settings
+    await loadAudioSettings();
 
-    // Load HOD settings from electron store
+    // Load HOD settings from electron store (only symbol length now)
     async function loadHodSettings() {
         try {
             const hodSettings = await window.hodSettingsAPI.get();
-            hodChimeVolumeSlider.value = hodSettings.chimeVolume || 0.05;
-            hodTickVolumeSlider.value = hodSettings.tickVolume || 0.05;
             if (hodSymbolLengthInput) {
                 hodSymbolLengthInput.value = hodSettings.symbolLength || 10;
             }
-            hodChimeValue.textContent = Math.round((hodSettings.chimeVolume || 0.05) * 100) + "%";
-            hodTickValue.textContent = Math.round((hodSettings.tickVolume || 0.05) * 100) + "%";
             console.log(`[Settings] Loaded HOD settings:`, hodSettings);
         } catch (error) {
             console.error(`[Settings] Failed to load HOD settings:`, error);
             // Set defaults
-            hodChimeVolumeSlider.value = 0.05;
-            hodTickVolumeSlider.value = 0.05;
             if (hodSymbolLengthInput) {
                 hodSymbolLengthInput.value = 10;
             }
-            hodChimeValue.textContent = "5%";
-            hodTickValue.textContent = "5%";
         }
     }
 
     // Load initial HOD settings
     loadHodSettings();
 
-    // set UI from settings
-    eventsComboVolumeSlider.value = window.settings.events.comboVolume;
-    eventsComboValue.textContent = Math.round(window.settings.events.comboVolume * 100) + "%";
-    newsAlertVolumeSlider.value = window.settings.events.newsAlertVolume;
-    newsAlertValue.textContent = Math.round(window.settings.events.newsAlertVolume * 100) + "%";
+    // set UI from centralized audio settings
+    eventsComboVolumeSlider.value = audioSettings.comboVolume;
+    eventsComboValue.textContent = Math.round(audioSettings.comboVolume * 100) + "%";
+    newsAlertVolumeSlider.value = audioSettings.newsVolume;
+    newsAlertValue.textContent = Math.round(audioSettings.newsVolume * 100) + "%";
+    hodChimeVolumeSlider.value = audioSettings.hodChimeVolume;
+    hodChimeValue.textContent = Math.round(audioSettings.hodChimeVolume * 100) + "%";
 
     // wire inputs → settings (parse to number, clamp 0..1)
     hodChimeVolumeSlider.addEventListener("input", async (e) => {
         const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
+        audioSettings.hodChimeVolume = v;
         hodChimeValue.textContent = Math.round(v * 100) + "%";
-        console.log(`[Settings] Saving chime volume: ${v}`);
-        await window.hodSettingsAPI.set({ chimeVolume: v });
+        try {
+            await window.audioSettingsAPI.set({ hodChimeVolume: v });
+        } catch (error) {
+            console.error("❌ Failed to save HOD chime volume:", error);
+        }
     });
 
-    hodTickVolumeSlider.addEventListener("input", async (e) => {
-        const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
-        hodTickValue.textContent = Math.round(v * 100) + "%";
-        await window.hodSettingsAPI.set({ tickVolume: v });
-    });
 
     // HOD symbol length input
     if (hodSymbolLengthInput) {
@@ -543,72 +548,67 @@ function initializeGeneralSection() {
 
     eventsComboVolumeSlider.addEventListener("input", async (e) => {
         const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
-        window.settings.events.comboVolume = v;
+        audioSettings.comboVolume = v;
         eventsComboValue.textContent = Math.round(v * 100) + "%";
-        await window.settingsAPI.update(window.settings);
+        try {
+            await window.audioSettingsAPI.set({ comboVolume: v });
+        } catch (error) {
+            console.error("❌ Failed to save combo volume:", error);
+        }
     });
 
     newsAlertVolumeSlider.addEventListener("input", async (e) => {
         const v = clamp(parseFloat(e.target.value) || 0, 0, 1);
-        window.settings.events.newsAlertVolume = v;
+        audioSettings.newsVolume = v;
         newsAlertValue.textContent = Math.round(v * 100) + "%";
-        await window.settingsAPI.update(window.settings);
+        try {
+            await window.audioSettingsAPI.set({ newsVolume: v });
+        } catch (error) {
+            console.error("❌ Failed to save news volume:", error);
+        }
     });
 
     // Test buttons for all audio types
     document.getElementById("test-chime-btn").addEventListener("click", async () => {
-        console.log("Testing chime...");
+        console.log("Testing HOD chime...");
         try {
-            if (window.audioTestAPI?.testChimeAlert) {
-                const result = await window.audioTestAPI.testChimeAlert();
-                console.log("Chime test result:", result);
+            if (window.audioAPI?.testHodChime) {
+                await window.audioAPI.testHodChime();
+                console.log("✅ HOD chime test completed");
             } else {
-                console.warn("audioTestAPI.testChimeAlert not available");
+                console.warn("⚠️ audioAPI.testHodChime not available");
             }
         } catch (error) {
-            console.error("Error testing chime:", error);
+            console.error("❌ Error testing HOD chime:", error);
         }
     });
 
-    document.getElementById("test-tick-btn").addEventListener("click", async () => {
-        console.log("Testing tick...");
-        try {
-            if (window.audioTestAPI?.testTickAlert) {
-                const result = await window.audioTestAPI.testTickAlert();
-                console.log("Tick test result:", result);
-            } else {
-                console.warn("audioTestAPI.testTickAlert not available");
-            }
-        } catch (error) {
-            console.error("Error testing tick:", error);
-        }
-    });
 
     document.getElementById("test-combo-btn").addEventListener("click", async () => {
-        console.log("Testing combo alert...");
+        console.log("Testing events combo alert...");
         try {
-            if (window.audioTestAPI?.testComboAlert) {
-                const result = await window.audioTestAPI.testComboAlert();
-                console.log("Combo test result:", result);
+            if (window.audioAPI?.testEventsCombo) {
+                await window.audioAPI.testEventsCombo();
+                console.log("✅ Events combo test completed");
             } else {
-                console.warn("audioTestAPI.testComboAlert not available");
+                console.warn("⚠️ audioAPI.testEventsCombo not available");
             }
         } catch (error) {
-            console.error("Error testing combo alert:", error);
+            console.error("❌ Error testing events combo:", error);
         }
     });
 
     document.getElementById("test-news-btn").addEventListener("click", async () => {
         console.log("Testing news alert...");
         try {
-            if (window.audioTestAPI?.testNewsAlert) {
-                const result = await window.audioTestAPI.testNewsAlert();
-                console.log("News test result:", result);
+            if (window.audioAPI?.testNewsAlert) {
+                await window.audioAPI.testNewsAlert();
+                console.log("✅ News alert test completed");
             } else {
-                console.warn("audioTestAPI.testNewsAlert not available");
+                console.warn("⚠️ audioAPI.testNewsAlert not available");
             }
         } catch (error) {
-            console.error("Error testing news alert:", error);
+            console.error("❌ Error testing news alert:", error);
         }
     });
 
@@ -643,17 +643,9 @@ function initializeGeneralSection() {
         }
     };
 
-    // Set up HOD settings update handler after elements are initialized
+    // Set up HOD settings update handler after elements are initialized (only symbol length)
     window.hodSettingsAPI.onUpdate(async (updated) => {
         if (updated) {
-            if (updated.chimeVolume !== undefined && hodChimeVolumeSlider) {
-                hodChimeVolumeSlider.value = updated.chimeVolume;
-                hodChimeValue.textContent = Math.round(updated.chimeVolume * 100) + "%";
-            }
-            if (updated.tickVolume !== undefined && hodTickVolumeSlider) {
-                hodTickVolumeSlider.value = updated.tickVolume;
-                hodTickValue.textContent = Math.round(updated.tickVolume * 100) + "%";
-            }
             if (updated.symbolLength !== undefined && hodSymbolLengthInput) {
                 hodSymbolLengthInput.value = updated.symbolLength;
             }
@@ -686,11 +678,9 @@ function initializeScannerSection() {
     const minChangePercentInput = document.getElementById("filter-change-percent");
     const minVolumeInput = document.getElementById("filter-volume");
     const maxAlertsInput = document.getElementById("max-alerts");
-    const volumeSlider = document.getElementById("scanner-volume");
-    const volumeValueDisplay = document.getElementById("scanner-volume-value");
 
     // Ensure all elements exist
-    if (!minPriceInput || !maxPriceInput || !directionSelect || !minChangePercentInput || !minVolumeInput || !maxAlertsInput || !volumeSlider || !volumeValueDisplay) {
+    if (!minPriceInput || !maxPriceInput || !directionSelect || !minChangePercentInput || !minVolumeInput || !maxAlertsInput) {
         console.error("❌ Scanner initialization error. Missing inputs:", {
             minPriceInput,
             maxPriceInput,
@@ -698,8 +688,6 @@ function initializeScannerSection() {
             minChangePercentInput,
             minVolumeInput,
             maxAlertsInput,
-            volumeSlider,
-            volumeValueDisplay,
         });
         return;
     }
@@ -711,7 +699,6 @@ function initializeScannerSection() {
     minChangePercentInput.value = window.settings.scanner.minChangePercent ?? "";
     minVolumeInput.value = window.settings.scanner.minVolume ?? "";
     maxAlertsInput.value = window.settings.scanner.maxAlerts ?? 100;
-    volumeSlider.value = window.settings.scanner.scannerVolume ?? 1;
 
     async function updateScannerSettings() {
         0;
@@ -730,8 +717,7 @@ function initializeScannerSection() {
                     direction: directionSelect.value || null,
                     minChangePercent: parseFloat(minChangePercentInput.value) || 0,
                     minVolume: parseInt(minVolumeInput.value, 10) || 0,
-                    maxAlerts: parseInt(maxAlertsInput.value, 10) || 100,
-                    scannerVolume: parseFloat(volumeSlider.value) ?? 0.5, // ✅ Volume setting added
+                    maxAlerts: parseInt(maxAlertsInput.value, 10) || 100
                 },
             };
 
@@ -751,10 +737,6 @@ function initializeScannerSection() {
     minChangePercentInput.addEventListener("input", updateScannerSettings);
     minVolumeInput.addEventListener("input", updateScannerSettings);
     maxAlertsInput.addEventListener("input", updateScannerSettings);
-    volumeSlider.addEventListener("input", (event) => {
-        volumeValueDisplay.textContent = `${Math.round(event.target.value * 100)}%`;
-        updateScannerSettings();
-    });
 }
 
 function initializeTopSection() {
@@ -774,8 +756,6 @@ function initializeTopSection() {
     const minScoreInput = document.getElementById("min-score");
     const maxScoreInput = document.getElementById("max-score");
     // const topTransparentToggle = document.getElementById("top-transparent-toggle");
-    const frontlineLengthInput = document.getElementById("frontline-length");
-    const heroesLengthInput = document.getElementById("heroes-length");
 
     // ✅ Set placeholder to reflect "No limit" if 0 is set
     minPriceInput.placeholder = minPriceInput.value === "0" ? "No limit" : "";
@@ -801,10 +781,6 @@ function initializeTopSection() {
     if (window.settings.top.maxVolume !== undefined) maxVolumeInput.value = window.settings.top.maxVolume;
 
     // if (window.settings.top.transparent !== undefined) topTransparentToggle.checked = window.settings.top.transparent;
-
-    // ✅ Load saved length settings
-    frontlineLengthInput.value = window.settings.top.frontlineListLength ?? 10;
-    heroesLengthInput.value = window.settings.top.heroesListLength ?? 3;
 
     async function updatePriceFilter() {
         try {
@@ -976,8 +952,7 @@ function initializeTopSection() {
     maxScoreInput.addEventListener("input", updateScoreFilter);
 
     // topTransparentToggle.addEventListener("change", updateTransparency);
-    frontlineLengthInput.addEventListener("input", () => updateListLength("frontline", frontlineLengthInput));
-    heroesLengthInput.addEventListener("input", () => updateListLength("heroes", heroesLengthInput));
+    
 }
 
 function initializeNewsSection() {

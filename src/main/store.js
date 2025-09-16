@@ -1,7 +1,6 @@
 const EventEmitter = require("events");
 const createLogger = require("../hlps/logger");
 const log = createLogger(__filename);
-// const { fetchHistoricalNews, subscribeToSymbolNews } = require("../../dump/news"); // Removed - news now handled by oracle.js
 const { computeBuffsForSymbol, calculateVolumeImpact } = require("./utils/buffLogic");
 const { DateTime } = require("luxon");
 

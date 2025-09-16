@@ -42,6 +42,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
     }),
     sendAuthInfo: (info) => ipcRenderer.send("set-auth-info", info),
     login: (email, password) => ipcRenderer.invoke("login", { email, password }),
+    
+    // IPC access for progress window audio commands
+    ipc: {
+        on: (channel, callback) => ipcRenderer.on(channel, callback),
+        off: (channel, callback) => ipcRenderer.off(channel, callback),
+        invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+        send: (channel, ...args) => ipcRenderer.send(channel, ...args),
+    },
 });
 
 contextBridge.exposeInMainWorld("splashAPI", {
@@ -185,6 +193,9 @@ contextBridge.exposeInMainWorld("traderviewAPI", {
     openTickersNow: (tickers) => ipcRenderer.send("open-traderview-tickers", tickers),
     closeTickerNow: (ticker) => ipcRenderer.send("close-traderview-ticker", ticker),
     closeAllWindows: () => ipcRenderer.send("close-all-traderview-windows"),
+    setFullscreen: (symbol, fullscreen = true, delayMs = 2000) => ipcRenderer.invoke("tradingview-fullscreen", symbol, fullscreen, delayMs),
+    enterFullscreen: (symbol, delayMs = 2000) => ipcRenderer.invoke("tradingview-fullscreen", symbol, true, delayMs),
+    exitFullscreen: (symbol, delayMs = 500) => ipcRenderer.invoke("tradingview-fullscreen", symbol, false, delayMs),
 });
 
 contextBridge.exposeInMainWorld("progressAPI", {
@@ -244,13 +255,14 @@ contextBridge.exposeInMainWorld("sessionHistoryAPI", {
     deactivate: () => ipcRenderer.send("deactivate-sessionHistory"),
 });
 
-// Audio Test API
-contextBridge.exposeInMainWorld("audioTestAPI", {
-    testComboAlert: () => ipcRenderer.invoke("test-combo-alert"),
-    testNewsAlert: () => ipcRenderer.invoke("test-news-alert"),
-    testChimeAlert: () => ipcRenderer.invoke("test-chime-alert"),
-    testTickAlert: () => ipcRenderer.invoke("test-tick-alert"),
-    testScannerAlert: () => ipcRenderer.invoke("test-scanner-alert"),
+// Centralized Audio API
+contextBridge.exposeInMainWorld("audioAPI", {
+    playNewsAlert: () => ipcRenderer.invoke("audio:play-news-alert"),
+    playHodChime: () => ipcRenderer.invoke("audio:play-hod-chime"),
+    playEventsCombo: (strength, isLongAlert, comboLevel) => ipcRenderer.invoke("audio:play-events-combo", { strength, isLongAlert, comboLevel }),
+    testNewsAlert: () => ipcRenderer.invoke("audio:test-news-alert"),
+    testHodChime: () => ipcRenderer.invoke("audio:test-hod-chime"),
+    testEventsCombo: () => ipcRenderer.invoke("audio:test-events-combo"),
 });
 
 // IPC Listener API for renderer windows
@@ -380,6 +392,54 @@ contextBridge.exposeInMainWorld("filingFilterSettingsAPI", {
         ipcRenderer.on("filing-filter-settings:change", handler);
         ipcRenderer.send("filing-filter-settings:subscribe");
         return () => ipcRenderer.removeListener("filing-filter-settings:change", handler);
+    },
+});
+
+// Frontline Settings API
+contextBridge.exposeInMainWorld("frontlineSettingsAPI", {
+    get: () => ipcRenderer.invoke("frontline-settings:get"),
+    set: (settings) => ipcRenderer.invoke("frontline-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("frontline-settings:change", handler);
+        ipcRenderer.send("frontline-settings:subscribe");
+        return () => ipcRenderer.removeListener("frontline-settings:change", handler);
+    },
+});
+
+// Heroes Settings API
+contextBridge.exposeInMainWorld("heroesSettingsAPI", {
+    get: () => ipcRenderer.invoke("heroes-settings:get"),
+    set: (settings) => ipcRenderer.invoke("heroes-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("heroes-settings:change", handler);
+        ipcRenderer.send("heroes-settings:subscribe");
+        return () => ipcRenderer.removeListener("heroes-settings:change", handler);
+    },
+});
+
+// Traderview Settings API
+contextBridge.exposeInMainWorld("traderviewSettingsAPI", {
+    get: () => ipcRenderer.invoke("traderview-settings:get"),
+    set: (settings) => ipcRenderer.invoke("traderview-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("traderview-settings:change", handler);
+        ipcRenderer.send("traderview-settings:subscribe");
+        return () => ipcRenderer.removeListener("traderview-settings:change", handler);
+    },
+});
+
+// Audio Settings API
+contextBridge.exposeInMainWorld("audioSettingsAPI", {
+    get: () => ipcRenderer.invoke("audio-settings:get"),
+    set: (settings) => ipcRenderer.invoke("audio-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("audio-settings:change", handler);
+        ipcRenderer.send("audio-settings:subscribe");
+        return () => ipcRenderer.removeListener("audio-settings:change", handler);
     },
 });
 

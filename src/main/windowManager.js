@@ -240,16 +240,12 @@ function registerTradingViewWindow(symbol = "AAPL", isDev = false) {
     const sharedKey = "traderviewWindow_shared";
     const state = getWindowState(sharedKey) || {}; // Ensure state is never null
     
-    // Load settings to check headless mode
-    const settings = loadSettings();
-    const isHeadless = settings.traderview?.headless ?? false;
-
     win = new BrowserWindow({
         width: state.width || 850,
         height: state.height || 660,
         x: state.x,
         y: state.y,
-        frame: !isHeadless, // No frame if headless mode is enabled
+        frame: true,
         backgroundColor: "#00000000",
         webPreferences: {
             preload: path.join(__dirname, "../renderer/preload.js"),
@@ -260,14 +256,8 @@ function registerTradingViewWindow(symbol = "AAPL", isDev = false) {
 
     const encoded = encodeURIComponent(symbol);
     
-    if (isHeadless) {
-        // Load custom headless HTML with drag handle
-        const headlessPath = path.join(__dirname, "../renderer/traderview/traderview-headless.html");
-        win.loadFile(headlessPath, { query: { symbol: symbol } });
-    } else {
-        // Load TradingView directly
-        win.loadURL(`https://www.tradingview.com/chart/?symbol=${encoded}`);
-    }
+    // Load TradingView directly
+    win.loadURL(`https://www.tradingview.com/chart/?symbol=${encoded}`);
     
     win.symbolLoaded = symbol;
 
@@ -359,6 +349,61 @@ function getOpenTradingViewSymbols() {
     });
 }
 
+function setTradingViewFullscreen(symbol, fullscreen = true, delayMs = 2000) {
+    const win = tradingViewWindows.get(symbol);
+    if (!win || win.isDestroyed()) {
+        log.warn(`TradingView window for ${symbol} not found`);
+        return Promise.resolve(false);
+    }
+
+    return new Promise((resolve) => {
+        // Ensure window has focus first
+        win.focus();
+        
+        setTimeout(() => {
+            try {
+                log.log(`📺 Setting TradingView fullscreen for ${symbol} to: ${fullscreen}`);
+                
+                if (fullscreen) {
+                    // Send Shift+F to enter fullscreen (TradingView's native shortcut)
+                    win.webContents.sendInputEvent({
+                        type: 'keyDown',
+                        keyCode: 'F',
+                        modifiers: ['shift']
+                    });
+                    
+                    // Release the key after a short delay
+                    setTimeout(() => {
+                        win.webContents.sendInputEvent({
+                            type: 'keyUp',
+                            keyCode: 'F',
+                            modifiers: ['shift']
+                        });
+                    }, 100);
+                } else {
+                    // Send Escape to exit fullscreen
+                    win.webContents.sendInputEvent({
+                        type: 'keyDown',
+                        keyCode: 'Escape'
+                    });
+                    
+                    setTimeout(() => {
+                        win.webContents.sendInputEvent({
+                            type: 'keyUp',
+                            keyCode: 'Escape'
+                        });
+                    }, 100);
+                }
+                
+                resolve(true);
+            } catch (error) {
+                log.error('Failed to set TradingView fullscreen:', error);
+                resolve(false);
+            }
+        }, delayMs);
+    });
+}
+
 module.exports = {
     ...module.exports,
     registerTradingViewWindow, // ✅
@@ -366,4 +411,5 @@ module.exports = {
     destroyTradingViewWindows,
     updateTradingViewWindows,
     getOpenTradingViewSymbols, // ✅ New helper function
+    setTradingViewFullscreen, // ✅ New fullscreen function
 };
