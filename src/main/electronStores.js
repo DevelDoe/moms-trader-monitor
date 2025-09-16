@@ -2037,14 +2037,18 @@ const audioSettingsBus = new EventEmitter();
 let _audioComboVolume = audioSettingsStore.get("comboVolume", 0.55);
 let _audioNewsVolume = audioSettingsStore.get("newsVolume", 1.0);
 let _audioHodChimeVolume = audioSettingsStore.get("hodChimeVolume", 0.05);
-let _audioMuted = audioSettingsStore.get("muted", false);
+let _audioComboMuted = audioSettingsStore.get("comboMuted", false);
+let _audioNewsMuted = audioSettingsStore.get("newsMuted", false);
+let _audioChimeMuted = audioSettingsStore.get("chimeMuted", false);
 
 function getAudioSettings() {
     return {
         comboVolume: _audioComboVolume,
         newsVolume: _audioNewsVolume,
         hodChimeVolume: _audioHodChimeVolume,
-        muted: _audioMuted
+        comboMuted: _audioComboMuted,
+        newsMuted: _audioNewsMuted,
+        chimeMuted: _audioChimeMuted
     };
 }
 
@@ -2069,9 +2073,21 @@ function setAudioSettings(settings) {
         changed = true;
     }
     
-    if (settings.muted !== undefined && settings.muted !== _audioMuted) {
-        _audioMuted = Boolean(settings.muted);
-        audioSettingsStore.set("muted", _audioMuted);
+    if (settings.comboMuted !== undefined && settings.comboMuted !== _audioComboMuted) {
+        _audioComboMuted = Boolean(settings.comboMuted);
+        audioSettingsStore.set("comboMuted", _audioComboMuted);
+        changed = true;
+    }
+    
+    if (settings.newsMuted !== undefined && settings.newsMuted !== _audioNewsMuted) {
+        _audioNewsMuted = Boolean(settings.newsMuted);
+        audioSettingsStore.set("newsMuted", _audioNewsMuted);
+        changed = true;
+    }
+    
+    if (settings.chimeMuted !== undefined && settings.chimeMuted !== _audioChimeMuted) {
+        _audioChimeMuted = Boolean(settings.chimeMuted);
+        audioSettingsStore.set("chimeMuted", _audioChimeMuted);
         changed = true;
     }
     
@@ -2105,8 +2121,16 @@ function setAudioHodChimeVolume(volume) {
     return setAudioSettings({ hodChimeVolume: volume });
 }
 
-function setAudioMuted(muted) {
-    return setAudioSettings({ muted: muted });
+function setAudioComboMuted(muted) {
+    return setAudioSettings({ comboMuted: muted });
+}
+
+function setAudioNewsMuted(muted) {
+    return setAudioSettings({ newsMuted: muted });
+}
+
+function setAudioChimeMuted(muted) {
+    return setAudioSettings({ chimeMuted: muted });
 }
 
 if (app && ipcMain && typeof app.on === "function" && !app.__audio_settings_ipc_registered__) {
@@ -2774,7 +2798,9 @@ module.exports = {
     setAudioComboVolume,
     setAudioNewsVolume,
     setAudioHodChimeVolume,
-    setAudioMuted,
+    setAudioComboMuted,
+    setAudioNewsMuted,
+    setAudioChimeMuted,
     
     // For testing - expose IPC handlers and stores
     ipcMain: app && ipcMain ? ipcMain : undefined,

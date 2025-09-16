@@ -291,19 +291,12 @@
                 <section id="section-audio">
                     <h2>Audio</h2>
 
-                    <div class="toggle-row">
-                        <label class="switch">
-                            <input type="checkbox" id="audio-mute-toggle" />
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="toggle-label">Mute All Audio Alerts</span>
-                    </div>
-
                     <label for="events-combo-volume">
                         Events combo volume:
                         <input type="range" id="events-combo-volume" min="0" max="1" step="0.05" />
                         <span id="events-combo-volume-value">50%</span>
                         <button id="test-combo-btn" style="margin-left: 10px;" title="Test Events combo sound">Test Combo</button>
+                        <button id="mute-combo-btn" style="margin-left: 10px;" title="Mute Events combo sound">🔇 Mute</button>
                     </label>
 
                     
@@ -312,6 +305,7 @@
                         <input type="range" id="news-alert-volume" min="0" max="1" step="0.05" />
                         <span id="news-alert-volume-value">50%</span>
                         <button id="test-news-btn" style="margin-left: 10px;" title="Test News alert sound">Test News</button>
+                        <button id="mute-news-btn" style="margin-left: 10px;" title="Mute News alert sound">🔇 Mute</button>
                     </label>
 
                     <label for="hod-chime-volume">
@@ -319,6 +313,7 @@
                         <input type="range" id="hod-chime-volume" min="0" max="1" step="0.05" />
                         <span id="hod-chime-volume-value">50%</span>
                         <button id="test-chime-btn" style="margin-left: 10px;" title="Test HOD chime sound">Test Chime</button>
+                        <button id="mute-chime-btn" style="margin-left: 10px;" title="Mute HOD chime sound">🔇 Mute</button>
                     </label>
 
                 </section>

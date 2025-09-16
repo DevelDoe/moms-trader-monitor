@@ -464,10 +464,12 @@ async function initializeGeneralSection() {
     const eventsComboValue = document.getElementById("events-combo-volume-value");
     const newsAlertVolumeSlider = document.getElementById("news-alert-volume");
     const newsAlertValue = document.getElementById("news-alert-volume-value");
-    const audioMuteToggle = document.getElementById("audio-mute-toggle");
+    const muteComboBtn = document.getElementById("mute-combo-btn");
+    const muteNewsBtn = document.getElementById("mute-news-btn");
+    const muteChimeBtn = document.getElementById("mute-chime-btn");
 
     // Ensure all elements exist before proceeding
-    if (!hodChimeVolumeSlider || !hodChimeValue || !eventsComboVolumeSlider || !eventsComboValue || !newsAlertVolumeSlider || !newsAlertValue || !audioMuteToggle) {
+    if (!hodChimeVolumeSlider || !hodChimeValue || !eventsComboVolumeSlider || !eventsComboValue || !newsAlertVolumeSlider || !newsAlertValue || !muteComboBtn || !muteNewsBtn || !muteChimeBtn) {
         console.error("❌ Audio control elements not found:", {
             hodChimeVolumeSlider,
             hodChimeValue,
@@ -475,7 +477,9 @@ async function initializeGeneralSection() {
             eventsComboValue,
             newsAlertVolumeSlider,
             newsAlertValue,
-            audioMuteToggle
+            muteComboBtn,
+            muteNewsBtn,
+            muteChimeBtn
         });
         return;
     }
@@ -494,7 +498,9 @@ async function initializeGeneralSection() {
                 comboVolume: 0.55,
                 newsVolume: 0.8,
                 hodChimeVolume: 0.05,
-                muted: false
+                comboMuted: false,
+                newsMuted: false,
+                chimeMuted: false
             };
         }
     }
@@ -529,7 +535,11 @@ async function initializeGeneralSection() {
     newsAlertValue.textContent = Math.round(audioSettings.newsVolume * 100) + "%";
     hodChimeVolumeSlider.value = audioSettings.hodChimeVolume;
     hodChimeValue.textContent = Math.round(audioSettings.hodChimeVolume * 100) + "%";
-    audioMuteToggle.checked = audioSettings.muted || false;
+    
+    // Update mute button states
+    updateMuteButtonState(muteComboBtn, audioSettings.comboMuted || false);
+    updateMuteButtonState(muteNewsBtn, audioSettings.newsMuted || false);
+    updateMuteButtonState(muteChimeBtn, audioSettings.chimeMuted || false);
 
     // wire inputs → settings (parse to number, clamp 0..1)
     hodChimeVolumeSlider.addEventListener("input", async (e) => {
@@ -574,15 +584,51 @@ async function initializeGeneralSection() {
         }
     });
 
-    // Mute toggle event listener
-    audioMuteToggle.addEventListener("change", async (e) => {
-        const muted = e.target.checked;
-        audioSettings.muted = muted;
+    // Helper function to update mute button appearance
+    function updateMuteButtonState(button, isMuted) {
+        if (isMuted) {
+            button.textContent = "🔊 Unmute";
+            button.style.backgroundColor = "#f44336"; // Red when muted
+        } else {
+            button.textContent = "🔇 Mute";
+            button.style.backgroundColor = "#4CAF50"; // Green when unmuted
+        }
+    }
+
+    // Individual mute button event listeners
+    muteComboBtn.addEventListener("click", async () => {
+        const newMuted = !audioSettings.comboMuted;
+        audioSettings.comboMuted = newMuted;
+        updateMuteButtonState(muteComboBtn, newMuted);
         try {
-            await window.audioSettingsAPI.set({ muted: muted });
-            console.log("🔇 Audio mute setting saved:", muted);
+            await window.audioSettingsAPI.set({ comboMuted: newMuted });
+            console.log("🔇 Events combo mute setting saved:", newMuted);
         } catch (error) {
-            console.error("❌ Failed to save mute setting:", error);
+            console.error("❌ Failed to save combo mute setting:", error);
+        }
+    });
+
+    muteNewsBtn.addEventListener("click", async () => {
+        const newMuted = !audioSettings.newsMuted;
+        audioSettings.newsMuted = newMuted;
+        updateMuteButtonState(muteNewsBtn, newMuted);
+        try {
+            await window.audioSettingsAPI.set({ newsMuted: newMuted });
+            console.log("🔇 News alert mute setting saved:", newMuted);
+        } catch (error) {
+            console.error("❌ Failed to save news mute setting:", error);
+        }
+    });
+
+    muteChimeBtn.addEventListener("click", async () => {
+        const newMuted = !audioSettings.chimeMuted;
+        audioSettings.chimeMuted = newMuted;
+        updateMuteButtonState(muteChimeBtn, newMuted);
+        try {
+            await window.audioSettingsAPI.set({ chimeMuted: newMuted });
+            console.log("🔇 HOD chime mute setting saved:", newMuted);
+        } catch (error) {
+            console.error("❌ Failed to save chime mute setting:", error);
         }
     });
 

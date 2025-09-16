@@ -733,7 +733,9 @@ const AudioManager = (() => {
         comboVolume: 0.55,
         newsVolume: 1.0,
         hodChimeVolume: 0.05,
-        muted: false
+        comboMuted: false,
+        newsMuted: false,
+        chimeMuted: false
     };
     
     // Audio instances cache
@@ -767,7 +769,9 @@ const AudioManager = (() => {
                 comboVolume: 0.55,
                 newsVolume: 1.0,
                 hodChimeVolume: 0.05,
-                muted: false
+                comboMuted: false,
+                newsMuted: false,
+                chimeMuted: false
             };
         }
     }
@@ -841,9 +845,9 @@ const AudioManager = (() => {
     // Play news alert audio
     function playNewsAlert() {
         try {
-            // Check if audio is muted
-            if (audioSettings.muted) {
-                console.log("🔇 Audio muted, skipping news alert");
+            // Check if news alert is muted
+            if (audioSettings.newsMuted) {
+                console.log("🔇 News alert muted, skipping");
                 return;
             }
             
@@ -866,9 +870,9 @@ const AudioManager = (() => {
     // Play HOD chime audio
     function playHodChime() {
         try {
-            // Check if audio is muted
-            if (audioSettings.muted) {
-                console.log("🔇 Audio muted, skipping HOD chime");
+            // Check if HOD chime is muted
+            if (audioSettings.chimeMuted) {
+                console.log("🔇 HOD chime muted, skipping");
                 return;
             }
             
@@ -891,9 +895,9 @@ const AudioManager = (() => {
     // Play events combo audio - replicates original playSampleBuffer function exactly
     function playEventsCombo(strength = 0, isLongAlert = false, comboLevel = 2) {
         try {
-            // Check if audio is muted
-            if (audioSettings.muted) {
-                console.log("🔇 Audio muted, skipping events combo");
+            // Check if events combo is muted
+            if (audioSettings.comboMuted) {
+                console.log("🔇 Events combo muted, skipping");
                 return;
             }
             
