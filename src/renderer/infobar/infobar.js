@@ -35,23 +35,42 @@ function maybeActivateFromSymbols(symbols) {
 function isNewsItemRecent(newsItem) {
     if (!newsItem) return false;
     
-    // Use the same timestamp extraction logic as news.js getTime() function
-    // Priority: updated_at -> created_at (matching news.js line 645)
-    const timestampStr = newsItem.updated_at || newsItem.created_at;
+    // Check updated_at first, then fall back to published_at (both NY time)
+    // This ensures we use the most recent timestamp available
+    const timestampStr = newsItem.updated_at || newsItem.published_at;
+    
+    console.log("📰 [INFOBAR] Age filter check:", {
+        headline: newsItem.headline?.substring(0, 50),
+        timestampStr: timestampStr,
+        updated_at: newsItem.updated_at,
+        created_at: newsItem.created_at,
+        received_at: newsItem.received_at,
+        published_at: newsItem.published_at
+    });
     
     if (!timestampStr) {
         console.log("📰 [INFOBAR] News item has no timestamp, skipping age filter");
         return true; // If no timestamp, allow it through
     }
     
+    // The timestamp is already in NY time, convert to milliseconds
     const itemTime = new Date(timestampStr).getTime();
-    const now = Date.now();
+    
+    // Convert current local time to NY time for comparison
+    const nowLocal = new Date();
+    const nowNY = new Date(nowLocal.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const now = nowNY.getTime();
+    
     const age = now - itemTime;
+    const ageMinutes = Math.round(age / 1000 / 60);
     
     const isRecent = age < MAX_AGE_MS;
     
+    console.log(`📰 [INFOBAR] Age calculation: ${ageMinutes} minutes old, isRecent: ${isRecent}, MAX_AGE_MS: ${MAX_AGE_MS}`);
+    console.log(`📰 [INFOBAR] Published: ${timestampStr}, Now NY: ${nowNY}, Age: ${age}ms`);
+    
     if (!isRecent) {
-        console.log(`📰 [INFOBAR] News item too old (${Math.round(age / 1000 / 60)} minutes), skipping:`, newsItem.headline?.substring(0, 50));
+        console.log(`📰 [INFOBAR] News item too old (${ageMinutes} minutes), skipping:`, newsItem.headline?.substring(0, 50));
     }
     
     return isRecent;
@@ -61,23 +80,33 @@ function isNewsItemRecent(newsItem) {
 function isFilingItemRecent(filingItem) {
     if (!filingItem) return false;
     
-    // Use the same timestamp extraction logic as news.js getFilingTime() function
-    // Priority: filing_date -> filed_at (matching news.js line 565)
-    const timestampStr = filingItem.filing_date || filingItem.filed_at;
+    // Use filing_date (NY time) to check if filing is recent
+    // This is the actual filing time, not when we received it
+    const timestampStr = filingItem.filing_date;
     
     if (!timestampStr) {
         console.log("📁 [INFOBAR] Filing item has no timestamp, skipping age filter");
         return true; // If no timestamp, allow it through
     }
     
+    // The timestamp is already in NY time, convert to milliseconds
     const itemTime = new Date(timestampStr).getTime();
-    const now = Date.now();
+    
+    // Convert current local time to NY time for comparison
+    const nowLocal = new Date();
+    const nowNY = new Date(nowLocal.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const now = nowNY.getTime();
+    
     const age = now - itemTime;
+    const ageMinutes = Math.round(age / 1000 / 60);
     
     const isRecent = age < MAX_AGE_MS;
     
+    console.log(`📁 [INFOBAR] Filing age calculation: ${ageMinutes} minutes old, isRecent: ${isRecent}`);
+    console.log(`📁 [INFOBAR] Filed: ${timestampStr}, Now NY: ${nowNY}, Age: ${age}ms`);
+    
     if (!isRecent) {
-        console.log(`📁 [INFOBAR] Filing item too old (${Math.round(age / 1000 / 60)} minutes), skipping:`, filingItem.symbol, filingItem.form_type);
+        console.log(`📁 [INFOBAR] Filing item too old (${ageMinutes} minutes), skipping:`, filingItem.symbol, filingItem.form_type);
     }
     
     return isRecent;
@@ -128,6 +157,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             console.log("📰 New news delta received:", newsItem.headline);
+            
+            // Debug: Log all available timestamp fields
+            console.log("📰 [INFOBAR] News item timestamp fields:", {
+                published_at: newsItem.published_at,
+                received_at: newsItem.received_at,
+                created_at: newsItem.created_at,
+                updated_at: newsItem.updated_at,
+                headline: newsItem.headline?.substring(0, 50)
+            });
             
             // Check if news item is recent (less than 4 minutes old)
             if (!isNewsItemRecent(newsItem)) {
@@ -575,14 +613,14 @@ window.testAgeFiltering = () => {
     // Test with a recent news item (1 minute old)
     const recentNews = {
         headline: "Test recent news",
-        updated_at: new Date(Date.now() - 1 * 60 * 1000).toISOString(), // 1 minute ago
+        published_at: new Date(Date.now() - 1 * 60 * 1000).toISOString(), // 1 minute ago
         id: "test-recent"
     };
     
     // Test with an old news item (5 minutes old)
     const oldNews = {
         headline: "Test old news",
-        updated_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
+        published_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
         id: "test-old"
     };
     
