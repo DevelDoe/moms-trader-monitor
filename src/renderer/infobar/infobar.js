@@ -35,39 +35,31 @@ function maybeActivateFromSymbols(symbols) {
 function isNewsItemRecent(newsItem) {
     if (!newsItem) return false;
     
-    // Check updated_at first, then fall back to published_at (both NY time)
-    // This ensures we use the most recent timestamp available
-    const timestampStr = newsItem.updated_at || newsItem.published_at;
+    // For age checking: use Unix timestamp if available, fallback to ISO string parsing
+    let newsTimestamp;
     
-    console.log("📰 [INFOBAR] Age filter check:", {
-        headline: newsItem.headline?.substring(0, 50),
-        timestampStr: timestampStr,
-        updated_at: newsItem.updated_at,
-        created_at: newsItem.created_at,
-        received_at: newsItem.received_at,
-        published_at: newsItem.published_at
-    });
-    
-    if (!timestampStr) {
-        console.log("📰 [INFOBAR] News item has no timestamp, skipping age filter");
-        return true; // If no timestamp, allow it through
+    if (newsItem.received_at_unix) {
+        newsTimestamp = newsItem.received_at_unix * 1000; // Convert to milliseconds
+    } else {
+        // Check updated_at first, then fall back to published_at (both NY time)
+        const timestampStr = newsItem.updated_at || newsItem.published_at;
+        
+        if (!timestampStr) {
+            console.log("📰 [INFOBAR] News item has no timestamp, skipping age filter");
+            return true; // If no timestamp, allow it through
+        }
+        
+        // The timestamp is already in NY time, convert to milliseconds
+        newsTimestamp = new Date(timestampStr).getTime();
     }
     
-    // The timestamp is already in NY time, convert to milliseconds
-    const itemTime = new Date(timestampStr).getTime();
-    
-    // Convert current local time to NY time for comparison
-    const nowLocal = new Date();
-    const nowNY = new Date(nowLocal.toLocaleString("en-US", {timeZone: "America/New_York"}));
-    const now = nowNY.getTime();
-    
-    const age = now - itemTime;
+    const now = Date.now();
+    const age = now - newsTimestamp;
     const ageMinutes = Math.round(age / 1000 / 60);
     
     const isRecent = age < MAX_AGE_MS;
     
-    console.log(`📰 [INFOBAR] Age calculation: ${ageMinutes} minutes old, isRecent: ${isRecent}, MAX_AGE_MS: ${MAX_AGE_MS}`);
-    console.log(`📰 [INFOBAR] Published: ${timestampStr}, Now NY: ${nowNY}, Age: ${age}ms`);
+    console.log(`📰 [INFOBAR] Age calculation: ${ageMinutes} minutes old, isRecent: ${isRecent}`);
     
     if (!isRecent) {
         console.log(`📰 [INFOBAR] News item too old (${ageMinutes} minutes), skipping:`, newsItem.headline?.substring(0, 50));
@@ -80,30 +72,33 @@ function isNewsItemRecent(newsItem) {
 function isFilingItemRecent(filingItem) {
     if (!filingItem) return false;
     
-    // Use filing_date (NY time) to check if filing is recent
-    // This is the actual filing time, not when we received it
-    const timestampStr = filingItem.filing_date;
+    // For age checking: use Unix timestamp if available, fallback to ISO string parsing
+    let filingTimestamp;
     
-    if (!timestampStr) {
-        console.log("📁 [INFOBAR] Filing item has no timestamp, skipping age filter");
-        return true; // If no timestamp, allow it through
+    if (filingItem.received_at_unix) {
+        filingTimestamp = filingItem.received_at_unix * 1000; // Convert to milliseconds
+    } else {
+        const timestampStr = filingItem.filing_date;
+        if (!timestampStr) {
+            console.log("📁 [INFOBAR] Filing item has no timestamp, skipping age filter");
+            return true; // If no timestamp, allow it through
+        }
+        
+        const filingDate = new Date(timestampStr);
+        if (Number.isNaN(filingDate.getTime())) {
+            console.log("📁 [INFOBAR] Invalid filing date, skipping age filter");
+            return true; // If invalid timestamp, allow it through
+        }
+        filingTimestamp = filingDate.getTime();
     }
     
-    // The timestamp is already in NY time, convert to milliseconds
-    const itemTime = new Date(timestampStr).getTime();
-    
-    // Convert current local time to NY time for comparison
-    const nowLocal = new Date();
-    const nowNY = new Date(nowLocal.toLocaleString("en-US", {timeZone: "America/New_York"}));
-    const now = nowNY.getTime();
-    
-    const age = now - itemTime;
+    const now = Date.now();
+    const age = now - filingTimestamp;
     const ageMinutes = Math.round(age / 1000 / 60);
     
     const isRecent = age < MAX_AGE_MS;
     
     console.log(`📁 [INFOBAR] Filing age calculation: ${ageMinutes} minutes old, isRecent: ${isRecent}`);
-    console.log(`📁 [INFOBAR] Filed: ${timestampStr}, Now NY: ${nowNY}, Age: ${age}ms`);
     
     if (!isRecent) {
         console.log(`📁 [INFOBAR] Filing item too old (${ageMinutes} minutes), skipping:`, filingItem.symbol, filingItem.form_type);

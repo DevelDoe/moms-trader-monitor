@@ -870,6 +870,7 @@ function formatDate(dateStr) {
 
 // Helper function to extract timestamp from standardized news format
 function getNewsTimestamp(newsItem) {
+    // For sorting/display: use original published/updated times, NOT Unix timestamp
     // Try different timestamp fields in order of preference
     const timestampStr = newsItem.published_at || newsItem.received_at || newsItem.created_at || newsItem.updated_at;
     
@@ -1102,9 +1103,10 @@ function renderOracleNews(symbolData = null) {
             const count = item.count || 1;
             const ts = getFilingTimestamp(filingItem);
             const when = ts ? formatFilingTime(new Date(ts)) : "";
+            const isCollapsed = isFilingItemCollapsed(filingItem);
             
             const itemDiv = document.createElement("div");
-            itemDiv.className = `filing-item`;
+            itemDiv.className = `filing-item${isCollapsed ? ' collapsed' : ''}`;
             itemDiv.style.padding = '0'; // Consistent padding with news items
             itemDiv.style.borderBottom = 'none'; // Remove any default borders
             
@@ -1154,7 +1156,9 @@ function renderOracleNews(symbolData = null) {
 
 // Helper function to extract timestamp from standardized filing format
 function getFilingTimestamp(filingItem) {
+    // For sorting/display: use original filing_date, NOT Unix timestamp
     if (filingItem.filing_date) {
+        // Filing dates are already in NY timezone, parse them directly
         return new Date(filingItem.filing_date).getTime();
     }
     
@@ -1207,17 +1211,18 @@ function groupConsecutiveFilings(filings) {
 function formatFilingTime(ts) {
     const ms = parseTs(ts);
     if (Number.isNaN(ms)) return "";
-    // Backend provides dates in ET timezone, display in ET to preserve original timezone
+    
+    // Filing dates are already in NY timezone, display them directly
     const d = new Date(ms);
     const now = new Date();
 
-    // Compare dates in ET timezone to ensure accurate same-day detection
-    const dET = new Date(d.toLocaleString("en-US", { timeZone: "America/New_York" }));
-    const nowET = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    // Convert current local time to NY timezone for comparison
+    const nowNY = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const dateNY = new Date(d.toLocaleString("en-US", { timeZone: "America/New_York" }));
     
-    const sameDay = dET.getFullYear() === nowET.getFullYear() && 
-                    dET.getMonth() === nowET.getMonth() && 
-                    dET.getDate() === nowET.getDate();
+    const sameDay = dateNY.getFullYear() === nowNY.getFullYear() && 
+                    dateNY.getMonth() === nowNY.getMonth() && 
+                    dateNY.getDate() === nowNY.getDate();
 
     return sameDay
         ? d.toLocaleTimeString([], { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })
@@ -1234,23 +1239,48 @@ function formatFilingTime(ts) {
 
 // Check if news item is older than 4 minutes (should be collapsed)
 function isNewsItemCollapsed(newsItem) {
-    // Use the same timestamp extraction logic as getNewsTimestamp for consistency
-    const timestampStr = newsItem.published_at || newsItem.received_at || newsItem.created_at || newsItem.updated_at;
-    if (!timestampStr) return true; // If no timestamp, treat as collapsed
+    // For age checking: use Unix timestamp if available, fallback to ISO string parsing
+    let newsTimestamp;
     
-    // Use the same parsing approach as getNewsTimestamp for consistency
-    const ms = new Date(timestampStr).getTime();
-    if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
+    if (newsItem.received_at_unix) {
+        newsTimestamp = newsItem.received_at_unix * 1000; // Convert to milliseconds
+    } else {
+        // Use the same timestamp extraction logic as getNewsTimestamp for consistency
+        const timestampStr = newsItem.published_at || newsItem.received_at || newsItem.created_at || newsItem.updated_at;
+        if (!timestampStr) return true; // If no timestamp, treat as collapsed
+        
+        // Use the same parsing approach as getNewsTimestamp for consistency
+        const ms = new Date(timestampStr).getTime();
+        if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
+        newsTimestamp = ms;
+    }
     
     const now = Date.now();
     const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
-    const ageInMs = now - ms;
-    const ageInMinutes = ageInMs / (60 * 1000);
+    const ageInMs = now - newsTimestamp;
     
-    // Debug logging for items close to collapse threshold
-    if (ageInMinutes > 3.5 && ageInMinutes < 4.5) {
-        console.log(`📰 [ACTIVE] News item "${newsItem.headline?.substring(0, 50)}..." age: ${ageInMinutes.toFixed(1)}min, collapsed: ${ageInMs > fourMinutesInMs}`);
+    return ageInMs > fourMinutesInMs;
+}
+
+// Check if filing item is older than 4 minutes (should be collapsed)
+function isFilingItemCollapsed(filingItem) {
+    // For age checking: use Unix timestamp if available, fallback to ISO string parsing
+    let filingTimestamp;
+    
+    if (filingItem.received_at_unix) {
+        filingTimestamp = filingItem.received_at_unix * 1000; // Convert to milliseconds
+    } else {
+        const ts = filingItem.filing_date || filingItem.filed_at;
+        if (!ts) return true; // If no timestamp, treat as collapsed
+        
+        const filingDate = new Date(ts);
+        if (Number.isNaN(filingDate.getTime())) return true; // If invalid timestamp, treat as collapsed
+        filingTimestamp = filingDate.getTime();
     }
+    
+    const now = Date.now();
+    const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
+    const ageInMs = now - filingTimestamp;
     
     return ageInMs > fourMinutesInMs;
 }

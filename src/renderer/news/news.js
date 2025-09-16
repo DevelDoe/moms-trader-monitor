@@ -315,23 +315,25 @@ function isFilingAllowed(filingItem) {
 
 // Check if news item is older than 4 minutes
 function isNewsItemCollapsed(newsItem) {
-    // Use the same timestamp extraction logic as getTime() for consistency
-    const ts = newsItem.updated_at ?? newsItem.created_at ?? newsItem.received_at;
-    if (!ts) return true; // If no timestamp, treat as collapsed
+    // Use Unix timestamp if available, fallback to ISO string parsing
+    let newsTimestamp;
     
-    // Use the same parsing approach as getTime() for consistency
-    const ms = toMs(ts);
-    if (!ms || Number.isNaN(ms) || ms === 0) return true; // If invalid timestamp, treat as collapsed
+    if (newsItem.received_at_unix) {
+        newsTimestamp = newsItem.received_at_unix * 1000; // Convert to milliseconds
+    } else {
+        // Use the same timestamp extraction logic as getTime() for consistency
+        const ts = newsItem.updated_at ?? newsItem.created_at ?? newsItem.received_at;
+        if (!ts) return true; // If no timestamp, treat as collapsed
+        
+        // Use the same parsing approach as getTime() for consistency
+        const ms = toMs(ts);
+        if (!ms || Number.isNaN(ms) || ms === 0) return true; // If invalid timestamp, treat as collapsed
+        newsTimestamp = ms;
+    }
     
     const now = Date.now();
     const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
-    const ageInMs = now - ms;
-    const ageInMinutes = ageInMs / (60 * 1000);
-    
-    // Debug logging for items close to collapse threshold
-    if (ageInMinutes > 3.5 && ageInMinutes < 4.5) {
-        console.log(`📰 [NEWS] News item "${newsItem.headline?.substring(0, 50)}..." age: ${ageInMinutes.toFixed(1)}min, collapsed: ${ageInMs > fourMinutesInMs}`);
-    }
+    const ageInMs = now - newsTimestamp;
     
     return ageInMs > fourMinutesInMs;
 }
@@ -576,21 +578,14 @@ function getFilingTime(filingItem) {
     // 🔍 DETAILED LOGGING: Log the complete filing object structure
     console.log(`🔍 [NEWS] COMPLETE FILING OBJECT:`, JSON.stringify(filingItem, null, 2));
     console.log(`🔍 [NEWS] Filing object keys:`, Object.keys(filingItem));
+    console.log(`🔍 [NEWS] Received_at_unix field:`, filingItem.received_at_unix);
     console.log(`🔍 [NEWS] Filing_date field:`, filingItem.filing_date);
     console.log(`🔍 [NEWS] Filed_at field:`, filingItem.filed_at);
-    console.log(`🔍 [NEWS] All date-related fields:`, {
-        filing_date: filingItem.filing_date,
-        filed_at: filingItem.filed_at,
-        created_at: filingItem.created_at,
-        updated_at: filingItem.updated_at,
-        timestamp: filingItem.timestamp,
-        date: filingItem.date
-    });
     
-    // Use filing_date or filed_at - the actual SEC filing time
+    // For sorting/display: use original filing_date, NOT Unix timestamp
     const filingDate = filingItem.filing_date || filingItem.filed_at;
     if (!filingDate) {
-        console.log(`📁 [NEWS] Filing ${filingItem.symbol} has no filing_date or filed_at, using 0 timestamp`);
+        console.log(`📁 [NEWS] Filing ${filingItem.symbol} has no filing_date, using 0 timestamp`);
         return 0;
     }
     const date = new Date(filingDate);
@@ -639,13 +634,33 @@ function groupConsecutiveFilings(filings) {
 }
 
 function formatFilingTime(filingDate) {
-    // Backend already provides dates in ET timezone, display as-is
+    // Display the original filing_date (already in NY timezone) without conversion
     if (!filingDate) return "";
     
-    const ms = parseTs(filingDate);
-    if (Number.isNaN(ms)) return "";
+    const date = new Date(filingDate);
+    if (Number.isNaN(date.getTime())) return "";
     
-    const formatted = formatNewsTime(filingDate);
+    const now = new Date();
+    
+    // Convert current local time to NY timezone for same-day comparison
+    const nowNY = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const dateNY = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    
+    const sameDay = dateNY.getFullYear() === nowNY.getFullYear() && 
+                    dateNY.getMonth() === nowNY.getMonth() && 
+                    dateNY.getDate() === nowNY.getDate();
+
+    const formatted = sameDay
+        ? date.toLocaleTimeString([], { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" })
+        : date.toLocaleString([], {
+              timeZone: "America/New_York",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+          });
+    
     console.log(`📅 [NEWS] Filing time: ${filingDate} → ${formatted}`);
     
     return formatted;
@@ -653,21 +668,29 @@ function formatFilingTime(filingDate) {
 
 // Check if filing item is older than 4 minutes
 function isFilingItemCollapsed(filingItem) {
-    const ts = filingItem.filing_date || filingItem.filed_at;
-    if (!ts) return true; // If no timestamp, treat as collapsed
+    // Use Unix timestamp if available, fallback to ISO string parsing
+    let filingTimestamp;
     
-    // Use filing_date directly - it's already in ISO format
-    const date = new Date(ts);
-    const ms = Number.isFinite(date.getTime()) ? date.getTime() : NaN;
-    if (Number.isNaN(ms)) return true; // If invalid timestamp, treat as collapsed
+    if (filingItem.received_at_unix) {
+        filingTimestamp = filingItem.received_at_unix * 1000; // Convert to milliseconds
+    } else {
+        const ts = filingItem.filing_date || filingItem.filed_at;
+        if (!ts) return true; // If no timestamp, treat as collapsed
+        
+        const filingDate = new Date(ts);
+        if (Number.isNaN(filingDate.getTime())) return true; // If invalid timestamp, treat as collapsed
+        filingTimestamp = filingDate.getTime();
+    }
     
     const now = Date.now();
     const fourMinutesInMs = 4 * 60 * 1000; // 4 minutes in milliseconds
+    const ageInMs = now - filingTimestamp;
     
-    return (now - ms) > fourMinutesInMs;
+    return ageInMs > fourMinutesInMs;
 }
 
 function getTime(item) {
+    // For sorting/display: use original published/updated times, NOT Unix timestamp
     return toMs(item.updated_at) || toMs(item.created_at) || 0;
 }
 

@@ -629,6 +629,34 @@
             window.trophyMap = new Map();
         }
 
+        // Subscribe to trophy updates from change top3
+        window.changeTop3API.onUpdate?.(({ entries: trophyData }) => {
+            console.log("🏆 [FRONTLINE] Trophy update received from change top3:", trophyData);
+            window.trophyMap = new Map((trophyData || []).map((t) => [String(t.symbol || "").toUpperCase(), t.trophy]));
+            
+            // Update visible cards with new trophies
+            state.container?.querySelectorAll(".hero-card").forEach((card) => {
+                const sym = card.dataset.symbol?.toUpperCase();
+                const medalEl = card.querySelector(".medal");
+                if (sym && medalEl) {
+                    medalEl.innerHTML = getSymbolMedal(sym);
+                    
+                    // Update trophy separately
+                    const trophyEl = card.querySelector('.trophy:not(.trophy-xp)');
+                    if (trophyEl) {
+                        const trophy = getSymbolTrophy(sym);
+                        trophyEl.outerHTML = trophy;
+                    } else if (getSymbolTrophy(sym)) {
+                        // Add trophy if it doesn't exist but should
+                        const badgesEl = card.querySelector('.symbol-badges');
+                        if (badgesEl) {
+                            badgesEl.insertAdjacentHTML('beforeend', getSymbolTrophy(sym));
+                        }
+                    }
+                }
+            });
+        });
+
         // Initialize XP top3 data for sword trophies
         try {
             const { entries: xpData } = await window.xpTop3API.get();
