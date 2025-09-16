@@ -11,7 +11,8 @@
 .halts-list {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
+    padding: 0 10px 0 0; /* Extra padding on right for countdown animations */
 }
 
 /* Compact halt event styling */
@@ -33,11 +34,7 @@
     transform: translateX(1px);
 }
 
-/* Halt state specific colors */
-.halt-event.halted {
-    /* border-left-color: #ff4444; */
-    /* background: rgba(255, 68, 68, 0.1); */
-}
+/* Halt state specific colors - styles removed for compact view */
 
 .halt-event.resumed {
     border-left-color: #44ff44;
@@ -61,43 +58,129 @@
 
 /* Compact layout - single line with 3 elements */
 .halt-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: block;
     width: 100%;
-    gap: 8px;
+    position: relative;
 }
 
 .halt-symbol-container {
-    flex: 0 0 auto;
-    min-width: 60px;
+    display: inline-block;
+    width: 60px;
+    vertical-align: middle;
 }
 
 .halt-state {
-    flex: 1 1 auto;
-    padding: 2px 0px;
+    display: inline-block;
+    padding: 4px 6px;
     border-radius: 2px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
     white-space: nowrap;
-    min-width: 80px;
+    width: calc(100% - 140px);
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
+    vertical-align: middle;
+    margin: 0 8px;
 }
 
 .halt-time {
-    flex: 0 0 auto;
-    font-size: 11px;
+    display: inline-block;
+    font-size: 14px;
     color: #aaa;
     white-space: nowrap;
-    min-width: 80px;
+    width: 60px;
     text-align: right;
+    vertical-align: middle;
+    margin-left: -5px;
+}
+
+.halt-time.countdown {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+/* Color states for countdown timers */
+.halt-time.countdown.green {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.halt-time.countdown.yellow {
+    color: #facc15;
+    background: rgba(250, 204, 21, 0.1);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.halt-time.countdown.red {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    animation: redPulse 1s ease-in-out infinite;
+}
+
+/* Pulsing animation for red countdown */
+@keyframes redPulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.8;
+        transform: scale(1.02);
+    }
+}
+
+/* Blinking animation for critical countdown (last 10 seconds) */
+@keyframes criticalBlink {
+    0%, 50% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    25%, 75% { 
+        opacity: 0.3;
+        transform: scale(1.1);
+    }
+}
+
+.halt-time.countdown.critical {
+    animation: criticalBlink 0.5s ease-in-out infinite;
+}
+
+/* Expired halt states */
+.halt-time.countdown.expired {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.2);
+    border: 1px solid rgba(255, 107, 107, 0.5);
+    animation: expiredPulse 2s ease-in-out infinite;
+}
+
+.halt-time.countdown.resumed {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.2);
+    border: 1px solid rgba(74, 222, 128, 0.5);
+}
+
+/* Expired pulse animation */
+@keyframes expiredPulse {
+    0%, 100% { 
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1.02);
+    }
 }
 
 .halt-state.halted {
     background: #ff4444;
     color: white;
+    margin-left: -5px;
 }
 
 .halt-state.resumed {
@@ -120,19 +203,81 @@
     color: white;
 }
 
+.halt-state.expired {
+    background: #ff6b6b;
+    color: white;
+    opacity: 0.8;
+}
+
+.halt-state.resumed {
+    background: #4ade80;
+    color: black;
+}
+
 /* Removed old detailed styles - using compact view only */
 
 /* Removed current state indicator and price info for compact view */
 
-/* Animation for new halt events */
-@keyframes haltPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.02); }
-    100% { transform: scale(1); }
+/* Animation for new halt events - sliding down from top */
+@keyframes slideDown {
+    0% { 
+        transform: translateY(-100px);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% { 
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Animation for halts dropping down when one is removed */
+@keyframes dropDown {
+    0% { 
+        transform: translateY(0);
+    }
+    100% { 
+        transform: translateY(0);
+    }
+}
+
+/* Animation for fading out when countdown ends */
+@keyframes fadeOut {
+    0% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(0.98);
+    }
+    100% { 
+        opacity: 0;
+        transform: scale(0.95);
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+    }
 }
 
 .halt-event.new {
-    animation: haltPulse 0.5s ease-in-out;
+    animation: slideDown 0.8s ease-out;
+}
+
+.halt-event.dropping {
+    animation: dropDown 0.3s ease-out;
+}
+
+.halt-event.fading-out {
+    animation: fadeOut 1s ease-in-out forwards;
+}
+
+/* Ensure smooth transitions for all halt events */
+.halt-event {
+    transition: all 0.3s ease;
+    overflow: hidden;
 }
 
 /* Empty state - compact */
@@ -157,13 +302,13 @@
     }
     
     .halt-time {
-        font-size: 10px;
+        font-size: 12px;
         min-width: 60px;
     }
     
     .halt-state {
-        font-size: 9px;
+        font-size: 12px;
         min-width: 40px;
-        padding: 1px 4px;
+        padding: 2px 4px;
     }
 }
