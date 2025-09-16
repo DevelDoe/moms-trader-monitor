@@ -122,12 +122,13 @@
     }
 
     // --- One-line buffs (frontline style) ---
-    const BUFF_SORT_ORDER = ["volume", "float", "news", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
+    const BUFF_SORT_ORDER = ["volume", "float", "news", "hasFiling", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
 
     function categorizeBuffKey(key) {
         const k = String(key || "").toLowerCase();
         if (k.includes("vol")) return "volume";
         if (k.startsWith("float")) return "float";
+        if (k.includes("filing")) return "hasFiling";
         return k;
     }
 

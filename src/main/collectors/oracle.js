@@ -102,6 +102,8 @@ const FILING_BROADCAST_TARGETS = [
     "news",
     "active",
     "infobar",
+    "frontline",
+    "heroes",
 ];
 
 // Configure which windows should receive Halt broadcasts
