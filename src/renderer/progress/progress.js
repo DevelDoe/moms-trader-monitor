@@ -253,6 +253,18 @@ function processMarketEvent(event) {
     const volume = event.strength || event.one_min_volume || 0;
     if (volume < CONFIG.MIN_VOLUME_THRESHOLD) return;
 
+    // Check for High of Day alert and trigger sound
+    const isHOD = event.isHighOfDay === true;
+    if (isHOD) {
+        debugLog.info(`🎯 HOD Alert detected for ${event.hero || event.symbol || 'unknown'}`);
+        // Use the centralized AudioManager to play HOD chime
+        if (window.audioManager && window.audioManager.playHodChime) {
+            window.audioManager.playHodChime();
+        } else {
+            debugLog.warn("⚠️ AudioManager not available for HOD chime");
+        }
+    }
+
     // Check if we need to reset for new session
     const currentSession = getCurrentSession();
     if (sessionData.current !== currentSession.key) {
@@ -679,6 +691,27 @@ if (document.readyState === 'loading') {
         await AudioManager.initialize();
     })();
 }
+
+// Test function for HOD alerts - call from browser console
+window.testHodAlert = (symbol = 'TEST') => {
+    console.log(`🧪 Testing HOD alert for ${symbol}`);
+    
+    // Create a mock HOD alert event
+    const mockHodEvent = {
+        hero: symbol,
+        price: 100.50,
+        hp: 2.5,
+        dp: 0,
+        strength: 50000,
+        one_min_volume: 50000,
+        isHighOfDay: true
+    };
+    
+    // Process the mock event
+    processMarketEvent(mockHodEvent);
+    
+    console.log(`🧪 HOD alert test completed for ${symbol}`);
+};
 
 // Export for testing if needed
 if (typeof module !== 'undefined' && module.exports) {

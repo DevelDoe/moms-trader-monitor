@@ -408,6 +408,20 @@ async function initializeApp() {
                 return;
             }
 
+            // Check for High of Day alert and trigger sound
+            const isHOD = alertData.isHighOfDay === true;
+            if (isHOD) {
+                console.log(`🎯 [EVENTS] HOD Alert detected for ${symbol}`);
+                // Use centralized audio system for HOD chime
+                if (window.audioAPI) {
+                    window.audioAPI.playHodChime().catch((error) => {
+                        console.error("❌ Failed to play HOD chime:", error);
+                    });
+                } else {
+                    console.warn("⚠️ Centralized audio API not available for HOD chime");
+                }
+            }
+
             const now = Date.now(); // 🧼 keep only this one at the top of the block
 
             const quietTime = isQuietTimeEST();
@@ -637,6 +651,28 @@ window.testComboAlert = () => {
     } else {
         console.warn("⚠️ Centralized audio API not available");
     }
+};
+
+// Test function for HOD alerts - call from browser console
+window.testHodAlert = (symbol = 'TEST') => {
+    console.log(`🧪 [EVENTS] Testing HOD alert for ${symbol}`);
+    
+    // Create a mock HOD alert event
+    const mockHodEvent = {
+        hero: symbol,
+        price: 100.50,
+        hp: 2.5,
+        dp: 0,
+        strength: 50000,
+        one_min_volume: 50000,
+        change: 2.5,
+        isHighOfDay: true
+    };
+    
+    // Process the mock event through the alert handler
+    window.eventsAPI.onAlert(mockHodEvent);
+    
+    console.log(`🧪 [EVENTS] HOD alert test completed for ${symbol}`);
 };
 
 // Test function for blink animation system
