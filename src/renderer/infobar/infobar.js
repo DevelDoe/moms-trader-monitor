@@ -14,6 +14,10 @@ const ACTIVE_PUSH_COOLDOWN = 8000; // ms
 const filingDebounceMap = new Map(); // key: "symbol_formType", value: timestamp
 const FILING_DEBOUNCE_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+// Age filter constants
+const MAX_AGE_MINUTES = 4;
+const MAX_AGE_MS = MAX_AGE_MINUTES * 60 * 1000; // 4 minutes in milliseconds
+
 function maybeActivateFromSymbols(symbols) {
     if (!Array.isArray(symbols) || !symbols.length) return;
     const sym = String(symbols[0] || "").toUpperCase();
@@ -25,6 +29,58 @@ function maybeActivateFromSymbols(symbols) {
 
     window.activeAPI?.setActiveTicker?.(sym);
     lastActivePush = now;
+}
+
+// Helper function to check if news item is less than 4 minutes old
+function isNewsItemRecent(newsItem) {
+    if (!newsItem) return false;
+    
+    // Use the same timestamp extraction logic as news.js getTime() function
+    // Priority: updated_at -> created_at (matching news.js line 645)
+    const timestampStr = newsItem.updated_at || newsItem.created_at;
+    
+    if (!timestampStr) {
+        console.log("📰 [INFOBAR] News item has no timestamp, skipping age filter");
+        return true; // If no timestamp, allow it through
+    }
+    
+    const itemTime = new Date(timestampStr).getTime();
+    const now = Date.now();
+    const age = now - itemTime;
+    
+    const isRecent = age < MAX_AGE_MS;
+    
+    if (!isRecent) {
+        console.log(`📰 [INFOBAR] News item too old (${Math.round(age / 1000 / 60)} minutes), skipping:`, newsItem.headline?.substring(0, 50));
+    }
+    
+    return isRecent;
+}
+
+// Helper function to check if filing item is less than 4 minutes old
+function isFilingItemRecent(filingItem) {
+    if (!filingItem) return false;
+    
+    // Use the same timestamp extraction logic as news.js getFilingTime() function
+    // Priority: filing_date -> filed_at (matching news.js line 565)
+    const timestampStr = filingItem.filing_date || filingItem.filed_at;
+    
+    if (!timestampStr) {
+        console.log("📁 [INFOBAR] Filing item has no timestamp, skipping age filter");
+        return true; // If no timestamp, allow it through
+    }
+    
+    const itemTime = new Date(timestampStr).getTime();
+    const now = Date.now();
+    const age = now - itemTime;
+    
+    const isRecent = age < MAX_AGE_MS;
+    
+    if (!isRecent) {
+        console.log(`📁 [INFOBAR] Filing item too old (${Math.round(age / 1000 / 60)} minutes), skipping:`, filingItem.symbol, filingItem.form_type);
+    }
+    
+    return isRecent;
 }
 
 
@@ -72,6 +128,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             console.log("📰 New news delta received:", newsItem.headline);
+            
+            // Check if news item is recent (less than 4 minutes old)
+            if (!isNewsItemRecent(newsItem)) {
+                return;
+            }
+            
             const sanitized = newsItem.headline.toLowerCase().trim();
             const isBlocked = blockList.some((word) => sanitized.includes(word));
             const isDuplicate = displayedNewsKeys.has(newsItem.id);
@@ -105,6 +167,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             console.log("📁 New filing delta received:", filingItem.form_type, filingItem.title);
+            
+            // Check if filing item is recent (less than 4 minutes old)
+            if (!isFilingItemRecent(filingItem)) {
+                return;
+            }
             
             // Check if filing is allowed based on filter settings
             if (!isFilingAllowed(filingItem)) {
@@ -498,6 +565,47 @@ window.testNewsIntegration = () => {
     console.log(`[News Test] Block list:`, blockList);
     console.log(`[News Test] Bullish list:`, bullishList);
     console.log(`[News Test] Bearish list:`, bearishList);
+};
+
+// Test function for age filtering
+window.testAgeFiltering = () => {
+    console.log("Testing age filtering...");
+    console.log(`[Age Filter Test] Max age: ${MAX_AGE_MINUTES} minutes (${MAX_AGE_MS} ms)`);
+    
+    // Test with a recent news item (1 minute old)
+    const recentNews = {
+        headline: "Test recent news",
+        updated_at: new Date(Date.now() - 1 * 60 * 1000).toISOString(), // 1 minute ago
+        id: "test-recent"
+    };
+    
+    // Test with an old news item (5 minutes old)
+    const oldNews = {
+        headline: "Test old news",
+        updated_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
+        id: "test-old"
+    };
+    
+    // Test with a recent filing (2 minutes old)
+    const recentFiling = {
+        symbol: "TEST",
+        form_type: "8-K",
+        filing_date: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 minutes ago
+        accession_number: "test-recent-filing"
+    };
+    
+    // Test with an old filing (6 minutes old)
+    const oldFiling = {
+        symbol: "TEST",
+        form_type: "8-K",
+        filing_date: new Date(Date.now() - 6 * 60 * 1000).toISOString(), // 6 minutes ago
+        accession_number: "test-old-filing"
+    };
+    
+    console.log(`[Age Filter Test] Recent news (1 min old): ${isNewsItemRecent(recentNews) ? "PASS" : "FAIL"}`);
+    console.log(`[Age Filter Test] Old news (5 min old): ${isNewsItemRecent(oldNews) ? "FAIL" : "PASS"}`);
+    console.log(`[Age Filter Test] Recent filing (2 min old): ${isFilingItemRecent(recentFiling) ? "PASS" : "FAIL"}`);
+    console.log(`[Age Filter Test] Old filing (6 min old): ${isFilingItemRecent(oldFiling) ? "FAIL" : "PASS"}`);
 };
 
 // IPC listeners for audio test commands
