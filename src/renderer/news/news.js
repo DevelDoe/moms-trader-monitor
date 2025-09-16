@@ -206,7 +206,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     window.filingAPI.onHeadlines((filings) => {
         console.log("📁 [NEWS] Received filing-headlines event:", filings);
+        console.log("🔍 [NEWS] Filing headlines type:", typeof filings);
+        console.log("🔍 [NEWS] Filing headlines length:", Array.isArray(filings) ? filings.length : "not an array");
+        
         if (Array.isArray(filings)) {
+            // 🔍 DETAILED LOGGING: Log the first few filing objects to see their structure
+            if (filings.length > 0) {
+                console.log("🔍 [NEWS] FIRST FILING OBJECT STRUCTURE:", JSON.stringify(filings[0], null, 2));
+                console.log("🔍 [NEWS] FIRST FILING OBJECT KEYS:", Object.keys(filings[0]));
+                if (filings.length > 1) {
+                    console.log("🔍 [NEWS] SECOND FILING OBJECT STRUCTURE:", JSON.stringify(filings[1], null, 2));
+                }
+            }
+            
             allFilings = filings;
             console.log(`📁 [NEWS] Full refresh: ${allFilings.length} filings`);
             render();
@@ -561,6 +573,20 @@ function renderFilingItem(filingItem, container, count = 1) {
 }
 
 function getFilingTime(filingItem) {
+    // 🔍 DETAILED LOGGING: Log the complete filing object structure
+    console.log(`🔍 [NEWS] COMPLETE FILING OBJECT:`, JSON.stringify(filingItem, null, 2));
+    console.log(`🔍 [NEWS] Filing object keys:`, Object.keys(filingItem));
+    console.log(`🔍 [NEWS] Filing_date field:`, filingItem.filing_date);
+    console.log(`🔍 [NEWS] Filed_at field:`, filingItem.filed_at);
+    console.log(`🔍 [NEWS] All date-related fields:`, {
+        filing_date: filingItem.filing_date,
+        filed_at: filingItem.filed_at,
+        created_at: filingItem.created_at,
+        updated_at: filingItem.updated_at,
+        timestamp: filingItem.timestamp,
+        date: filingItem.date
+    });
+    
     // Use filing_date or filed_at - the actual SEC filing time
     const filingDate = filingItem.filing_date || filingItem.filed_at;
     if (!filingDate) {
