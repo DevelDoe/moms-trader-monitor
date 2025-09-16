@@ -4,7 +4,6 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <title>Grimoire</title>
         <link rel="stylesheet" href="../styles.css" />
@@ -62,40 +61,10 @@
                                 </div>
                             </div>
 
-                            <!-- Charts -->
-                            <div id="charts" class="bg-zinc-800 p-4 rounded-xl chart" style="position: relative">
-                                <div class="bg-zinc-800 p-4 rounded-xl">
-                                    <div class="grid grid-cols-2 gap-1">
-                                        <!-- Float Data -->
-                                        <div id="section-float-summary" class="space-y-2">
-                                            <div>
-                                                <span>Outstanding Shares: <strong class="text-white" data-id="statistics-sharesOutstanding"></strong></span>
-                                            </div>
-                                            <div>
-                                                <span>🔵 Float: <strong class="text-white" data-id="statistics-float"></strong></span>
-                                            </div>
-                                            <div>
-                                                <span>🟡 Short: <strong class="text-white" data-id="statistics-sharesShort"></strong></span>
-                                            </div>
-                                            <div>
-                                                <span>🔴 Inside: <strong class="text-white" data-id="statistics-insidersHeld"></strong></span>
-                                            </div>
-                                            <div>
-                                                <span>🟠 Insti: <strong class="text-white" data-id="statistics-floatHeldByInstitutions"></strong></span>
-                                            </div>
-                                            <div>
-                                                <span>⚫ Remain: <strong class="text-white" data-id="statistics-remainingShares"></strong></span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Ownership Pie -->
-                                        <div class="chart-container">
-                                            <canvas id="ownershipChart-summary" class="no-drag"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="data-warning-summary" class="bg-zinc-800 p-4 rounded-xl" style="text-align: center; color: #aa9c4c; display: none">
-                                    ⚠️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden.
+                            <!-- Ownership Bars -->
+                            <div id="ownership-section" class="bg-zinc-800 p-4 rounded-xl">
+                                <div class="ownership-bars-container">
+                                    <div id="ownershipBars-summary" class="ownership-bars no-drag"></div>
                                 </div>
                             </div>
 
@@ -113,10 +82,6 @@
                             <div id="news-container" class="news-list no-drag"></div>
                         </div>
 
-                        <!-- Right Column -->
-                        <div class="space-y-4">
-                            
-                        </div>
                     </div>
                 </div>
 
@@ -150,19 +115,9 @@
                     <div id="data-warning-stats" style="color: #b6a041; display: none; margin-bottom: 10px">
                         🧙‍♂️ Fog of uncertainty lingers — The float data is unclear, and true ownership remains hidden.
                     </div>
-                    <section id="section-float-stats" class="two-column-layout">
-                        <div class="data-column no-drag">
-                            <p><strong title="Total Shares Outstanding">Shares Outstanding:</strong> <span data-id="statistics-sharesOutstanding"></span></p>
-                            <p><strong title="🔵 Public Float">🔵 Float:</strong> <span data-id="statistics-float"></span></p>
-                            <p><strong title="🟡 Total Shorted Shares">🟡 Shorted:</strong><span data-id="statistics-sharesShort"></span></p>
-                            <p><strong title="🔴Held by Insiders">🔴 Insiders:</strong> <span data-id="statistics-insidersHeld"></span></p>
-                            <p><strong title="🟠 Held by Institutions">🟠 Institutions:</strong> <span data-id="statistics-floatHeldByInstitutions"></span></p>
-                            <p><strong title="⚫ Remaining Shares (Non-Float)">⚫ Remaining:</strong> <span data-id="statistics-remainingShares"></span></p>
-                        </div>
-                        <div class="chart-column">
-                            <div class="chart-container">
-                                <canvas id="ownershipChart-stats" class="no-drag"></canvas>
-                            </div>
+                    <section id="section-float-stats">
+                        <div class="ownership-bars-container">
+                            <div id="ownershipBars-stats" class="ownership-bars no-drag"></div>
                         </div>
                     </section>
                 </div>
@@ -238,6 +193,8 @@
             </div>
         </div>
 
+        <!-- Finviz charts embedded via iframe -->
+        
         <script src="./active.js"></script>
         <script>
             const container = document.querySelector(".scroll-content.no-drag");

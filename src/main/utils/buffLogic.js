@@ -382,7 +382,7 @@ function getFilingBuff(symbolData, buffList = []) {
         key: "hasFiling",
         icon: def.icon || "📁",
         desc: def.desc || "Recent SEC filing",
-        score: def.score ?? 150,
+        score: def.score ?? 25,
         multiplier: def.multiplier ?? 1.1,
         isBuff: def.isBuff ?? true,
     };

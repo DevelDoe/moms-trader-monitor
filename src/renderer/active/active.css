@@ -7,7 +7,7 @@ body {
     height: 100%;
 }
 #app-container {
-    padding: 0px 10px;
+    padding: 0px 0px;
     box-shadow: inset 0px 0px 0px 0px rgba(0, 0, 0, 0.5);
     height: 100%;
 }
@@ -79,10 +79,145 @@ body {
     margin-top: 0px;
 }
 
-#ownershipChart-summary,
-#ownershipChart-stats {
-    width: 145px !important; /* you wrote 35w, fixed it to 35vw */
-    height: 145px !important;
+#ownership-section {
+    padding: 0px !important;
+    margin-top: 0px !important;
+    padding-left: 10px;
+}
+
+/* Ownership Bars Styling */
+.ownership-bars-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 3px;
+    width: 100%;
+    min-height: 120px;
+    font-size: 16px;
+}
+
+.ownership-bars {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0px;
+}
+
+.ownership-bar {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.ownership-bar-label {
+    color: white;
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 4px;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
+}
+
+.ownership-bar-value {
+    color: #60a5fa;
+    font-weight: 600;
+}
+
+.ownership-bar-breakdown {
+    font-size: 12px;
+    color: #ccc;
+    margin-top: 3px;
+    line-height: 1.2;
+    opacity: 0.8;
+}
+
+.ownership-bar-fill-container {
+    display: flex;
+    height: 16px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ownership-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    min-width: 0;
+}
+
+/* Color scheme matching the original chart */
+.ownership-bar-float {
+    background-color: #1E90FF; /* Blue - Public Float */
+}
+
+.ownership-bar-insider {
+    background-color: #FF0000; /* Red - Insider Held */
+}
+
+.ownership-bar-institutional {
+    background-color: #FFA500; /* Orange - Institutional Held */
+}
+
+.ownership-bar-remaining {
+    background-color: #404040; /* Gray - Remaining Shares */
+}
+
+.ownership-bar-short {
+    background-color: #FFFF00; /* Yellow - Shorted Shares */
+}
+
+.ownership-bar-float-non-short {
+    background-color: #1E90FF; /* Blue - Float excluding shorts */
+}
+
+/* Data Error Highlighting */
+.data-error {
+    background-color: #ff6b6b !important;
+    color: white !important;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+/* Data Quality Warning */
+.data-quality-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.warning-header {
+    color: #ffc107;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.warning-list {
+    color: #ffc107;
+    font-size: 12px;
+    margin: 0;
+    padding-left: 16px;
+    line-height: 1.4;
+}
+
+.warning-list li {
+    margin-bottom: 2px;
+}
+
+/* TradingView Chart Styling */
+#tradingview-chart {
+    margin-top: 0px;
+}
+
+#tradingview-widget {
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 /* Two-column layout using Flexbox */
@@ -123,7 +258,7 @@ body {
     transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
-/* Ensure the chart container is responsive */
+/* Legacy chart container - now using ownership-bars-container */
 .chart-container {
     display: flex;
     justify-content: center;

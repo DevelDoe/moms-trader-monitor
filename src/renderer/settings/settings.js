@@ -36,6 +36,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         initializeAdminSection();
         initializeXpSettingsSection();
         initializeChangeSettingsSection();
+        initializeFrontlineSettingsSection();
+        initializeHeroesSettingsSection();
         initializeStatsSettingsSection();
         initializeFilingFiltersSection();
         
@@ -462,16 +464,18 @@ async function initializeGeneralSection() {
     const eventsComboValue = document.getElementById("events-combo-volume-value");
     const newsAlertVolumeSlider = document.getElementById("news-alert-volume");
     const newsAlertValue = document.getElementById("news-alert-volume-value");
+    const audioMuteToggle = document.getElementById("audio-mute-toggle");
 
     // Ensure all elements exist before proceeding
-    if (!hodChimeVolumeSlider || !hodChimeValue || !eventsComboVolumeSlider || !eventsComboValue || !newsAlertVolumeSlider || !newsAlertValue) {
+    if (!hodChimeVolumeSlider || !hodChimeValue || !eventsComboVolumeSlider || !eventsComboValue || !newsAlertVolumeSlider || !newsAlertValue || !audioMuteToggle) {
         console.error("❌ Audio control elements not found:", {
             hodChimeVolumeSlider,
             hodChimeValue,
             eventsComboVolumeSlider,
             eventsComboValue,
             newsAlertVolumeSlider,
-            newsAlertValue
+            newsAlertValue,
+            audioMuteToggle
         });
         return;
     }
@@ -489,7 +493,8 @@ async function initializeGeneralSection() {
             audioSettings = {
                 comboVolume: 0.55,
                 newsVolume: 0.8,
-                hodChimeVolume: 0.05
+                hodChimeVolume: 0.05,
+                muted: false
             };
         }
     }
@@ -524,6 +529,7 @@ async function initializeGeneralSection() {
     newsAlertValue.textContent = Math.round(audioSettings.newsVolume * 100) + "%";
     hodChimeVolumeSlider.value = audioSettings.hodChimeVolume;
     hodChimeValue.textContent = Math.round(audioSettings.hodChimeVolume * 100) + "%";
+    audioMuteToggle.checked = audioSettings.muted || false;
 
     // wire inputs → settings (parse to number, clamp 0..1)
     hodChimeVolumeSlider.addEventListener("input", async (e) => {
@@ -565,6 +571,18 @@ async function initializeGeneralSection() {
             await window.audioSettingsAPI.set({ newsVolume: v });
         } catch (error) {
             console.error("❌ Failed to save news volume:", error);
+        }
+    });
+
+    // Mute toggle event listener
+    audioMuteToggle.addEventListener("change", async (e) => {
+        const muted = e.target.checked;
+        audioSettings.muted = muted;
+        try {
+            await window.audioSettingsAPI.set({ muted: muted });
+            console.log("🔇 Audio mute setting saved:", muted);
+        } catch (error) {
+            console.error("❌ Failed to save mute setting:", error);
         }
     });
 
@@ -1892,6 +1910,114 @@ function initializeChangeSettingsSection() {
             updateButtonState(changeShowLevelBtn, updatedSettings.showLevel !== false);
             updateButtonState(changeShowSessionChangeBtn, updatedSettings.showSessionChange !== false);
             console.log("✅ Change settings updated from other window:", updatedSettings);
+        }
+    });
+}
+
+function initializeFrontlineSettingsSection() {
+    console.log("Initializing Frontline Settings Section");
+
+    const frontlineListLengthInput = document.getElementById("frontline-list-length");
+    
+    if (!frontlineListLengthInput) {
+        console.error("❌ Frontline list length input not found!");
+        return;
+    }
+
+    // Load initial value from electron store
+    async function loadFrontlineSettings() {
+        try {
+            const frontlineSettings = await window.frontlineSettingsAPI.get();
+            frontlineListLengthInput.value = frontlineSettings.listLength || 14;
+            console.log("✅ Loaded Frontline settings:", frontlineSettings);
+        } catch (error) {
+            console.error("❌ Failed to load Frontline settings:", error);
+            frontlineListLengthInput.value = 14; // fallback
+        }
+    }
+
+    // Save Frontline settings
+    async function saveFrontlineSettings() {
+        try {
+            const newLength = parseInt(frontlineListLengthInput.value, 10) || 14;
+            const clampedLength = Math.max(1, Math.min(100, newLength));
+            
+            if (clampedLength !== newLength) {
+                frontlineListLengthInput.value = clampedLength;
+            }
+            
+            await window.frontlineSettingsAPI.set({ listLength: clampedLength });
+            console.log("✅ Saved Frontline list length:", clampedLength);
+        } catch (error) {
+            console.error("❌ Failed to save Frontline settings:", error);
+        }
+    }
+
+    // Load initial settings
+    loadFrontlineSettings();
+
+    // Listen for changes
+    frontlineListLengthInput.addEventListener("input", saveFrontlineSettings);
+
+    // Listen for updates from other windows
+    window.frontlineSettingsAPI.onUpdate((updatedSettings) => {
+        if (updatedSettings && updatedSettings.listLength !== undefined) {
+            frontlineListLengthInput.value = updatedSettings.listLength;
+            console.log("✅ Frontline settings updated from other window:", updatedSettings);
+        }
+    });
+}
+
+function initializeHeroesSettingsSection() {
+    console.log("Initializing Heroes Settings Section");
+
+    const heroesListLengthInput = document.getElementById("heroes-list-length");
+    
+    if (!heroesListLengthInput) {
+        console.error("❌ Heroes list length input not found!");
+        return;
+    }
+
+    // Load initial value from electron store
+    async function loadHeroesSettings() {
+        try {
+            const heroesSettings = await window.heroesSettingsAPI.get();
+            heroesListLengthInput.value = heroesSettings.listLength || 3;
+            console.log("✅ Loaded Heroes settings:", heroesSettings);
+        } catch (error) {
+            console.error("❌ Failed to load Heroes settings:", error);
+            heroesListLengthInput.value = 3; // fallback
+        }
+    }
+
+    // Save Heroes settings
+    async function saveHeroesSettings() {
+        try {
+            const newLength = parseInt(heroesListLengthInput.value, 10) || 3;
+            const clampedLength = Math.max(1, Math.min(100, newLength));
+            
+            if (clampedLength !== newLength) {
+                heroesListLengthInput.value = clampedLength;
+            }
+            
+            await window.heroesSettingsAPI.set({ listLength: clampedLength });
+            console.log("✅ Saved Heroes list length:", clampedLength);
+        } catch (error) {
+            console.error("❌ Failed to save Heroes settings:", error);
+        }
+    }
+
+    // Load initial settings
+    loadHeroesSettings();
+
+    // Listen for changes
+    heroesListLengthInput.addEventListener("input", saveHeroesSettings);
+
+    // Listen for updates from other windows
+    window.heroesSettingsAPI.onUpdate((updatedSettings) => {
+        if (updatedSettings && updatedSettings.listLength !== undefined) {
+            heroesListLengthInput.value = updatedSettings.listLength;
+            console.log("✅ Heroes settings updated from other window:", updatedSettings);
         }
     });
 }

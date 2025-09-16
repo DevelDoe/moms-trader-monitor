@@ -69,7 +69,7 @@
  *    - Reduced console noise in production
  */
 
-// Global object to store chart instances
+// Global object to store bar instances (no longer needed but keeping for compatibility)
 window.ownershipCharts = {};
 const symbolColors = {};
 
@@ -459,6 +459,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Initialize UI with no symbol data
     updateUI(null); // Show "No active symbol" placeholder
+    
+    // Initialize Finviz chart with placeholder
+    updateStockChart(null);
 
     try {
         // Listen for active ticker updates
@@ -637,13 +640,18 @@ function updateUI(symbolData) {
         });
     }
 
-    document.getElementById("data-warning-summary").style.display = dataIsCorrupted ? "block" : "none";
-    document.getElementById("section-float-summary").style.display = "flex";
+    const dataWarningSummary = document.getElementById("data-warning-summary");
+    if (dataWarningSummary) {
+        dataWarningSummary.style.display = dataIsCorrupted ? "block" : "none";
+    }
 
     document.getElementById("data-warning-stats").style.display = dataIsCorrupted ? "block" : "none";
-    document.getElementById("section-float-stats").style.display = "flex";
+    const sectionFloatStats = document.getElementById("section-float-stats");
+    if (sectionFloatStats) {
+        sectionFloatStats.style.display = "flex";
+    }
 
-    const floatSection = document.getElementById("section-float-summary");
+    const floatSection = document.getElementById("ownership-section");
 
     if (floatSection) {
         if (dataIsCorrupted) {
@@ -701,13 +709,16 @@ function updateUI(symbolData) {
     // Update current active symbol for news and filing filtering
     currentActiveSymbol = symbolData.symbol;
     
+    // Update Finviz chart symbol
+    updateStockChart(symbolData.symbol);
+    
     // Render Oracle news and filings (filtered by active symbol)
     renderOracleNews(symbolData);
 
     /* --- helpers --- */
 
-    renderOwnershipChart(symbolData, "ownershipChart-summary");
-    renderOwnershipChart(symbolData, "ownershipChart-stats");
+    renderOwnershipBars(symbolData, "ownershipBars-summary");
+    renderOwnershipBars(symbolData, "ownershipBars-stats");
 
     // Stats & Buffs (NEW)
     setText("stats-lv", symbolData.lv || 1);
@@ -1286,7 +1297,7 @@ function openTab(evt, tabId) {
     }
 }
 
-function renderOwnershipChart(symbolData, chartId) {
+function renderOwnershipBars(symbolData, barsId) {
     const floatShares = symbolData.statistics?.floatShares || 0;
     const insidersPercentHeld = symbolData.ownership?.insidersPercentHeld || 0;
     const institutionsPercentHeld = symbolData.ownership?.institutionsPercentHeld || 0;
@@ -1298,115 +1309,166 @@ function renderOwnershipChart(symbolData, chartId) {
     const institutionalShares = Math.round(sharesOutstanding * institutionsPercentHeld);
     const remainingShares = sharesOutstanding - (floatShares + insiderShares + institutionalShares);
 
-    // ✅ Inner ring (FLOAT breakdown: float vs. shorted inside float)
+    // ✅ Calculate float breakdown
     const floatNonShort = floatShares - sharesShort; // Remaining float
-    const floatBreakdown = [
-        Math.max(floatNonShort, 0), // Float excluding shorts (Blue)
-        Math.max(sharesShort, 0), // Shorted Shares (Red inside Float)
-    ];
 
-    // ✅ Outer ring (Total Outstanding breakdown)
-    const totalBreakdown = [
-        Math.max(floatShares, 0), // Public Float (Blue)
-        Math.max(insiderShares, 0), // Insider held (Yellow)
-        Math.max(institutionalShares, 0), // Institutional held (Orange)
-        Math.max(remainingShares, 0), // Remaining (Gray)
-    ];
-
-    if (totalBreakdown.every((val) => val === 0)) {
-        console.warn("All ownership data is zero. Chart will not be displayed.");
+    // Get the bars container
+    const barsContainer = document.getElementById(barsId);
+    if (!barsContainer) {
+        console.error(`Bars container not found: ${barsId}`);
         return;
     }
 
-    // Select the correct canvas dynamically
-    const chartCanvas = document.getElementById(chartId);
-    if (!chartCanvas) {
-        console.error(`Canvas not found: ${chartId}`);
+    // Clear existing content
+    barsContainer.innerHTML = '';
+
+    // Check if we have valid data
+    if (sharesOutstanding === 0) {
+        console.warn("All ownership data is zero. Bars will not be displayed.");
+        barsContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No ownership data available</div>';
         return;
     }
 
-    // Clean up old chart instance (prevents multiple charts being created)
-    if (window.ownershipCharts[chartId]) {
-        window.ownershipCharts[chartId].destroy();
+    // Check for data quality issues
+    const dataIssues = [];
+    const issues = [];
+    
+    if (!floatShares || floatShares <= 0) {
+        issues.push("Float shares missing or invalid");
     }
+    if (!sharesOutstanding || sharesOutstanding <= 0) {
+        issues.push("Shares outstanding missing or invalid");
+    }
+    if (floatShares > 1_000_000_000) {
+        issues.push("Float shares unrealistically large (>1B)");
+    }
+    if (sharesOutstanding > 5_000_000_000) {
+        issues.push("Shares outstanding unrealistically large (>5B)");
+    }
+    if (floatShares / sharesOutstanding > 1.2) {
+        issues.push("Float exceeds shares outstanding (impossible)");
+    }
+    if (floatShares / sharesOutstanding < 0.01) {
+        issues.push("Float too small relative to shares outstanding");
+    }
+    
+    const hasDataIssues = issues.length > 0;
 
-    // ✅ Custom tooltip function to show percentages
-    const tooltipFormatter = (tooltipItem) => {
-        const datasetIndex = tooltipItem.datasetIndex; // 0 = Outer Ring, 1 = Inner Ring
-        const index = tooltipItem.dataIndex;
-        const dataset = tooltipItem.dataset;
-        const value = dataset.data[index];
+    // Create two stacked bars: Total Outstanding and Float breakdown
+    
+    // 1. Total Shares Outstanding Bar
+    const totalBarElement = document.createElement('div');
+    totalBarElement.className = 'ownership-bar';
+    
+    // Highlight problematic values
+    const outstandingClass = (!sharesOutstanding || sharesOutstanding <= 0) ? 'data-error' : '';
+    const floatClass = (!floatShares || floatShares <= 0 || floatShares > 1_000_000_000) ? 'data-error' : '';
+    
+    totalBarElement.innerHTML = `
+        <div class="ownership-bar-label">
+            Outstanding: <span class="ownership-bar-value ${outstandingClass}">${formatLargeNumber(sharesOutstanding)}</span>
+        </div>
+        <div class="ownership-bar-fill-container">
+            <div class="ownership-bar-fill ownership-bar-remaining" style="width: ${sharesOutstanding > 0 ? (remainingShares / sharesOutstanding) * 100 : 0}%"></div>
+            <div class="ownership-bar-fill ownership-bar-institutional" style="width: ${sharesOutstanding > 0 ? (institutionalShares / sharesOutstanding) * 100 : 0}%"></div>
+            <div class="ownership-bar-fill ownership-bar-insider" style="width: ${sharesOutstanding > 0 ? (insiderShares / sharesOutstanding) * 100 : 0}%"></div>
+            <div class="ownership-bar-fill ownership-bar-float ${floatClass}" style="width: ${sharesOutstanding > 0 ? (floatShares / sharesOutstanding) * 100 : 0}%"></div>
+        </div>
+        <div class="ownership-bar-breakdown">
+            ⚫ rem: ${formatLargeNumber(remainingShares)} (${((remainingShares / sharesOutstanding) * 100).toFixed(1)}%) • 
+            🟠 insid: ${formatLargeNumber(institutionalShares)} (${((institutionalShares / sharesOutstanding) * 100).toFixed(1)}%) • 
+            🔴 insti: ${formatLargeNumber(insiderShares)} (${((insiderShares / sharesOutstanding) * 100).toFixed(1)}%)
+        </div>
+    `;
+    barsContainer.appendChild(totalBarElement);
 
-        // Determine the reference total (outer ring uses sharesOutstanding, inner uses floatShares)
-        const referenceTotal = datasetIndex === 0 ? sharesOutstanding : floatShares;
-        const percentage = ((value / referenceTotal) * 100).toFixed(2);
-
-        return `${tooltipItem.label}: ${percentage}%)`;
-    };
-
-    // ✅ Create a nested doughnut chart (Stacked Ownership)
-    window.ownershipCharts[chartId] = new Chart(chartCanvas.getContext("2d"), {
-        type: "doughnut",
-        data: {
-            labels: [
-                "Public Float",
-                "Insider Held",
-                "Institutional Held",
-                "Remaining Shares", // Outer Ring (Total)
-                "Float (Non-Shorted)",
-                "Shorted Shares", // Inner Ring (Short Inside Float)
-            ],
-            datasets: [
-                {
-                    // Outer Ring (Total Outstanding Breakdown)
-                    data: totalBreakdown,
-                    backgroundColor: [
-                        "#1E90FF", // 🔵 Public Float (Blue)
-                        "#FF0000", // 🔴 Insider Held
-                        "#FFA500", // 🟠 Institutional Held (Orange)
-                        "#404040", // ⚫ Remaining Shares (Gray)
-                    ],
-                    borderColor: "#1c1d23", // ⚪ Keep borders white for better separation
-                    borderWidth: 1, // ✅ Reduced width
-                },
-                {
-                    // Inner Ring (Short Inside Float)
-                    data: floatBreakdown,
-                    backgroundColor: [
-                        "#1E90FF", // 🔵 Float (excluding short)
-                        "#FFFF00", // 🟡 Shorted Shares
-                    ],
-                    borderColor: "#1c1d23", // ⚪ Keep borders white for better separation
-                    borderWidth: 1, // ✅ Reduced width
-                },
-            ],
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }, // ✅ Enabled legend for clarity
-                tooltip: {
-                    enabled: true, // ✅ Enable tooltips
-                    callbacks: {
-                        label: tooltipFormatter, // ✅ Format tooltips to show absolute + percentage
-                    },
-                },
-            },
-            cutout: "80%", // ✅ Makes it a more distinct double-ring chart
-        },
-    });
+    // 2. Float Breakdown Bar (only if we have float data)
+    if (floatShares > 0) {
+        const floatBarElement = document.createElement('div');
+        floatBarElement.className = 'ownership-bar';
+        floatBarElement.innerHTML = `
+            <div class="ownership-bar-label">
+                🔵 Float: <span class="ownership-bar-value ${floatClass}">${formatLargeNumber(floatShares)}</span>
+            </div>
+            <div class="ownership-bar-fill-container">
+                <div class="ownership-bar-fill ownership-bar-float-non-short" style="width: ${(floatNonShort / floatShares) * 100}%"></div>
+                <div class="ownership-bar-fill ownership-bar-short" style="width: ${(sharesShort / floatShares) * 100}%"></div>
+            </div>
+            <div class="ownership-bar-breakdown">
+               
+                🟡 short ${formatLargeNumber(sharesShort)} (${((sharesShort / floatShares) * 100).toFixed(1)}%)
+            </div>
+        `;
+        barsContainer.appendChild(floatBarElement);
+    }
+    
+    // 3. Data Quality Issues Message
+    if (hasDataIssues) {
+        const errorElement = document.createElement('div');
+        errorElement.className = 'data-quality-warning';
+        errorElement.innerHTML = `
+            <div class="warning-header">⚠️ Data Quality Issues:</div>
+            <ul class="warning-list">
+                ${issues.map(issue => `<li>${issue}</li>`).join('')}
+            </ul>
+        `;
+        barsContainer.appendChild(errorElement);
+    }
 }
 
-function getSymbolColor(symbol) {
-    if (!symbolColors[symbol]) {
-        const hash = [...symbol].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const hue = (hash * 37) % 360;
-        const saturation = 80;
-        const lightness = 50;
-        const alpha = 0.5;
-        symbolColors[symbol] = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+// Finviz charts implementation
+// No global variables needed - using simple iframe approach
+
+// Function to create/update Finviz chart
+function updateStockChart(symbol) {
+    console.log(`📊 [ACTIVE] Updating Finviz chart for: ${symbol}`);
+    
+    const container = document.getElementById("stockchart-widget");
+    if (!container) {
+        console.warn("⚠️ [ACTIVE] Chart container not found");
+        return;
     }
-    return symbolColors[symbol];
+    
+    if (!symbol) {
+        // Show placeholder if no symbol
+        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #888; font-size: 14px;">Select a symbol to view chart</div>';
+        return;
+    }
+    
+    // Build Finviz mini chart URL (smaller, simpler format)
+    // Parameters:
+    // t = ticker symbol
+    // ty = chart type (c = candlestick, l = line)
+    // ta = technical analysis (0 = no indicators)
+    // p = period (d = daily, w = weekly, m = monthly)
+    // s = size (s = small)
+    const chartUrl = `https://finviz.com/chart.ashx?t=${symbol}&ty=l&ta=0&p=d&s=s`;
+    
+    console.log(`📊 [ACTIVE] Creating iframe with Finviz mini chart URL: ${chartUrl}`);
+    
+    // Create iframe dynamically
+    const iframe = document.createElement('iframe');
+    iframe.id = 'stockchart-iframe';
+    iframe.src = chartUrl;
+    iframe.style.cssText = 'height: 100%; width: 100%; border: none; border-radius: 8px;';
+    iframe.frameBorder = '0';
+    iframe.title = 'Stock Chart';
+    
+    // Handle iframe load events
+        iframe.onload = () => {
+            console.log(`📊 [ACTIVE] Finviz mini chart loaded for ${symbol}`);
+        };
+        
+        iframe.onerror = () => {
+            console.error(`❌ [ACTIVE] Failed to load Finviz mini chart for ${symbol}`);
+        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #ff6b6b; font-size: 14px;">Chart failed to load</div>';
+    };
+    
+    // Clear container and add iframe
+    container.innerHTML = '';
+    container.appendChild(iframe);
+    
+    console.log(`📊 [ACTIVE] Iframe created and added to container`);
 }
 
 function getSymbolColor(symbol) {

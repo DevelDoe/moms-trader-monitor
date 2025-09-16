@@ -732,7 +732,8 @@ const AudioManager = (() => {
     let audioSettings = {
         comboVolume: 0.55,
         newsVolume: 1.0,
-        hodChimeVolume: 0.05
+        hodChimeVolume: 0.05,
+        muted: false
     };
     
     // Audio instances cache
@@ -765,7 +766,8 @@ const AudioManager = (() => {
             audioSettings = {
                 comboVolume: 0.55,
                 newsVolume: 1.0,
-                hodChimeVolume: 0.05
+                hodChimeVolume: 0.05,
+                muted: false
             };
         }
     }
@@ -839,6 +841,12 @@ const AudioManager = (() => {
     // Play news alert audio
     function playNewsAlert() {
         try {
+            // Check if audio is muted
+            if (audioSettings.muted) {
+                console.log("🔇 Audio muted, skipping news alert");
+                return;
+            }
+            
             if (!audioCache.newsAlert) {
                 console.warn("⚠️ News alert audio not loaded");
                 return;
@@ -858,6 +866,12 @@ const AudioManager = (() => {
     // Play HOD chime audio
     function playHodChime() {
         try {
+            // Check if audio is muted
+            if (audioSettings.muted) {
+                console.log("🔇 Audio muted, skipping HOD chime");
+                return;
+            }
+            
             if (!audioCache.hodChime) {
                 console.warn("⚠️ HOD chime audio not loaded");
                 return;
@@ -877,6 +891,12 @@ const AudioManager = (() => {
     // Play events combo audio - replicates original playSampleBuffer function exactly
     function playEventsCombo(strength = 0, isLongAlert = false, comboLevel = 2) {
         try {
+            // Check if audio is muted
+            if (audioSettings.muted) {
+                console.log("🔇 Audio muted, skipping events combo");
+                return;
+            }
+            
             if (!audioCache.eventsAudioContext || audioCache.eventsAudioContext.state === "closed") {
                 console.warn("⚠️ Events audio context not available");
                 return;

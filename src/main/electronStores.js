@@ -2037,12 +2037,14 @@ const audioSettingsBus = new EventEmitter();
 let _audioComboVolume = audioSettingsStore.get("comboVolume", 0.55);
 let _audioNewsVolume = audioSettingsStore.get("newsVolume", 1.0);
 let _audioHodChimeVolume = audioSettingsStore.get("hodChimeVolume", 0.05);
+let _audioMuted = audioSettingsStore.get("muted", false);
 
 function getAudioSettings() {
     return {
         comboVolume: _audioComboVolume,
         newsVolume: _audioNewsVolume,
-        hodChimeVolume: _audioHodChimeVolume
+        hodChimeVolume: _audioHodChimeVolume,
+        muted: _audioMuted
     };
 }
 
@@ -2064,6 +2066,12 @@ function setAudioSettings(settings) {
     if (settings.hodChimeVolume !== undefined && settings.hodChimeVolume !== _audioHodChimeVolume) {
         _audioHodChimeVolume = Math.max(0, Math.min(1, Number(settings.hodChimeVolume) || 0.05));
         audioSettingsStore.set("hodChimeVolume", _audioHodChimeVolume);
+        changed = true;
+    }
+    
+    if (settings.muted !== undefined && settings.muted !== _audioMuted) {
+        _audioMuted = Boolean(settings.muted);
+        audioSettingsStore.set("muted", _audioMuted);
         changed = true;
     }
     
@@ -2095,6 +2103,10 @@ function setAudioNewsVolume(volume) {
 
 function setAudioHodChimeVolume(volume) {
     return setAudioSettings({ hodChimeVolume: volume });
+}
+
+function setAudioMuted(muted) {
+    return setAudioSettings({ muted: muted });
 }
 
 if (app && ipcMain && typeof app.on === "function" && !app.__audio_settings_ipc_registered__) {
@@ -2762,6 +2774,7 @@ module.exports = {
     setAudioComboVolume,
     setAudioNewsVolume,
     setAudioHodChimeVolume,
+    setAudioMuted,
     
     // For testing - expose IPC handlers and stores
     ipcMain: app && ipcMain ? ipcMain : undefined,
