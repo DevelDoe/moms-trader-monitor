@@ -2265,17 +2265,51 @@ function initializeFilingFiltersSection() {
     // Listen for updates from other windows
     window.filingFilterSettingsAPI.onUpdate((updatedSettings) => {
         if (updatedSettings) {
-            document.getElementById('filing-group-1-enabled').checked = updatedSettings.group1Enabled !== false;
-            document.getElementById('filing-group-2-enabled').checked = updatedSettings.group2Enabled !== false;
-            document.getElementById('filing-group-3-enabled').checked = updatedSettings.group3Enabled !== false;
+            // Update individual form checkboxes from the actual data structure
+            if (updatedSettings.group1Forms) {
+                Object.entries(updatedSettings.group1Forms).forEach(([form, enabled]) => {
+                    const checkbox = document.getElementById(`filing-form-${form}`);
+                    if (checkbox) {
+                        checkbox.checked = enabled;
+                    }
+                });
+            }
             
-            const enabledForms = updatedSettings.enabledForms || [];
-            Object.values(formsByPriority).flat().forEach(form => {
+            if (updatedSettings.group2Forms) {
+                Object.entries(updatedSettings.group2Forms).forEach(([form, enabled]) => {
+                    const checkbox = document.getElementById(`filing-form-${form}`);
+                    if (checkbox) {
+                        checkbox.checked = enabled;
+                    }
+                });
+            }
+            
+            if (updatedSettings.group3Forms) {
+                Object.entries(updatedSettings.group3Forms).forEach(([form, enabled]) => {
+                    const checkbox = document.getElementById(`filing-form-${form}`);
+                    if (checkbox) {
+                        checkbox.checked = enabled;
+                    }
+                });
+            }
+            
+            // Update group toggles based on whether ALL forms in each group are enabled
+            const group1AllEnabled = formsByPriority[1].every(form => {
                 const checkbox = document.getElementById(`filing-form-${form}`);
-                if (checkbox) {
-                    checkbox.checked = enabledForms.includes(form);
-                }
+                return checkbox && checkbox.checked;
             });
+            const group2AllEnabled = formsByPriority[2].every(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                return checkbox && checkbox.checked;
+            });
+            const group3AllEnabled = formsByPriority[3].every(form => {
+                const checkbox = document.getElementById(`filing-form-${form}`);
+                return checkbox && checkbox.checked;
+            });
+            
+            document.getElementById('filing-group-1-enabled').checked = group1AllEnabled;
+            document.getElementById('filing-group-2-enabled').checked = group2AllEnabled;
+            document.getElementById('filing-group-3-enabled').checked = group3AllEnabled;
             
             console.log("✅ Filing filter settings updated from other window:", updatedSettings);
         }

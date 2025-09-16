@@ -131,6 +131,7 @@ a {
     display: flex;
     align-items: center;
     gap: 8px;
+    color: #999
 }
 
 .filing-item.collapsed h5 {
@@ -141,7 +142,7 @@ a {
     text-overflow: ellipsis;
     flex: 1;
     margin: 0;
-    color: #cfcfcf;
+    color: #999;
 }
 
 .filing-item.collapsed .filing-time {
@@ -150,4 +151,5 @@ a {
     opacity: 0.8;
     white-space: nowrap;
     flex-shrink: 0;
+    color: #cfcfcf
 }
