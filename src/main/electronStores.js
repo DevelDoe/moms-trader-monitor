@@ -2028,6 +2028,175 @@ if (app && ipcMain && typeof app.on === "function" && !app.__traderview_settings
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// World Settings store (persist + broadcast)
+// ─────────────────────────────────────────────────────────────────────
+
+const worldSettingsStore = createStore("world-settings-store", "world.");
+const worldSettingsBus = new EventEmitter();
+
+let _worldMinPrice = worldSettingsStore.get("minPrice", 1);
+let _worldMaxPrice = worldSettingsStore.get("maxPrice", 0);
+let _worldMinFloat = worldSettingsStore.get("minFloat", 0);
+let _worldMaxFloat = worldSettingsStore.get("maxFloat", 0);
+let _worldMinScore = worldSettingsStore.get("minScore", 0);
+let _worldMaxScore = worldSettingsStore.get("maxScore", 0);
+let _worldMinVolume = worldSettingsStore.get("minVolume", 0);
+let _worldMaxVolume = worldSettingsStore.get("maxVolume", 0);
+let _worldMinChangePercent = worldSettingsStore.get("minChangePercent", 0);
+
+function getWorldSettings() {
+    return {
+        minPrice: _worldMinPrice,
+        maxPrice: _worldMaxPrice,
+        minFloat: _worldMinFloat,
+        maxFloat: _worldMaxFloat,
+        minScore: _worldMinScore,
+        maxScore: _worldMaxScore,
+        minVolume: _worldMinVolume,
+        maxVolume: _worldMaxVolume,
+        minChangePercent: _worldMinChangePercent,
+    };
+}
+
+function setWorldSettings(settings) {
+    let changed = false;
+    
+    if (settings.minPrice !== undefined && settings.minPrice !== _worldMinPrice) {
+        _worldMinPrice = Number(settings.minPrice) || 0;
+        worldSettingsStore.set("minPrice", _worldMinPrice);
+        changed = true;
+    }
+    
+    if (settings.maxPrice !== undefined && settings.maxPrice !== _worldMaxPrice) {
+        _worldMaxPrice = Number(settings.maxPrice) || 0;
+        worldSettingsStore.set("maxPrice", _worldMaxPrice);
+        changed = true;
+    }
+    
+    if (settings.minFloat !== undefined && settings.minFloat !== _worldMinFloat) {
+        _worldMinFloat = Number(settings.minFloat) || 0;
+        worldSettingsStore.set("minFloat", _worldMinFloat);
+        changed = true;
+    }
+    
+    if (settings.maxFloat !== undefined && settings.maxFloat !== _worldMaxFloat) {
+        _worldMaxFloat = Number(settings.maxFloat) || 0;
+        worldSettingsStore.set("maxFloat", _worldMaxFloat);
+        changed = true;
+    }
+    
+    if (settings.minScore !== undefined && settings.minScore !== _worldMinScore) {
+        _worldMinScore = Number(settings.minScore) || 0;
+        worldSettingsStore.set("minScore", _worldMinScore);
+        changed = true;
+    }
+    
+    if (settings.maxScore !== undefined && settings.maxScore !== _worldMaxScore) {
+        _worldMaxScore = Number(settings.maxScore) || 0;
+        worldSettingsStore.set("maxScore", _worldMaxScore);
+        changed = true;
+    }
+    
+    if (settings.minVolume !== undefined && settings.minVolume !== _worldMinVolume) {
+        _worldMinVolume = Number(settings.minVolume) || 0;
+        worldSettingsStore.set("minVolume", _worldMinVolume);
+        changed = true;
+    }
+    
+    if (settings.maxVolume !== undefined && settings.maxVolume !== _worldMaxVolume) {
+        _worldMaxVolume = Number(settings.maxVolume) || 0;
+        worldSettingsStore.set("maxVolume", _worldMaxVolume);
+        changed = true;
+    }
+    
+    if (settings.minChangePercent !== undefined && settings.minChangePercent !== _worldMinChangePercent) {
+        _worldMinChangePercent = Number(settings.minChangePercent) || 0;
+        worldSettingsStore.set("minChangePercent", _worldMinChangePercent);
+        changed = true;
+    }
+    
+    if (changed) {
+        const payload = getWorldSettings();
+        worldSettingsBus.emit("change", payload);
+        
+        const targets = webContents.getAllWebContents();
+        for (const wc of targets) {
+            try {
+                wc.send("world-settings:change", payload);
+            } catch (err) {
+                log.log("[world-settings] send failed", { target: wc.id, err: String(err) });
+            }
+        }
+    }
+    
+    return changed;
+}
+
+// Individual setters for convenience
+function setWorldMinPrice(minPrice) {
+    return setWorldSettings({ minPrice });
+}
+
+function setWorldMaxPrice(maxPrice) {
+    return setWorldSettings({ maxPrice });
+}
+
+function setWorldMinFloat(minFloat) {
+    return setWorldSettings({ minFloat });
+}
+
+function setWorldMaxFloat(maxFloat) {
+    return setWorldSettings({ maxFloat });
+}
+
+function setWorldMinScore(minScore) {
+    return setWorldSettings({ minScore });
+}
+
+function setWorldMaxScore(maxScore) {
+    return setWorldSettings({ maxScore });
+}
+
+function setWorldMinVolume(minVolume) {
+    return setWorldSettings({ minVolume });
+}
+
+function setWorldMaxVolume(maxVolume) {
+    return setWorldSettings({ maxVolume });
+}
+
+function setWorldMinChangePercent(minChangePercent) {
+    return setWorldSettings({ minChangePercent });
+}
+
+if (app && ipcMain && typeof app.on === "function" && !app.__world_settings_ipc_registered__) {
+    app.__world_settings_ipc_registered__ = true;
+
+    ipcMain.removeHandler("world-settings:get");
+    ipcMain.removeHandler("world-settings:set");
+    
+    ipcMain.handle("world-settings:get", () => {
+        return getWorldSettings();
+    });
+    
+    ipcMain.handle("world-settings:set", (_e, settings) => {
+        return setWorldSettings(settings);
+    });
+
+    ipcMain.removeAllListeners("world-settings:subscribe");
+    ipcMain.on("world-settings:subscribe", (e) => {
+        const wc = e.sender;
+        const push = (data) => wc.send("world-settings:change", data);
+        push(getWorldSettings()); // prime immediately
+        worldSettingsBus.on("change", push);
+        wc.once("destroyed", () => {
+            log.log("[world-settings] unsubscribe WC", wc.id);
+            worldSettingsBus.removeListener("change", push);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Audio Settings store (persist + broadcast)
 // ─────────────────────────────────────────────────────────────────────
 
@@ -2265,11 +2434,6 @@ const DEFAULT_WINDOW_STATES = {
         height: 39,
         isOpen: false,
     },
-    wizardWindow: {
-        width: 2400,
-        height: 504,
-        isOpen: false,
-    },
     dockerWindow: {
         width: 200,
         height: 100,
@@ -2403,7 +2567,6 @@ function calculateSmartWindowPosition(windowKey, width = 0, height = 0) {
             activeWindow: { x: -100, y: 0 },
             heroesWindow: { x: 100, y: 0 },
             settingsWindow: { x: 0, y: 0 },
-            wizardWindow: { x: 0, y: 0 },
             dockerWindow: { x: 100, y: 100 },
             progressWindow: { x: 0, y: 100 },
             scrollXpWindow: { x: -100, y: 100 },
@@ -2791,6 +2954,19 @@ module.exports = {
     setTraderviewAutoClose,
     setTraderviewEnableActiveChart,
     setTraderviewAutoCloseActive,
+    
+    // World settings exports
+    getWorldSettings,
+    setWorldSettings,
+    setWorldMinPrice,
+    setWorldMaxPrice,
+    setWorldMinFloat,
+    setWorldMaxFloat,
+    setWorldMinScore,
+    setWorldMaxScore,
+    setWorldMinVolume,
+    setWorldMaxVolume,
+    setWorldMinChangePercent,
     
     // Audio settings exports
     getAudioSettings,

@@ -9,6 +9,46 @@ const ACTIVE_TICKER_UPDATE_INTERVAL = 3 * 60 * 1000;
 const MIN_UPDATE_INTERVAL = 5000;
 const MAX_STRENGTH = 1_000_000;
 
+// HOD Color Logic (from hod.js)
+const GOLD_HEX = "#ffd24a";
+const AT_HIGH_EPS = 0.01;
+const HOD_BASE_AT3 = 0.3;
+const HOD_EXP = 0.5;
+const HOD_MIN = 0.05;
+const HOD_MAX = 3.0;
+let HOD_ZONE_SCALE = 1.0;
+
+const clamp = (n, mi, ma) => Math.max(mi, Math.min(ma, n));
+
+function hodThresholdUSDFromPrice(price) {
+    if (!isFinite(price) || price <= 0) return HOD_BASE_AT3;
+    const k = HOD_BASE_AT3 / Math.pow(3, HOD_EXP);
+    let th = HOD_ZONE_SCALE * k * Math.pow(price, HOD_EXP);
+    if (price < 2) th *= 0.8;
+    if (price > 12) th *= 0.9;
+    if (price > 20) th *= 0.8;
+    return clamp(th, HOD_MIN, HOD_MAX);
+}
+
+function getHodPriceColor(currentPrice, sessionHigh) {
+    if (!isFinite(currentPrice) || !isFinite(sessionHigh) || sessionHigh <= 0) {
+        return 'white'; // Default color
+    }
+
+    const diffUSD = Math.max(0, sessionHigh - currentPrice);
+    const thr = hodThresholdUSDFromPrice(currentPrice || sessionHigh || 0);
+    const atHigh = diffUSD <= AT_HIGH_EPS;
+    const within = diffUSD > AT_HIGH_EPS && diffUSD <= thr;
+
+    if (atHigh) {
+        return GOLD_HEX; // Gold when at high of day
+    } else if (within) {
+        return '#ffff99'; // Light yellow when within HOD threshold
+    } else {
+        return 'white'; // White when far from high
+    }
+}
+
 /* ===== 1) State ===== */
 const state = {
     heroes: Object.create(null),
@@ -134,6 +174,9 @@ function createCard(h) {
     const { totalXp, xpForNextLevel, xpPercent } = window.helpers.getXpProgress(h);
     const faded = Date.now() - (h.lastUpdate || 0) > 10_000 ? "opacity:.8; filter:grayscale(.8);" : "";
     const { posHTML, neuHTML, negHTML } = buildBuffRows(h);
+    
+    // Get HOD color for price
+    const priceColor = getHodPriceColor(h.price, h.sessionHigh);
 
     card.innerHTML = `
     <div class="ticker-header-grid">
@@ -144,7 +187,7 @@ function createCard(h) {
             <span class="lv-medal">${getSymbolMedal(h.hero)}</span>
             ${getSymbolTrophy(h.hero)}
             ${getSymbolXpTrophy(h.hero)}
-            <span class="lv-price">$${(h.price ?? 0).toFixed(2)}</span>
+            <span class="lv-price" style="color:${priceColor}">$${(h.price ?? 0).toFixed(2)}</span>
           </span>
         </div>
         <div class="bar-text stats lv" style="font-size:6px;margin-top:4px">L <span style="color:white;">${h.lv ?? 1}</span></div>
@@ -195,7 +238,12 @@ function patchCardDOM(sym, h) {
     }
 
     const priceEl = card.querySelector(".lv-price");
-    if (priceEl) priceEl.textContent = `$${(h.price ?? 0).toFixed(2)}`;
+    if (priceEl) {
+        priceEl.textContent = `$${(h.price ?? 0).toFixed(2)}`;
+        // Apply HOD color logic based on proximity to session high
+        const priceColor = getHodPriceColor(h.price, h.sessionHigh);
+        priceEl.style.color = priceColor;
+    }
 
     const medalEl = card.querySelector(".lv-medal");
     if (medalEl) medalEl.innerHTML = getSymbolMedal(sym);
@@ -307,9 +355,16 @@ function render() {
     if (topKey !== state.lastTopSymbolsKey) {
         state.lastTopSymbolsKey = topKey;
         if (window.traderviewAPI?.setTopTickers && now - state.lastTickerSetAt > MIN_UPDATE_INTERVAL) {
-            const n = state.heroesSettings?.listLength ?? 3;
-            window.traderviewAPI.setTopTickers(topSymbols.slice(0, n));
-            state.lastTickerSetAt = now;
+            // Check if heroes mode is enabled before setting top tickers
+            const enableHeroes = state.traderviewSettings?.enableHeroes ?? false;
+            if (enableHeroes) {
+                const n = state.heroesSettings?.listLength ?? 3;
+                window.traderviewAPI.setTopTickers(topSymbols.slice(0, n));
+                state.lastTickerSetAt = now;
+                console.log(`🦸 [HEROES] Heroes mode enabled, setting top tickers: ${topSymbols.slice(0, n).join(', ')}`);
+            } else {
+                console.log(`🦸 [HEROES] Heroes mode disabled, skipping top tickers update`);
+            }
         }
     }
 }
@@ -351,8 +406,8 @@ function handleAlertEvent(evt) {
     if (!evt?.hero) return;
 
     // Guards
-    const minPrice = state.settings?.top?.minPrice ?? 0;
-    const maxPrice = state.settings?.top?.maxPrice > 0 ? state.settings.top.maxPrice : Infinity;
+    const minPrice = state.worldSettings?.minPrice ?? 0;
+    const maxPrice = state.worldSettings?.maxPrice > 0 ? state.worldSettings.maxPrice : Infinity;
 
     const price = Number(evt.price);
     const vol = Number(evt.one_min_volume) || 0;
@@ -380,7 +435,7 @@ function handleAlertEvent(evt) {
             strength: vol,
             lastEvent: { hp: 0, dp: 0, score: 0 },
             buffs: {},
-            highestPrice: Number.isFinite(price) ? price : 1,
+            sessionHigh: evt.sessionHigh || Number.isFinite(price) ? price : 1,
             lastUpdate: 0,
         };
     }
@@ -389,6 +444,11 @@ function handleAlertEvent(evt) {
     if (Number.isFinite(price)) h.price = price;
     if (evt.hue !== undefined) h.hue = evt.hue;
     h.strength = vol;
+    
+    // Update session high from alert data
+    if (Number.isFinite(evt.sessionHigh)) {
+        h.sessionHigh = evt.sessionHigh;
+    }
 
     // HP bar: apply both sides (no mutual-exclusivity)
     if (hp > 0) h.hp += hp;
@@ -511,9 +571,7 @@ async function boot() {
     state.container = document.getElementById("heroes");
     if (!state.container) return;
 
-    try {
-        state.settings = await window.settingsAPI.get();
-    } catch {}
+    // Settings are now managed by Electron stores
     try {
         state.buffsMaster = (await window.electronAPI.getBuffs()) || [];
         window.electronAPI.onBuffsUpdate?.((b) => {
@@ -530,6 +588,11 @@ async function boot() {
     // traderview settings
     try {
         state.traderviewSettings = await window.electronAPI.ipc.invoke("traderview-settings:get");
+    } catch {}
+    
+    // world settings
+    try {
+        state.worldSettings = await window.worldSettingsAPI.get();
     } catch {}
 
     // seed from store
@@ -551,18 +614,14 @@ async function boot() {
                     strength: s.one_min_volume || 0,
                     lastEvent: { hp: 0, dp: 0 },
                     buffs: s.buffs || {}, // already hydrated by store
-                    highestPrice: s.highestPrice ?? s.price ?? 1,
+                    sessionHigh: s.sessionHigh ?? s.price ?? 1,
                     lastUpdate: Date.now(),
                 };
             }
         });
     } catch {}
 
-    // settings + alerts + store updates
-    window.settingsAPI.onUpdate((s) => {
-        state.settings = s || {};
-        markDirty();
-    });
+    // Settings are now managed by Electron stores
     
     // heroes settings listener
     window.electronAPI.ipc?.send("heroes-settings:subscribe");
@@ -575,6 +634,12 @@ async function boot() {
     window.electronAPI.ipc?.send("traderview-settings:subscribe");
     window.electronAPI.ipc?.on("traderview-settings:change", (_event, traderviewSettings) => {
         state.traderviewSettings = traderviewSettings || {};
+        markDirty();
+    });
+    
+    // world settings listener
+    window.worldSettingsAPI.onUpdate((worldSettings) => {
+        state.worldSettings = worldSettings || {};
         markDirty();
     });
 
@@ -601,7 +666,7 @@ async function boot() {
 
     window.storeAPI.onHeroUpdate?.((payload) => {
         const items = Array.isArray(payload) ? payload : [payload];
-        items.forEach(({ hero, buffs, price, one_min_volume, highestPrice, lastEvent, xp, lv, totalXpGained }) => {
+        items.forEach(({ hero, buffs, price, one_min_volume, sessionHigh, lastEvent, xp, lv, totalXpGained }) => {
             if (!hero) return;
             const sym = String(hero).toUpperCase();
             const h =
@@ -619,13 +684,13 @@ async function boot() {
                     strength: one_min_volume || 0,
                     lastEvent: { hp: 0, dp: 0 },
                     buffs: {},
-                    highestPrice: highestPrice ?? price ?? 1,
+                    sessionHigh: sessionHigh ?? price ?? 1,
                     lastUpdate: 0,
                 });
 
             if (Number.isFinite(price)) h.price = price;
             if (Number.isFinite(one_min_volume)) h.strength = one_min_volume;
-            if (highestPrice !== undefined) h.highestPrice = highestPrice;
+            if (Number.isFinite(sessionHigh)) h.sessionHigh = sessionHigh;
             if (lastEvent) h.lastEvent = lastEvent;
             if (Number.isFinite(xp)) h.xp = xp;
             if (Number.isFinite(lv)) h.lv = lv;

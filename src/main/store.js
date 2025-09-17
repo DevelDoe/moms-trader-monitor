@@ -27,8 +27,7 @@ const debugXp = false;
 const debug = false;
 const HYDRATION_DEBUG = false; // Hydration flow logging
 
-// ✅ Declare SETTINGS_FILE before logging it
-const SETTINGS_FILE = isDevelopment ? path.join(__dirname, "../data/settings.dev.json") : path.join(require("electron").app.getPath("userData"), "settings.json");
+// Settings are now managed by Electron stores
 
 const BUFFS_FILE = path.join(__dirname, "../data/buffs.json");
 

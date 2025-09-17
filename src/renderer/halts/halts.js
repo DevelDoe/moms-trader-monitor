@@ -53,14 +53,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    // Load settings
-    try {
-        settings = await window.settingsAPI.get();
-        console.log("✅ Settings loaded in halts window:", settings);
-    } catch (e) {
-        console.warn("⚠️ Failed to load settings in halts window:", e);
-        settings = {}; // fallback
-    }
+    // Settings are now managed by Electron stores
+    settings = {}; // fallback
 
     // Test data removed - ready for production
 
@@ -69,7 +63,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         const halts = await window.haltAPI.getHeadlines();
         if (halts && Array.isArray(halts)) {
             console.log(`📊 Received ${halts.length} initial halts from Oracle`);
-            allHalts = [...allHalts, ...halts];
+            
+            // Filter out expired halts (older than 5 minutes) BEFORE adding to allHalts
+            const now = Date.now();
+            const validHalts = halts.filter(halt => {
+                let haltTimeMs;
+                
+                if (halt.halt_time && typeof halt.halt_time === 'number') {
+                    haltTimeMs = halt.halt_time * 1000;
+                } else {
+                    const timestampStr = halt.timestamp_et || halt.timestamp || halt.received_at;
+                    if (timestampStr) {
+                        try {
+                            haltTimeMs = new Date(timestampStr).getTime();
+                        } catch (e) {
+                            return false; // Invalid timestamp, remove it
+                        }
+                    } else {
+                        return false; // No timestamp, remove it
+                    }
+                }
+                
+                // Keep only halts that are less than 5 minutes old (300 seconds)
+                const elapsedMs = now - haltTimeMs;
+                const elapsedSeconds = Math.floor(elapsedMs / 1000);
+                return elapsedSeconds < 300;
+            });
+            
+            console.log(`📊 Filtered to ${validHalts.length} non-expired halts from ${halts.length} total`);
+            allHalts = [...allHalts, ...validHalts];
             
             // Sort halts by timestamp (newest first)
             allHalts.sort((a, b) => {
@@ -147,16 +169,18 @@ function updateCountdowns() {
             const seconds = countdownSeconds % 60;
             countdownStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         } else {
-            // Countdown has expired - show "EXPIRED" instead of removing
-            countdownStr = 'EXPIRED';
+            // Countdown reached 0 - restart from 5 minutes (loop)
+            const minutes = Math.floor(300 / 60); // 5 minutes = 300 seconds
+            const seconds = 300 % 60;
+            countdownStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             
-            // Mark as expired but don't remove
+            // Update the data-halt-time to restart the countdown
             const haltElement = element.closest('.halt-event');
-            const symbol = haltElement?.getAttribute('data-symbol');
-            
-            if (symbol && !expiredHalts.has(symbol)) {
-                expiredHalts.add(symbol);
-                markHaltAsExpired(haltElement, symbol);
+            if (haltElement) {
+                // Set halt time to current time to restart 5-minute countdown
+                const newHaltTime = Math.floor(Date.now() / 1000);
+                haltElement.setAttribute('data-halt-time', newHaltTime);
+                element.setAttribute('data-halt-time', newHaltTime);
             }
         }
         
@@ -436,7 +460,7 @@ function createHaltElement(halt) {
     
     // Create compact layout with Symbol component, halt type, and countdown
     return `
-        <div class="halt-event ${stateClass}" id="halt-${haltId}" data-symbol="${halt.symbol}" data-halt-time="${halt.halt_time || halt.timestamp_et || halt.timestamp || halt.received_at}">
+        <div class="halt-event ${stateClass}" id="halt-${haltId}" data-symbol="${halt.symbol}" data-halt-time="${halt.halt_time || ''}">
             <div class="halt-content">
                 <div class="halt-symbol-container">
                     ${window.components.Symbol({ 
@@ -462,50 +486,77 @@ function handleHaltDelta(haltData, metadata = {}) {
         return;
     }
 
-    // Add new halt to array
-    allHalts.push(haltData);
-
-    // Sort halts by timestamp (newest first) and keep only the most recent
-    allHalts.sort((a, b) => {
-        const timeA = a.halt_time || a.timestamp_et || a.timestamp || a.received_at;
-        const timeB = b.halt_time || b.timestamp_et || b.timestamp || b.received_at;
+    // Handle RESUMED state - remove the halt
+    if (haltData.state === 'RESUMED') {
+        console.log(`✅ Received RESUMED message for ${haltData.symbol} - removing halt`);
         
-        // Compare timestamps (newest first)
-        if (typeof timeA === 'number' && typeof timeB === 'number') {
-            return timeB - timeA;
+        // Find and remove the halt from allHalts
+        allHalts = allHalts.filter(halt => halt.symbol !== haltData.symbol);
+        
+        // Remove from currently halted symbols
+        currentlyHaltedSymbols.delete(haltData.symbol);
+        symbolStates.delete(haltData.symbol);
+        
+        // Re-render the display
+        renderHalts();
+        
+        // Log structure for debugging
+        if (window.appFlags?.eventsDebug) {
+            logHaltStructure([haltData], "RESUMED");
         }
-        return timeB.localeCompare(timeA);
-    });
-
-    // Keep only the most recent halts
-    if (allHalts.length > maxHaltsLength) {
-        allHalts = allHalts.slice(0, maxHaltsLength);
+        return;
     }
 
-    // Update halted symbols set
-    updateHaltedSymbols();
+    // Handle HALTED state - add or update the halt
+    if (haltData.state === 'HALTED') {
+        // Remove any existing halt for this symbol first
+        allHalts = allHalts.filter(halt => halt.symbol !== haltData.symbol);
+        
+        // Add new halt to array
+        allHalts.push(haltData);
 
-    // Re-render the display
-    renderHalts();
-
-    // Add visual indicator for new halt with slide-down animation
-    if (metadata.isDelta) {
-        const haltId = `${haltData.symbol}-${haltData.halt_time || Date.now()}`;
-        const haltElement = document.getElementById(`halt-${haltId}`);
-        if (haltElement) {
-            haltElement.classList.add('new');
-            console.log(`🎭 Starting slide-down animation for ${haltData.symbol}`);
+        // Sort halts by timestamp (newest first) and keep only the most recent
+        allHalts.sort((a, b) => {
+            const timeA = a.halt_time || a.timestamp_et || a.timestamp || a.received_at;
+            const timeB = b.halt_time || b.timestamp_et || b.timestamp || b.received_at;
             
-            // Remove the 'new' class after animation completes
-            setTimeout(() => {
-                haltElement.classList.remove('new');
-            }, 800); // Match the slideDown animation duration
-        }
-    }
+            // Compare timestamps (newest first)
+            if (typeof timeA === 'number' && typeof timeB === 'number') {
+                return timeB - timeA;
+            }
+            return timeB.localeCompare(timeA);
+        });
 
-    // Log structure for debugging
-    if (window.appFlags?.eventsDebug) {
-        logHaltStructure([haltData], "DELTA");
+        // Keep only the most recent halts
+        if (allHalts.length > maxHaltsLength) {
+            allHalts = allHalts.slice(0, maxHaltsLength);
+        }
+
+        // Update halted symbols set
+        updateHaltedSymbols();
+
+        // Re-render the display
+        renderHalts();
+
+        // Add visual indicator for new halt with slide-down animation
+        if (metadata.isDelta) {
+            const haltId = `${haltData.symbol}-${haltData.halt_time || Date.now()}`;
+            const haltElement = document.getElementById(`halt-${haltId}`);
+            if (haltElement) {
+                haltElement.classList.add('new');
+                console.log(`🎭 Starting slide-down animation for ${haltData.symbol}`);
+                
+                // Remove the 'new' class after animation completes
+                setTimeout(() => {
+                    haltElement.classList.remove('new');
+                }, 800); // Match the slideDown animation duration
+            }
+        }
+
+        // Log structure for debugging
+        if (window.appFlags?.eventsDebug) {
+            logHaltStructure([haltData], "HALTED");
+        }
     }
 }
 
@@ -518,12 +569,40 @@ function handleHaltHeadlines(haltsData, metadata = {}) {
         return;
     }
 
+    // Filter out expired halts (older than 5 minutes) BEFORE processing
+    const now = Date.now();
+    const validHalts = haltsData.filter(halt => {
+        let haltTimeMs;
+        
+        if (halt.halt_time && typeof halt.halt_time === 'number') {
+            haltTimeMs = halt.halt_time * 1000;
+        } else {
+            const timestampStr = halt.timestamp_et || halt.timestamp || halt.received_at;
+            if (timestampStr) {
+                try {
+                    haltTimeMs = new Date(timestampStr).getTime();
+                } catch (e) {
+                    return false; // Invalid timestamp, remove it
+                }
+            } else {
+                return false; // No timestamp, remove it
+            }
+        }
+        
+        // Keep only halts that are less than 5 minutes old (300 seconds)
+        const elapsedMs = now - haltTimeMs;
+        const elapsedSeconds = Math.floor(elapsedMs / 1000);
+        return elapsedSeconds < 300;
+    });
+    
+    console.log(`🔄 Filtered to ${validHalts.length} non-expired halts from ${haltsData.length} total`);
+
     if (metadata.isHydration) {
-        console.log(`🔄 Hydrating with ${haltsData.length} halt events`);
-        allHalts = haltsData;
+        console.log(`🔄 Hydrating with ${validHalts.length} halt events`);
+        allHalts = validHalts;
     } else {
         // Merge with existing data
-        allHalts = [...haltsData, ...allHalts];
+        allHalts = [...validHalts, ...allHalts];
     }
 
     // Sort halts by timestamp (newest first)
@@ -609,11 +688,7 @@ window.haltAPI.onHydrationComplete(() => {
 });
 
 // Settings update handler
-window.settingsAPI.onUpdate((updatedSettings) => {
-    console.log("⚙️ Settings updated in halts window");
-    settings = updatedSettings;
-    // Could adjust display based on new settings
-});
+// Settings are now managed by Electron stores
 
 // Utility functions for external access
 window.haltsAPI = {

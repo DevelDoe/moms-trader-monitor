@@ -99,16 +99,53 @@ const { DateTime } = require("luxon");
 // const { connectMTP, fetchSymbolsFromServer, flushMessageQueue, startMockAlerts } = require("./collectors/mtp");
 const { hydrateAndApplySymbols } = require("./collectors/arcane_api");
 // const { startMockNews } = require("./collectors/news"); // Removed - news now handled by oracle.js
-const { getLastAckCursor, setLastAckCursor, setTop3, getTop3 } = require("./electronStores");
+const { getLastAckCursor, setLastAckCursor, setTop3, getTop3, getTraderviewSettings, setTraderviewSettings } = require("./electronStores");
 const { chronos } = require("./collectors/chronos");
 const { oracle, getXpActiveStocks, getXpSessionHistory, getXpSessionUpdate, getNewsHeadlines, getNewsCount, getFilingHeadlines, getFilingCount, getChangeActiveStocks, getHaltHeadlines, getHaltCount } = require("./collectors/oracle");
 
 ////////////////////////////////////////////////////////////////////////////////////
 // DATA
 
-const { loadSettings, saveSettings, logVolumeSnapshot } = require("./settings");
+// Cache nuke functionality moved inline
+const CURRENT_VERSION = app.getVersion();
+const VERSION_LOCK_FILE = path.join(app.getPath("userData"), "version.lock");
+let cacheCleared = false;
 
-appSettings = loadSettings();
+function deleteFolderRecursive(folderPath) {
+    if (!fs.existsSync(folderPath)) return;
+    fs.readdirSync(folderPath).forEach((file) => {
+        const curPath = path.join(folderPath, file);
+        if (fs.lstatSync(curPath).isDirectory()) {
+            deleteFolderRecursive(curPath);
+        } else {
+            fs.unlinkSync(curPath);
+        }
+    });
+    try {
+        fs.rmdirSync(folderPath);
+    } catch (err) {
+        log.warn("⚠️ Failed to remove cache folder root:", err.message);
+    }
+}
+
+function nukeCacheIfNeeded() {
+    try {
+        const cachePath = path.join(app.getPath("userData"), "Cache", "Cache_Data");
+        const existingVersion = fs.existsSync(VERSION_LOCK_FILE) ? fs.readFileSync(VERSION_LOCK_FILE, "utf-8").trim() : null;
+
+        if (!cacheCleared && existingVersion !== CURRENT_VERSION) {
+            log.warn(`🧼 Cache nuke triggered (version changed: ${existingVersion} → ${CURRENT_VERSION})`);
+            deleteFolderRecursive(cachePath);
+            fs.writeFileSync(VERSION_LOCK_FILE, CURRENT_VERSION, "utf-8");
+            cacheCleared = true;
+        }
+    } catch (err) {
+        log.log("⚠️ Failed to check or nuke cache:", err.message);
+    }
+}
+
+// Settings are now managed by Electron stores
+appSettings = {};
 
 const buffManager = require("./data/buffsManager");
 
@@ -136,7 +173,6 @@ const { createScrollHodWindow } = require("./windows/scrollHOD");
 const { createInfobarWindow } = require("./windows/infobar");
 
 const { createProgressWindow } = require("./windows/progress");
-const { createWizardWindow } = require("./windows/wizard");
 
 const { createNewsWindow } = require("./windows/news");
 const { createHaltsWindow } = require("./windows/halts");
@@ -194,19 +230,9 @@ app.on("ready", async () => {
 
     // ✅ Do NOT fetch symbols here — handled in ipcMain.once("splash-ready")
 
-    // ✅ Set scannerVolume to 0 before creating windows
-    try {
-        log.log("Loading settings...");
-        let settings = loadSettings();
-
-        if (!settings.scanner) settings.scanner = {};
-        settings.scanner.scannerVolume = 0; // ✅ Ensure volume starts muted
-        saveSettings(settings); // ✅ Persist the settings before windows load
-
-        log.log("Scanner volume initialized to 0 (muted)");
-    } catch (error) {
-        log.error("Failed to initialize scanner volume:", error);
-    }
+    
+    // ✅ Nuke cache if version changed
+    nukeCacheIfNeeded();
 
     // ✅ Check for scheduled restart and close splash immediately
     // if (process.argv.includes("--scheduled-restart") && windows.splash) {
@@ -259,25 +285,9 @@ app.on("ready", async () => {
             windows.docker.show();
         }
 
-        const settings = loadSettings(); // load once, reuse
+        // Settings are now managed by Electron stores
 
-        Object.values(windows).forEach((win) => {
-            function encrypt(text) {
-                const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
-                let encrypted = cipher.update(text, "utf8", "hex");
-                encrypted += cipher.final("hex");
-                return encrypted;
-            }
-
-            function decrypt(encryptedText) {
-                const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
-                let decrypted = decipher.update(encryptedText, "hex", "utf8");
-                decrypted += decipher.final("utf8");
-                return decrypted;
-            }
-
-            safeSend(win, "settings-updated", settings);
-        });
+        // Settings are now managed by Electron stores - no need to broadcast
 
         if (isDevelopment) {
             // startMockAlerts();
@@ -327,8 +337,8 @@ app.on("before-quit", () => {
 });
 
 process.on("exit", () => {
-    log.log("Saving settings before exit...");
-    // saveSettings(appSettings);
+    log.log("Exiting...");
+    // Settings are now managed by Electron stores
 });
 
 function scheduleDailyRestart(targetHour = 0, targetMinute = 0) {
@@ -391,28 +401,9 @@ if (!isDevelopment || forceUpdate) {
             delete windows.splash; // ✅ Ensure reference is removed
         }
 
-        if (appSettings.hasDonated) {
-            // 🛠 If user has donated, let them decide
-            dialog
-                .showMessageBox({
-                    type: "info",
-                    title: "Update Available",
-                    message: `A new update (${info.version}) is available. Would you like to download it now?`,
-                    buttons: ["Download", "Later"],
-                })
-                .then((result) => {
-                    if (result.response === 0) {
-                        log.log("User confirmed download, starting...");
-                        autoUpdater.downloadUpdate();
-                    } else {
-                        log.log("User postponed update.");
-                    }
-                });
-        } else {
-            // 🛠 If user hasn’t donated, update automatically
-            log.log("User hasn't donated, auto-downloading update...");
-            autoUpdater.downloadUpdate();
-        }
+        // Auto-update for all users
+        log.log("Update available, auto-downloading...");
+        autoUpdater.downloadUpdate();
     });
 
     autoUpdater.on("update-not-available", () => {
@@ -435,25 +426,9 @@ if (!isDevelopment || forceUpdate) {
     autoUpdater.on("update-downloaded", () => {
         isUpdating = true;
 
-        if (appSettings.hasDonated) {
-            // 🛠 Donors can choose when to install
-            dialog
-                .showMessageBox({
-                    type: "info",
-                    title: "Update Ready",
-                    message: "The update has been downloaded. Would you like to restart the app now to install it?",
-                    buttons: ["Restart", "Later"],
-                })
-                .then((result) => {
-                    if (result.response === 0) {
-                        autoUpdater.quitAndInstall();
-                    }
-                });
-        } else {
-            // 🛠 Non-donors get auto-installed updates
-            log.log("User hasn't donated, installing update now...");
-            autoUpdater.quitAndInstall();
-        }
+        // Auto-install updates for all users
+        log.log("Update downloaded, installing now...");
+        autoUpdater.quitAndInstall();
         updateShortcutIcon();
     });
     const { exec } = require("child_process");
@@ -671,14 +646,9 @@ ipcMain.on("update-settings", (event, newSettings) => {
         }
     });
 
-    saveSettings(appSettings); // ✅ Save settings after updates
+    // Settings are now managed by Electron stores
 
-    // ✅ Broadcast updated settings to all windows
-    log.log("Broadcasting 'settings-updated' event...");
-
-    BrowserWindow.getAllWindows().forEach((win) => {
-        safeSend(win, "settings-updated", appSettings);
-    });
+    // Settings are now managed by Electron stores - no need to broadcast
 });
 
 tickerStore.on("xp-reset", () => {
@@ -809,9 +779,7 @@ ipcMain.on("activate-events", () => {
     try {
         const win = createWindow("events", () => createEventsWindow(isDevelopment)); // ✅ Fixed: use "events" not "scanner"
         if (win) win.show();
-        const settings = loadSettings();
-        settings.scanner.scannerVolume = 1;
-        saveSettings(settings);
+        // Scanner volume settings removed - no longer needed
     } catch (err) {
         log.error("Failed to activate events window:", err.message);
     }
@@ -819,9 +787,7 @@ ipcMain.on("activate-events", () => {
 
 ipcMain.on("deactivate-events", () => {
     destroyWindow("events"); // ✅ Fixed: use "events" not "scanner"
-    const settings = loadSettings();
-    settings.scanner.scannerVolume = 0;
-    saveSettings(settings);
+    // Scanner volume settings removed - no longer needed
 });
 
 // ipcMain.on("toggle-scanner", () => {
@@ -1065,12 +1031,12 @@ ipcMain.handle("test-scanner-alert", async () => {
         const eventsWindow = getWindow("events"); // ✅ Fixed: use "events" not "scanner"
         if (eventsWindow && !eventsWindow.isDestroyed()) {
             safeSend(eventsWindow, "test-scanner-alert");
-            return { success: true, message: "Scanner alert test sent to events window" };
+            return { success: true, message: "Events alert test sent to events window" };
         } else {
             return { success: false, message: "Events window not available" };
         }
     } catch (error) {
-        log.error("Error testing scanner alert:", error);
+        log.error("Error testing events alert:", error);
         return { success: false, message: error.message };
     }
 });
@@ -1084,11 +1050,9 @@ ipcMain.on("publish-tracked-tickers", (_evt, tracked = []) => {
         if (key === lastKey) return; // optional dedupe in main too
         lastKey = key;
 
-        const s = loadSettings();
-        s.news = { ...(s.news || {}), trackedTickers: list };
-        saveSettings(s);
-
-        BrowserWindow.getAllWindows().forEach((w) => w.webContents.send("settings-updated", s));
+        // Tracked tickers are managed by the rating system, not settings
+        // Just broadcast the update to windows that need it
+        BrowserWindow.getAllWindows().forEach((w) => w.webContents.send("tracked-tickers-updated", list));
     } catch (err) {
         log.error("publish-tracked-tickers failed:", err);
     }
@@ -1165,12 +1129,33 @@ ipcMain.on("open-traderview-tickers", (event, tickers) => {
         return;
     }
     
-    // log.log(`[Traderview] Opening TradingView windows for tickers: ${tickers.join(', ')}`);
+    // Check if auto mode is enabled before creating windows
+    const traderviewSettings = getTraderviewSettings();
+    const enableActiveChart = traderviewSettings?.enableActiveChart ?? false;
+    const enableHeroes = traderviewSettings?.enableHeroes ?? false;
+    const autoModeEnabled = enableActiveChart || enableHeroes;
     
-    // Open TradingView window for each ticker
+    if (!autoModeEnabled) {
+        log.log(`[Traderview] Auto mode disabled, ignoring request to open windows for: ${tickers.join(', ')}`);
+        return;
+    }
+    
+    log.log(`[Traderview] Auto mode enabled, opening TradingView windows for tickers: ${tickers.join(', ')}`);
+    
+    // Get currently open symbols to avoid reopening existing windows
+    const openSymbols = getOpenTradingViewSymbols();
+    const openSet = new Set(openSymbols);
+    
+    // Only open windows for symbols that aren't already open
     tickers.forEach((symbol) => {
         if (symbol && typeof symbol === 'string') {
-            registerTradingViewWindow(symbol.toUpperCase(), isDevelopment);
+            const upperSymbol = symbol.toUpperCase();
+            if (!openSet.has(upperSymbol)) {
+                log.log(`[Traderview] Opening new TradingView window for: ${upperSymbol}`);
+                registerTradingViewWindow(upperSymbol, isDevelopment);
+            } else {
+                log.log(`[Traderview] TradingView window already open for: ${upperSymbol}, skipping`);
+            }
         }
     });
 });
@@ -1192,12 +1177,7 @@ ipcMain.on("close-all-traderview-windows", (event) => {
 });
 
 ipcMain.on("set-enable-heroes", (event, enabled) => {
-    const settings = loadSettings();
-    settings.traderview = {
-        ...(settings.traderview || {}),
-        enableHeroes: enabled,
-    };
-    saveSettings(settings);
+    setTraderviewSettings({ enableHeroes: enabled });
 
     if (!enabled) return;
 
@@ -1210,23 +1190,30 @@ ipcMain.on("set-enable-heroes", (event, enabled) => {
 });
 
 function applyTopTickers(newTickers) {
-    const settings = loadSettings();
-    const enableHeroes = settings.traderview?.enableHeroes ?? false;
-    const autoClose = settings.traderview?.autoClose ?? true;
+    const traderviewSettings = getTraderviewSettings();
+    const enableHeroes = traderviewSettings?.enableHeroes ?? false;
+    const enableActiveChart = traderviewSettings?.enableActiveChart ?? false;
+    const autoClose = traderviewSettings?.autoClose ?? true;
+    const autoCloseActive = traderviewSettings?.autoCloseActive ?? true;
 
     global.currentTopTickers = [...newTickers];
 
-    if (!enableHeroes) return;
+    // Only apply top tickers if either heroes mode or active mode is enabled
+    if (!enableHeroes && !enableActiveChart) return;
 
     const openSymbols = getOpenTradingViewSymbols();
     const openSet = new Set(openSymbols);
     const desiredSet = new Set(newTickers);
 
-    if (autoClose) {
+    // Use appropriate auto-close setting based on current mode
+    const shouldAutoClose = enableHeroes ? autoClose : autoCloseActive;
+
+    if (shouldAutoClose) {
         // Close windows for tickers no longer in the list
         openSymbols.forEach((symbol) => {
             if (!desiredSet.has(symbol)) {
-                log.log(`[Traderview] Auto-closing TradingView window for removed hero: ${symbol}`);
+                const mode = enableHeroes ? 'hero' : 'active';
+                log.log(`[Traderview] Auto-closing TradingView window for removed ${mode} ticker: ${symbol}`);
                 destroyTradingViewWindow(symbol);
             }
         });
@@ -1235,7 +1222,8 @@ function applyTopTickers(newTickers) {
     // Open windows for new tickers not yet displayed
     newTickers.forEach((symbol) => {
         if (!openSet.has(symbol)) {
-            log.log(`[Traderview] Opening TradingView window for new hero: ${symbol}`);
+            const mode = enableHeroes ? 'hero' : 'active';
+            log.log(`[Traderview] Opening TradingView window for new ${mode} ticker: ${symbol}`);
             registerTradingViewWindow(symbol, isDevelopment);
         }
     });
@@ -1257,23 +1245,8 @@ ipcMain.on("deactivate-progress", () => {
     destroyWindow("progress");
 });
 
-ipcMain.on("log-volume", (event, { timestamp, volume }) => {
-    logVolumeSnapshot(timestamp, volume);
-});
+// Volume logging removed - no longer needed
 
-// Wizard
-ipcMain.on("activate-wizard", () => {
-    try {
-        const win = createWindow("wizard", () => createWizardWindow(isDevelopment));
-        if (win) win.show();
-    } catch (err) {
-        log.error("Failed to activate events window:", err.message);
-    }
-});
-
-ipcMain.on("deactivate-wizard", () => {
-    destroyWindow("wizard");
-});
 
 // News
 ipcMain.on("activate-news", () => {

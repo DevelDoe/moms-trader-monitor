@@ -1,6 +1,6 @@
 const { BrowserWindow } = require("electron");
 const { getWindowState, saveWindowState, setWindowState, nukeTradingViewWindowStates, setWindowBounds } = require("./electronStores");
-const { loadSettings } = require("./settings");
+// Settings are now managed by Electron stores
 const log = require("../hlps/logger")(__filename);
 const { safeSend } = require("./utils/safeSend");
 const { debounce } = require("./utils//debounce");
@@ -15,7 +15,6 @@ const { createHeroesWindow } = require("./windows/heroes");
 const { createActiveWindow } = require("./windows/active");
 const { createEventsWindow } = require("./windows/events");
 const { createInfobarWindow } = require("./windows/infobar");
-const { createWizardWindow } = require("./windows/wizard");
 const { createProgressWindow } = require("./windows/progress");
 const { createScrollXpWindow } = require("./windows/scrollXp");
 const { createScrollChangeWindow } = require("./windows/scrollChange");
@@ -80,7 +79,7 @@ function getWindow(name) {
 }
 
 async function restoreWindows() {
-    const settings = loadSettings();
+    // Settings are now managed by Electron stores
 
     const windowKeyMap = {
         settings: "settingsWindow",
@@ -90,7 +89,6 @@ async function restoreWindows() {
         infobar: "infobarWindow",
         docker: "dockerWindow",
         traderview: "traderviewWindow",
-        wizard: "wizardWindow",
         progress: "progressWindow",
         scrollXp: "scrollXpWindow",
         scrollChange: "scrollChangeWindow",
@@ -160,20 +158,13 @@ async function restoreWindows() {
         windows.docker.show();
     }
 
-    // Send settings to all windows (excluding window settings which are managed separately)
-    const settingsWithoutWindows = { ...settings };
-    delete settingsWithoutWindows.windows;
-    
-    // log.log(`[windowManager] 📊 Available windows after restore:`, {
-    //     total: Object.keys(windows).length,
-    //     windows: Object.keys(windows),
-    //     progress: !!windows.progress,
-    //     events: !!windows.events,
-    //     docker: !!windows.docker
-    // });
-    
-    Object.values(windows).forEach((win) => {
-        safeSend(win, "settings-updated", settingsWithoutWindows);
+    // Settings are now managed by Electron stores - no need to broadcast
+    log.log(`[windowManager] 📊 Available windows after restore:`, {
+        total: Object.keys(windows).length,
+        windows: Object.keys(windows),
+        progress: !!windows.progress,
+        events: !!windows.events,
+        docker: !!windows.docker
     });
 }
 
@@ -193,8 +184,6 @@ function createWindowByName(name) {
             return createEventsWindow(isDevelopment);
         case "infobar":
             return createInfobarWindow(isDevelopment);
-        case "wizard":
-            return createWizardWindow(isDevelopment);
         case "progress":
             return createProgressWindow(isDevelopment);
         case "scrollXp":

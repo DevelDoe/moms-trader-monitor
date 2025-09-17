@@ -40,8 +40,7 @@ body {
 }
 
 #business-summary {
-    margin-top: 7px;
-    margin-bottom: 7px;
+    margin-top: 0px;
 }
 
 .scroll-container {
@@ -121,8 +120,13 @@ body {
 }
 
 .ownership-bar-value {
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.ownership-bar-value.float {
     color: #60a5fa;
-    font-weight: 600;
 }
 
 .ownership-bar-breakdown {

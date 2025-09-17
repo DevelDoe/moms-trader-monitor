@@ -186,12 +186,24 @@ async function initializeApp() {
     }
     
     // DOM is already loaded, proceed with initialization
-    window.settings = await window.settingsAPI.get();
+    // Settings are now managed by Electron stores
+    
+    // Load world settings
+    try {
+        window.worldSettings = await window.worldSettingsAPI.get();
+    } catch (error) {
+        console.error("❌ Failed to load world settings:", error);
+        window.worldSettings = {};
+    }
+    
     // Audio preloading removed - now handled by centralized system
 
-    window.settingsAPI.onUpdate(async (updatedSettings) => {
-        console.log("🎯 Settings updated in Top Window, applying changes...", updatedSettings);
-        window.settings = updatedSettings;
+    // Settings are now managed by Electron stores
+    
+    // Listen for world settings updates
+    window.worldSettingsAPI.onUpdate((updatedWorldSettings) => {
+        console.log("🌍 World settings updated in Events Window:", updatedWorldSettings);
+        window.worldSettings = updatedWorldSettings;
     });
 
     const logElement = document.getElementById("log");
@@ -315,7 +327,7 @@ async function initializeApp() {
 
     function flushAlerts() {
         flushScheduled = false;
-        const maxAlerts = window.settings?.scanner?.maxAlerts || 50;
+        const maxAlerts = 100; // Hardcoded max alerts
 
         for (const data of alertQueue) {
             const alertElement = createAlertElement(data);
@@ -387,10 +399,9 @@ async function initializeApp() {
         try {
             // if (debugMode) console.log("[CLIENT] Received via IPC:", alertData);
 
-            const topSettings = window.settings?.top || {};
-            const scannerSettings = window.settings?.scanner || {};
-            const { minChangePercent = 0, minVolume = 0, maxAlerts = 50 } = scannerSettings;
-            const { minPrice = 0, maxPrice = Infinity } = topSettings;
+            // Get settings from world settings store
+            const worldSettings = window.worldSettings || {};
+            const { minChangePercent = 0, minVolume = 0, minPrice = 0, maxPrice = Infinity } = worldSettings;
 
             const symbol = alertData.hero || alertData.symbol;
             const { price = 0, hp = 0, dp = 0, strength = 0, change = 0 } = alertData;

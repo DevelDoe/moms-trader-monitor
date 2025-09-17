@@ -111,16 +111,14 @@ function isFilingItemRecent(filingItem) {
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Page Loaded. Initializing...");
 
-    await loadSettings(); // blockList + bullishList + bearishList
+    await loadNewsSettings(); // blockList + bullishList + bearishList
     // Don't fetch initial news - only listen for deltas
 
 
 
 
 
-    window.settingsAPI.onUpdate(async (updated) => {
-        window.settings = structuredClone(updated || {});
-    });
+    // Settings are now managed by Electron stores
 
     // Subscribe to news settings changes
     window.newsSettingsAPI.onUpdate((updatedNewsSettings) => {
@@ -268,34 +266,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
-async function loadSettings() {
+async function loadNewsSettings() {
     try {
-        console.log("📢 Fetching settings...");
-        window.settings = await window.settingsAPI.get();
-
-        // ✅ Ensure path + default
-        window.settings.events ||= {};
-        if (typeof window.settings.events.newsAlertVolume !== "number") {
-            window.settings.events.newsAlertVolume = 0.55;
-            window.settingsAPI.update(window.settings).catch(() => {});
-        }
-
-
-
+        console.log("📢 Loading news settings...");
+        
         // Load news settings from news store
-        try {
-            const newsSettings = await window.newsSettingsAPI.get();
-            blockList = (newsSettings.blockList || []).map((w) => w.toLowerCase().trim());
-            bullishList = (newsSettings.bullishList || []).map((w) => w.toLowerCase().trim());
-            bearishList = (newsSettings.bearishList || []).map((w) => w.toLowerCase().trim());
-            console.log("✅ Loaded news settings from news store:", newsSettings);
-        } catch (newsError) {
-            console.warn("⚠️ Failed to load news settings, using empty lists:", newsError);
-            blockList = [];
-            bullishList = [];
-            bearishList = [];
-        }
-
+        const newsSettings = await window.newsSettingsAPI.get();
+        blockList = (newsSettings.blockList || []).map((w) => w.toLowerCase().trim());
+        bullishList = (newsSettings.bullishList || []).map((w) => w.toLowerCase().trim());
+        bearishList = (newsSettings.bearishList || []).map((w) => w.toLowerCase().trim());
+        console.log("✅ Loaded news settings from news store:", newsSettings);
+        
         // Load filing filter settings
         try {
             filingFilterSettings = await window.filingFilterSettingsAPI.get();
@@ -308,20 +289,24 @@ async function loadSettings() {
                 group3Forms: {}
             };
         }
-
-        console.log("✅ Loaded settings:", window.settings);
     } catch (error) {
-        console.error("⚠️ Error loading settings:", error);
+        console.error("⚠️ Error loading news settings:", error);
         blockList = [];
         bullishList = [];
         bearishList = [];
     }
 }
 
-function getNewsAlertVolume() {
-    const v = Number(window?.settings?.events?.newsAlertVolume);
-    if (!Number.isFinite(v)) return 0.55;
-    return Math.min(1, Math.max(0, v));
+async function getNewsAlertVolume() {
+    try {
+        const audioSettings = await window.audioSettingsAPI.get();
+        const v = Number(audioSettings?.newsVolume);
+        if (!Number.isFinite(v)) return 0.55;
+        return Math.min(1, Math.max(0, v));
+    } catch (error) {
+        console.error("❌ Failed to get news alert volume:", error);
+        return 0.55; // fallback
+    }
 }
 
 

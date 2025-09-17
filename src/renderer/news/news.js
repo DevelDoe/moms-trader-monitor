@@ -58,14 +58,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     console.log("✅ News view - activeAPI is now available");
 
-    // Load settings globally for sentiment analysis
-    try {
-        settings = await window.settingsAPI.get();
-        // console.log("✅ Settings loaded in news window:", settings);
-    } catch (e) {
-        console.warn("⚠️ Failed to load settings in news window:", e);
-        settings = {}; // fallback
-    }
+    // Settings are now managed by Electron stores
+    settings = {}; // fallback
 
     // Load news settings
     try {
@@ -272,6 +266,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 });
+
+// Helper function to truncate text to a maximum length
+function truncateText(text, maxLength) {
+    if (!text || text.length <= maxLength) {
+        return text;
+    }
+    return text.substring(0, maxLength).trim() + '...';
+}
 
 // Sentiment analysis function (from active.js)
 function getNewsSentimentClass(newsItem) {
@@ -484,7 +486,7 @@ function renderNewsItem(newsItem, container) {
                 size: symbolSize,
                 onClick: true
             })}
-            <h5>${newsItem.headline || "Untitled"}</h5>
+            <h5 style="color: #fff; margin-bottom: 10px;">${newsItem.headline || "Untitled"}</h5>
             ${when ? `<div class="news-time">${when}</div>` : ""}
         `;
     }
@@ -511,7 +513,9 @@ function renderFilingItem(filingItem, container, count = 1) {
         const formType = filingItem.form_type;
         const description = filingItem.form_description || filingItem.title || "filing";
         const countText = count > 1 ? ` (${count})` : '';
-        const filingText = `${symbol} has filed${countText} form ${formType} ${description}`;
+        const article = count <= 1 ? 'a' : '';
+        const formWord = count > 1 ? 'forms' : 'form';
+        const filingText = `${symbol} has filed${countText} ${article} ${formWord} ${formType} ${description}`;
         
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
@@ -536,7 +540,9 @@ function renderFilingItem(filingItem, container, count = 1) {
     } else {
         // Expanded view: Symbol + Full Title + Company + Time + URL
         const countText = count > 1 ? ` (${count})` : '';
-        const titleText = `${symbol} has filed${countText} form ${filingItem.form_type} ${filingItem.form_description || filingItem.title || "filing"}`;
+        const article = count <= 1 ? 'a' : '';
+        const formWord = count > 1 ? 'forms' : 'form';
+        const titleText = `${symbol} has filed${countText} ${article} ${formWord} ${filingItem.form_type}`;
         
         itemDiv.innerHTML = `
             ${window.components.Symbol({ 
@@ -545,9 +551,8 @@ function renderFilingItem(filingItem, container, count = 1) {
                 onClick: true
             })}
             <div class="filing-content">
-                <h3 class="filing-title-large ${filingItem.filing_url ? 'filing-title-clickable' : ''}">${titleText}</h3>
-                ${filingItem.form_description ? `
-                    <div class="filing-description"> ${filingItem.form_description}</div>
+                <h3 class="filing-title-large ${filingItem.filing_url ? 'filing-title-clickable' : ''}">${titleText} - ${filingItem.form_description ? `
+                    <div class="filing-description"> ${filingItem.form_description}</h3>
                 ` : ''}
                 ${filingItem.company_name || when || count > 1 ? `
                     <div class="filing-meta">

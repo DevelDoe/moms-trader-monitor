@@ -67,9 +67,7 @@ contextBridge.exposeInMainWorld("appFlags", {
 
 contextBridge.exposeInMainWorld("settingsAPI", {
     toggle: () => ipcRenderer.send("toggle-settings"),
-    get: () => ipcRenderer.invoke("get-settings"),
-    update: (settings) => ipcRenderer.send("update-settings", settings),
-    onUpdate: (callback) => ipcRenderer.on("settings-updated", (_, updatedSettings) => callback(updatedSettings)),
+    // get and update functions removed - settings are now managed by Electron stores
 });
 
 // Modern
@@ -201,14 +199,9 @@ contextBridge.exposeInMainWorld("traderviewAPI", {
 contextBridge.exposeInMainWorld("progressAPI", {
     activate: () => ipcRenderer.send("activate-progress"),
     deactivate: () => ipcRenderer.send("deactivate-progress"),
-    log: (timestamp, volume) => ipcRenderer.send("log-volume", { timestamp, volume }),
     onXpActiveStocksCount: (callback) => ipcRenderer.on("xp-active-stocks-count", callback),
 });
 
-contextBridge.exposeInMainWorld("wizardAPI", {
-    activate: () => ipcRenderer.send("activate-wizard"),
-    deactivate: () => ipcRenderer.send("deactivate-wizard"),
-});
 
 contextBridge.exposeInMainWorld("scrollChangeAPI", {
     activate: () => ipcRenderer.send("activate-scrollChange"),
@@ -440,6 +433,18 @@ contextBridge.exposeInMainWorld("audioSettingsAPI", {
         ipcRenderer.on("audio-settings:change", handler);
         ipcRenderer.send("audio-settings:subscribe");
         return () => ipcRenderer.removeListener("audio-settings:change", handler);
+    },
+});
+
+// World Settings API
+contextBridge.exposeInMainWorld("worldSettingsAPI", {
+    get: () => ipcRenderer.invoke("world-settings:get"),
+    set: (settings) => ipcRenderer.invoke("world-settings:set", settings),
+    onUpdate: (callback) => {
+        const handler = (_e, data) => callback(data);
+        ipcRenderer.on("world-settings:change", handler);
+        ipcRenderer.send("world-settings:subscribe");
+        return () => ipcRenderer.removeListener("world-settings:change", handler);
     },
 });
 

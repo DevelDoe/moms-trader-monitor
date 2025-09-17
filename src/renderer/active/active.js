@@ -378,14 +378,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     // console.log("🟢 Notifying active-window-ready");
     window.activeAPI.notifyActiveWindowReady();
 
-    // Load settings globally
-    try {
-        window.settings = await window.settingsAPI.get();
-        // console.log("✅ Settings loaded in active window:", window.settings);
-    } catch (e) {
-        console.warn("⚠️ Failed to load settings in active window:", e);
-        window.settings = {}; // fallback
-    }
+    // Settings are now managed by Electron stores
+    window.settings = {}; // fallback
 
     // Load news settings for sentiment analysis and filtering
     try {
@@ -397,12 +391,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Load TradingView settings
-    traderviewSettings = window.settings.traderview || {};
+    try {
+        traderviewSettings = await window.electronAPI.ipc.invoke("traderview-settings:get");
+    } catch (error) {
+        console.error("Failed to load traderview settings in active window:", error);
+        traderviewSettings = {}; // fallback
+    }
 
     // Listen for settings updates to refresh TradingView settings
-    window.settingsAPI.onUpdate((updatedSettings) => {
-        window.settings = updatedSettings || {};
-        traderviewSettings = window.settings.traderview || {};
+    window.electronAPI.ipc?.send("traderview-settings:subscribe");
+    window.electronAPI.ipc?.on("traderview-settings:change", (_event, updatedTraderviewSettings) => {
+        traderviewSettings = updatedTraderviewSettings || {};
+        console.log(`📊 [ACTIVE] Traderview settings updated:`, traderviewSettings);
         
         // If active chart is enabled and we have an active symbol, ensure chart is open
         if (traderviewSettings.enableActiveChart && currentActiveSymbol) {
@@ -1052,7 +1052,7 @@ function renderOracleNews(symbolData = null) {
                 // Collapsed view - just headline and time
                 itemDiv.innerHTML = `
                     <div class="news-content">
-                        <h5 class="news-title-clickable" style="cursor: pointer;">${newsItem.headline || "Untitled"}</h5>
+                        <h5 class="news-title-clickable" style="cursor: pointer; >${newsItem.headline || "Untitled"}</h5>
                         <div class="news-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
                             <div class="news-meta-left">
                                 ${when ? `<span class="news-time">${when}</span>` : ''}
@@ -1072,7 +1072,7 @@ function renderOracleNews(symbolData = null) {
                         </div>
                     ` : ''}
                     <div class="news-content">
-                        <h5 class="news-title-clickable" style="cursor: pointer;">${newsItem.headline || "Untitled"}</h5>
+                        <h3 class="news-title-clickable" style="cursor: pointer; margin-bottom: 10px;color: #fff !important; font-size: 14px !important;"">${newsItem.headline || "Untitled"}</h3>
                         ${newsItem.content || newsItem.summary ? `
                             <div class="news-body">${newsItem.content || newsItem.summary}</div>
                         ` : ''}
@@ -1086,6 +1086,9 @@ function renderOracleNews(symbolData = null) {
                     </div>
                 `;
             }
+
+
+            
             
             // Make only the headline clickable if there's a URL
             if (newsItem.url) {
@@ -1118,6 +1121,8 @@ function renderOracleNews(symbolData = null) {
             
             // Add count to title if there are multiple filings
             const titleWithCount = count > 1 ? `Form ${title} (${count})` : `Form ${title}`;
+
+            
             
             itemDiv.innerHTML = `
                 <h5 class="filing-title-clickable" style="cursor: pointer;">${titleWithCount}</h5>
@@ -1407,7 +1412,8 @@ function renderOwnershipBars(symbolData, barsId) {
         <div class="ownership-bar-breakdown">
             ⚫ rem: ${formatLargeNumber(remainingShares)} (${((remainingShares / sharesOutstanding) * 100).toFixed(1)}%) • 
             🟠 insid: ${formatLargeNumber(institutionalShares)} (${((institutionalShares / sharesOutstanding) * 100).toFixed(1)}%) • 
-            🔴 insti: ${formatLargeNumber(insiderShares)} (${((insiderShares / sharesOutstanding) * 100).toFixed(1)}%)
+            🔴 insti: ${formatLargeNumber(insiderShares)} (${((insiderShares / sharesOutstanding) * 100).toFixed(1)}%) • 
+            🔵 float: ${formatLargeNumber(floatShares)} (${((floatShares / sharesOutstanding) * 100).toFixed(1)}%)
         </div>
     `;
     barsContainer.appendChild(totalBarElement);
@@ -1418,7 +1424,7 @@ function renderOwnershipBars(symbolData, barsId) {
         floatBarElement.className = 'ownership-bar';
         floatBarElement.innerHTML = `
             <div class="ownership-bar-label">
-                🔵 Float: <span class="ownership-bar-value ${floatClass}">${formatLargeNumber(floatShares)}</span>
+                🔵 Float: <span class="ownership-bar-value float ${floatClass}">${formatLargeNumber(floatShares)}</span>
             </div>
             <div class="ownership-bar-fill-container">
                 <div class="ownership-bar-fill ownership-bar-float-non-short" style="width: ${(floatNonShort / floatShares) * 100}%"></div>

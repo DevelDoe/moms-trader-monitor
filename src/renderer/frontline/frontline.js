@@ -11,6 +11,46 @@
     const SCALE_DOWN_THRESHOLD = 1; // 100% of current scale
     const SCALE_DOWN_FACTOR = 0.9; // shrink by 10%
 
+    // HOD Color Logic (from hod.js)
+    const GOLD_HEX = "#ffd24a";
+    const AT_HIGH_EPS = 0.01;
+    const HOD_BASE_AT3 = 0.3;
+    const HOD_EXP = 0.5;
+    const HOD_MIN = 0.05;
+    const HOD_MAX = 3.0;
+    let HOD_ZONE_SCALE = 1.0;
+
+    const clamp = (n, mi, ma) => Math.max(mi, Math.min(ma, n));
+
+    function hodThresholdUSDFromPrice(price) {
+        if (!isFinite(price) || price <= 0) return HOD_BASE_AT3;
+        const k = HOD_BASE_AT3 / Math.pow(3, HOD_EXP);
+        let th = HOD_ZONE_SCALE * k * Math.pow(price, HOD_EXP);
+        if (price < 2) th *= 0.8;
+        if (price > 12) th *= 0.9;
+        if (price > 20) th *= 0.8;
+        return clamp(th, HOD_MIN, HOD_MAX);
+    }
+
+    function getHodPriceColor(currentPrice, sessionHigh) {
+        if (!isFinite(currentPrice) || !isFinite(sessionHigh) || sessionHigh <= 0) {
+            return 'white'; // Default color
+        }
+
+        const diffUSD = Math.max(0, sessionHigh - currentPrice);
+        const thr = hodThresholdUSDFromPrice(currentPrice || sessionHigh || 0);
+        const atHigh = diffUSD <= AT_HIGH_EPS;
+        const within = diffUSD > AT_HIGH_EPS && diffUSD <= thr;
+
+        if (atHigh) {
+            return GOLD_HEX; // Gold when at high of day
+        } else if (within) {
+            return '#ffff99'; // Light yellow when within HOD threshold
+        } else {
+            return 'white'; // White when far from high
+        }
+    }
+
     // dev flag (keeps your behavior)
     window.isDev = window.appFlags?.isDev === true;
 
@@ -232,7 +272,12 @@
         }
         
         const priceEl = card.querySelector(".price-badge");
-        if (priceEl) priceEl.textContent = `$${(hero.price ?? 0).toFixed(2)}`;
+        if (priceEl) {
+            priceEl.textContent = `$${(hero.price ?? 0).toFixed(2)}`;
+            // Apply HOD color logic based on proximity to session high
+            const priceColor = getHodPriceColor(hero.price, hero.sessionHigh);
+            priceEl.style.color = priceColor;
+        }
 
         const medalEl = card.querySelector(".medal");
         if (medalEl) medalEl.innerHTML = getSymbolMedal(sym);
@@ -276,6 +321,9 @@
         card.className = "hero-card";
         card.dataset.symbol = sym;
 
+        // Get HOD color for price badge
+        const priceColor = getHodPriceColor(hero.price, hero.sessionHigh);
+
         card.innerHTML = `
         <div class="hero-header">
             <div class="hero-symbol" style="background-color:${getSymbolColor(hero.hue || 0)}">
@@ -284,7 +332,7 @@
                     <span class="medal">${getSymbolMedal(sym)}</span>
                     ${getSymbolTrophy(sym)}
                     ${getSymbolXpTrophy(sym)}
-                    <span class="price-badge">$${(hero.price ?? 0).toFixed(2)}</span>
+                    <span class="price-badge" style="color:${priceColor}">$${(hero.price ?? 0).toFixed(2)}</span>
                 </div>
             </div>
             <div class="hero-info">
@@ -388,8 +436,8 @@
      * 5) Event handling → state updates → markDirty()
      **************************************************************************/
     function handleAlert(event) {
-        const minPrice = state.settings?.top?.minPrice ?? 0;
-        const maxPrice = state.settings?.top?.maxPrice > 0 ? state.settings.top.maxPrice : Infinity;
+        const minPrice = state.worldSettings?.minPrice ?? 0;
+        const maxPrice = state.worldSettings?.maxPrice > 0 ? state.worldSettings.maxPrice : Infinity;
 
         if (!event?.hero) return;
         if (event.one_min_volume < 5000) return;
@@ -410,7 +458,7 @@
                 score: 0,
                 lastEvent: { hp: 0, dp: 0, score: 0 },
                 buffs: event.buffs || {},
-                highestPrice: event.price || 1,
+                sessionHigh: event.sessionHigh || event.price || 1,
                 lastUpdate: 0,
             });
 
@@ -419,6 +467,11 @@
         h.hue = event.hue ?? h.hue;
         h.strength = event.one_min_volume ?? h.strength;
         if (event.buffs && Object.keys(event.buffs).length) h.buffs = event.buffs;
+        
+        // Update session high from alert data
+        if (Number.isFinite(event.sessionHigh)) {
+            h.sessionHigh = event.sessionHigh;
+        }
 
         // HP/DP
         if (event.hp > 0) h.hp += event.hp;
@@ -556,10 +609,7 @@
         state.container = document.getElementById("frontline");
         if (!state.container) return;
 
-        // settings & buffs
-        try {
-            state.settings = await window.settingsAPI.get();
-        } catch {}
+        // Settings are now managed by Electron stores
         try {
             state.buffs = await window.electronAPI.getBuffs();
             window.buffs = state.buffs; // keep legacy path alive for calculateImpact()
@@ -570,6 +620,11 @@
             state.frontlineSettings = await window.electronAPI.ipc.invoke("frontline-settings:get");
         } catch {}
         
+        // world settings
+        try {
+            state.worldSettings = await window.worldSettingsAPI.get();
+        } catch {}
+        
         window.electronAPI.onBuffsUpdate?.((b) => {
             state.buffs = b || [];
             window.buffs = state.buffs; // keep OG compatibility
@@ -577,15 +632,18 @@
         });
 
         // listeners
-        window.settingsAPI.onUpdate((s) => {
-            state.settings = s || {};
-            markDirty();
-        });
+        // Settings are now managed by Electron stores
         
         // frontline settings listener
         window.electronAPI.ipc?.send("frontline-settings:subscribe");
         window.electronAPI.ipc?.on("frontline-settings:change", (_event, frontlineSettings) => {
             state.frontlineSettings = frontlineSettings || { listLength: 14 };
+            markDirty();
+        });
+        
+        // world settings listener
+        window.worldSettingsAPI.onUpdate((worldSettings) => {
+            state.worldSettings = worldSettings || {};
             markDirty();
         });
         
@@ -597,13 +655,14 @@
         // alerts + hero updates + nukes
         window.storeAPI.onHeroUpdate((payload) => {
             const items = Array.isArray(payload) ? payload : [payload];
-            items.forEach(({ hero, price, one_min_volume, buffs }) => {
+            items.forEach(({ hero, price, one_min_volume, buffs, sessionHigh }) => {
                 if (!hero) return;
                 const sym = String(hero).toUpperCase();
-                const h = state.heroes[sym] || (state.heroes[sym] = { hero: sym, price: 1, hp: 0, dp: 0, strength: 0, xp: 0, lv: 0, score: 0, lastEvent: {}, buffs: {}, lastUpdate: 0 });
+                const h = state.heroes[sym] || (state.heroes[sym] = { hero: sym, price: 1, hp: 0, dp: 0, strength: 0, xp: 0, lv: 0, score: 0, lastEvent: {}, buffs: {}, sessionHigh: 1, lastUpdate: 0 });
                 if (Number.isFinite(price)) h.price = price;
                 if (Number.isFinite(one_min_volume)) h.strength = one_min_volume;
                 if (buffs) h.buffs = buffs;
+                if (Number.isFinite(sessionHigh)) h.sessionHigh = sessionHigh;
                 h.lastUpdate = Date.now();
             });
             markDirty();

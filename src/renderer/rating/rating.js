@@ -387,12 +387,7 @@ class StatsDataManager {
     // Load initial settings
     async loadSettings() {
         try {
-            const [settings, statsSettings] = await Promise.all([
-                window.settingsAPI.get(),
-                window.statsSettingsAPI.get()
-            ]);
-            
-            window.settings = settings;
+            const statsSettings = await window.statsSettingsAPI.get();
             this.state.updateSettings(statsSettings);
             // Settings loaded successfully
         } catch (error) {
@@ -533,11 +528,7 @@ class StatsDataManager {
             this.handleHeroUpdate(payload);
         });
 
-        // Settings updates
-        window.settingsAPI.onUpdate((updated) => {
-            window.settings = updated;
-            this.renderer.render();
-        });
+        // Settings are now managed by Electron stores
 
         // Stats settings updates
         window.statsSettingsAPI.onUpdate((updatedSettings) => {

@@ -858,21 +858,8 @@ const createWebSocket = () => {
                 store.attachHaltToSymbol(haltItem, haltItem.symbol);
             }
 
-            // Add to existing halts (if we have them)
-            if (latestHalts && Array.isArray(latestHalts)) {
-                latestHalts.unshift(haltItem); // Add to beginning for latest first
-
-                // Keep only last 1000 halts to prevent memory bloat
-                if (latestHalts.length > 1000) {
-                    latestHalts = latestHalts.slice(0, 1000);
-                }
-            } else {
-                // Initialize with this single item
-                latestHalts = [haltItem];
-            }
-
-            // Update count
-            latestHaltCount = latestHalts.length;
+            // Don't store halts - they should be real-time only
+            // Just broadcast the delta update
 
             // Broadcast delta update to all configured halt target windows with delta flag
             let actualBroadcastCount = 0;
@@ -1122,26 +1109,14 @@ const getChangeActiveStocks = () => {
     return null;
 };
 
+
 // IPC handlers for Halt data requests
 const getHaltHeadlines = () => {
-    if (latestHalts) {
-        if (HALT_DEBUG) {
-            log.log(`🚨 IPC getHaltHeadlines: returning ${latestHalts.length} halts`);
-            if (latestHalts.length > 0) {
-                log.log(`🚨 First halt sample:`, {
-                    symbol: latestHalts[0].symbol,
-                    state: latestHalts[0].state,
-                    reason: latestHalts[0].reason?.substring(0, 50) + "...",
-                    timestamp: latestHalts[0].timestamp
-                });
-            }
-        }
-    } else {
-        if (HALT_DEBUG) {
-            log.log(`🚨 IPC getHaltHeadlines: no halts available`);
-        }
+    // Always return empty array - halts should be real-time only, not stored
+    if (HALT_DEBUG) {
+        log.log(`🚨 IPC getHaltHeadlines: returning empty array (halts are real-time only)`);
     }
-    return latestHalts;
+    return [];
 };
 
 // Counters to throttle logging frequency for frequently called IPC functions
@@ -1150,11 +1125,11 @@ let newsCountLogCounter = 0;
 let filingCountLogCounter = 0;
 
 const getHaltCount = () => {
-    // Only log every 100th call to avoid performance issues
+    // Always return 0 - halts should be real-time only, not stored
     if (HALT_DEBUG && ++haltCountLogCounter % 100 === 0) {
-        log.log(`📊 IPC getHaltCount: returning ${latestHaltCount} halts (called ${haltCountLogCounter} times)`);
+        log.log(`📊 IPC getHaltCount: returning 0 (halts are real-time only, called ${haltCountLogCounter} times)`);
     }
-    return latestHaltCount;
+    return 0;
 };
 
 module.exports = {
