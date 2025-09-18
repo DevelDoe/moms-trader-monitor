@@ -2832,6 +2832,58 @@ if (app && ipcMain && typeof app.on === "function" && !app.__window_settings_ipc
     });
 }
 
+// Arcane data store for saving buy/sell/volume data
+const arcaneDataStore = createStore("arcane-data-store", "arcane.");
+
+// Arcane data management functions
+function getArcaneData() {
+    return arcaneDataStore.get("sessionData", {
+        current: null,
+        buyVolume: 0,
+        sellVolume: 0,
+        totalTrades: 0,
+        lastUpdate: Date.now(),
+        heroesCount: 0,
+        marketTemp: 'balanced'
+    });
+}
+
+function setArcaneData(data) {
+    arcaneDataStore.set("sessionData", {
+        current: data.current,
+        buyVolume: data.buyVolume,
+        sellVolume: data.sellVolume,
+        totalTrades: data.totalTrades,
+        lastUpdate: data.lastUpdate,
+        heroesCount: data.heroesCount || 0,
+        marketTemp: data.marketTemp || 'balanced'
+    });
+}
+
+function clearArcaneData() {
+    arcaneDataStore.delete("sessionData");
+}
+
+// IPC handlers for arcane data
+if (app && ipcMain) {
+    ipcMain.removeAllListeners("arcane-data:get");
+    ipcMain.handle("arcane-data:get", () => {
+        return getArcaneData();
+    });
+
+    ipcMain.removeAllListeners("arcane-data:set");
+    ipcMain.handle("arcane-data:set", (event, data) => {
+        setArcaneData(data);
+        return true;
+    });
+
+    ipcMain.removeAllListeners("arcane-data:clear");
+    ipcMain.handle("arcane-data:clear", () => {
+        clearArcaneData();
+        return true;
+    });
+}
+
 module.exports = {
     // keep your existing exports...
     getLastAckCursor,
@@ -2977,6 +3029,11 @@ module.exports = {
     setAudioComboMuted,
     setAudioNewsMuted,
     setAudioChimeMuted,
+    
+    // Arcane data exports
+    getArcaneData,
+    setArcaneData,
+    clearArcaneData,
     
     // For testing - expose IPC handlers and stores
     ipcMain: app && ipcMain ? ipcMain : undefined,

@@ -202,6 +202,11 @@ contextBridge.exposeInMainWorld("progressAPI", {
     onXpActiveStocksCount: (callback) => ipcRenderer.on("xp-active-stocks-count", callback),
 });
 
+contextBridge.exposeInMainWorld("arcaneDataAPI", {
+    get: () => ipcRenderer.invoke("arcane-data:get"),
+    set: (data) => ipcRenderer.invoke("arcane-data:set", data),
+    clear: () => ipcRenderer.invoke("arcane-data:clear"),
+});
 
 contextBridge.exposeInMainWorld("scrollChangeAPI", {
     activate: () => ipcRenderer.send("activate-scrollChange"),

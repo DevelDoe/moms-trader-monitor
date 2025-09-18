@@ -54,6 +54,98 @@ const debugLog = {
     }
 };
 
+// Arcane data persistence functions
+async function saveArcaneData() {
+    if (!window.arcaneDataAPI) {
+        debugLog.warn("Arcane data API not available");
+        return;
+    }
+
+    try {
+        const dataToSave = {
+            current: sessionData.current,
+            buyVolume: sessionData.buyVolume,
+            sellVolume: sessionData.sellVolume,
+            totalTrades: sessionData.totalTrades,
+            lastUpdate: sessionData.lastUpdate,
+            heroesCount: elements.heroesCount ? parseInt(elements.heroesCount.textContent) || 0 : 0,
+            marketTemp: elements.marketTemp ? elements.marketTemp.textContent : 'balanced'
+        };
+
+        await window.arcaneDataAPI.set(dataToSave);
+        lastSaveTime = Date.now();
+        debugLog.info("Arcane data saved successfully");
+    } catch (error) {
+        debugLog.error(`Failed to save arcane data: ${error.message}`);
+    }
+}
+
+async function loadArcaneData() {
+    if (!window.arcaneDataAPI) {
+        debugLog.warn("Arcane data API not available");
+        return;
+    }
+
+    try {
+        const savedData = await window.arcaneDataAPI.get();
+        
+        // Check if data is too old
+        const dataAge = Date.now() - savedData.lastUpdate;
+        if (dataAge > ARCANE_DATA_CONFIG.MAX_SAVE_AGE) {
+            debugLog.info("Saved arcane data is too old, starting fresh");
+            return;
+        }
+
+        // Check if we're in the same session
+        const currentSession = getCurrentSession();
+        if (savedData.current === currentSession.key) {
+            // Restore data for current session
+            sessionData.current = savedData.current;
+            sessionData.buyVolume = savedData.buyVolume;
+            sessionData.sellVolume = savedData.sellVolume;
+            sessionData.totalTrades = savedData.totalTrades;
+            sessionData.lastUpdate = savedData.lastUpdate;
+
+            // Update UI with restored data
+            updateBanner();
+            
+            if (elements.heroesCount && savedData.heroesCount) {
+                elements.heroesCount.textContent = savedData.heroesCount;
+            }
+            
+            if (elements.marketTemp && savedData.marketTemp) {
+                elements.marketTemp.textContent = savedData.marketTemp;
+            }
+
+            debugLog.info(`Arcane data restored for session: ${currentSession.name}`);
+        } else {
+            debugLog.info("Session changed, starting fresh");
+        }
+    } catch (error) {
+        debugLog.error(`Failed to load arcane data: ${error.message}`);
+    }
+}
+
+function startArcaneDataPersistence() {
+    // Load existing data on startup
+    loadArcaneData();
+
+    // Set up periodic saving
+    saveInterval = setInterval(saveArcaneData, ARCANE_DATA_CONFIG.SAVE_INTERVAL);
+    debugLog.info("Arcane data persistence started");
+}
+
+function stopArcaneDataPersistence() {
+    if (saveInterval) {
+        clearInterval(saveInterval);
+        saveInterval = null;
+    }
+    
+    // Save data one last time
+    saveArcaneData();
+    debugLog.info("Arcane data persistence stopped");
+}
+
 // Trading session definitions (in 24-hour format)
 const SESSIONS = {
     PRE: { name: 'pre', start: 4, end: 7, color: '#4A90E2' },
@@ -73,6 +165,15 @@ const sessionData = {
     eventBuffer: [], // Buffer for batching events
     maxBufferSize: 100 // Limit buffer size to prevent memory leaks
 };
+
+// Arcane data persistence
+const ARCANE_DATA_CONFIG = {
+    SAVE_INTERVAL: 120000, // Save every 2 minutes
+    MAX_SAVE_AGE: 24 * 60 * 60 * 1000, // Don't restore data older than 24 hours
+};
+
+let saveInterval = null;
+let lastSaveTime = 0;
 
 // DOM element cache
 const elements = {
@@ -618,6 +719,9 @@ function initialize() {
         });
     }
 
+    // Start arcane data persistence
+    startArcaneDataPersistence();
+
     // Set up periodic updates with proper interval tracking
     intervals.updateInterval = setInterval(checkSessionAndUpdate, CONFIG.UPDATE_INTERVAL);
     
@@ -688,6 +792,10 @@ function cleanup() {
         displayUpdatePending = false;
     }
     sessionData.eventBuffer.length = 0;
+    
+    // Stop arcane data persistence
+    stopArcaneDataPersistence();
+    
     debugLog.info("Cleaned up intervals and memory");
 }
 
