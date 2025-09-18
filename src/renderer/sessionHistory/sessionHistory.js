@@ -37,6 +37,35 @@ function formatXp(value) {
     }
 }
 
+// Helper function to format change values
+function formatChangeValue(value) {
+    if (value === null || value === undefined) return '0%';
+    
+    const num = Number(value);
+    if (isNaN(num)) return '0%';
+    
+    // Format as percentage with appropriate decimal places
+    if (Math.abs(num) >= 100) {
+        return num.toFixed(0) + '%';
+    } else if (Math.abs(num) >= 10) {
+        return num.toFixed(1) + '%';
+    } else {
+        return num.toFixed(2) + '%';
+    }
+}
+
+// Helper function to get CSS class for change value
+function getChangeClass(value) {
+    if (value === null || value === undefined) return 'neutral';
+    
+    const num = Number(value);
+    if (isNaN(num)) return 'neutral';
+    
+    if (num > 0) return 'positive';
+    if (num < 0) return 'negative';
+    return 'neutral';
+}
+
 // Helper function to get sort icon (no longer used but kept for future)
 function getSortIcon(column) {
     return '↕️';
@@ -80,6 +109,7 @@ function renderSessionHistory() {
 
     // Get current session for highlighting
     const currentSession = getCurrentSession();
+    
     
     // Create table HTML for top stocks by phase
     const tableHtml = `
@@ -144,13 +174,62 @@ function generateTopStocksRows(sessions, activeStocks, currentSession) {
                 const xpClass = netXp > 0 ? 'positive' : netXp < 0 ? 'negative' : 'neutral';
                 const isCurrentSession = (!outsideMarketHours && phase === currentSession);
                 
+                // Determine change data based on whether it's current or historical
+                let changeData;
+                if (isCurrentSession) {
+                    // For current session, use current change fields (might be different field names)
+                    changeData = stock.change || stock.changePercent || stock.session_change_percent;
+                    
+                    // Log current session stock structure for debugging
+                    if (i === 0) {
+                        console.log(`📊 [SessionHistory] Current session stock data for ${stock.symbol}:`, {
+                            symbol: stock.symbol,
+                            allFields: Object.keys(stock),
+                            change: stock.change,
+                            changePercent: stock.changePercent,
+                            session_change_percent: stock.session_change_percent,
+                            selectedChangeData: changeData
+                        });
+                    }
+                } else {
+                    // For historical sessions, use session_change_percent
+                    changeData = stock.session_change_percent;
+                    
+                    // Log historical session stock structure for debugging
+                    if (i === 0) {
+                        console.log(`📊 [SessionHistory] Historical session stock data for ${stock.symbol} (${phase}):`, {
+                            symbol: stock.symbol,
+                            allFields: Object.keys(stock),
+                            session_change_percent: stock.session_change_percent,
+                            selectedChangeData: changeData
+                        });
+                    }
+                }
+                
+                // Log what we're passing to Symbol component
+                console.log(`📊 [SessionHistory] Symbol component call for ${stock.symbol}:`, {
+                    symbol: stock.symbol,
+                    size: "small",
+                    onClick: true,
+                    change: changeData,
+                    changePercent: changeData
+                });
+                
+                // Format the change value for display
+                const formattedChange = formatChangeValue(changeData);
+                
                 rows += `
                     <td class="stock-cell ${isCurrentSession ? 'current-session-cell' : ''}">
-                        ${window.components.Symbol({ 
-                            symbol: stock.symbol || 'N/A', 
-                            size: "small",
-                            onClick: true
-                        })}
+                        <div class="symbol-container">
+                            ${window.components.Symbol({ 
+                                symbol: stock.symbol || 'N/A', 
+                                size: "small",
+                                onClick: true
+                            })}
+                            <div class="session-change ${getChangeClass(changeData)}">
+                                ${formattedChange}
+                            </div>
+                        </div>
                     </td>
                 `;
             } else {
@@ -199,8 +278,64 @@ function getTopStocksForPhase(sessions, phaseName, currentSession) {
     return symbols.slice(0, 3);
 }
 
+// Debug function to print complete data structures
+function printDataStructures() {
+    console.log('🔍 [SessionHistory] ===== DATA STRUCTURE ANALYSIS =====');
+    
+    // Print session history data structure
+    if (sessionHistoryData) {
+        console.log('📊 [SessionHistory] Session History Data Structure:');
+        console.log('  - Root keys:', Object.keys(sessionHistoryData));
+        console.log('  - Sessions array length:', sessionHistoryData.sessions?.length || 0);
+        
+        if (sessionHistoryData.sessions && sessionHistoryData.sessions.length > 0) {
+            console.log('  - First session structure:');
+            const firstSession = sessionHistoryData.sessions[0];
+            console.log('    * Keys:', Object.keys(firstSession));
+            console.log('    * Full object:', firstSession);
+            
+            if (firstSession.symbols && firstSession.symbols.length > 0) {
+                console.log('  - First symbol in first session:');
+                const firstSymbol = firstSession.symbols[0];
+                console.log('    * Keys:', Object.keys(firstSymbol));
+                console.log('    * Full object:', firstSymbol);
+            }
+        }
+    } else {
+        console.log('📊 [SessionHistory] No session history data available');
+    }
+    
+    // Print active stocks data structure
+    if (activeStocksData) {
+        console.log('📈 [SessionHistory] Active Stocks Data Structure:');
+        console.log('  - Root keys:', Object.keys(activeStocksData));
+        console.log('  - Symbols array length:', activeStocksData.symbols?.length || 0);
+        
+        if (activeStocksData.symbols && activeStocksData.symbols.length > 0) {
+            console.log('  - First active symbol structure:');
+            const firstActiveSymbol = activeStocksData.symbols[0];
+            console.log('    * Keys:', Object.keys(firstActiveSymbol));
+            console.log('    * Full object:', firstActiveSymbol);
+        }
+    } else {
+        console.log('📈 [SessionHistory] No active stocks data available');
+    }
+    
+    console.log('🔍 [SessionHistory] ===== END DATA STRUCTURE ANALYSIS =====');
+}
+
 // Initialize the view
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.sessionHistoryHeader = new window.HeaderComponent(headerContainer, {
+            icon: '📜',
+            text: 'Register of Conquerors (Sessions)',
+            className: 'sessionHistory-header'
+        });
+    }
+
     // Set up event delegation for symbol clicks
     document.addEventListener('click', function(event) {
         const symbolElement = event.target.closest('.symbol[data-clickable="true"]');
@@ -210,6 +345,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log(`🖱️ [SessionHistory] Symbol clicked: ${symbol}`);
                 window.handleSymbolClick(symbol, event);
             }
+        }
+        
+        // Handle debug button click
+        if (event.target.id === 'debug-btn') {
+            console.log('🔍 [SessionHistory] Debug button clicked - printing data structures');
+            printDataStructures();
         }
     });
 
@@ -227,6 +368,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         activeStocksData = await window.changeAPI.getActiveStocks();
         
         if (sessionHistoryData) {
+            // Print data structures for debugging
+            printDataStructures();
             renderSessionHistory();
         }
     } catch (error) {
@@ -239,22 +382,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Listen for session history updates
     window.xpAPI.onSessionHistoryUpdate((data) => {
+        console.log('📊 [SessionHistory] Session history data updated');
         sessionHistoryData = data;
+        printDataStructures();
         renderSessionHistory();
     });
 
     // Listen for session updates
     window.xpAPI.onSessionUpdate((data) => {
+        console.log('📊 [SessionHistory] Session data updated');
         // Refresh the data if we have session history
         if (data && data.session_history) {
             sessionHistoryData = data.session_history;
+            printDataStructures();
             renderSessionHistory();
         }
     });
 
     // Listen for active stocks updates (current session - change-sorted)
     window.changeAPI.onActiveStocksUpdate((data) => {
+        console.log('📈 [SessionHistory] Active stocks data updated');
         activeStocksData = data;
+        printDataStructures();
         renderSessionHistory();
     });
 });

@@ -3,16 +3,24 @@
     <head>
         <meta charset="UTF-8" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
-        <link rel="stylesheet" href="../flat.css" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="../components/symbol/symbol.css" />
         <title>High of Day</title>
         <link rel="stylesheet" href="./hod.css" />
     </head>
     <body>
-        <div class="drag-area"></div>
-        <h2>🗻 Ledger of Summits (HOD)</h2>
-        <div id="hod-scroll" class="no-drag">Loading...</div>
 
+        <!-- Header Component Container -->
+        <div id="header-container"></div>
+
+        <div id="app">
+            <div id="hod-scroll" class="no-drag">Loading...</div>
+        </div>
+        
+        <footer id=""></footer>
+
+        <script src="../components/header/header.js"></script>
         <script src="./hod.js"></script>
     </body>
 </html>

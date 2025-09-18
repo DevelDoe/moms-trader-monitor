@@ -1,0 +1,49 @@
+/* Header Component Styles */
+.window-header {
+    margin: 0;
+    padding: 0;
+    background-color: #1b1f24;
+}
+
+.header-title {
+    margin: 0;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #627572;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.5px;
+    text-transform: capitalize;
+}
+
+.header-icon {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.header-text {
+    flex: 1;
+    line-height: 1.2;
+}
+
+/* Dark theme adjustments */
+.dark .header-title {
+    color: #f1f5f9;
+}
+
+/* Light theme adjustments */
+.light .header-title {
+    color: #1e293b;
+}
+
+/* Font loading states */
+.header-title.font-loading {
+    opacity: 0.8;
+}
+
+.header-title.font-loaded {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}

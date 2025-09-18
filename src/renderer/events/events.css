@@ -1,41 +1,23 @@
-/* Body Styles */
-html,
-body,
-* {
-    overflow: hidden !important;
-    overscroll-behavior: none !important;
-    scrollbar-width: none !important; /* Firefox */
-    -ms-overflow-style: none !important; /* IE 10+ */
-}
-body::-webkit-scrollbar,
-*::-webkit-scrollbar {
-    display: none !important; /* Chrome, Safari, Edge */
-}
+/* ==========================================================================
+   EVENTS DASHBOARD - CLEAN REFACTOR
+   ========================================================================== */
 
-body {
-    color: #e0e0e0;
-    font-size: 10px;
-    position: relative;
-    margin: 0px auto;
-    width: 100vw;
-    box-sizing: border-box;
-    height: 100%;
-    overflow-x: hidden;
-    font-family: Arial, Helvetica, sans-serif;
-}
+/* ==========================================================================
+   LOG CONTAINER
+   ========================================================================== */
+
 #log {
-    overflow-y: auto;
-    padding: 0px;
-    width: 100vw;
-    font-size: 16px;
     position: fixed;
     bottom: 0px;
-    list-style-type: none;
-    margin: 0px auto;
-    box-sizing: border-box;
-    overflow-x: hidden;
-    padding-right: 12px;
+    z-index: -999;
+    margin-left: -9px;
+    width: 100%;
 }
+
+/* ==========================================================================
+   ALERT COMPONENT
+   ========================================================================== */
+
 .alert {
     display: flex;
     flex-wrap: wrap;
@@ -46,7 +28,21 @@ body {
     font-size: 16px;
     color: #eee;
     width: 100%;
-    gap: 8px; /* spacing between elements (e.g. symbol + values) */
+    gap: 8px;
+    position: relative;
+    z-index: 0;
+    transition: opacity 0.1s ease-out;
+    overflow: visible;
+}
+
+.alert-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding-left: 6px;
+    padding-right: 6px;
+    position: relative;
+    z-index: 1;
 }
 
 .alert-values {
@@ -56,15 +52,12 @@ body {
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    flex: 1;
 }
 
-.alert.up {
-    border-left-color: #28a745;
-}
-
-.alert.down {
-    border-left-color: #dc3545;
-}
+/* ==========================================================================
+   ALERT SYMBOL
+   ========================================================================== */
 
 .alert-symbol {
     min-width: 42px;
@@ -77,23 +70,18 @@ body {
     margin-right: 0px;
     z-index: 2;
     cursor: pointer;
+    position: relative;
+    z-index: 1;
 }
 
-.alert-content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    padding-left: 6px;
-    padding-right: 6px;
+.alert.combo-active .alert-symbol {
+    font-weight: bolder;
+    font-size: 1.1rem;
 }
 
-.alert-values {
-    display: flex;
-    gap: 12px;
-    flex: 1;
-    justify-content: space-between;
-    align-items: center;
-}
+/* ==========================================================================
+   ALERT VALUES
+   ========================================================================== */
 
 .price {
     color: #fff;
@@ -113,24 +101,55 @@ body {
     color: #aaa;
 }
 
-/* 
-.progress-bar {
-    display: flex;
-    margin-top: 3px;
+/* ==========================================================================
+   ALERT STATES
+   ========================================================================== */
+
+.alert.up {
+    border-left-color: #28a745;
 }
-.segment {
-    width: 8px;
-    height: 10px;
-    margin: 1px;
-    background-color: gray;
+
+.alert.down {
+    border-left-color: #dc3545;
 }
-.segment.filled.up {
-    background-color: #28a745;
+
+.alert.new-high {
+    filter: grayscale(0%) brightness(1);
+    box-sizing: border-box;
+    border-top: 1px solid gold;
+    border-bottom: 1px solid gold;
+    background-color: #333d2a;
+    width: 100vw;
+    position: relative;
+    outline: none !important;
 }
-.segment.filled.down {
-    background-color: #dc3545;
+
+.alert.new-high::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-top: 2px solid #ffd400;
+    border-bottom: 2px solid #ffd400;
+    border-left: none;
+    border-right: none;
+    pointer-events: none;
+    z-index: 3;
 }
-*/
+
+.alert.new-entry {
+    box-sizing: border-box;
+    filter: grayscale(0%) brightness(1);
+    background-color: #223144;
+    border-top: 1px solid #55aaff;
+    border-bottom: 1px solid #55aaff;
+    width: 100vw;
+    position: relative;
+    z-index: 0;
+}
+
+/* ==========================================================================
+   FADE STATES
+   ========================================================================== */
 
 .low-1 {
     filter: grayscale(60%) brightness(1);
@@ -148,48 +167,42 @@ body {
     filter: grayscale(15%) brightness(0.4);
 }
 
-.alert.new-high {
-    filter: grayscale(0%) brightness(1);
-    box-sizing: border-box;
-    border-top: 1px solid gold;
-    border-bottom: 1px solid gold;
-    background-color: #333d2a;
-    width: 100vw;
-}
-
-.alert.new-entry {
-    box-sizing: border-box;
-    filter: grayscale(0%) brightness(1);
-    background-color: #223144;
-    border-top: 1px solid #55aaff;
-    border-bottom: 1px solid #55aaff;
-    width: 100vw;
-}
+/* ==========================================================================
+   COMBO FILLS
+   ========================================================================== */
 
 .combo-fill {
     position: absolute;
-    z-index: 0;
     top: 0;
-    left: 0;
     height: 100%;
     width: 0%;
     pointer-events: none;
+    transition: width 0.3s ease-out;
+    z-index: 0;
+    opacity: 0.25;
+}
+
+.combo-fill.up {
+    left: 0;
+    right: auto;
     background: rgba(78, 255, 122, 0.5);
-    background-size: 200% 100%;
-    transition: width 0.3s ease-out; /* Reduced from 0.6s for better performance */
-    /* Removed will-change and mix-blend-mode for better performance */
 }
 
-.alert.combo-active .alert-symbol {
-    font-weight: bolder;
-    font-size: 1.1rem;
+.combo-fill.down {
+    left: auto;
+    right: 0;
+    background: rgba(255, 78, 78, 0.3);
+    transform-origin: right center;
 }
 
-.alert {
-    position: relative; /* make sure fill overlays work */
-    z-index: 1;
-    overflow: visible;
+.alert.combo-active.down-combo {
+    border-top: none;
+    border-bottom: none;
 }
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
 
 @keyframes comboPulse {
     0% {
@@ -203,39 +216,40 @@ body {
     }
 }
 
-.combo-fill.down {
-    background: rgba(255, 78, 78, 0.3);
-    left: unset; /* ✅ Cancel the default left fill */
-    right: 0; /* ✅ Start from right side */
-    transform-origin: right center;
-    transition: width 0.3s ease-out; /* Reduced from 0.6s for better performance */
-    /* Removed mix-blend-mode for better performance */
-}
-
-.alert.combo-active.down-combo {
-    /* border-top: 1px solid #ff4e4e; */
-    /* border-bottom: 1px solid #ff4e4e; */
-    border-top: none;
-    border-bottom: none;
-    /* filter: grayscale(0%) brightness(1); */
-}
-
 @keyframes blink-soft {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
 }
 
 @keyframes blink-medium {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
 }
 
 @keyframes blink-intense {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
 }
 
-/* Optimized blink animations - only one type active at a time */
+/* ==========================================================================
+   BLINK ANIMATIONS
+   ========================================================================== */
+
 .blink-soft {
     animation: blink-soft 1.2s infinite;
     will-change: opacity;
@@ -254,87 +268,26 @@ body {
     animation-fill-mode: both;
 }
 
-/* 1) Make content stack above fills and ensure smooth transitions */
-.alert {
-    position: relative;
-    z-index: 0;
-    transition: opacity 0.1s ease-out;
-} /* the card */
-.alert-content {
-    position: relative;
-    z-index: 1;
-} /* text sits above fills */
-.alert-symbol {
-    position: relative;
-    z-index: 1;
-}
+/* ==========================================================================
+   COMBO PULSE ANIMATIONS
+   ========================================================================== */
 
-/* 2) Base fill (common) — sits under content */
-.combo-fill {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    width: 0%;
-    pointer-events: none;
-    transition: width 0.3s ease-out; /* Reduced for better performance */
-    z-index: 0;
-    opacity: 0.25;
-    /* Removed will-change and mix-blend-mode for better performance */
-}
-
-/* 3) Separate directions */
-.combo-fill.up {
-    left: 0;
-    right: auto;
-    background: rgba(78, 255, 122, 0.5);
-}
-.combo-fill.down {
-    left: auto;
-    right: 0;
-    background: rgba(255, 78, 78, 0.3);
-    transform-origin: right center;
-}
-
-/* (optional) pulse keeps working - optimized */
 .combo-pulse-1 {
     animation: comboPulse 6s ease-in-out infinite;
     will-change: opacity;
 }
+
 .combo-pulse-2 {
     animation: comboPulse 5s ease-in-out infinite;
     will-change: opacity;
 }
+
 .combo-pulse-3 {
     animation: comboPulse 4s ease-in-out infinite;
     will-change: opacity;
 }
+
 .combo-pulse-4 {
     animation: comboPulse 0.3s ease-in-out infinite;
     will-change: opacity;
-}
-
-/* 5) High of Day must always win, even while comboing */
-.alert.new-high {
-    background-color: #333d2a;
-    filter: grayscale(0%) brightness(1);
-    position: relative;
-    outline: none !important;
-}
-
-.alert.new-high::after {
-    content: "";
-    position: absolute;
-    inset: -1px; /* stretch across */
-    border-top: 2px solid #ffd400; /* top bar */
-    border-bottom: 2px solid #ffd400; /* bottom bar */
-    border-left: none; /* kill left */
-    border-right: none; /* kill right */
-    pointer-events: none;
-    z-index: 3;
-}
-
-/* Keep your new-entry styling; ensure it doesn't hide the ring */
-.alert.new-entry {
-    position: relative;
-    z-index: 0;
 }

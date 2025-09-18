@@ -122,8 +122,9 @@ function buffSignature(h) {
         .join("|");
 }
 
+
 const BUFF_SORT_ORDER = ["float", "volume", "news", "hasNews", "hasBullishNews", "hasBearishNews", "hasFiling", "bio", "weed", "space", "newHigh", "bounceBack", "highShort", "netLoss", "hasS3", "dilutionRisk", "china", "lockedShares"];
-const placeholderDot = `<span class="buff-icon" style="opacity:.0">•</span>`;
+const placeholderDot = `<span class="buff-icon placeholder">•</span>`;
 
 function buildBuffRows(h) {
     const arr = Object.entries(h.buffs || {}).map(([key, v]) => ({
@@ -148,7 +149,29 @@ function buildBuffRows(h) {
 
     const row = (xs) =>
         xs.length
-            ? xs.map((b) => `<span class="buff-icon ${b.isBuff ? "buff-positive" : b.isBuff === false ? "buff-negative" : ""}" title="${b.desc || ""}">${b.icon || "•"}</span>`).join("")
+            ? xs.map((b) => {
+                // For float buffs, use the value instead of icon and apply color class
+                if (b._sortKey === "float") {
+                    // Extract the numeric value from the icon (1, 5, 10, 20, 50, 100, 200, 500)
+                    const floatValue = parseInt(b.icon) || 0;
+                    let colorClass = "";
+                    
+                    // Precise color mapping based on actual values
+                    if (floatValue === 1 || floatValue === 5 || floatValue === 10) {
+                        colorClass = "float-green";
+                    } else if (floatValue === 20) {
+                        colorClass = "float-yellow";
+                    } else if (floatValue === 50) {
+                        colorClass = "float-orange";
+                    } else if (floatValue === 100 || floatValue === 200 || floatValue === 500) {
+                        colorClass = "float-red";
+                    }
+                    
+                    return `<span class="buff-icon ${colorClass}" title="${b.desc || ""}">${b.icon}</span>`;
+                }
+                // For other buffs, use the icon as before
+                return `<span class="buff-icon ${b.isBuff ? "buff-positive" : b.isBuff === false ? "buff-negative" : ""}" title="${b.desc || ""}">${b.icon || "•"}</span>`;
+            }).join("")
             : placeholderDot;
 
     return { posHTML: row(pos), neuHTML: row(neu), negHTML: row(neg) };
@@ -172,7 +195,7 @@ function createCard(h) {
 
     const impact = window.hlpsFunctions?.calculateImpact?.(h.strength || 0, h.price || 0, state.buffsMaster) || { style: { color: "" } };
     const { totalXp, xpForNextLevel, xpPercent } = window.helpers.getXpProgress(h);
-    const faded = Date.now() - (h.lastUpdate || 0) > 10_000 ? "opacity:.8; filter:grayscale(.8);" : "";
+    const isFaded = Date.now() - (h.lastUpdate || 0) > 10_000;
     const { posHTML, neuHTML, negHTML } = buildBuffRows(h);
     
     // Get HOD color for price
@@ -181,19 +204,19 @@ function createCard(h) {
     card.innerHTML = `
     <div class="ticker-header-grid">
       <div class="ticker-info">
-        <div class="ticker-symbol" style="background-color:${window.helpers.getSymbolColor(h.hue || 0)}; ${faded}">
+        <div class="ticker-symbol ${isFaded ? 'faded' : ''}" style="background-color:${window.helpers.getSymbolColor(h.hue || 0)}">
           $${h.hero}
           <span class="lv">
             <span class="lv-medal">${getSymbolMedal(h.hero)}</span>
             ${getSymbolTrophy(h.hero)}
             ${getSymbolXpTrophy(h.hero)}
-            <span class="lv-price" style="color:${priceColor}">$${(h.price ?? 0).toFixed(2)}</span>
+            <span class="lv-price ${priceColor === '#ffd24a' ? 'price-gold' : priceColor === '#ffff99' ? 'price-yellow' : 'price-white'}">$${(h.price ?? 0).toFixed(2)}</span>
           </span>
         </div>
-        <div class="bar-text stats lv" style="font-size:6px;margin-top:4px">L <span style="color:white;">${h.lv ?? 1}</span></div>
-        <div class="bar-text stats x"  style="font-size:6px;margin-top:4px">X <span style="color:#04f370;">${Math.floor(totalXp)}</span></div>
-        <div class="bar-text stats ch" style="font-size:6px;margin-top:4px">C <span style="color:#fd5151;">${(h.hp || 0).toFixed(0)}%</span></div>
-        <div class="bar-text stats"    style="font-size:6px;margin-top:4px">V <span style="color:${impact.style.color};">${window.helpers.abbreviatedValues(h.strength || 0)}</span></div>
+        <div class="bar-text stats lv">L <span class="stat-white">${h.lv ?? 1}</span></div>
+        <div class="bar-text stats x">X <span class="stat-green">${Math.floor(totalXp)}</span></div>
+        <div class="bar-text stats ch">C <span class="stat-red">${(h.hp || 0).toFixed(0)}%</span></div>
+        <div class="bar-text stats">V <span style="color:${impact.style.color};">${window.helpers.abbreviatedValues(h.strength || 0)}</span></div>
       </div>
 
       <div class="buff-container">
@@ -204,6 +227,7 @@ function createCard(h) {
     </div>
 
     <div class="bars">
+      <!-- Dynamic width and background color - must stay as inline styles -->
       <div class="bar"><div class="bar-fill xp"       style="width:${xpPercent}%"><span class="bar-text">XP: ${Math.floor(totalXp)} / ${xpForNextLevel}</span></div></div>
       <div class="bar"><div class="bar-fill hp"       style="width:${Math.min((h.hp / state.maxHP) * 100, 100)}%"><span class="bar-text">HP: ${(h.hp || 0).toFixed(0)}</span></div></div>
       <div class="bar"><div class="bar-fill strength" style="background-color:${impact.style.color}; width:${Math.min((h.strength / MAX_STRENGTH) * 100, 100)}%">
@@ -232,9 +256,12 @@ function patchCardDOM(sym, h) {
 
     const symEl = card.querySelector(".ticker-symbol");
     if (symEl) {
-        const faded = Date.now() - (h.lastUpdate || 0) > 10_000;
-        symEl.style.opacity = faded ? ".8" : "";
-        symEl.style.filter = faded ? "grayscale(.8)" : "";
+        const isFaded = Date.now() - (h.lastUpdate || 0) > 10_000;
+        if (isFaded) {
+            symEl.classList.add('faded');
+        } else {
+            symEl.classList.remove('faded');
+        }
     }
 
     const priceEl = card.querySelector(".lv-price");
@@ -242,7 +269,16 @@ function patchCardDOM(sym, h) {
         priceEl.textContent = `$${(h.price ?? 0).toFixed(2)}`;
         // Apply HOD color logic based on proximity to session high
         const priceColor = getHodPriceColor(h.price, h.sessionHigh);
-        priceEl.style.color = priceColor;
+        // Remove existing price color classes
+        priceEl.classList.remove('price-gold', 'price-yellow', 'price-white');
+        // Add appropriate class
+        if (priceColor === '#ffd24a') {
+            priceEl.classList.add('price-gold');
+        } else if (priceColor === '#ffff99') {
+            priceEl.classList.add('price-yellow');
+        } else {
+            priceEl.classList.add('price-white');
+        }
     }
 
     const medalEl = card.querySelector(".lv-medal");
@@ -276,6 +312,7 @@ function patchCardDOM(sym, h) {
     const impact = window.hlpsFunctions?.calculateImpact?.(h.strength || 0, h.price || 0, state.buffsMaster) || { style: { color: "" } };
     const { xpPercent } = window.helpers.getXpProgress(h);
 
+    // Dynamic width calculations - must stay as inline styles
     const setWidth = (sel, pct) => {
         const el = card.querySelector(sel);
         if (el) el.style.width = `${Math.max(0, Math.min(100, pct))}%`;
@@ -284,6 +321,7 @@ function patchCardDOM(sym, h) {
     setWidth(".bar-fill.hp", Math.min((h.hp / state.maxHP) * 100, 100));
     setWidth(".bar-fill.strength", Math.min((h.strength / MAX_STRENGTH) * 100, 100));
 
+    // Dynamic background color - must stay as inline style
     const strBar = card.querySelector(".bar-fill.strength");
     if (strBar) {
         strBar.style.backgroundColor = impact.style.color;
@@ -568,6 +606,22 @@ window.addEventListener("beforeunload", () => {
 
 /* ===== 9) Boot ===== */
 async function boot() {
+    // Preload critical fonts
+    if (window.fontLoader) {
+        await window.fontLoader.preloadCriticalFonts();
+    }
+    
+    // Initialize header component
+    const headerContainer = document.getElementById("header-container");
+    if (headerContainer && window.HeaderComponent) {
+        new window.HeaderComponent(headerContainer, {
+            icon: "🛡️",
+            text: "Heroes of Myth and Momentum (sustained)",
+            className: "heroes-header"
+        });
+        
+    }
+    
     state.container = document.getElementById("heroes");
     if (!state.container) return;
 

@@ -35,7 +35,6 @@
 /* Rating-specific tooltip styles */
 #xp-scroll .score-tooltip {
     cursor: help;
-    border-bottom: 1px dashed #aaa;
 }
 
 /* ============================================================================
@@ -56,6 +55,9 @@
 
 #xp-scroll .buffs {
     font-weight: 600;
+    font-size: 18px;
+    padding-left: 5px;
+    line-height: 14px;
 }
 
 /* ============================================================================

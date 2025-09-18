@@ -41,6 +41,16 @@ function logHaltStructure(halts, context = "") {
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚨 Halts: Initializing halt monitor...");
 
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.haltsHeader = new window.HeaderComponent(headerContainer, {
+            icon: '⚖️',
+            text: 'Edict of stasis (halts)',
+            className: 'halts-header'
+        });
+    }
+
     // Set up event delegation for symbol clicks (similar to sessionHistory)
     document.addEventListener('click', function(event) {
         const symbolElement = event.target.closest('.symbol[data-clickable="true"]');
@@ -52,6 +62,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
     });
+
+    // startMockLoop()
 
     // Settings are now managed by Electron stores
     settings = {}; // fallback
@@ -458,14 +470,17 @@ function createHaltElement(halt) {
     // Create unique ID for this halt
     const haltId = `${halt.symbol}-${halt.halt_time || Date.now()}`;
     
+    // Check if this halt should animate
+    const animateClass = halt._shouldAnimate ? ' new' : '';
+    
     // Create compact layout with Symbol component, halt type, and countdown
     return `
-        <div class="halt-event ${stateClass}" id="halt-${haltId}" data-symbol="${halt.symbol}" data-halt-time="${halt.halt_time || ''}">
+        <div class="halt-event ${stateClass}${animateClass}" id="halt-${haltId}" data-symbol="${halt.symbol}" data-halt-time="${halt.halt_time || ''}">
             <div class="halt-content">
                 <div class="halt-symbol-container">
                     ${window.components.Symbol({ 
                         symbol: halt.symbol, 
-                        size: "small",
+                        size: "medium",
                         onClick: true
                     })}
                 </div>
@@ -724,3 +739,46 @@ window.addEventListener('beforeunload', () => {
 });
 
 console.log("✅ Halts monitor initialized and ready");
+
+// Mock loop function that keeps adding new halts
+function startMockLoop() {
+    const symbols = ['AAPL', 'TSLA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC'];
+    const states = ['HALTED', 'RESUME_PENDING'];
+    const reasons = ['Circuit Breaker', 'News Pending', 'Volatility Halt', 'Trading Halt', 'Limit Up/Down'];
+    
+    setInterval(() => {
+        const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+        const randomState = states[Math.floor(Math.random() * states.length)];
+        const randomReason = reasons[Math.floor(Math.random() * reasons.length)];
+        
+        const mockHalt = {
+            symbol: randomSymbol,
+            state: randomState,
+            reason: randomReason,
+            timestamp_et: new Date().toISOString(),
+            halt_time: Math.floor(Date.now() / 1000),
+            tape_description: 'NYSE',
+            high_price: Math.random() * 100 + 10,
+            low_price: Math.random() * 100 + 10
+        };
+        
+        console.log("🧪 Adding mock halt from loop:", mockHalt);
+        allHalts.push(mockHalt);
+        updateHaltedSymbols();
+        
+        // Mark the new halt for animation before rendering
+        mockHalt._shouldAnimate = true;
+        
+        renderHalts();
+        
+        // Clean up animation flag after animation completes
+        setTimeout(() => {
+            mockHalt._shouldAnimate = false;
+        }, 800);
+    }, 5000); // Add new halt every 5 seconds
+}
+
+
+
+// Make mock loop function available globally for testing
+window.startMockLoop = startMockLoop;

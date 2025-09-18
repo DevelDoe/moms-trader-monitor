@@ -5,19 +5,26 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
         <title>Trading Halts</title>
-        <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../styles/styles.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="./halts.css" />
         <link rel="stylesheet" href="../components/symbol/symbol.css" />
-        <link rel="stylesheet" href="../flat.css" />
     </head>
-    <body class="draggable">
-        <h2>⚖️ Edict of stasis (halts)</h2>
-        <div id="halts-container" class="no-drag">
+    <body >
+
+        <!-- Header Component Container -->
+        <div id="header-container"></div>
+
+        <div id="app" >
             <div class="halts-list" id="halts-list">
                 <!-- Halt events will be populated here -->
             </div>
         </div>
+        
         <footer></footer>
+
+        <script src="../components/header/header.js"></script>
         <script src="./halts.js"></script>
     </body>
 </html>

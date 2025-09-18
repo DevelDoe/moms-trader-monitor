@@ -346,6 +346,16 @@ function render() {
 /* 7) Boot */
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("🎯 HOD window loaded, waiting for APIs...");
+
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.hodHeader = new window.HeaderComponent(headerContainer, {
+            icon: '🗻',
+            text: 'Ledger of Summits (HOD)',
+            className: 'hod-header'
+        });
+    }
     
     // Set up event delegation for symbol clicks
     document.addEventListener('click', function(event) {

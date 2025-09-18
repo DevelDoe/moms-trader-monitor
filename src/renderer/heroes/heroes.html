@@ -5,20 +5,29 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none';" />
 
-        <link rel="stylesheet" href="../flat.css" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../styles/fonts.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="./heroes.css" />
-        
+
         <title>Heroes</title>
     </head>
     <body>
-        <h2>🛡️ Heroes of Myth and Momentum (sustained)</h2>
-        <div id="heroes-window" class="heroes-window">
-            <div class="drag-area"></div>
-            <div id="heroes"></div>
-            <!-- Content will be injected here -->
-            <script src="./heroes.js"></script>
-            <script src="./stateManager.js"></script>
-            <script src="./helpers.js"></script>
+        <div id="header-container"></div>
+
+        <div id="app">
+            <div id="heroes-window" class="heroes-window">
+                <div id="heroes"></div>
+                <!-- Content will be injected here -->
+            </div>
         </div>
+
+        <footer id=""></footer>
+
+        <script src="../utils/fontLoader.js"></script>
+        <script src="../components/header/header.js"></script>
+        <script src="./heroes.js"></script>
+        <script src="./stateManager.js"></script>
+        <script src="./helpers.js"></script>
     </body>
 </html>

@@ -1,0 +1,218 @@
+/* ==========================================================================
+   FONT DEFINITIONS - MTM Application
+   ========================================================================== */
+
+/* ==========================================================================
+   1. FONT FACE DECLARATIONS
+   ========================================================================== */
+
+/* Press Start 2P - Retro Gaming Font */
+@font-face {
+    font-family: 'Press Start 2P';
+    src: url('../../../assets/fonts/Press_Start_2P/PressStart2P-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap; /* Better loading performance */
+}
+
+/* Montserrat - Modern Display Font */
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/Montserrat-VariableFont_wght.ttf') format('truetype-variations');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf') format('truetype-variations');
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Montserrat Static Weights (fallbacks for older browsers) */
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/static/Montserrat-Thin.ttf') format('truetype');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/static/Montserrat-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/static/Montserrat-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/static/Montserrat-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/static/Montserrat-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/static/Montserrat-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/static/Montserrat-ExtraBold.ttf') format('truetype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../../../assets/fonts/Montserrat/static/Montserrat-Black.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ==========================================================================
+   2. FONT STACKS (FALLBACKS)
+   ========================================================================== */
+
+:root {
+    /* Gaming Font Stack - Press Start 2P for retro elements */
+    --font-gaming: 'Press Start 2P', 'Courier New', monospace;
+    
+    /* Monospace Font Stack */
+    --font-mono: 'Courier New', 'Consolas', monospace;
+}
+
+/* ==========================================================================
+   3. FONT UTILITY CLASSES
+   ========================================================================== */
+
+.font-gaming {
+    font-family: var(--font-gaming);
+}
+
+.font-mono {
+    font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   4. FONT LOADING OPTIMIZATION
+   ========================================================================== */
+
+/* Preload critical fonts */
+.font-preload {
+    font-display: block; /* Block rendering until font loads */
+}
+
+.font-swap {
+    font-display: swap; /* Show fallback immediately, swap when loaded */
+}
+
+.font-fallback {
+    font-display: fallback; /* Show fallback, swap if loaded quickly */
+}
+
+.font-optional {
+    font-display: optional; /* Only use if already cached */
+}
+
+/* ==========================================================================
+   5. FONT SIZE SCALE
+   ========================================================================== */
+
+:root {
+    --font-size-xs: 10px;
+    --font-size-sm: 12px;
+    --font-size-base: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+    --font-size-2xl: 24px;
+    --font-size-3xl: 32px;
+    --font-size-4xl: 48px;
+}
+
+/* ==========================================================================
+   6. RESPONSIVE FONT SIZES
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    :root {
+        --font-size-xs: 9px;
+        --font-size-sm: 11px;
+        --font-size-base: 13px;
+        --font-size-lg: 15px;
+        --font-size-xl: 17px;
+        --font-size-2xl: 22px;
+        --font-size-3xl: 28px;
+        --font-size-4xl: 42px;
+    }
+}
+
+/* ==========================================================================
+   7. FONT WEIGHT UTILITIES
+   ========================================================================== */
+
+.font-thin { font-weight: 100; }
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+.font-black { font-weight: 900; }
+
+/* ==========================================================================
+   8. FONT STYLE UTILITIES
+   ========================================================================== */
+
+.font-italic { font-style: italic; }
+.font-normal-style { font-style: normal; }
+.font-oblique { font-style: oblique; }
+
+/* ==========================================================================
+   9. LINE HEIGHT UTILITIES
+   ========================================================================== */
+
+.leading-none { line-height: 1; }
+.leading-tight { line-height: 1.25; }
+.leading-snug { line-height: 1.375; }
+.leading-normal { line-height: 1.5; }
+.leading-relaxed { line-height: 1.625; }
+.leading-loose { line-height: 2; }
+
+/* ==========================================================================
+   10. LETTER SPACING UTILITIES
+   ========================================================================== */
+
+.tracking-tighter { letter-spacing: -0.05em; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-normal { letter-spacing: 0em; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-wider { letter-spacing: 0.05em; }
+.tracking-widest { letter-spacing: 0.1em; }

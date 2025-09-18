@@ -9,13 +9,11 @@
     align-items: center;
     column-gap: 2px;
     width: 280px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    margin-bottom: 2px;
     position: relative;
     overflow: hidden;
     float: left;
     transition: background-color 0.3s ease;
+    margin-bottom: 3px;
 }
 
 

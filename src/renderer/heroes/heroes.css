@@ -1,62 +1,53 @@
-/* Body Styles */
-body {
-    background-color: #1b1f24;
-    color: #fff;
-    font-family: "Press Start 2P", monospace;
-    /* font-family: Arial, Helvetica, sans-serif; */
-    margin: 0;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    font-size: 10px;
-    overflow-x: hidden; /* Hide horizontal scrollbar */
-    overflow-y: scroll; /* Allow vertical scrolling */
-    scrollbar-width: none; /* For Firefox */
-    -ms-overflow-style: none; /* For Internet Explorer and Edge */
-}
+/* ==========================================================================
+   HEROES DASHBOARD - CLEAN REFACTOR
+   ========================================================================== */
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
 
 body::-webkit-scrollbar {
-    display: none; /* Hide scrollbar in WebKit browsers */
+    display: none;
 }
+
 #heroes-window {
     margin-top: -7px;
 }
-/* Ticker Card */
+
+/* ==========================================================================
+   TICKER CARD COMPONENT
+   ========================================================================== */
+
 .ticker-card {
     background-color: #2a2d36;
     border: 2px solid #444;
     border-radius: 8px;
     padding: 6px;
     display: flex;
-    flex-direction: column; /* Changed to column for better alignment */
+    flex-direction: column;
     margin: 5px;
 }
 
-/* Header Section with Sprite and Price */
+.ticker-card.dp-shake {
+    animation: shakePink 0.4s ease;
+}
+
+/* ==========================================================================
+   TICKER HEADER
+   ========================================================================== */
+
 .ticker-header {
     display: grid;
-    grid-template-columns: auto 1fr; /* 2 columns: sprite takes auto width, the rest takes the remaining space */
-    grid-gap: 10px; /* Space between columns */
-    align-items: center; /* Vertically center items */
+    grid-template-columns: auto 1fr;
+    grid-gap: 10px;
+    align-items: center;
 }
 
-h1
-{
-    font-size: 16px;
-    margin-top: -6px;
-    color: #595959;
-    font-family: Arial, Helvetica, sans-serif;
-    margin-bottom: 0;
-}
-
-h2 {
-    font-size: 16px !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: #595959;
-    font-family: Arial, Helvetica, sans-serif !important;
+.ticker-header-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: flex-start;
 }
 
 .ticker-info {
@@ -66,19 +57,22 @@ h2 {
     align-items: flex-start;
 }
 
+/* Ticker Symbol */
 .ticker-symbol {
     font-size: 26px;
     font-weight: bold;
     color: antiquewhite;
-    padding: 2px; /* add bottom padding to push text baseline down */
+    padding: 2px;
     cursor: pointer;
     display: inline-block;
     width: 210px;
     position: relative;
     box-sizing: border-box;
-    line-height: 1.1; /* tune this if needed */
+    line-height: 1.1;
     margin-bottom: 2px;
+    font-family: "Press Start 2P", monospace;
 }
+
 .ticker-symbol:hover {
     color: #a6fcca !important;
 }
@@ -107,7 +101,99 @@ h2 {
     margin-top: -4px;
 }
 
-/* Bars Section */
+/* ==========================================================================
+   TROPHIES AND MEDALS
+   ========================================================================== */
+
+.lv-medal {
+    position: absolute;
+    right: 38px;
+    top: -20px;
+    background-color: transparent;
+    font-size: 15px;
+    z-index: 100;
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.ticker-symbol .trophy {
+    position: absolute;
+    right: 10px;
+    top: -11px;
+    background-color: transparent;
+    font-size: 16px;
+    z-index: 101;
+    pointer-events: none;
+    transform: scale(0.8);
+    transform-origin: center;
+}
+
+.ticker-symbol .trophy-xp {
+    position: absolute;
+    right: 0px;
+    top: -17px;
+    background-color: transparent;
+    font-size: 16px;
+    z-index: 101;
+    pointer-events: none;
+    transform: scale(1.75);
+    transform-origin: center;
+    background-image: url('../xp/img/Svärd_i_rad_och_korsvis-removebg-preview.png');
+    background-size: 48px 32px;
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}
+
+.trophy-xp-gold {
+    background-position: 0px 0px;
+}
+
+.trophy-xp-silver {
+    background-position: -16px 0px;
+}
+
+.trophy-xp-bronze {
+    background-position: -32px 0px;
+}
+
+/* ==========================================================================
+   BUFFS CONTAINER
+   ========================================================================== */
+
+.buff-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    padding-top: 0px;
+    margin-top: -5px;
+    height: 65px;
+}
+
+.buff-row {
+    display: flex;
+    gap: 4px;
+    font-size: 12px;
+    min-height: 10px;
+    margin-bottom: 0px;
+}
+
+.buff-icon {
+    padding: 2px 4px;
+    cursor: help;
+    opacity: 0.91;
+    color: #ff0040;
+}
+
+/* Buff row styling handled by JavaScript */
+
+/* ==========================================================================
+   PROGRESS BARS
+   ========================================================================== */
+
 .bars {
     display: flex;
     flex-direction: column;
@@ -115,7 +201,6 @@ h2 {
     margin-top: 6px;
 }
 
-/* Individual Bar */
 .bar {
     height: 10px;
     background: rgba(0, 0, 0, 0.09);
@@ -123,7 +208,6 @@ h2 {
     overflow: hidden;
 }
 
-/* Bar Fill */
 .bar-fill {
     height: 100%;
     position: relative;
@@ -133,9 +217,11 @@ h2 {
     font-size: 10px;
     font-weight: bold;
     color: #000;
+    transition: width 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: width;
+    transform: translateZ(0);
 }
 
-/* Bar Text */
 .bar-text {
     white-space: nowrap;
     overflow: hidden;
@@ -151,27 +237,24 @@ h2 {
     font-weight: 400;
 }
 
-/* Bar Color Classes */
-.xp {
+/* Bar Colors */
+.bar-fill.xp {
     background: linear-gradient(90deg, #01831d, #04f370);
 }
 
-.hp {
+.bar-fill.hp {
     background: linear-gradient(90deg, #c20101, #fd5151);
 }
 
-/* .strength {
-    background: linear-gradient(90deg, #263cff, #00aeff);
-} */
-
-/* Animation for HP and DP Boost */
-#change {
-    position: absolute;
-    left: -35px;
-    z-index: 999;
-    background-color: #2a2d36;
-    height: 90%;
+.bar-animate {
+    animation: barPulse 0.3s ease-out;
 }
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+
+/* HP and DP Boost Animations */
 .hp-boost,
 .dp-damage {
     font-size: 12px;
@@ -189,7 +272,6 @@ h2 {
     color: #ff0040;
 }
 
-/* Boost Animation */
 .boost {
     position: absolute;
     left: 0px;
@@ -211,133 +293,7 @@ h2 {
     color: #ff3333;
 }
 
-/* Keyframe for Animation */
-@keyframes floatOut {
-    0% {
-        opacity: 1;
-        transform: translateY(40px); /* Start 20px below its final position */
-    }
-    60% {
-        opacity: 1;
-        transform: translateY(40px); /* End at its original position */
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(0); /* End at its original position */
-    }
-}
-
-/* Sprite Styles
-.sprite-container {
-    position: absolute;
-    right: 254px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.sprite {
-    width: 57px;
-    height: 79px;
-    background-image: url("./sprite/Soldier.png");
-    background-repeat: no-repeat;
-    animation: soldier-walk 1s steps(10);
-    background-position-x: 0;
-    opacity: 0;
-    transition: opacity 0.01s ease;
-}
-
-.sprite-active {
-    opacity: 1;
-} */
-
-@keyframes soldier-walk {
-    from {
-        background-position-x: 0;
-    }
-    to {
-        background-position-x: -1000px; /* 10 columns * 100px */
-    }
-}
-
-/* Draggable Area */
-.drag-area {
-    height: 30px;
-    -webkit-app-region: drag; /* Enable dragging */
-    position: absolute;
-    top: 0;
-    width: 100%;
-    z-index: 10;
-}
-
-/* hp bar animatiion  */
-/* Smooth transitions for all bars */
-
-/* Optional pulse animation */
-@keyframes barPulse {
-    0% {
-        transform: scaleX(1);
-    }
-    50% {
-        transform: scaleX(1.02);
-    }
-    100% {
-        transform: scaleX(1);
-    }
-}
-
-.bar-animate {
-    animation: barPulse 0.3s ease-out;
-}
-
-/* buffs  */
-.ticker-header-grid {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 12px;
-    align-items: flex-start;
-}
-
-/* Buffs aligned to the right */
-.buff-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
-    padding-top: 0px;
-    margin-top: -5px;
-    height: 65px;
-}
-
-.buff-row {
-    display: flex;
-    gap: 2px;
-    font-size: 12px;
-    /* box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); */
-    min-height: 10px; /* or whatever fits your icons */
-    display: flex;
-    gap: 4px;
-    margin-bottom: 0px;
-}
-
-.buff-icon {
-    /* background-color: #333; */
-    padding: 2px 4px;
-    cursor: help;
-    opacity: 0.91;
-    color: #ff0040;
-}
-
-.buff-row.positive {
-    /* border-bottom: 1px solid rgba(0, 255, 221, 0.2); */
-}
-
-.buff-row.negative {
-    /* border-bottom: 1px solid rgba(128, 0, 0, 0.8); */
-}
-
-/* score animations */
-
+/* Score Flash Animations */
 .score-flash-up {
     color: #00ffaa !important;
     animation: flashColorUp 0.4s ease-out;
@@ -346,6 +302,22 @@ h2 {
 .score-flash-down {
     color: #ffcdcd !important;
     animation: flashColorDown 0.4s ease-out;
+}
+
+/* Keyframes */
+@keyframes floatOut {
+    0% {
+        opacity: 1;
+        transform: translateY(40px);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(40px);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(0);
+    }
 }
 
 @keyframes flashColorUp {
@@ -366,85 +338,159 @@ h2 {
     }
 }
 
+@keyframes barPulse {
+    0% {
+        transform: scaleX(1);
+    }
+    50% {
+        transform: scaleX(1.02);
+    }
+    100% {
+        transform: scaleX(1);
+    }
+}
+
+@keyframes shakePink {
+    0% { 
+        transform: translate(0, 0); 
+        background-color: #2a2d36; 
+    }
+    20% { 
+        transform: translate(-2px, 0); 
+        background-color: #442a36; 
+    }
+    40% { 
+        transform: translate(2px, 0); 
+        background-color: #5a2d44; 
+    }
+    60% { 
+        transform: translate(-2px, 0); 
+        background-color: #442a36; 
+    }
+    80% { 
+        transform: translate(2px, 0); 
+        background-color: #5a2d44; 
+    }
+    100% { 
+        transform: translate(0, 0); 
+        background-color: #2a2d36; 
+    }
+}
+
+@keyframes soldier-walk {
+    from {
+        background-position-x: 0;
+    }
+    to {
+        background-position-x: -1000px;
+    }
+}
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
 .negative {
     color: red;
     opacity: 0.9;
     font-weight: bold;
 }
 
-.bar-fill {
-    transition: width 0.4s cubic-bezier(0.65, 0, 0.35, 1);
-    will-change: width;
-    transform: translateZ(0);
+/* ==========================================================================
+   DYNAMIC STYLING CLASSES
+   ========================================================================== */
+
+/* Faded state for inactive heroes */
+.ticker-symbol.faded {
+    opacity: 0.8;
+    filter: grayscale(0.8);
 }
 
-/* Shake and pink flash animation */
-@keyframes shakePink {
-    0% { transform: translate(0, 0); background-color: #2a2d36; }
-    20% { transform: translate(-2px, 0); background-color: #442a36; }
-    40% { transform: translate(2px, 0); background-color: #5a2d44; }
-    60% { transform: translate(-2px, 0); background-color: #442a36; }
-    80% { transform: translate(2px, 0); background-color: #5a2d44; }
-    100% { transform: translate(0, 0); background-color: #2a2d36; }
+/* Stats text styling */
+.bar-text.stats.lv {
+    font-size: 6px;
+    margin-top: 4px;
 }
 
-.ticker-card.dp-shake {
-    animation: shakePink 0.4s ease;
+.bar-text.stats.x {
+    font-size: 6px;
+    margin-top: 4px;
 }
 
-.lv-medal {
+.bar-text.stats.ch {
+    font-size: 6px;
+    margin-top: 4px;
+}
+
+.bar-text.stats {
+    font-size: 6px;
+    margin-top: 4px;
+}
+
+/* Color classes for stats */
+.stat-white {
+    color: white;
+}
+
+.stat-green {
+    color: #04f370;
+}
+
+.stat-red {
+    color: #fd5151;
+}
+
+/* Buff icon placeholder */
+.buff-icon.placeholder {
+    opacity: 0;
+}
+
+/* Price color classes */
+.price-gold {
+    color: #ffd24a;
+}
+
+.price-yellow {
+    color: #ffff99;
+}
+
+.price-white {
+    color: white;
+}
+
+/* ==========================================================================
+   FLOAT VALUE COLOR CLASSES
+   ========================================================================== */
+
+.float-green {
+    color: #00ff00;
+}
+
+.float-yellow {
+    color: #ffff00;
+}
+
+.float-blue {
+    color: #00aeff;
+}
+
+.float-orange {
+    color: #ff8c00;
+}
+
+.float-red {
+    color: #ff0000;
+}
+
+/* ==========================================================================
+   DRAG AREA
+   ========================================================================== */
+
+.drag-area {
+    height: 30px;
+    -webkit-app-region: drag;
     position: absolute;
-    right: 38px;
-    top: -20px;
-    background-color: transparent;
-    font-size: 15px;
-    z-index: 100;
-    display: inline-flex;
-    gap: 2px;
-    align-items: center;
-}
-
-/* Trophy specific styling - absolutely positioned separately from medals */
-.ticker-symbol .trophy {
-    position: absolute;
-    right: 10px; /* One fixed position to the left of medals */
-    top: -11px;
-    background-color: transparent;
-    font-size: 16px;
-    z-index: 101;
-    pointer-events: none;
-    transform: scale(0.8);
-    transform-origin: center;
-}
-
-/* Trophy specific styling - absolutely positioned separately from medals */
-.ticker-symbol .trophy-xp {
-    position: absolute;
-    right: 0px; /* One fixed position to the left of medals */
-    top: -17px;
-    background-color: transparent;
-    font-size: 16px;
-    z-index: 101;
-    pointer-events: none;
-    transform: scale(1.75);
-    transform-origin: center;
-    background-image: url('../xp/img/Svärd_i_rad_och_korsvis-removebg-preview.png');
-    background-size: 48px 32px; /* 3 swords wide, 2 rows high */
-    background-repeat: no-repeat;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-}
-
-/* XP Trophy rank-specific background positions */
-.trophy-xp-gold {
-    background-position: 0px 0px; /* Top-left sword (rank 1) */
-}
-
-.trophy-xp-silver {
-    background-position: -16px 0px; /* Top-middle sword (rank 2) */
-}
-
-.trophy-xp-bronze {
-    background-position: -32px 0px; /* Top-right sword (rank 3) */
+    top: 0;
+    width: 100%;
+    z-index: 10;
 }

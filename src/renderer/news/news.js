@@ -40,6 +40,16 @@ function logFilingStructure(filings, context = "") {
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ News: Hydrating from Oracle...");
 
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.newsHeader = new window.HeaderComponent(headerContainer, {
+            icon: '📜',
+            text: 'Spells of Enchantments (news)',
+            className: 'news-header'
+        });
+    }
+
     // Set up event delegation for symbol clicks
     document.addEventListener('click', function(event) {
         const symbolElement = event.target.closest('.symbol[data-clickable="true"]');

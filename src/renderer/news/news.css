@@ -1,18 +1,4 @@
-html,
-body {
-    height: 100%;
-    margin: 0;
-    background: #1b1f24;
-    padding: 0;
-    margin: 0 auto;
-    color: #cdcdcd;
-    font-size: 14px;
-}
 
-/* window drag rules */
-body.draggable {
-    -webkit-app-region: drag;
-}
 
 /* ===================== NEWS STYLING (from active.css) ===================== */
 .news-list {
@@ -153,3 +139,4 @@ a {
     flex-shrink: 0;
     color: #cfcfcf
 }
+

@@ -579,6 +579,16 @@ function performMemoryCleanup() {
 
 // Initialize the application
 function initialize() {
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.progressHeader = new window.HeaderComponent(headerContainer, {
+            icon: '⟁',
+            text: 'Arcane Monitor (progress)',
+            className: 'progress-header'
+        });
+    }
+
     if (!initializeElements()) {
         debugLog.error("Failed to initialize DOM elements");
         return;

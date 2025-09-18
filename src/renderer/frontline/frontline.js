@@ -172,6 +172,7 @@
         return k;
     }
 
+
     function sortBuffsInline(arr) {
         return arr.sort((a, b) => {
             const ai = BUFF_SORT_ORDER.indexOf(a._sortKey);
@@ -180,17 +181,58 @@
         });
     }
 
+    function getVolumeIcon(hero) {
+        const volumeBuff = Object.entries(hero?.buffs || {}).find(([key, v]) => {
+            const k = String(key || "").toLowerCase();
+            return k.includes("vol");
+        });
+        
+        if (volumeBuff) {
+            const [, v] = volumeBuff;
+            return `<span class="buff-icon ${v.isBuff ? "buff-positive" : v.isBuff === false ? "buff-negative" : ""}" title="${v.desc || ""}">${v.icon || "•"}</span>`;
+        }
+        return "";
+    }
+
     function buildBuffInlineHTML(hero) {
-        const entries = Object.entries(hero?.buffs || {}).map(([key, v]) => ({
-            ...(v || {}),
-            key,
-            _sortKey: categorizeBuffKey(key),
-        }));
+        // Filter out volume buffs since they're displayed separately
+        const entries = Object.entries(hero?.buffs || {})
+            .filter(([key]) => {
+                const k = String(key || "").toLowerCase();
+                return !k.includes("vol"); // Exclude volume buffs
+            })
+            .map(([key, v]) => ({
+                ...(v || {}),
+                key,
+                _sortKey: categorizeBuffKey(key),
+            }));
 
         const sorted = sortBuffsInline(entries);
         if (!sorted.length) return ""; // keep container empty ≈ previous behavior
 
-        return sorted.map((b) => `<span class="buff-icon ${b.isBuff ? "buff-positive" : b.isBuff === false ? "buff-negative" : ""}" title="${b.desc || ""}">${b.icon || "•"}</span>`).join("");
+        return sorted.map((b) => {
+            // For float buffs, use the value instead of icon and apply color class
+            if (b._sortKey === "float") {
+                // Extract the numeric value from the icon (1, 5, 10, 20, 50, 100, 200, 500)
+                const floatValue = parseInt(b.icon) || 0;
+                let colorClass = "";
+                
+                // Precise color mapping based on actual values
+                if (floatValue === 1 || floatValue === 5 || floatValue === 10) {
+                    colorClass = "float-green";
+                } else if (floatValue === 20) {
+                    colorClass = "float-yellow";
+                } else if (floatValue === 50) {
+                    colorClass = "float-orange";
+                } else if (floatValue === 100 || floatValue === 200 || floatValue === 500) {
+                    colorClass = "float-red";
+                }
+                
+                return `<span class="buff-icon ${colorClass}" title="${b.desc || ""}">${b.icon}</span>`;
+            }
+            // For other buffs, use the icon as before
+            return `<span class="buff-icon ${b.isBuff ? "buff-positive" : b.isBuff === false ? "buff-negative" : ""}" title="${b.desc || ""}">${b.icon || "•"}</span>`;
+        }).join("");
     }
 
     function volumeColorFromImpact(hero) {
@@ -259,6 +301,7 @@
         const card = state.container.querySelector(`.hero-card[data-symbol="${sym}"]`);
         if (!card) return;
         
+        // Dynamic width calculation - must stay as inline style
         const scoreFill = card.querySelector(".progress-fill.score");
         if (scoreFill) {
             const exponent = 0.75;
@@ -271,12 +314,41 @@
             volEl.textContent = abbreviatedValues(hero.strength || 0);
         }
         
+        // Update volume icon (it's the first buff-icon before volume-text)
+        const volumeIconEl = card.querySelector(".hero-data .buff-icon:first-child");
+        if (volumeIconEl) {
+            const volumeIconHTML = getVolumeIcon(hero);
+            if (volumeIconHTML) {
+                volumeIconEl.outerHTML = volumeIconHTML;
+            } else {
+                volumeIconEl.remove();
+            }
+        } else if (getVolumeIcon(hero)) {
+            // Add volume icon if it doesn't exist but should
+            const heroDataEl = card.querySelector(".hero-data");
+            if (heroDataEl) {
+                const volumeTextEl = heroDataEl.querySelector(".volume-text");
+                if (volumeTextEl) {
+                    volumeTextEl.insertAdjacentHTML('beforebegin', getVolumeIcon(hero));
+                }
+            }
+        }
+        
         const priceEl = card.querySelector(".price-badge");
         if (priceEl) {
             priceEl.textContent = `$${(hero.price ?? 0).toFixed(2)}`;
             // Apply HOD color logic based on proximity to session high
             const priceColor = getHodPriceColor(hero.price, hero.sessionHigh);
-            priceEl.style.color = priceColor;
+            // Remove existing price color classes
+            priceEl.classList.remove('price-gold', 'price-yellow', 'price-white');
+            // Add appropriate class
+            if (priceColor === '#ffd24a') {
+                priceEl.classList.add('price-gold');
+            } else if (priceColor === '#ffff99') {
+                priceEl.classList.add('price-yellow');
+            } else {
+                priceEl.classList.add('price-white');
+            }
         }
 
         const medalEl = card.querySelector(".medal");
@@ -323,6 +395,7 @@
 
         // Get HOD color for price badge
         const priceColor = getHodPriceColor(hero.price, hero.sessionHigh);
+        const priceColorClass = priceColor === '#ffd24a' ? 'price-gold' : priceColor === '#ffff99' ? 'price-yellow' : 'price-white';
 
         card.innerHTML = `
         <div class="hero-header">
@@ -332,17 +405,18 @@
                     <span class="medal">${getSymbolMedal(sym)}</span>
                     ${getSymbolTrophy(sym)}
                     ${getSymbolXpTrophy(sym)}
-                    <span class="price-badge" style="color:${priceColor}">$${(hero.price ?? 0).toFixed(2)}</span>
+                    <span class="price-badge ${priceColorClass}">$${(hero.price ?? 0).toFixed(2)}</span>
                 </div>
             </div>
             <div class="hero-info">
                 <div class="hero-data">
-                    <span class="volume-text" style="color:${volumeColorFromImpact(hero)}">
+                    ${getVolumeIcon(hero)}<span class="volume-text" style="color:${volumeColorFromImpact(hero)}">
                         ${abbreviatedValues(hero.strength || 0)}
                     </span>
                     <div class="buffs-container">${buildBuffInlineHTML(hero)}</div>
                 </div>
                 <div class="progress-bars">
+                    <!-- Dynamic width - must stay as inline style -->
                     <div class="progress-bar">
                         <div class="progress-fill score" style="width:0%"></div>
                     </div>
@@ -605,6 +679,21 @@
      * 7) Boot
      **************************************************************************/
     async function boot() {
+        // Preload critical fonts
+        if (window.fontLoader) {
+            await window.fontLoader.preloadCriticalFonts();
+        }
+        
+        // Initialize header component
+        const headerContainer = document.getElementById("header-container");
+        if (headerContainer && window.HeaderComponent) {
+            new window.HeaderComponent(headerContainer, {
+                icon: "⚔️",
+                text: "The Frontline of Shifting Fortunes (peak)",
+                className: "frontline-header"
+            });
+        }
+        
         // DOM
         state.container = document.getElementById("frontline");
         if (!state.container) return;

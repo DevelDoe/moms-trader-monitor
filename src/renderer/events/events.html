@@ -5,13 +5,19 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Chronicle</title>
-        <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../styles/styles.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="./events.css" />
     </head>
-    <body class="draggable">
-        <div id="wrapper">
-            <ul id="log" class="draggable"></ul>
-            <script src="./events.js"></script>
+    <body >
+        <div id="header-container"></div>
+        
+        <div id="app">
+            <ul id="log"></ul>
         </div>
+        
+        <script src="../components/header/header.js"></script>
+        <script src="./events.js"></script>
     </body>
 </html>

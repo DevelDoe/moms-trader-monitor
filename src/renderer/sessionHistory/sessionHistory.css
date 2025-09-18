@@ -1,12 +1,5 @@
 /* Session History View Styles */
 
-/* Additional styling for the session history table */
-.session-history-container {
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 1px;
-    margin: 10px 0;
-}
 
 /* Enhanced table styling */
 table {
@@ -174,7 +167,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-    /* background: rgba(255, 255, 255, 0.1); */
+    background: rgba(255, 255, 255, 0.05);
 }
 
 /* Sort indicator styling */
@@ -185,7 +178,6 @@ tbody tr:hover {
 
 /* XP value formatting */
 .xp-value {
-    font-family: 'Courier New', monospace;
     font-weight: 600;
 }
 
@@ -306,7 +298,38 @@ tbody tr:hover {
 }
 
 .current-session-cell {
-    /* background: rgba(0, 174, 255, 0.1); */
-    /* border-left: 3px solid #00aeff;
-    border-right: 3px solid #00aeff; */
+    background: rgba(0, 174, 255, 0.05);
+}
+
+/* Session change display styling */
+.symbol-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.session-change {
+    font-size: 10px;
+    font-weight: 500;
+    text-align: center;
+    padding: 1px 2px;
+    border-radius: 2px;
+    min-width: 40px;
+    transition: all 0.2s ease;
+}
+
+.session-change.positive {
+    color: #00ff00;
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.session-change.negative {
+    color: #ff0000;
+    background: rgba(255, 0, 0, 0.1);
+}
+
+.session-change.neutral {
+    color: #888;
+    background: rgba(136, 136, 136, 0.1);
 }

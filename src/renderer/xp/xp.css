@@ -1,0 +1,198 @@
+/* ========================================
+   XP COMPONENT STYLES
+   ======================================== */
+
+/* ========================================
+   1. LOADING STATES
+   ======================================== */
+.loading-message {
+    color: #666;
+    text-align: center;
+    padding: 20px;
+}
+
+/* ========================================
+   2. TABLE STRUCTURE
+   ======================================== */
+.xp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    border-radius: 1px;
+    overflow: hidden;
+    background: transparent;
+    backdrop-filter: blur(10px);
+}
+
+/* ========================================
+   3. TABLE HEADERS
+   ======================================== */
+.xp-header-row {
+    border-bottom: 1px solid #333;
+}
+
+.xp-header-cell {
+    text-align: left;
+    padding: 6px 8px;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    backdrop-filter: blur(5px);
+}
+
+.xp-header-cell-right {
+    text-align: right;
+}
+
+.xp-header-cell-symbol {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+.xp-header-cell-narrow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70px;
+}
+
+.xp-header-cell-wide {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+/* Special header styling */
+.xp-header-net {
+    color: #4A90E2;
+    border-bottom: 2px solid #4A90E2;
+}
+
+.xp-header-change {
+    color: #4A90E2;
+    border-bottom: 2px solid #4A90E2;
+}
+
+.xp-header-arrow {
+    color: #4A90E2;
+    font-size: 12px;
+}
+
+/* ========================================
+   4. TABLE BODY
+   ======================================== */
+.xp-body-row {
+    border-bottom: 1px solid #222;
+    transition: all 0.2s ease;
+}
+
+.xp-body-cell {
+    color: #ccc;
+}
+
+.xp-body-cell-first {
+    padding: 10px 8px 2px 8px;
+}
+
+.xp-body-cell-normal {
+    padding: 2px 8px;
+}
+
+.xp-body-cell-rank {
+    color: #666;
+    text-align: right;
+}
+
+.xp-body-cell-center {
+    text-align: center;
+}
+
+/* ========================================
+   5. TROPHY SYSTEM
+   ======================================== */
+.trophy {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    vertical-align: middle;
+    margin-right: -3px;
+}
+
+.trophy-xp {
+    background-image: url("./img/Svärd_i_rad_och_korsvis-removebg-preview.png");
+    background-size: 48px 32px; /* 3 swords wide, 2 rows high */
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    transform: scale(1.75); /* Enlarge by 25% */
+}
+
+.trophy-xp-gold {
+    background-position: 0px 0px; /* Top left - Gold sword */
+}
+
+.trophy-xp-silver {
+    background-position: -16px 0px; /* Top middle - Silver sword */
+}
+
+.trophy-xp-bronze {
+    background-position: -32px 0px; /* Top right - Bronze sword */
+}
+
+.rank-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+/* ========================================
+   6. DATA VALUE COLORS
+   ======================================== */
+.xp-value-up {
+    color: #00ff00;
+}
+
+.xp-value-down {
+    color: #ff0000;
+}
+
+.xp-value-total {
+    color: #00aeff;
+}
+
+.xp-value-net {
+    color: #ffff00;
+}
+
+.xp-value-volume {
+    color: #00ff00;
+}
+
+.xp-value-level {
+    color: #00aeff;
+}
+
+.xp-value-price {
+    color: #ffffff;
+}
+
+.xp-value-positive {
+    color: #00ff00;
+}
+
+.xp-value-negative {
+    color: #ff0000;
+}
+
+.xp-value-neutral {
+    color: #666;
+}

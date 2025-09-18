@@ -1,13 +1,5 @@
 /* halts.css - Trading Halts Monitor Styles - Compact View */
 
-#halts-container {
-    padding: 0px;
-    height: calc(100vh - 50px);
-    overflow-y: auto;
-    border-radius: 4px;
-    margin: 2px;
-}
-
 .halts-list {
     display: flex;
     flex-direction: column;

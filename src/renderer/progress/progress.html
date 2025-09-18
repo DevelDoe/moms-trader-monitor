@@ -2,12 +2,18 @@
 <html>
     <head>
         <meta charset="UTF-8" />
-        <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../styles/styles.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="./progress.css" />
         <title>Arcane Monitor</title>
     </head>
     <body>
-        <div class="arcane-header draggable">
+        <!-- Header Component Container -->
+        <div id="header-container"></div>
+
+        <div id="app">
+            
             <!-- Clock and Session Header -->
             <div class="clock-session-header">
                 <div class="ny-clock" id="ny-clock">12:53:37 PM</div>
@@ -16,7 +22,7 @@
                     <div class="countdown-timer" id="countdown-timer">3h 6m 23s</div>
                 </div>
             </div>
-            
+
             <!-- Data Banner -->
             <div class="data-banner" id="data-banner">
                 <div class="banner-content">
@@ -42,14 +48,15 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Progress Bar -->
-            <div class="sentiment-flow draggable">
-                <div class="flow-hp draggable" id="flow-hp" title="Buying Volume"></div>
-                <div class="flow-dp draggable" id="flow-dp" title="Selling Volume"></div>
-            </div>
         </div>
 
+        <!-- Progress Bar -->
+        <div class="sentiment-flow draggable">
+            <div class="flow-hp draggable" id="flow-hp" title="Buying Volume"></div>
+            <div class="flow-dp draggable" id="flow-dp" title="Selling Volume"></div>
+        </div>
+
+        <script src="../components/header/header.js"></script>
         <script src="./progress.js"></script>
     </body>
 </html>

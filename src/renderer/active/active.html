@@ -6,13 +6,17 @@
         
 
         <title>Grimoire</title>
-        <link rel="stylesheet" href="../styles.css" />
-        <link rel="stylesheet" href="../flat.css" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../styles/styles.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="./active.css" />
         <link rel="stylesheet" href="./tailwind.css" />
     </head>
     <body>
-        <div id="app-container">
+        <!-- Header Component Container -->
+        <div id="header-container"></div>
+        
+        <div id="app">
             <!-- <div class="tab-wrapper">
                 <div class="tab">
                     <button class="tablinks active" onclick="openTab(event, 'summary')">Summary</button>
@@ -25,7 +29,7 @@
                 </div>
             </div> -->
 
-            <h2 style="margin-top: 0px; margin-bottom: 7px;">📚 The Arcane Grimoire (active)</h2>
+            
 
             <div id="no-active-symbol" class="no-active-symbol draggable">
                 <p>No active symbol</p>
@@ -39,10 +43,10 @@
                         <div id="left-column" class="space-y-4">
                             <!-- Symbol and Info -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-0">
-                                <div id="symbol" class="bg-zinc-800 p-4 rounded-xl col-span-1">
-                                    <input id="symbol-input" class="editable-symbol" type="text" spellcheck="false" />
+                                <div id="symbol-input-container" class="bg-zinc-800 p-4 rounded-xl col-span-1">
+                                    <input id="symbol-input" class="editable-symbol font-gaming" type="text" spellcheck="false" />
                                 </div>
-                                <div id="symbol" class="bg-zinc-800 p-4 rounded-xl col-span-2">
+                                <div id="symbol-info" class="bg-zinc-800 p-4 rounded-xl col-span-2">
                                     <span data-id="industry"></span>
                                 </div>
                             </div>
@@ -77,7 +81,7 @@
                         </div>
 
                         <!-- News -->
-                        <div id="news" class="bg-zinc-800 p-4 rounded-xl">
+                        <div id="news-summary" class="bg-zinc-800 p-4 rounded-xl">
 
                             <div id="news-container" class="news-list no-drag"></div>
                         </div>
@@ -193,8 +197,9 @@
             </div>
         </div>
 
-        <!-- Finviz charts embedded via iframe -->
+        <footer id=""></footer>
         
+        <script src="../components/header/header.js"></script>
         <script src="./active.js"></script>
         <script>
             const container = document.querySelector(".scroll-content.no-drag");

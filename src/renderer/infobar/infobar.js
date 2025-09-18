@@ -111,6 +111,16 @@ function isFilingItemRecent(filingItem) {
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("⚡ Page Loaded. Initializing...");
 
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.infobarHeader = new window.HeaderComponent(headerContainer, {
+            icon: '📯',
+            text: 'Herald of the Market (infobar)',
+            className: 'infobar-header'
+        });
+    }
+
     await loadNewsSettings(); // blockList + bullishList + bearishList
     // Don't fetch initial news - only listen for deltas
 
@@ -548,6 +558,7 @@ const bonusItems = [
     { icon: "😼", desc: "Catalyst in play — recent news may affect momentum" },
     { icon: "😺", desc: "Bullish news - may affect momentum" },
     { icon: "🙀", desc: "Bearish news - may affect momentum" },
+    { icon: "📁", desc: "Recent SEC filing - may affect momentum" },
     { icon: "📈", desc: "New high" },
     { icon: "🔁", desc: "Recovering — stock is bouncing back after a downtrend" },
     { icon: "🧬", desc: "Biotechnology stock" },

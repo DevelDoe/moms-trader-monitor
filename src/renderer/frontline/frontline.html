@@ -5,22 +5,27 @@
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none';" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../styles/fonts.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="./frontline.css" />
-        <link rel="stylesheet" href="../flat.css" />
         <title>Frontline</title>
     </head>
     <body>
-        <div class="drag-area"></div>
-        <header class="app-header">
-            <h1>⚔️ The Frontline of Shifting Fortunes (peak)</h1>
-        </header>
+        <div id="header-container"></div>
         
-        <main class="frontline-container">
-            <div id="frontline" class="heroes-list">
-                <!-- Hero cards will be dynamically inserted here -->
-            </div>
-        </main>
+        <div id="app">
+            <main class="frontline-container">
+                <div id="frontline" class="heroes-list">
+                    <!-- Hero cards will be dynamically inserted here -->
+                </div>
+            </main>
+        </div>
+        
+        <footer id=""></footer>
            
+        <script src="../utils/fontLoader.js"></script>
+        <script src="../components/header/header.js"></script>
         <script src="./frontline.js"></script>
         <script src="./stateManager.js"></script>
         <script src="./helpers.js"></script>

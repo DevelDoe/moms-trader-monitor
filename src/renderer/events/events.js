@@ -254,11 +254,17 @@ async function initializeApp() {
         
         // Use textContent for better performance than innerHTML
         valuesDiv.innerHTML = `
-          <span class="alert-symbol no-drag" style="background-color: ${getSymbolColor(alertData.hue || 0)}" title="Click to copy and set active ticker">${hero}</span>
+          <span class="alert-symbol no-drag" title="Click to copy and set active ticker">${hero}</span>
           <span class="price">$${Number(price).toFixed(2)}</span>
           <span class="${isUp ? "change-up" : "change-down"}">${change.toFixed(2)}%</span>
           <span class="size">${abbreviatedValues(strength)}</span>
         `;
+        
+        // Apply dynamic background color via CSS custom property
+        const symbolEl = valuesDiv.querySelector(".alert-symbol");
+        if (symbolEl) {
+            symbolEl.style.setProperty('--hue', alertData.hue || 0);
+        }
 
         valuesDiv.querySelector(".alert-symbol").onclick = () => {
             navigator.clipboard.writeText(hero);
@@ -750,6 +756,16 @@ if (window.ipcListenerAPI) {
     window.ipcListenerAPI.onTestScannerAlert(() => {
         console.log("[Events] Received test-scanner-alert command from main process");
         window.testScannerAlert();
+    });
+}
+
+// Initialize header component
+const headerContainer = document.getElementById("header-container");
+if (headerContainer && window.HeaderComponent) {
+    new window.HeaderComponent(headerContainer, {
+        icon: "📊",
+        text: "Events Chronicle",
+        className: "events-header"
     });
 }
 

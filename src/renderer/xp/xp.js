@@ -30,7 +30,7 @@ async function refreshList() {
     if (!oracleActiveStocks?.symbols || oracleActiveStocks.symbols.length === 0) {
         const container = document.getElementById("xp-scroll");
         if (container) {
-            container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Waiting for Oracle data...</div>';
+            container.innerHTML = '<div class="loading-message">Waiting for Oracle data...</div>';
         }
         return;
     }
@@ -108,76 +108,79 @@ async function refreshList() {
     
     const headersHtml = showHeaders ? `
         <thead>
-            <tr style="border-bottom: 1px solid #333;">
-                <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Rank Position">
+            <tr class="xp-header-row">
+                <th class="xp-header-cell" title="Rank Position">
                     #
                 </th>
-                <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
+                <th class="xp-header-cell xp-header-cell-symbol">
                     Symbol
                 </th>
-                ${window.xpSettings?.showUpXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.xpSettings?.showUpXp !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-narrow">
                     Up XP
                 </th>` : ''}
-                ${window.xpSettings?.showDownXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.xpSettings?.showDownXp !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-narrow">
                     Down XP
                 </th>` : ''}
-                ${window.xpSettings?.showRatio !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
+                ${window.xpSettings?.showRatio !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-wide">
                     Ratio
                 </th>` : ''}
-                ${window.xpSettings?.showTotal !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.xpSettings?.showTotal !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-narrow">
                     Total
                 </th>` : ''}
-                ${window.xpSettings?.showNet !== false ? `<th style="text-align: right; padding: 6px 8px; color: #4A90E2; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px); border-bottom: 2px solid #4A90E2;">
-                    Net XP <span style="color: #4A90E2; font-size: 12px;">↓</span>
+                ${window.xpSettings?.showNet !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-narrow xp-header-net">
+                    Net XP <span class="xp-header-arrow">↓</span>
                 </th>` : ''}
-                ${window.xpSettings?.showTotalVolume !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.xpSettings?.showTotalVolume !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-narrow">
                     Volume
                 </th>` : ''}
-                ${window.xpSettings?.showLevel !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.xpSettings?.showLevel !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-narrow">
                     Level
                 </th>` : ''}
-                ${window.xpSettings?.showPrice !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.xpSettings?.showPrice !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-narrow">
                     Price
                 </th>` : ''}
-                ${window.xpSettings?.showSessionChange !== false ? `<th style="text-align: right; padding: 6px 8px; color: #4A90E2; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px); border-bottom: 2px solid #4A90E2;">
-                    Change % <span style="color: #4A90E2; font-size: 12px;">↓</span>
+                ${window.xpSettings?.showSessionChange !== false ? `<th class="xp-header-cell xp-header-cell-right xp-header-cell-wide xp-header-change">
+                    Change % <span class="xp-header-arrow">↓</span>
                 </th>` : ''}
             </tr>
         </thead>
     ` : '';
 
     container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 16px; border-radius: 1px; overflow: hidden; background: transparent; backdrop-filter: blur(10px); ">
+        <table class="xp-table">
             ${headersHtml}
             <tbody>
                 ${sortedList.map((h, i) => {
                     const isFirstRow = i === 0;
-                    const firstRowPadding = isFirstRow ? 'padding: 10px 8px 6px 8px;' : 'padding: 6px 8px;';
+                    const cellClass = isFirstRow ? 'xp-body-cell-first' : 'xp-body-cell-normal';
+                    const ratioColorClass = h.up > h.down ? 'xp-value-positive' : 'xp-value-negative';
+                    const changeColorClass = h.sessionChangePercent > 0 ? 'xp-value-positive' : h.sessionChangePercent < 0 ? 'xp-value-negative' : 'xp-value-neutral';
+                    
                     return `
-                        <tr style="border-bottom: 1px solid #222; transition: all 0.2s ease;">
-                            <td style="${firstRowPadding} color: #666; text-align: right;" title="Rank Position">
+                        <tr class="xp-body-row">
+                            <td class="xp-body-cell ${cellClass} xp-body-cell-rank" title="Rank Position">
                                 <div class="rank-cell">
                                     ${i < 3 ? getTrophyIcon(i + 1) : `<span>${i + 1}</span>`}
                                 </div>
                             </td>
-                            <td style="${firstRowPadding}" title="Symbol">
+                            <td class="xp-body-cell ${cellClass}" title="Symbol">
                                 ${window.components.Symbol({ 
                                     symbol: h.hero, 
                                     size: "medium",
                                     onClick: true
                                 })}
                             </td>
-                            ${window.xpSettings?.showUpXp !== false ? `<td style="${firstRowPadding} text-align: center; color: #00ff00;" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
-                            ${window.xpSettings?.showDownXp !== false ? `<td style="${firstRowPadding} text-align: center; color: #ff0000;" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
-                            ${window.xpSettings?.showRatio !== false ? `<td style="${firstRowPadding} text-align: center;" title="Up/Down XP Ratio">
-                                <span style="color: ${h.up > h.down ? '#00ff00' : '#ff0000'};">${h.up + h.down > 0 ? Math.round(((h.up - h.down) / (h.up + h.down)) * 100) : 0}%</span>
+                            ${window.xpSettings?.showUpXp !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center xp-value-up" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
+                            ${window.xpSettings?.showDownXp !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center xp-value-down" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
+                            ${window.xpSettings?.showRatio !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center" title="Up/Down XP Ratio">
+                                <span class="${ratioColorClass}">${h.up + h.down > 0 ? Math.round(((h.up - h.down) / (h.up + h.down)) * 100) : 0}%</span>
                             </td>` : ''}
-                            ${window.xpSettings?.showTotal !== false ? `<td style="${firstRowPadding} text-align: center; color: #00aeff;" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
-                            ${window.xpSettings?.showNet !== false ? `<td style="${firstRowPadding} text-align: center; color: #ffff00;" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
-                            ${window.xpSettings?.showTotalVolume !== false ? `<td style="${firstRowPadding} text-align: center; color: #00ff00;" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
-                            ${window.xpSettings?.showLevel !== false ? `<td style="${firstRowPadding} text-align: center; color: #00aeff;" title="Level">${h.level}</td>` : ''}
-                            ${window.xpSettings?.showPrice !== false ? `<td style="${firstRowPadding} text-align: center; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
-                            ${window.xpSettings?.showSessionChange !== false ? `<td style="${firstRowPadding} text-align: center; color: ${h.sessionChangePercent > 0 ? '#00ff00' : h.sessionChangePercent < 0 ? '#ff0000' : '#666'};" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
+                            ${window.xpSettings?.showTotal !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center xp-value-total" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
+                            ${window.xpSettings?.showNet !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center xp-value-net" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
+                            ${window.xpSettings?.showTotalVolume !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center xp-value-volume" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
+                            ${window.xpSettings?.showLevel !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center xp-value-level" title="Level">${h.level}</td>` : ''}
+                            ${window.xpSettings?.showPrice !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center xp-value-price" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
+                            ${window.xpSettings?.showSessionChange !== false ? `<td class="xp-body-cell ${cellClass} xp-body-cell-center ${changeColorClass}" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
                         </tr>
                     `;
                 }).join('')}
@@ -190,6 +193,16 @@ async function refreshList() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.xpHeader = new window.HeaderComponent(headerContainer, {
+            icon: '🏆',
+            text: 'Hall of Legends (XP)',
+            className: 'xp-header'
+        });
+    }
+
     const container = document.getElementById("xp-scroll");
     if (!container) return;
 

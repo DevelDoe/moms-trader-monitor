@@ -1,0 +1,171 @@
+/* ========================================
+   CHANGE COMPONENT STYLES
+   ======================================== */
+
+/* ========================================
+   1. LOADING STATES
+   ======================================== */
+.loading-message {
+    color: #666;
+    text-align: center;
+    padding: 20px;
+}
+
+/* ========================================
+   2. TABLE STRUCTURE
+   ======================================== */
+.change-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    border-radius: 1px;
+    overflow: hidden;
+    background: transparent;
+    backdrop-filter: blur(10px);
+}
+
+/* ========================================
+   3. TABLE HEADERS
+   ======================================== */
+.change-header-row {
+    border-bottom: 1px solid #333;
+}
+
+.change-header-cell {
+    text-align: left;
+    padding: 6px 8px;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    backdrop-filter: blur(5px);
+}
+
+.change-header-cell-right {
+    text-align: right;
+}
+
+.change-header-cell-symbol {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+.change-header-cell-narrow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70px;
+}
+
+.change-header-cell-wide {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+/* Special header styling */
+.change-header-change {
+    color: #4A90E2;
+    border-bottom: 2px solid #4A90E2;
+}
+
+.change-header-arrow {
+    color: #4A90E2;
+    font-size: 12px;
+}
+
+/* ========================================
+   4. TABLE BODY
+   ======================================== */
+.change-body-row {
+    transition: all 0.2s ease;
+}
+
+.change-body-cell {
+    color: #ccc;
+}
+
+.change-body-cell-first {
+    padding: 10px 8px 2px 8px;
+}
+
+.change-body-cell-normal {
+    padding: 2px 8px;
+}
+
+.change-body-cell-rank {
+    color: #666;
+    text-align: right;
+}
+
+.change-body-cell-center {
+    text-align: center;
+}
+
+/* ========================================
+   5. TROPHY SYSTEM
+   ======================================== */
+.trophy {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    vertical-align: middle;
+    margin-right: -3px;
+}
+
+.rank-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+/* ========================================
+   6. DATA VALUE COLORS
+   ======================================== */
+.change-value-up {
+    color: #00ff00;
+}
+
+.change-value-down {
+    color: #ff0000;
+}
+
+.change-value-total {
+    color: #00aeff;
+}
+
+.change-value-net {
+    color: #ffff00;
+}
+
+.change-value-volume {
+    color: #00ff00;
+}
+
+.change-value-level {
+    color: #00aeff;
+}
+
+.change-value-price {
+    color: #ffffff;
+}
+
+.change-value-positive {
+    color: #00ff00;
+}
+
+.change-value-negative {
+    color: #ff0000;
+}
+
+.change-value-neutral {
+    color: #666;
+}

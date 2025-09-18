@@ -4,14 +4,14 @@
         <meta charset="UTF-8" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
 
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="./sessionHistory.css" />
         <link rel="stylesheet" href="../components/symbol/symbol.css" />
-        <link rel="stylesheet" href="../flat.css" />
         <title>Register of Conquerors</title>
         <style>
             body {
                 padding: 10px;
-                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
             }
 
             table {
@@ -120,12 +120,19 @@
         </style>
     </head>
     <body>
-        <div class="drag-area"></div>
-        <h2>Register of Conquerors (Sessions)</h2>
-        <div id="session-history-table">
-            <div class="loading">Loading session data...</div>
+
+        <!-- Header Component Container -->
+        <div id="header-container"></div>
+
+        <div id="app">
+            <div id="session-history-table">
+                <div class="loading">Loading session data...</div>
+            </div>
         </div>
 
+        <footer id="footer"></footer>
+
+        <script src="../components/header/header.js"></script>
         <script src="./sessionHistory.js"></script>
     </body>
 </html>

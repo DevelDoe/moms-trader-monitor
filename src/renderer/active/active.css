@@ -1,16 +1,4 @@
-body {
-    color: #cdcdcd;
 
-    margin: 0 auto;
-    font-size: 14px;
-    /* font-family: "Press Start 2P", monospace;  */
-    height: 100%;
-}
-#app-container {
-    padding: 0px 0px;
-    box-shadow: inset 0px 0px 0px 0px rgba(0, 0, 0, 0.5);
-    height: 100%;
-}
 
 #left-column {
     width: 100%;
@@ -400,7 +388,6 @@ body {
     width: 100px;
     /* max-width: 95px; */
     cursor: default;
-    font-family: "Press Start 2P", monospace;
     font-size: 20px;
 }
 

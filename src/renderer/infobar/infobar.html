@@ -3,21 +3,11 @@
     <head>
         <meta charset="UTF-8" />
         <!-- <link rel="stylesheet" href="../styles.css" /> -->
-        <link rel="stylesheet" href="../flat.css" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
 
         <title>Notice Board</title>
         <style>
-            /* Container styling */
-            body {
-                padding: 10px;
-                margin: 0;
-                color: #f0f0f0; /* light text for contrast */
-                font-family: sans-serif; /* use app's font if needed */
-                height: 100px;
-                width: 100%;
-                overflow-x: hidden;
-                min-height: 63px;
-            }
             .bonus-list,
             .news-list {
                 position: relative;
@@ -236,10 +226,18 @@
             }
         </style>
     </head>
-    <body class="draggable">
-        <h2>📯 Herald of the Market (infobar)</h2>
-        <ul class="bonus-list no-drag"></ul>
+    <body >
 
+        <!-- Header Component Container -->
+        <div id="header-container"></div>
+
+        <div id="app">
+            <ul class="bonus-list no-drag"></ul>
+        </div>
+        
+        <footer id=""></footer>
+
+        <script src="../components/header/header.js"></script>
         <script src="./infobar.js"></script>
     </body>
 </html>

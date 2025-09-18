@@ -1,7 +1,7 @@
 // Symbol Component - Reusable symbol display with configurable size and styling
 // Usage: window.components.Symbol({ symbol: "AAPL", size: "small", onClick: (symbol) => console.log(symbol) })
 
-function Symbol({ symbol, size = "medium", onClick = null, showTrophy = false, rank = null, customStyle = {} }) {
+function Symbol({ symbol, size = "medium", onClick = null, showTrophy = false, rank = null, customStyle = {}}) {
     // Size configurations
     const sizeConfigs = {
         small: {
@@ -36,10 +36,10 @@ function Symbol({ symbol, size = "medium", onClick = null, showTrophy = false, r
     const symbolColor = getSymbolColor(symbol);
     
     // Trophy HTML if needed
-    const trophyHtml = showTrophy && rank ? getTrophyIcon(rank) : '';
+    // const trophyHtml = showTrophy && rank ? getTrophyIcon(rank) : '';
     
     // Use data attributes instead of inline onclick for better security and reliability
-    const dataAttributes = onClick ? `data-symbol="${symbol}" data-clickable="true"` : '';
+    // const dataAttributes = onClick ? `data-symbol="${symbol}" data-clickable="true"` : '';
     
     return `
         <span class="symbol symbol-${size}" 
@@ -67,16 +67,16 @@ function Symbol({ symbol, size = "medium", onClick = null, showTrophy = false, r
 }
 
 // Trophy utility function (extracted from xp.js)
-function getTrophyIcon(rank) {
-    if (rank === 1) {
-        return '<img src="./img/gold-cup.png" alt="Gold Trophy" class="trophy trophy-gold" width="16" height="16" style="margin-right: 4px; vertical-align: middle;">';
-    } else if (rank === 2) {
-        return '<img src="./img/silver-cup.png" alt="Silver Trophy" class="trophy trophy-silver" width="16" height="16" style="margin-right: 4px; vertical-align: middle;">';
-    } else if (rank === 3) {
-        return '<img src="./img/bronze-cup.png" alt="Bronze Trophy" class="trophy trophy-bronze" width="16" height="16" style="margin-right: 4px; vertical-align: middle;">';
-    }
-    return '';
-}
+// function getTrophyIcon(rank) {
+//     if (rank === 1) {
+//         return '<img src="./img/gold-cup.png" alt="Gold Trophy" class="trophy trophy-gold" width="16" height="16" style="margin-right: 4px; vertical-align: middle;">';
+//     } else if (rank === 2) {
+//         return '<img src="./img/silver-cup.png" alt="Silver Trophy" class="trophy trophy-silver" width="16" height="16" style="margin-right: 4px; vertical-align: middle;">';
+//     } else if (rank === 3) {
+//         return '<img src="./img/bronze-cup.png" alt="Bronze Trophy" class="trophy trophy-bronze" width="16" height="16" style="margin-right: 4px; vertical-align: middle;">';
+//     }
+//     return '';
+// }
 
 // Symbol color generation (extracted from xp.js)
 const symbolColors = {};
@@ -93,28 +93,28 @@ function getSymbolColor(symbol) {
 }
 
 // Global click handler for symbols
-window.handleSymbolClick = function(symbol, event) {
-    try {
-        // Copy to clipboard
-        navigator.clipboard.writeText(symbol);
+// window.handleSymbolClick = function(symbol, event) {
+//     try {
+//         // Copy to clipboard
+//         navigator.clipboard.writeText(symbol);
         
-        // Set as active ticker if API is available
-        if (window.activeAPI?.setActiveTicker) {
-            window.activeAPI.setActiveTicker(symbol);
-        }
+//         // Set as active ticker if API is available
+//         if (window.activeAPI?.setActiveTicker) {
+//             window.activeAPI.setActiveTicker(symbol);
+//         }
         
-        // Add visual feedback
-        const clickedElement = event ? event.target.closest('.symbol') : null;
-        if (clickedElement) {
-            clickedElement.classList.add("symbol-clicked");
-            setTimeout(() => clickedElement.classList.remove("symbol-clicked"), 200);
-        }
+//         // Add visual feedback
+//         const clickedElement = event ? event.target.closest('.symbol') : null;
+//         if (clickedElement) {
+//             clickedElement.classList.add("symbol-clicked");
+//             setTimeout(() => clickedElement.classList.remove("symbol-clicked"), 200);
+//         }
         
-        console.log(`📋 Symbol copied and set as active: ${symbol}`);
-    } catch (err) {
-        console.error(`⚠️ Failed to handle click for ${symbol}:`, err);
-    }
-};
+//         console.log(`📋 Symbol copied and set as active: ${symbol}`);
+//     } catch (err) {
+//         console.error(`⚠️ Failed to handle click for ${symbol}:`, err);
+//     }
+// };
 
 // Make Symbol component available globally
 window.SymbolComponent = Symbol;

@@ -375,6 +375,16 @@ async function initializeOracleNews() {
 document.addEventListener("DOMContentLoaded", async () => {
     // console.log("⚡ DOMContentLoaded event fired!");
 
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.activeHeader = new window.HeaderComponent(headerContainer, {
+            icon: '📚',
+            text: 'The Arcane Grimoire (active)',
+            className: 'active-header'
+        });
+    }
+
     // console.log("🟢 Notifying active-window-ready");
     window.activeAPI.notifyActiveWindowReady();
 
@@ -504,7 +514,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        const appContainer = document.getElementById("app-container");
+        const appContainer = document.getElementById("app");
         const tabWrapper = document.querySelector(".tab-wrapper");
 
         let hideTimeout;
@@ -1052,7 +1062,7 @@ function renderOracleNews(symbolData = null) {
                 // Collapsed view - just headline and time
                 itemDiv.innerHTML = `
                     <div class="news-content">
-                        <h5 class="news-title-clickable" style="cursor: pointer; >${newsItem.headline || "Untitled"}</h5>
+                        <h5 class="news-title-clickable" style="cursor: pointer;">${newsItem.headline || "Untitled"}</h5>
                         <div class="news-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
                             <div class="news-meta-left">
                                 ${when ? `<span class="news-time">${when}</span>` : ''}

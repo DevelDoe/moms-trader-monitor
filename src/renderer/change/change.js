@@ -26,7 +26,7 @@ async function refreshList() {
     if (!oracleActiveStocks?.symbols || oracleActiveStocks.symbols.length === 0) {
         const container = document.getElementById("change-scroll");
         if (container) {
-            container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Waiting for Oracle data...</div>';
+            container.innerHTML = '<div class="loading-message">Waiting for Oracle data...</div>';
         }
         return;
     }
@@ -104,38 +104,38 @@ async function refreshList() {
     
     const headersHtml = showHeaders ? `
         <thead>
-            <tr style="border-bottom: 1px solid #333;">
-                <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s ease; user-select: none; backdrop-filter: blur(5px);" title="Rank Position">
+            <tr class="change-header-row">
+                <th class="change-header-cell" title="Rank Position">
                     #
                 </th>
-                <th style="text-align: left; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
+                <th class="change-header-cell change-header-cell-symbol">
                     Symbol
                 </th>
-                ${window.changeSettings?.showSessionChange !== false ? `<th style="text-align: right; padding: 6px 8px; color: #4A90E2; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px); border-bottom: 2px solid #4A90E2;">
-                    Change % <span style="color: #4A90E2; font-size: 12px;">↓</span>
+                ${window.changeSettings?.showSessionChange !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-wide change-header-change">
+                    Change % <span class="change-header-arrow">↓</span>
                 </th>` : ''}
-                ${window.changeSettings?.showUpXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showUpXp !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-narrow">
                     Up XP
                 </th>` : ''}
-                ${window.changeSettings?.showDownXp !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showDownXp !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-narrow">
                     Down XP
                 </th>` : ''}
-                ${window.changeSettings?.showRatio !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showRatio !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-wide">
                     Ratio
                 </th>` : ''}
-                ${window.changeSettings?.showTotal !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showTotal !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-narrow">
                     Total
                 </th>` : ''}
-                ${window.changeSettings?.showNet !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showNet !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-narrow">
                     Net
                 </th>` : ''}
-                ${window.changeSettings?.showTotalVolume !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showTotalVolume !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-narrow">
                     Volume
                 </th>` : ''}
-                ${window.changeSettings?.showLevel !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showLevel !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-narrow">
                     Level
                 </th>` : ''}
-                ${window.changeSettings?.showPrice !== false ? `<th style="text-align: right; padding: 6px 8px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; backdrop-filter: blur(5px);">
+                ${window.changeSettings?.showPrice !== false ? `<th class="change-header-cell change-header-cell-right change-header-cell-narrow">
                     Price
                 </th>` : ''}
             </tr>
@@ -143,37 +143,40 @@ async function refreshList() {
     ` : '';
 
     container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 16px; border-radius: 1px; overflow: hidden; background: transparent; backdrop-filter: blur(10px); ">
+        <table class="change-table">
             ${headersHtml}
             <tbody>
                 ${sortedList.map((h, i) => {
                     const isFirstRow = i === 0;
-                    const firstRowPadding = isFirstRow ? 'padding: 10px 8px 6px 8px;' : 'padding: 6px 8px;';
+                    const cellClass = isFirstRow ? 'change-body-cell-first' : 'change-body-cell-normal';
+                    const ratioColorClass = h.up > h.down ? 'change-value-positive' : 'change-value-negative';
+                    const changeColorClass = h.sessionChangePercent > 0 ? 'change-value-positive' : h.sessionChangePercent < 0 ? 'change-value-negative' : 'change-value-neutral';
+                    
                     return `
-                        <tr style=" transition: all 0.2s ease;">
-                            <td style="${firstRowPadding} color: #666; text-align: right;" title="Rank Position">
+                        <tr class="change-body-row">
+                            <td class="change-body-cell ${cellClass} change-body-cell-rank" title="Rank Position">
                                 <div class="rank-cell">
                                     ${i < 3 ? getTrophyIcon(i + 1) : `<span>${i + 1}</span>`}
                                 </div>
                             </td>
-                            <td style="${firstRowPadding}" title="Symbol">
+                            <td class="change-body-cell ${cellClass}" title="Symbol">
                                 ${window.components.Symbol({ 
                                     symbol: h.hero, 
                                     size: "medium",
                                     onClick: true
                                 })}
                             </td>
-                            ${window.changeSettings?.showSessionChange !== false ? `<td style="${firstRowPadding} text-align: center; color: ${h.sessionChangePercent > 0 ? '#00ff00' : h.sessionChangePercent < 0 ? '#ff0000' : '#666'};" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
-                            ${window.changeSettings?.showUpXp !== false ? `<td style="${firstRowPadding} text-align: center; color: #00ff00;" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
-                            ${window.changeSettings?.showDownXp !== false ? `<td style="${firstRowPadding} text-align: center; color: #ff0000;" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
-                            ${window.changeSettings?.showRatio !== false ? `<td style="${firstRowPadding} text-align: center;" title="Up/Down XP Ratio">
-                                <span style="color: ${h.up > h.down ? '#00ff00' : '#ff0000'};">${h.up + h.down > 0 ? Math.round(((h.up - h.down) / (h.up + h.down)) * 100) : 0}%</span>
+                            ${window.changeSettings?.showSessionChange !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center ${changeColorClass}" title="Session Change Percentage">${h.sessionChangePercent >= 0 ? '+' : ''}${h.sessionChangePercent.toFixed(2)}%</td>` : ''}
+                            ${window.changeSettings?.showUpXp !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center change-value-up" title="Up XP">${abbreviateXp(h.up)}</td>` : ''}
+                            ${window.changeSettings?.showDownXp !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center change-value-down" title="Down XP">${abbreviateXp(h.down)}</td>` : ''}
+                            ${window.changeSettings?.showRatio !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center" title="Up/Down XP Ratio">
+                                <span class="${ratioColorClass}">${h.up + h.down > 0 ? Math.round(((h.up - h.down) / (h.up + h.down)) * 100) : 0}%</span>
                             </td>` : ''}
-                            ${window.changeSettings?.showTotal !== false ? `<td style="${firstRowPadding} text-align: center; color: #00aeff;" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
-                            ${window.changeSettings?.showNet !== false ? `<td style="${firstRowPadding} text-align: center; color: #ffff00;" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
-                            ${window.changeSettings?.showTotalVolume !== false ? `<td style="${firstRowPadding} text-align: center; color: #00ff00;" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
-                            ${window.changeSettings?.showLevel !== false ? `<td style="${firstRowPadding} text-align: center; color: #00aeff;" title="Level">${h.level}</td>` : ''}
-                            ${window.changeSettings?.showPrice !== false ? `<td style="${firstRowPadding} text-align: center; color: #ffffff;" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
+                            ${window.changeSettings?.showTotal !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center change-value-total" title="Total XP Gained">${abbreviateXp(h.total)}</td>` : ''}
+                            ${window.changeSettings?.showNet !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center change-value-net" title="Net XP">${abbreviateXp(h.net)}</td>` : ''}
+                            ${window.changeSettings?.showTotalVolume !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center change-value-volume" title="Total Volume">${abbreviateVolume(h.totalVolume)}</td>` : ''}
+                            ${window.changeSettings?.showLevel !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center change-value-level" title="Level">${h.level}</td>` : ''}
+                            ${window.changeSettings?.showPrice !== false ? `<td class="change-body-cell ${cellClass} change-body-cell-center change-value-price" title="Last Price">$${h.price.toFixed(2)}</td>` : ''}
                         </tr>
                     `;
                 }).join('')}
@@ -185,6 +188,16 @@ async function refreshList() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.changeHeader = new window.HeaderComponent(headerContainer, {
+            icon: '🏆',
+            text: 'Hall of legends (change)',
+            className: 'change-header'
+        });
+    }
+
     const container = document.getElementById("change-scroll");
     if (!container) return;
 

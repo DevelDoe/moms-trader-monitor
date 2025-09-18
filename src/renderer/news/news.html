@@ -4,16 +4,24 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">        <title>News</title>
-        <link rel="stylesheet" href="../styles.css" />
+        <link rel="stylesheet" href="../styles/flat.css" />
+        <link rel="stylesheet" href="../styles/styles.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="../components/symbol/symbol.css" />
         <link rel="stylesheet" href="./news.css" />
-        <link rel="stylesheet" href="../flat.css" />
     </head>
-    <body class="draggable">
-        <h2>📜 Spells of Enchantments (news)</h2>
-        <div id="news-container" class="no-drag">
+    <body>
+
+        <!-- Header Component Container -->
+        <div id="header-container"></div>
+        
+        <div id="app">
+            <div id="news-container" class="no-drag"></div>
         </div>
-        <footer></footer>
+        
+        <footer id=""></footer>
+        
+        <script src="../components/header/header.js"></script>
         <script src="./news.js"></script>
     </body>
 </html>
