@@ -1,0 +1,69 @@
+/* ============================================================================
+   RATING COMPONENT STYLES
+   ============================================================================ */
+
+/* ============================================================================
+   MAIN LAYOUT STYLES
+   ============================================================================ */
+
+/* Rating-specific xp-line styles (more specific to avoid conflicts with hod.css) */
+#xp-scroll .xp-line {
+    margin-bottom: 3px;
+}
+
+/* ============================================================================
+   LEVEL INDICATOR STYLES
+   ============================================================================ */
+
+/* Rating-specific level indicator */
+#xp-scroll .lv {
+    font-size: 10px;
+    color: white;
+    font-weight: 300;
+    position: absolute;
+    right: 1px;
+    bottom: 2px;
+    background-color: #1b1f24;
+    padding: 0px 1px;
+    border-radius: 1px;
+}
+
+/* ============================================================================
+   TOOLTIP STYLES
+   ============================================================================ */
+
+/* Rating-specific tooltip styles */
+#xp-scroll .score-tooltip {
+    cursor: help;
+    border-bottom: 1px dashed #aaa;
+}
+
+/* ============================================================================
+   RANKING DISPLAY STYLES
+   ============================================================================ */
+
+.rank-display {
+    display: inline-block;
+    min-width: 24px;
+    text-align: right;
+    margin-right: 4px;
+    opacity: 1;
+}
+
+/* ============================================================================
+   BUFFS DISPLAY STYLES
+   ============================================================================ */
+
+#xp-scroll .buffs {
+    font-weight: 600;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+.ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

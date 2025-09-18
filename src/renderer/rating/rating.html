@@ -4,61 +4,22 @@
         <meta charset="UTF-8" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
         <link rel="stylesheet" href="../flat.css" />
+        <link rel="stylesheet" href="../components/header/header.css" />
         <link rel="stylesheet" href="../components/symbol/symbol.css" />
+        <link rel="stylesheet" href="./rating.css" />
         <title>Foundations</title>
-        <style>
-            body {
-                padding: 10px;
-            }
-            .xp-line {
-                padding: 4px 8px;
-                border-radius: 4px;
-                margin-bottom: 2px;
-                font-size: 1rem;
-                font-weight: 200;
-                
-            }
-            .symbol {
-                /* Your existing symbol styles */
-                white-space: nowrap; /* Prevents line breaks */
-                color: antiquewhite !important;
-                font-weight: 400;
-                width: 75px;
-                display: inline-block;
-                font-size: 22px;
-                padding: 0px 2px;
-                border-radius: 1px;
-                /* cursor: pointer; */
-                margin-right: 4px;
-                position: relative;
-                cursor: pointer;
-            }
-            .xp-line {
-                transition: opacity 0.5s ease, filter 0.5s ease;
-                margin-left: -10px;
-            }
-            .lv {
-                font-size: 10px;
-                color: white;
-                font-weight: 300;
-                position: absolute;
-                right: 1px;
-                bottom: 2px;
-                background-color: #1b1f24;
-                padding: 0px 1px;
-                border-radius: 1px;
-            }
-            .score-tooltip {
-                cursor: help;
-                border-bottom: 1px dashed #aaa;
-            }
-        </style>
     </head>
     <body>
-        <div class="drag-area"></div>
-        <h2>🏅 Sigil of Merit (rating)</h2>
-        <div id="xp-scroll">Loading...</div>
+        <!-- Header Component Container -->
+        <div id="header-container"></div>
 
+        <div id="app">
+            <div id="xp-scroll">Loading...</div>
+        </div>
+
+        <footer id="footer"></footer>
+
+        <script src="../components/header/header.js"></script>
         <script src="./rating.js"></script>
     </body>
 </html>

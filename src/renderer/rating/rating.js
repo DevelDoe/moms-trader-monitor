@@ -250,7 +250,7 @@ class StatsRenderer {
 
         return `
             <div class="xp-line ellipsis">
-                <span class="text-tertiary" style="display:inline-block; min-width: 24px; text-align:right; margin-right: 4px; opacity: 1;">
+                <span class="text-tertiary rank-display">
                     ${rankIcon}
                 </span>
                 ${window.components.Symbol({ 
@@ -258,7 +258,7 @@ class StatsRenderer {
                     size: "medium",
                     onClick: true
                 })}
-                <span class="buffs" style="font-weight: 600;" title="${tooltipContent}">${displayScore}</span>
+                <span class="buffs score-tooltip" title="${tooltipContent}">${displayScore}</span>
             </div>`;
     }
 
@@ -557,6 +557,16 @@ class StatsDataManager {
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Initialize header component
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer && window.HeaderComponent) {
+        window.ratingHeader = new window.HeaderComponent(headerContainer, {
+            icon: '🏅',
+            text: 'Sigil of Merit (rating)',
+            className: 'rating-header'
+        });
+    }
+
     const container = document.getElementById("xp-scroll");
     if (!container) {
         console.error("❌ Stats container not found");
