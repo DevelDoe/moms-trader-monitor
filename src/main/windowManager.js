@@ -8,14 +8,14 @@ const { debounce } = require("./utils//debounce");
 const path = require("path");
 const fs = require("fs");
 
-// Docker window removed - controls moved to progress window
+// Docker window removed - controls moved to arcane window
 const { createSettingsWindow } = require("./windows/settings");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createHeroesWindow } = require("./windows/heroes");
 const { createActiveWindow } = require("./windows/active");
 const { createEventsWindow } = require("./windows/events");
 const { createInfobarWindow } = require("./windows/infobar");
-const { createProgressWindow } = require("./windows/progress");
+const { createArcaneWindow } = require("./windows/arcane");
 const { createScrollXpWindow } = require("./windows/scrollXp");
 const { createScrollChangeWindow } = require("./windows/scrollChange");
 const { createScrollStatsWindow } = require("./windows/scrollStats");
@@ -89,7 +89,7 @@ async function restoreWindows() {
         infobar: "infobarWindow",
         // docker: "dockerWindow", // Removed
         traderview: "traderviewWindow",
-        progress: "progressWindow",
+        arcane: "arcaneWindow",
         scrollXp: "scrollXpWindow",
         scrollChange: "scrollChangeWindow",
         scrollStats: "scrollStatsWindow",
@@ -152,13 +152,13 @@ async function restoreWindows() {
         }
     }
 
-    // Docker window removed - controls moved to progress window
+    // Docker window removed - controls moved to arcane window
 
     // Settings are now managed by Electron stores - no need to broadcast
     log.log(`[windowManager] 📊 Available windows after restore:`, {
         total: Object.keys(windows).length,
         windows: Object.keys(windows),
-        progress: !!windows.progress,
+        arcane: !!windows.arcane,
         events: !!windows.events,
         // docker: !!windows.docker // Removed
     });
@@ -180,8 +180,8 @@ function createWindowByName(name) {
             return createEventsWindow(isDevelopment);
         case "infobar":
             return createInfobarWindow(isDevelopment);
-        case "progress":
-            return createProgressWindow(isDevelopment);
+        case "arcane":
+            return createArcaneWindow(isDevelopment);
         case "scrollXp":
             return createScrollXpWindow(isDevelopment);
         case "scrollChange":

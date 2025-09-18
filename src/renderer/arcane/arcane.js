@@ -584,12 +584,12 @@ function initialize() {
     // Initialize header component with update notifications
     const headerContainer = document.getElementById('header-container');
     if (headerContainer && window.HeaderComponent) {
-        window.progressHeader = new window.HeaderComponent(headerContainer, {
+        window.arcaneHeader = new window.HeaderComponent(headerContainer, {
             icon: '<img src="./img/logo.png" class="header-logo" alt="Arcane Monitor">',
             text: 'Arcane Monitor (progress)',
             className: 'progress-header',
             showUpdateNotification: true,
-            showControlButtons: true // Enable control buttons for progress window
+            showControlButtons: true // Enable control buttons for arcane window
         });
         
         // Update check button removed - no manual updates needed
@@ -986,7 +986,7 @@ const AudioManager = (() => {
     };
 })();
 
-// Initialize audio manager when progress window loads
+// Initialize audio manager when arcane window loads
 window.audioManager = AudioManager;
 
 // Listen for audio commands from other windows via IPC

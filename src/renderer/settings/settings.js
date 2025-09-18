@@ -113,7 +113,7 @@ async function initializeGeneralSection() {
     showInfobarToggle.checked = window.windowSettings.infobarWindow?.isOpen ?? false;
 
     const showProgressToggle = document.getElementById("show-progress");
-    showProgressToggle.checked = window.windowSettings.progressWindow?.isOpen ?? false;
+    showProgressToggle.checked = window.windowSettings.arcaneWindow?.isOpen ?? false;
 
     const showNewsToggle = document.getElementById("show-news");
     showNewsToggle.checked = window.windowSettings.newsWindow?.isOpen ?? false;
@@ -221,7 +221,7 @@ async function initializeGeneralSection() {
         }
 
         // ✅ Persist the new state
-        await window.windowSettingsAPI.setOpenState("progressWindow", event.target.checked);
+        await window.windowSettingsAPI.setOpenState("arcaneWindow", event.target.checked);
     });
 
 

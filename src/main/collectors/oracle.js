@@ -457,13 +457,13 @@ const createWebSocket = () => {
             // Store latest data and broadcast to windows (preserve original structure)
             latestActiveStocks = activeStocks;
 
-            // Send specific count to progress window - use total_count if available, otherwise count array
-            const progressWindow = windows["progress"];
-            if (progressWindow?.webContents && !progressWindow.webContents.isDestroyed()) {
+            // Send specific count to arcane window - use total_count if available, otherwise count array
+            const arcaneWindow = windows["arcane"];
+            if (arcaneWindow?.webContents && !arcaneWindow.webContents.isDestroyed()) {
                 if(XP_DEBUG) {
-                    console.log(`📤 Sending count to progress window: ${totalCount} (from ${msg.type})`);
+                    console.log(`📤 Sending count to arcane window: ${totalCount} (from ${msg.type})`);
                 }
-                progressWindow.webContents.send("xp-active-stocks-count", {
+                arcaneWindow.webContents.send("xp-active-stocks-count", {
                     count: totalCount,
                     timestamp: activeStocks.timestamp || Date.now()
                 });

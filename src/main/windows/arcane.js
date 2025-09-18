@@ -1,12 +1,12 @@
-// ./src/main/windows/progress.js
+// ./src/main/windows/arcane.js
 
 const { BrowserWindow } = require("electron");
 const path = require("path");
 const { getWindowState, setWindowBounds } = require("../electronStores");
 const { setupWindowBoundsSaving } = require("./windowBoundsHelper");
 
-function createProgressWindow(isDevelopment) {
-    const state = getWindowState("progressWindow");
+function createArcaneWindow(isDevelopment) {
+    const state = getWindowState("arcaneWindow");
 
     const window = new BrowserWindow({
         width: state.width || 1440,
@@ -33,9 +33,9 @@ function createProgressWindow(isDevelopment) {
     });
 
     // Set window name for broadcast utility
-    window.windowName = "progress";
+    window.windowName = "arcane";
 
-    window.loadFile(path.join(__dirname, "../../renderer/progress/progress.html"));
+    window.loadFile(path.join(__dirname, "../../renderer/arcane/arcane.html"));
 
     if (isDevelopment) {
         window.webContents.once("did-finish-load", () => {
@@ -44,10 +44,10 @@ function createProgressWindow(isDevelopment) {
     }
     
     // Setup optimized bounds saving
-    setupWindowBoundsSaving(window, "progressWindow");
+    setupWindowBoundsSaving(window, "arcaneWindow");
 
     return window;
 }
 
-module.exports = { createProgressWindow };
+module.exports = { createArcaneWindow };
 

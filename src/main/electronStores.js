@@ -2328,7 +2328,7 @@ if (app && ipcMain && typeof app.on === "function" && !app.__audio_settings_ipc_
         });
     });
     
-    // Audio playback IPC handlers - forward to progress window
+    // Audio playback IPC handlers - forward to arcane window
     ipcMain.removeHandler("audio:play-news-alert");
     ipcMain.removeHandler("audio:play-hod-chime");
     ipcMain.removeHandler("audio:play-events-combo");
@@ -2337,7 +2337,7 @@ if (app && ipcMain && typeof app.on === "function" && !app.__audio_settings_ipc_
     ipcMain.removeHandler("audio:test-events-combo");
     
     ipcMain.handle("audio:play-news-alert", () => {
-        // Find progress window and send audio command
+        // Find arcane window and send audio command
         const targets = webContents.getAllWebContents();
         for (const wc of targets) {
             try {
@@ -2439,7 +2439,7 @@ const DEFAULT_WINDOW_STATES = {
     //     height: 100,
     //     isOpen: true,
     // },
-    progressWindow: {
+    arcaneWindow: {
         width: 800,
         height: 14,
         isOpen: true,
@@ -2568,7 +2568,7 @@ function calculateSmartWindowPosition(windowKey, width = 0, height = 0) {
             heroesWindow: { x: 100, y: 0 },
             settingsWindow: { x: 0, y: 0 },
             // dockerWindow: { x: 100, y: 100 }, // Removed
-            progressWindow: { x: 0, y: 100 },
+            arcaneWindow: { x: 0, y: 100 },
             scrollXpWindow: { x: -100, y: 100 },
             scrollChangeWindow: { x: -100, y: 125 },
             scrollStatsWindow: { x: -100, y: 150 },

@@ -156,7 +156,7 @@ const { createWindow, destroyWindow, restoreWindows, registerTradingViewWindow, 
 const { getWindowState, saveWindowState } = require("./utils/windowState");
 
 const { createSplashWindow } = require("./windows/splash");
-// Docker window removed - controls moved to progress window
+// Docker window removed - controls moved to arcane window
 const { createSettingsWindow } = require("./windows/settings");
 
 const { createEventsWindow } = require("./windows/events");
@@ -172,7 +172,7 @@ const { createScrollHodWindow } = require("./windows/scrollHOD");
 
 const { createInfobarWindow } = require("./windows/infobar");
 
-const { createProgressWindow } = require("./windows/progress");
+const { createArcaneWindow } = require("./windows/arcane");
 
 const { createNewsWindow } = require("./windows/news");
 const { createHaltsWindow } = require("./windows/halts");
@@ -1251,17 +1251,17 @@ function applyTopTickers(newTickers) {
 }
 
 // Progress
-ipcMain.on("activate-progress", () => {
+ipcMain.on("activate-arcane", () => {
     try {
-        const win = createWindow("progress", () => createProgressWindow(isDevelopment));
+        const win = createWindow("arcane", () => createArcaneWindow(isDevelopment));
         if (win) win.show();
     } catch (err) {
         log.error("Failed to activate events window:", err.message);
     }
 });
 
-ipcMain.on("deactivate-progress", () => {
-    destroyWindow("progress");
+ipcMain.on("deactivate-arcane", () => {
+    destroyWindow("arcane");
 });
 
 // Volume logging removed - no longer needed

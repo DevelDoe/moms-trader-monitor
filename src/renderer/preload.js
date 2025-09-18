@@ -43,7 +43,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     sendAuthInfo: (info) => ipcRenderer.send("set-auth-info", info),
     login: (email, password) => ipcRenderer.invoke("login", { email, password }),
     
-    // IPC access for progress window audio commands
+    // IPC access for arcane window audio commands
     ipc: {
         on: (channel, callback) => ipcRenderer.on(channel, callback),
         off: (channel, callback) => ipcRenderer.off(channel, callback),
@@ -197,8 +197,8 @@ contextBridge.exposeInMainWorld("traderviewAPI", {
 });
 
 contextBridge.exposeInMainWorld("progressAPI", {
-    activate: () => ipcRenderer.send("activate-progress"),
-    deactivate: () => ipcRenderer.send("deactivate-progress"),
+    activate: () => ipcRenderer.send("activate-arcane"),
+    deactivate: () => ipcRenderer.send("deactivate-arcane"),
     onXpActiveStocksCount: (callback) => ipcRenderer.on("xp-active-stocks-count", callback),
 });
 

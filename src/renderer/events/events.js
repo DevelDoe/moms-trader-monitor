@@ -119,7 +119,7 @@ const SAMPLE_COUNTS = { short: 32, long: 32 }; // your folders
 const SAMPLE_BASE = new URL(".", window.location.href).toString();
 const LONG_THRESHOLD_DEFAULT = 10_000; // volume cutoff for long pack
 
-// Audio loading removed - now using centralized audio system in progress window
+// Audio loading removed - now using centralized audio system in arcane window
 
 function levelToIndex(level, count) {
     const lv = Math.max(0, level | 0);
