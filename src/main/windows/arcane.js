@@ -11,8 +11,8 @@ function createArcaneWindow(isDevelopment) {
     const window = new BrowserWindow({
         width: state.width || 1440,
         height: 150,
-        minHeight: 100,
-        maxHeight: 100,
+        minHeight: 101,
+        maxHeight: 101,
         x: state.x,
         y: state.y,
         alwaysOnTop: false,

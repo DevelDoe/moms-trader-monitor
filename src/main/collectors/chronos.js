@@ -25,7 +25,7 @@ let hodUpdateCount = 0;
 const ALERT_BROADCAST_TARGETS = [
     "events",
     "active", 
-    "progress",
+    "arcane",
     "frontline",
     "heroes",
     // Add more windows here as needed

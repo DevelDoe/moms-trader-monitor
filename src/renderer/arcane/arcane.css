@@ -273,3 +273,18 @@ html {
         contain: layout style;
     }
 }
+
+.header-logo {
+    position: absolute;
+    top: 6px;
+    left: 7px;
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: -5px;
+}
+
+.header-title {
+    margin-left: 16px;
+}

@@ -89,7 +89,7 @@
     font-weight: 400;
     width: 75px;
     display: inline-block;
-    font-size: 22px;
+    font-size: 16px;
     padding: 0 2px;
     border-radius: 0;
     margin-right: 0;
@@ -103,7 +103,7 @@
     align-items: baseline; /* or center */
     justify-content: flex-start; /* ← left-align the prices */
     gap: 1px;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 200;
     line-height: 1;
     white-space: nowrap;

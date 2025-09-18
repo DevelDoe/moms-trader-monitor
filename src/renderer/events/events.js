@@ -764,7 +764,7 @@ const headerContainer = document.getElementById("header-container");
 if (headerContainer && window.HeaderComponent) {
     new window.HeaderComponent(headerContainer, {
         icon: "📊",
-        text: "Events Chronicle",
+        text: "Chronicle of Events (tape)",
         className: "events-header"
     });
 }

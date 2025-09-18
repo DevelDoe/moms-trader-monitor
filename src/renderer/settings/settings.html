@@ -32,10 +32,18 @@
 
                     <div class="toggle-row">
                         <label class="switch">
+                            <input type="checkbox" id="show-progress" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Arcane</span>
+                    </div>
+
+                    <div class="toggle-row">
+                        <label class="switch">
                             <input type="checkbox" id="show-events" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Chronicle Feed</span>
+                        <span class="toggle-label">Tape</span>
                     </div>
 
                     <div class="toggle-row">
@@ -43,7 +51,7 @@
                             <input type="checkbox" id="show-frontline" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Frontline</span>
+                        <span class="toggle-label">Peak</span>
                     </div>
 
                     <div class="toggle-row">
@@ -51,7 +59,7 @@
                             <input type="checkbox" id="show-heroes" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Heroes</span>
+                        <span class="toggle-label">Sustained</span>
                     </div>
 
                     <div class="toggle-row">
@@ -59,7 +67,7 @@
                             <input type="checkbox" id="show-active" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Grimoire</span>
+                        <span class="toggle-label">Active</span>
                     </div>
 
                     <div class="toggle-row">
@@ -67,7 +75,7 @@
                             <input type="checkbox" id="show-scrollXp" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Hall of Legends XP</span>
+                        <span class="toggle-label">XP</span>
                     </div>
 
                     <div class="toggle-row">
@@ -75,7 +83,7 @@
                             <input type="checkbox" id="show-scrollChange" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Hall of Legends Change</span>
+                        <span class="toggle-label">Change</span>
                     </div>
 
                     <div class="toggle-row">
@@ -83,7 +91,7 @@
                             <input type="checkbox" id="show-scrollStats" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Sigil of Merit</span>
+                        <span class="toggle-label">Rating</span>
                     </div>
 
                     <div class="toggle-row">
@@ -91,7 +99,7 @@
                             <input type="checkbox" id="show-scrollHod" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Ledger of Summits</span>
+                        <span class="toggle-label">HOD</span>
                     </div>
 
                     <div class="toggle-row">
@@ -99,24 +107,15 @@
                             <input type="checkbox" id="show-infobar" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Notice Board</span>
+                        <span class="toggle-label">Infobar</span>
                     </div>
-
-                    <div class="toggle-row">
-                        <label class="switch">
-                            <input type="checkbox" id="show-progress" />
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="toggle-label">Market Tide</span>
-                    </div>
-
 
                     <div class="toggle-row">
                         <label class="switch">
                             <input type="checkbox" id="show-news" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">The Bard</span>
+                        <span class="toggle-label">News</span>
                     </div>
 
                     <div class="toggle-row">
@@ -124,7 +123,7 @@
                             <input type="checkbox" id="show-sessionHistory" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Register of Conquerors</span>
+                        <span class="toggle-label">Sessions</span>
                     </div>
 
                     <div class="toggle-row">
@@ -132,18 +131,23 @@
                             <input type="checkbox" id="show-halts" />
                             <span class="slider round"></span>
                         </label>
-                        <span class="toggle-label">Trading Halts Monitor</span>
+                        <span class="toggle-label">Halts</span>
                     </div>
 
-                    <div class="window-controls" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #444;">
-                        <h3>Window Management</h3>
-                        <button id="reset-all-windows-btn" class="danger-btn" style="background-color: #d32f2f; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
-                            🔄 Reset All Windows to Default Positions
-                        </button>
-                        <p style="font-size: 12px; color: #888; margin-top: 8px;">
-                            Use this if windows are off-screen or on non-existent monitors
+
+
+
+                       
+                     <!-- Experimental Notice -->
+                     <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 4px; padding: 12px; margin-bottom: 15px;">
+                        <p style="color: #ffc107; font-size: 12px; margin: 0; line-height: 1.4;">
+                            ⚠️ <strong>Note</strong><br>
+                            Button below is used to reset all windows to default positions. Use case could be when windows are off-screen and unreachable. 
                         </p>
                     </div>
+                    <button id="reset-all-windows-btn" class="danger-btn" style="background-color: #d32f2f; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                        🔄 Reset
+                    </button>
                 </section>
 
                 <section id="section-traderview">

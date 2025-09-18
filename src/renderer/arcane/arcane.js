@@ -9,7 +9,7 @@ const CONFIG = {
     COLD_MARKET_THRESHOLD: 0.40, // >40% more selling = cold market (bearish)
     MAX_EVENTS_PER_BATCH: 50, // Maximum events to process in one batch
     MEMORY_CLEANUP_INTERVAL: 30000, // Clean up memory every 30 seconds
-    DEBUG_LOGGING: false, // Disable excessive debug logging in production
+    DEBUG_LOGGING: true, // Enable debug logging to troubleshoot
     LOG_THROTTLE_INTERVAL: 60000 // Only log debug info once per minute max
 };
 
@@ -107,7 +107,7 @@ async function loadArcaneData() {
             sessionData.lastUpdate = savedData.lastUpdate;
 
             // Update UI with restored data
-            updateBanner();
+            updateSessionDisplay();
             
             if (elements.heroesCount && savedData.heroesCount) {
                 elements.heroesCount.textContent = savedData.heroesCount;
@@ -349,7 +349,12 @@ function initializeElements() {
 // Process market events for buy/sell tracking with batching
 function processMarketEvent(event) {
     // Early validation
-    if (!event.hp && !event.dp) return;
+    if (!event.hp && !event.dp) {
+        debugLog.warn("Market event missing hp/dp data:", event);
+        return;
+    }
+    
+    debugLog.info(`Processing market event: hp=${event.hp}, dp=${event.dp}`);
     
     const volume = event.strength || event.one_min_volume || 0;
     if (volume < CONFIG.MIN_VOLUME_THRESHOLD) return;
@@ -614,6 +619,8 @@ function handleAlerts(events) {
     // Normalize to array efficiently
     const eventArray = Array.isArray(events) ? events : [events];
     
+    debugLog.info(`Received ${eventArray.length} market events`);
+    
     // Process events in batch
     for (let i = 0; i < eventArray.length; i++) {
         const event = eventArray[i];
@@ -708,6 +715,9 @@ function initialize() {
     // Set up event listeners
     if (window.eventsAPI && window.eventsAPI.onAlert) {
         window.eventsAPI.onAlert(handleAlerts);
+        debugLog.info("Events API listener set up successfully");
+    } else {
+        debugLog.warn("Events API not available - no market data will be received");
     }
 
     // Set up XP Active Stocks count listener
