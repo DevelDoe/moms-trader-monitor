@@ -2434,11 +2434,11 @@ const DEFAULT_WINDOW_STATES = {
         height: 39,
         isOpen: false,
     },
-    dockerWindow: {
-        width: 200,
-        height: 100,
-        isOpen: true,
-    },
+    // dockerWindow: { // Removed
+    //     width: 200,
+    //     height: 100,
+    //     isOpen: true,
+    // },
     progressWindow: {
         width: 800,
         height: 14,
@@ -2567,7 +2567,7 @@ function calculateSmartWindowPosition(windowKey, width = 0, height = 0) {
             activeWindow: { x: -100, y: 0 },
             heroesWindow: { x: 100, y: 0 },
             settingsWindow: { x: 0, y: 0 },
-            dockerWindow: { x: 100, y: 100 },
+            // dockerWindow: { x: 100, y: 100 }, // Removed
             progressWindow: { x: 0, y: 100 },
             scrollXpWindow: { x: -100, y: 100 },
             scrollChangeWindow: { x: -100, y: 125 },

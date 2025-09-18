@@ -8,7 +8,7 @@ const { debounce } = require("./utils//debounce");
 const path = require("path");
 const fs = require("fs");
 
-const { createDockerWindow } = require("./windows/docker");
+// Docker window removed - controls moved to progress window
 const { createSettingsWindow } = require("./windows/settings");
 const { createFrontlineWindow } = require("./windows/frontline");
 const { createHeroesWindow } = require("./windows/heroes");
@@ -87,7 +87,7 @@ async function restoreWindows() {
         heroes: "heroesWindow",
         events: "eventsWindow", // ✅ Fixed: events should map to eventsWindow
         infobar: "infobarWindow",
-        docker: "dockerWindow",
+        // docker: "dockerWindow", // Removed
         traderview: "traderviewWindow",
         progress: "progressWindow",
         scrollXp: "scrollXpWindow",
@@ -152,11 +152,7 @@ async function restoreWindows() {
         }
     }
 
-    if (!windows.docker) {
-        log.log("Manually restoring docker window...");
-        windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
-        windows.docker.show();
-    }
+    // Docker window removed - controls moved to progress window
 
     // Settings are now managed by Electron stores - no need to broadcast
     log.log(`[windowManager] 📊 Available windows after restore:`, {
@@ -164,14 +160,14 @@ async function restoreWindows() {
         windows: Object.keys(windows),
         progress: !!windows.progress,
         events: !!windows.events,
-        docker: !!windows.docker
+        // docker: !!windows.docker // Removed
     });
 }
 
 function createWindowByName(name) {
     switch (name) {
-        case "docker":
-            return createDockerWindow(isDevelopment); 
+        // case "docker": // Removed
+        //     return createDockerWindow(isDevelopment); 
         case "settings":
             return createSettingsWindow(isDevelopment);
         case "frontline":

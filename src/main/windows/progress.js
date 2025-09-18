@@ -11,8 +11,8 @@ function createProgressWindow(isDevelopment) {
     const window = new BrowserWindow({
         width: state.width || 1440,
         height: 150,
-        minHeight: 150,
-        maxHeight: 150,
+        minHeight: 100,
+        maxHeight: 100,
         x: state.x,
         y: state.y,
         alwaysOnTop: false,

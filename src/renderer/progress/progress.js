@@ -577,16 +577,22 @@ function performMemoryCleanup() {
     }
 }
 
+// Update check button function removed - no manual updates needed
+
 // Initialize the application
 function initialize() {
-    // Initialize header component
+    // Initialize header component with update notifications
     const headerContainer = document.getElementById('header-container');
     if (headerContainer && window.HeaderComponent) {
         window.progressHeader = new window.HeaderComponent(headerContainer, {
-            icon: '⟁',
+            icon: '<img src="./img/logo.png" class="header-logo" alt="Arcane Monitor">',
             text: 'Arcane Monitor (progress)',
-            className: 'progress-header'
+            className: 'progress-header',
+            showUpdateNotification: true,
+            showControlButtons: true // Enable control buttons for progress window
         });
+        
+        // Update check button removed - no manual updates needed
     }
 
     if (!initializeElements()) {

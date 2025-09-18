@@ -66,7 +66,7 @@ function decrypt(encryptedText) {
 if (process.env.NODE_ENV === "development") {
     const devPath = path.join(app.getPath("appData"), "Moms_Trader_Monitor_Dev");
     app.setPath("userData", devPath);
-    app.setName("Moms Trader Monitor Dev");
+    app.setName("Arcane Monitor Dev");
     log.log(`[main.js] Running in dev mode with userData path: ${devPath}`);
 }
 const { connectBridge, sendActiveSymbol } = require("../bridge");
@@ -156,7 +156,7 @@ const { createWindow, destroyWindow, restoreWindows, registerTradingViewWindow, 
 const { getWindowState, saveWindowState } = require("./utils/windowState");
 
 const { createSplashWindow } = require("./windows/splash");
-const { createDockerWindow } = require("./windows/docker");
+// Docker window removed - controls moved to progress window
 const { createSettingsWindow } = require("./windows/settings");
 
 const { createEventsWindow } = require("./windows/events");
@@ -259,17 +259,8 @@ app.on("ready", async () => {
             }
         }
 
-        // Docker window will be created by windowManager.restoreWindows() if needed
-        // windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
-
+        // Restore windows (docker window removed - controls moved to progress)
         restoreWindows();
-
-        // Ensure docker window always exists (fallback if windowManager didn't create it)
-        if (!windows.docker) {
-            log.log("[main] 🐳 Creating docker window (fallback)");
-            windows.docker = createWindow("docker", () => createDockerWindow(isDevelopment));
-            windows.docker.show();
-        }
 
         chronos(authInfo);
         oracle(authInfo);
@@ -280,10 +271,6 @@ app.on("ready", async () => {
         // flushMessageQueue();
 
         if (!isDevelopment) connectBridge();
-
-        if (windows.docker) {
-            windows.docker.show();
-        }
 
         // Settings are now managed by Electron stores
 
@@ -371,69 +358,101 @@ function scheduleDailyRestart(targetHour = 0, targetMinute = 0) {
 
 ////////////////////////////////////////////////////////////////////////////////////// UPDATES
 
+// Configure auto-updater
+autoUpdater.autoDownload = false; // Let user decide when to download
+autoUpdater.autoInstallOnAppQuit = true; // Install on next restart
+autoUpdater.allowPrerelease = true; // Allow pre-releases
+
+// Set feed URL (this should match your package.json publish config)
+autoUpdater.setFeedURL({
+    provider: "github",
+    owner: "DevelDoe",
+    repo: "moms-trader-monitor",
+});
+
+// Only enable auto-updater in production or when forced
 if (!isDevelopment || forceUpdate) {
     if (forceUpdate) {
         autoUpdater.forceDevUpdateConfig = true;
         autoUpdater.allowDowngrade = true;
+        log.log("🔧 Force update mode enabled");
     }
 
-    log.log("Production mode detected, checking for updates...");
-    autoUpdater.checkForUpdatesAndNotify();
+    log.log("🔍 Checking for updates...");
+    
+    // Check for updates on app start (but don't auto-download)
+    autoUpdater.checkForUpdates().catch(err => {
+        log.error("❌ Failed to check for updates:", err.message);
+    });
 
+    // Handle force update check from renderer
     if (forceUpdate) {
         ipcMain.on("force-update-check", () => {
-            log.log("Forcing update check in development mode...");
-            autoUpdater.checkForUpdatesAndNotify();
+            log.log("🔄 Forcing update check in development mode...");
+            autoUpdater.checkForUpdates().catch(err => {
+                log.error("❌ Failed to force update check:", err.message);
+            });
         });
     }
 
+    // Update checking started
     autoUpdater.on("checking-for-update", () => {
-        log.log("Checking for update...");
+        log.log("🔍 Checking for updates...");
+        broadcast("update-checking");
     });
 
+    // Update available - notify user and ask for permission
     autoUpdater.on("update-available", (info) => {
-        log.log(`🔔 Update found: ${info.version}`);
-
-        // ✅ Close splash screen if it's still open
-        if (windows.splash && !windows.splash.isDestroyed()) {
-            log.log("Closing splash screen before starting update...");
-            windows.splash.close();
-            delete windows.splash; // ✅ Ensure reference is removed
-        }
-
-        // Auto-update for all users
-        log.log("Update available, auto-downloading...");
-        autoUpdater.downloadUpdate();
+        log.log(`🔔 Update available: ${info.version}`);
+        
+        // Notify all windows about available update
+        broadcast("update-available", {
+            version: info.version,
+            releaseNotes: info.releaseNotes,
+            releaseDate: info.releaseDate
+        });
     });
 
-    autoUpdater.on("update-not-available", () => {
-        log.log("No update available.");
+    // No update available
+    autoUpdater.on("update-not-available", (info) => {
+        log.log("✅ App is up to date");
+        broadcast("update-not-available", info);
     });
 
-    autoUpdater.on("error", (err) => {
-        log.error("Update error:", err);
-    });
-    process.on("unhandledRejection", (reason, promise) => {
-        log.error("Unhandled Promise Rejection:", reason);
-    });
-
+    // Download progress
     autoUpdater.on("download-progress", (progressObj) => {
-        let logMessage = `Download speed: ${progressObj.bytesPerSecond} - `;
-        logMessage += `Downloaded ${progressObj.percent}% (${progressObj.transferred} / ${progressObj.total})`;
-        log.log(logMessage);
+        const progress = {
+            percent: Math.round(progressObj.percent),
+            bytesPerSecond: progressObj.bytesPerSecond,
+            transferred: progressObj.transferred,
+            total: progressObj.total
+        };
+        
+        log.log(`📥 Download progress: ${progress.percent}% (${Math.round(progress.bytesPerSecond / 1024)} KB/s)`);
+        broadcast("update-download-progress", progress);
     });
 
-    autoUpdater.on("update-downloaded", () => {
+    // Update downloaded - ask user when to install
+    autoUpdater.on("update-downloaded", (info) => {
+        log.log(`✅ Update downloaded: ${info.version}`);
         isUpdating = true;
-
-        // Auto-install updates for all users
-        log.log("Update downloaded, installing now...");
-        autoUpdater.quitAndInstall();
-        updateShortcutIcon();
+        
+        // Notify user that update is ready to install
+        broadcast("update-downloaded", {
+            version: info.version,
+            releaseNotes: info.releaseNotes
+        });
     });
-    const { exec } = require("child_process");
+
+    // Update error
+    autoUpdater.on("error", (err) => {
+        log.error("❌ Update error:", err.message);
+        broadcast("update-error", { message: err.message });
+        isUpdating = false;
+    });
+
 } else {
-    log.log("Skipping auto-updates in development mode");
+    log.log("🚫 Skipping auto-updates in development mode");
 }
 
 function updateShortcutIcon() {
@@ -443,7 +462,7 @@ function updateShortcutIcon() {
         "Windows",
         "Start Menu",
         "Programs",
-        "MomsTraderMonitor.lnk" // ✅ Make sure this matches the actual shortcut name
+        "ArcaneMonitor.lnk" // ✅ Make sure this matches the actual shortcut name
     );
 
     const iconPath = path.join(__dirname, "build", "icon.ico"); // ✅ Ensure this icon exists
@@ -1295,4 +1314,69 @@ ipcMain.on("activate-sessionHistory", () => {
 
 ipcMain.on("deactivate-sessionHistory", () => {
     destroyWindow("sessionHistory");
+});
+
+// Auto-updater IPC handlers
+ipcMain.handle("check-for-updates", async () => {
+    try {
+        if (isDevelopment && !forceUpdate) {
+            return { success: false, message: "Updates disabled in development mode" };
+        }
+        
+        const result = await autoUpdater.checkForUpdates();
+        return { success: true, result };
+    } catch (error) {
+        log.error("❌ Failed to check for updates:", error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle("download-update", async () => {
+    try {
+        if (isDevelopment && !forceUpdate) {
+            return { success: false, message: "Updates disabled in development mode" };
+        }
+        
+        await autoUpdater.downloadUpdate();
+        return { success: true };
+    } catch (error) {
+        log.error("❌ Failed to download update:", error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle("install-update", async () => {
+    try {
+        if (isUpdating) {
+            log.log("🔄 Installing update and restarting...");
+            
+            // Close splash screen if it's still open
+            if (windows.splash && !windows.splash.isDestroyed()) {
+                log.log("Closing splash screen before installing update...");
+                windows.splash.close();
+                delete windows.splash;
+            }
+            
+            // Update shortcut icon before installing
+            updateShortcutIcon();
+            
+            // Install and restart
+            autoUpdater.quitAndInstall();
+            return { success: true };
+        } else {
+            return { success: false, message: "No update available to install" };
+        }
+    } catch (error) {
+        log.error("❌ Failed to install update:", error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle("get-update-status", () => {
+    return {
+        isUpdating,
+        isDevelopment,
+        forceUpdate,
+        currentVersion: app.getVersion()
+    };
 });
