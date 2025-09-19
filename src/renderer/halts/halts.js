@@ -572,7 +572,6 @@ function handleHaltDelta(haltData, metadata = {}) {
                     
                     // Position the new halt above the container initially
                     haltElement.style.transform = 'translateY(-80px)';
-                    haltElement.style.opacity = '0';
                     
                     // Force a reflow to ensure the initial position is applied
                     haltElement.offsetHeight;
@@ -580,9 +579,10 @@ function handleHaltDelta(haltData, metadata = {}) {
                     // Start the slide down animation
                     haltElement.classList.add('new');
                     
-                    // Remove the 'new' class after animation completes
+                    // Remove the 'new' class and clean up styles after animation completes
                     setTimeout(() => {
                         haltElement.classList.remove('new');
+                        haltElement.style.transform = '';
                     }, 600);
                 } else {
                     console.log(`🎭 Skipping animation for ${haltData.symbol} (not first position)`);
@@ -893,7 +893,6 @@ function haltRandomSymbol() {
                 
                 // Position the new halt above the container initially
                 haltElement.style.transform = 'translateY(-80px)';
-                haltElement.style.opacity = '0';
                 
                 // Force a reflow to ensure the initial position is applied
                 haltElement.offsetHeight;
@@ -901,9 +900,10 @@ function haltRandomSymbol() {
                 // Start the slide down animation
                 haltElement.classList.add('new');
                 
-                // Remove the 'new' class after animation completes
+                // Remove the 'new' class and clean up styles after animation completes
                 setTimeout(() => {
                     haltElement.classList.remove('new');
+                    haltElement.style.transform = '';
                 }, 600);
             } else {
                 console.log(`🎭 Skipping animation for ${symbol} (not first position)`);
@@ -1125,7 +1125,6 @@ window.testAnimation = () => {
             
             // Position the new halt above the container initially
             haltElement.style.transform = 'translateY(-80px)';
-            haltElement.style.opacity = '0';
             
             // Force a reflow
             haltElement.offsetHeight;
@@ -1144,6 +1143,7 @@ window.testAnimation = () => {
             
             setTimeout(() => {
                 haltElement.classList.remove('new');
+                haltElement.style.transform = '';
             }, 600);
         }
     }, 100);
