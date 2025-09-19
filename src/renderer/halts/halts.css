@@ -436,7 +436,7 @@
 /* Animation for new halt sliding down to position 1 */
 @keyframes slideDownToFirst {
     0% { 
-        transform: translateY(-150px);
+        transform: translateY(-80px);
         opacity: 0;
     }
     100% { 

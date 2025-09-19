@@ -600,7 +600,7 @@ function handleHaltDelta(haltData, metadata = {}) {
                 console.log(`🎭 Starting stack animation for ${haltData.symbol}`);
                 
                 // Position the new halt above the container initially
-                haltElement.style.transform = 'translateY(-150px)';
+                haltElement.style.transform = 'translateY(-80px)';
                 haltElement.style.opacity = '0';
                 
                 // Force a reflow to ensure the initial position is applied
@@ -932,7 +932,7 @@ function haltRandomSymbol() {
             console.log(`🎭 Starting stack animation for ${symbol}`);
             
             // Position the new halt above the container initially
-            haltElement.style.transform = 'translateY(-150px)';
+            haltElement.style.transform = 'translateY(-80px)';
             haltElement.style.opacity = '0';
             
             // Force a reflow to ensure the initial position is applied
@@ -1170,7 +1170,7 @@ window.testAnimation = () => {
             console.log(`🎭 Testing animation for ANIMTEST`);
             
             // Position the new halt above the container initially
-            haltElement.style.transform = 'translateY(-150px)';
+            haltElement.style.transform = 'translateY(-80px)';
             haltElement.style.opacity = '0';
             
             // Force a reflow
