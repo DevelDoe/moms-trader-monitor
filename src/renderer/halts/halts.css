@@ -496,6 +496,8 @@
 
 .halt-event.new {
     animation: slideDownToFirst 0.6s ease-out;
+    opacity: 0 !important; /* Force hidden initially */
+    transform: translateY(-80px) !important; /* Force above position initially */
 }
 
 .halt-event.shifting-down {

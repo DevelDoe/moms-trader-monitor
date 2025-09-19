@@ -537,6 +537,26 @@ function playFlash() {
     } else {
         console.warn("⚠️ Centralized audio API not available, skipping news alert");
     }
+
+    // Start blinking effect for 10 seconds
+    startBlinkingEffect();
+}
+
+// Function to start blinking effect for 10 seconds
+function startBlinkingEffect() {
+    const container = document.querySelector(".bonus-list");
+    if (!container) return;
+
+    // Add blinking class to the container
+    container.classList.add("blinking");
+    
+    // Remove blinking class after 10 seconds
+    setTimeout(() => {
+        container.classList.remove("blinking");
+        console.log("🔆 Blinking effect stopped after 10 seconds");
+    }, 10000);
+    
+    console.log("🔆 Blinking effect started for 10 seconds");
 }
 
 const bonusItems = [
@@ -594,6 +614,12 @@ window.testNewsIntegration = () => {
     console.log(`[News Test] Block list:`, blockList);
     console.log(`[News Test] Bullish list:`, bullishList);
     console.log(`[News Test] Bearish list:`, bearishList);
+};
+
+// Test function for blinking effect
+window.testBlinkingEffect = () => {
+    console.log("🔆 Testing blinking effect...");
+    startBlinkingEffect();
 };
 
 // Test function for age filtering

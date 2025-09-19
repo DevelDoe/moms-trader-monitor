@@ -224,6 +224,20 @@
             .badge-h330 {
                 background: hsla(330, 80%, 45%, 0.5);
             }
+
+            /* Blinking animation for news/filing alerts */
+            @keyframes blink {
+                0%, 50% {
+                    opacity: 1;
+                }
+                51%, 100% {
+                    opacity: 0.7;
+                }
+            }
+
+            .blinking {
+                animation: blink 0.8s ease-in-out infinite;
+            }
         </style>
     </head>
     <body >

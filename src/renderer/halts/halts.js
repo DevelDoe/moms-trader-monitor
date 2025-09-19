@@ -570,24 +570,12 @@ function handleHaltDelta(haltData, metadata = {}) {
                 if (isFirstHalt) {
                     console.log(`🎭 Starting stack animation for ${haltData.symbol} (first position)`);
                     
-                    // Set initial hidden state
-                    haltElement.style.opacity = '0';
-                    haltElement.style.transform = 'translateY(-80px)';
-                    haltElement.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+                    // Start the CSS animation
+                    haltElement.classList.add('new');
                     
-                    // Force reflow to apply initial state
-                    haltElement.offsetHeight;
-                    
-                    // Animate to final state
-                    requestAnimationFrame(() => {
-                        haltElement.style.opacity = '1';
-                        haltElement.style.transform = 'translateY(0)';
-                    });
-                    
-                    // Clean up after animation
+                    // Remove the 'new' class after animation completes
                     setTimeout(() => {
-                        haltElement.style.transition = '';
-                        haltElement.style.transform = '';
+                        haltElement.classList.remove('new');
                     }, 600);
                 } else {
                     console.log(`🎭 Skipping animation for ${haltData.symbol} (not first position)`);
@@ -896,24 +884,12 @@ function haltRandomSymbol() {
             if (isFirstHalt) {
                 console.log(`🎭 Starting stack animation for ${symbol} (first position)`);
                 
-                // Set initial hidden state
-                haltElement.style.opacity = '0';
-                haltElement.style.transform = 'translateY(-80px)';
-                haltElement.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+                // Start the CSS animation
+                haltElement.classList.add('new');
                 
-                // Force reflow to apply initial state
-                haltElement.offsetHeight;
-                
-                // Animate to final state
-                requestAnimationFrame(() => {
-                    haltElement.style.opacity = '1';
-                    haltElement.style.transform = 'translateY(0)';
-                });
-                
-                // Clean up after animation
+                // Remove the 'new' class after animation completes
                 setTimeout(() => {
-                    haltElement.style.transition = '';
-                    haltElement.style.transform = '';
+                    haltElement.classList.remove('new');
                 }, 600);
             } else {
                 console.log(`🎭 Skipping animation for ${symbol} (not first position)`);
@@ -1133,24 +1109,12 @@ window.testAnimation = () => {
         if (haltElement) {
             console.log(`🎭 Testing animation for ANIMTEST`);
             
-            // Set initial hidden state
-            haltElement.style.opacity = '0';
-            haltElement.style.transform = 'translateY(-80px)';
-            haltElement.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            // Start the CSS animation
+            haltElement.classList.add('new');
             
-            // Force reflow to apply initial state
-            haltElement.offsetHeight;
-            
-            // Animate to final state
-            requestAnimationFrame(() => {
-                haltElement.style.opacity = '1';
-                haltElement.style.transform = 'translateY(0)';
-            });
-            
-            // Clean up after animation
+            // Remove the 'new' class after animation completes
             setTimeout(() => {
-                haltElement.style.transition = '';
-                haltElement.style.transform = '';
+                haltElement.classList.remove('new');
             }, 600);
         }
     }, 100);
