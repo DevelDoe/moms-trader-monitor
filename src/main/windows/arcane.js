@@ -23,7 +23,6 @@ function createArcaneWindow(isDevelopment) {
         frame: false, // no OS frame
         transparent: true, // fully transparent background
         hasShadow: false, // Electron hint to remove shadow
-        skipTaskbar: true,
         webPreferences: {
             preload: path.join(__dirname, "../../renderer/preload.js"),
             contextIsolation: true,

@@ -1,13 +1,60 @@
-/* halts.css - Trading Halts Monitor Styles - Compact View */
+/* halts.css - Trading Halts Monitor Styles - Large and Small Card Views */
 
 .halts-list {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 8px;
     padding: 0 10px 0 0; /* Extra padding on right for countdown animations */
+    position: relative;
+    overflow: hidden;
 }
 
-/* Compact halt event styling */
+/* Tube effect - subtle background gradient */
+.halts-list::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, 
+        rgba(0, 0, 0, 0.1) 0%, 
+        rgba(0, 0, 0, 0.05) 50%, 
+        rgba(0, 0, 0, 0.1) 100%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Large card halt event styling */
+.halt-event.large {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 1px;
+    padding: 12px 16px;
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 80px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Small card halt event styling */
+.halt-event.small {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 1px;
+    padding: 6px 12px;
+    border-left: 3px solid;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+}
+
+/* Compact halt event styling (legacy) */
 .halt-event {
     /* background: rgba(255, 255, 255, 0.05); */
     /* border-radius: 3px; */
@@ -26,13 +73,42 @@
     transform: translateX(1px);
 }
 
-/* Halt state specific colors - styles removed for compact view */
+/* Halt state specific colors for large and small cards */
 
+/* HALTED state */
+.halt-event.halted {
+    border-left-color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+}
+
+.halt-event.halted:hover {
+    background: rgba(255, 68, 68, 0.15);
+    transform: translateX(2px);
+}
+
+/* RESUME_PENDING state */
+.halt-event.resume-pending {
+    border-left-color: #ffaa44;
+    background: rgba(255, 170, 68, 0.1);
+}
+
+.halt-event.resume-pending:hover {
+    background: rgba(255, 170, 68, 0.15);
+    transform: translateX(2px);
+}
+
+/* RESUMED state */
 .halt-event.resumed {
     border-left-color: #44ff44;
     background: rgba(68, 255, 68, 0.1);
 }
 
+.halt-event.resumed:hover {
+    background: rgba(68, 255, 68, 0.15);
+    transform: translateX(2px);
+}
+
+/* Legacy states for compatibility */
 .halt-event.limit_state_enter {
     border-left-color: #ffaa44;
     background: rgba(255, 170, 68, 0.1);
@@ -48,7 +124,129 @@
     background: rgba(136, 136, 136, 0.1);
 }
 
-/* Compact layout - single line with 3 elements */
+/* Large card layout - modular badge design */
+.halt-event.large .halt-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.halt-event.large .halt-badges {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 6px;
+    width: 100%;
+}
+
+/* Symbol badge - top left, 1px radius, dark background with light text */
+.halt-event.large .halt-symbol-badge {
+    grid-column: 1;
+    grid-row: 1;
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 8px 12px;
+    border-radius: 1px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: left;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* State badge - top right, no background, colored text */
+.halt-event.large .halt-state-badge {
+    grid-column: 2;
+    grid-row: 1;
+    background: none;
+    padding: 8px 12px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Combined reason and exchange badge - spans entire second row */
+.halt-event.large .halt-reason-badge {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    background: none;
+    color: #ccc;
+    padding: 6px 10px;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Exchange text styling - smaller and lighter */
+.halt-event.large .exchange-text {
+    font-size: 14px;
+    font-weight: 400;
+    color: #888;
+}
+
+/* Countdown badge - bottom left, no background, colored text */
+.halt-event.large .halt-countdown-badge {
+    grid-column: 1;
+    grid-row: 3;
+    background: none;
+    padding: 8px 12px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+}
+
+/* Countdown badge color states - colored text instead of background */
+.halt-event.large .halt-countdown-badge.green {
+    color: #10b981;
+}
+
+.halt-event.large .halt-countdown-badge.yellow {
+    color: #f59e0b;
+}
+
+.halt-event.large .halt-countdown-badge.red {
+    color: #ef4444;
+}
+
+.halt-event.large .halt-countdown-badge.critical {
+    color: #ef4444;
+    animation: criticalBlink 0.5s ease-in-out infinite;
+}
+
+/* Small card layout - single line with 3 elements */
+.halt-event.small .halt-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+}
+
+.halt-event.small .halt-symbol-container {
+    display: flex;
+    align-items: center;
+    min-width: 60px;
+}
+
+.halt-event.small .halt-state {
+    flex: 1;
+    text-align: center;
+    margin: 0 8px;
+}
+
+.halt-event.small .halt-time {
+    min-width: 60px;
+    text-align: right;
+}
+
+/* Compact layout - single line with 3 elements (legacy) */
 .halt-content {
     display: block;
     width: 100%;
@@ -61,11 +259,25 @@
     vertical-align: middle;
 }
 
+/* Symbol styling for small cards */
+.halt-event.small .halt-symbol-container {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 4px 8px;
+    border-radius: 1px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: left;
+    display: flex;
+    align-items: flex-end;
+    min-width: 60px;
+}
+
 .halt-state {
     display: inline-block;
     padding: 4px 6px;
-    border-radius: 2px;
-    font-size: 12px;
+    border-radius: 1px;
+    font-size: 16px;
     font-weight: bold;
     white-space: nowrap;
     width: calc(100% - 140px);
@@ -78,7 +290,7 @@
 
 .halt-time {
     display: inline-block;
-    font-size: 14px;
+    font-size: 16px;
     color: #aaa;
     white-space: nowrap;
     width: 60px;
@@ -91,7 +303,7 @@
     font-family: 'Courier New', monospace;
     font-weight: bold;
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: 1px;
     transition: all 0.3s ease;
 }
 
@@ -169,17 +381,39 @@
     }
 }
 
-.halt-state.halted {
-    background: #ff4444;
-    color: white;
-    margin-left: -5px;
+/* State badge styling for large and small cards */
+.halt-state, .halt-state-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 1px;
+    font-size: 16px;
+    font-weight: bold;
+    white-space: nowrap;
+    text-align: center;
 }
 
-.halt-state.resumed {
-    background: #44ff44;
-    color: black;
+.halt-state.halted, .halt-state-badge.halted {
+    background: none;
+    color: #ff4444;
 }
 
+.halt-state.resume-pending, .halt-state-badge.resume-pending {
+    background: none;
+    color: #ffaa44;
+}
+
+.halt-state.resumed, .halt-state-badge.resumed {
+    background: none;
+    color: #44ff44;
+}
+
+.halt-state.expired, .halt-state-badge.expired {
+    background: none;
+    color: #ff6b6b;
+    opacity: 0.8;
+}
+
+/* Legacy state styles for compatibility */
 .halt-state.limit_state_enter {
     background: #ffaa44;
     color: black;
@@ -195,33 +429,39 @@
     color: white;
 }
 
-.halt-state.expired {
-    background: #ff6b6b;
-    color: white;
-    opacity: 0.8;
-}
-
-.halt-state.resumed {
-    background: #4ade80;
-    color: black;
-}
-
 /* Removed old detailed styles - using compact view only */
 
 /* Removed current state indicator and price info for compact view */
 
-/* Animation for new halt events - sliding down from top */
-@keyframes slideDown {
+/* Animation for new halt sliding down to position 1 */
+@keyframes slideDownToFirst {
     0% { 
-        transform: translateY(-100px);
+        transform: translateY(-150px);
         opacity: 0;
-    }
-    50% {
-        opacity: 1;
     }
     100% { 
         transform: translateY(0);
         opacity: 1;
+    }
+}
+
+/* Animation for existing halts shifting down one position */
+@keyframes shiftDownOne {
+    0% { 
+        transform: translateY(0);
+    }
+    100% { 
+        transform: translateY(calc(100% + 8px));
+    }
+}
+
+/* Animation for stack dropping down when one is removed */
+@keyframes stackDropDown {
+    0% { 
+        transform: translateY(0);
+    }
+    100% { 
+        transform: translateY(calc(-100% - 8px));
     }
 }
 
@@ -255,7 +495,15 @@
 }
 
 .halt-event.new {
-    animation: slideDown 0.8s ease-out;
+    animation: slideDownToFirst 0.6s ease-out;
+}
+
+.halt-event.shifting-down {
+    animation: shiftDownOne 0.6s ease-out;
+}
+
+.halt-event.stack-dropping {
+    animation: stackDropDown 0.4s ease-out;
 }
 
 .halt-event.dropping {
@@ -278,7 +526,7 @@
     color: #666;
     padding: 20px 10px;
     font-style: italic;
-    font-size: 12px;
+    font-size: 16px;
 }
 
 .empty-state .icon {
@@ -294,12 +542,12 @@
     }
     
     .halt-time {
-        font-size: 12px;
+        font-size: 16px;
         min-width: 60px;
     }
     
     .halt-state {
-        font-size: 12px;
+        font-size: 16px;
         min-width: 40px;
         padding: 2px 4px;
     }

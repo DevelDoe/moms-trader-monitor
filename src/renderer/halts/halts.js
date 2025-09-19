@@ -9,6 +9,21 @@ let countdownTimer = null; // Timer for updating countdowns
 let expiredHalts = new Set(); // Track halts that have expired
 let animationQueue = []; // Queue for managing animations
 
+// Card layout configuration
+let cardLayoutConfig = {
+    maxLargeCards: 3, // Switch to small cards when more than this many halts
+    currentLayout: 'large' // 'large' or 'small'
+};
+
+// Mock data system
+let mockSystem = {
+    enabled: false,
+    symbols: ['AAPL', 'TSLA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC'],
+    haltStates: new Map(), // Track each symbol's current state and timing
+    reasons: ['Circuit Breaker', 'News Pending', 'Volatility Halt', 'Trading Halt', 'Limit Up/Down'],
+    exchanges: ['NYSE', 'NASDAQ', 'AMEX']
+};
+
 // Halt structure debug logging
 function logHaltStructure(halts, context = "") {
     if (!Array.isArray(halts) || halts.length === 0) {
@@ -63,7 +78,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    // startMockLoop()
+    // Start mock system for testing
+    startMockSystem();
 
     // Settings are now managed by Electron stores
     settings = {}; // fallback
@@ -156,7 +172,7 @@ function startCountdownTimer() {
 
 // Update all countdown displays and handle expired halts
 function updateCountdowns() {
-    const countdownElements = document.querySelectorAll('.halt-time.countdown[data-halt-time]');
+    const countdownElements = document.querySelectorAll('.halt-time.countdown[data-halt-time], .halt-countdown-badge.countdown[data-halt-time]');
     const haltsToRemove = [];
     
     countdownElements.forEach(element => {
@@ -400,12 +416,15 @@ function renderHalts() {
     container.innerHTML = sortedHalts.map(halt => createHaltElement(halt)).join('');
 }
 
-// Create compact HTML element for a halt event
+// Create HTML element for a halt event (large or small card)
 function createHaltElement(halt) {
     // Calculate countdown from unix timestamp
     let countdownStr = 'Unknown';
     
-    if (halt.halt_time && typeof halt.halt_time === 'number') {
+    // For RESUMED state, show "RESUMED" instead of countdown
+    if (halt.state === 'RESUMED') {
+        countdownStr = 'RESUMED';
+    } else if (halt.halt_time && typeof halt.halt_time === 'number') {
         // Unix timestamp in seconds
         const haltTimeMs = halt.halt_time * 1000;
         const now = Date.now();
@@ -442,7 +461,10 @@ function createHaltElement(halt) {
     // Determine initial color class
     let colorClass = 'red'; // default
     let criticalClass = '';
-    if (halt.halt_time && typeof halt.halt_time === 'number') {
+    
+    if (halt.state === 'RESUMED') {
+        colorClass = 'green'; // Green for RESUMED state
+    } else if (halt.halt_time && typeof halt.halt_time === 'number') {
         const haltTimeMs = halt.halt_time * 1000;
         const now = Date.now();
         const elapsedMs = now - haltTimeMs;
@@ -473,22 +495,39 @@ function createHaltElement(halt) {
     // Check if this halt should animate
     const animateClass = halt._shouldAnimate ? ' new' : '';
     
-    // Create compact layout with Symbol component, halt type, and countdown
-    return `
-        <div class="halt-event ${stateClass}${animateClass}" id="halt-${haltId}" data-symbol="${halt.symbol}" data-halt-time="${halt.halt_time || ''}">
-            <div class="halt-content">
-                <div class="halt-symbol-container">
-                    ${window.components.Symbol({ 
-                        symbol: halt.symbol, 
-                        size: "medium",
-                        onClick: true
-                    })}
+    // Determine card layout based on current configuration
+    const cardSize = allHalts.length <= cardLayoutConfig.maxLargeCards ? 'large' : 'small';
+    
+    if (cardSize === 'large') {
+        // Large card layout with modular badges
+        const reasonText = halt.reason || 'Trading Halt';
+        const exchangeText = halt.tape_description || 'NYSE';
+        const combinedText = `${reasonText} • <span class="exchange-text">🏛️ ${exchangeText}</span>`;
+        
+        return `
+            <div class="halt-event large ${stateClass}${animateClass}" id="halt-${haltId}" data-symbol="${halt.symbol}" data-halt-time="${halt.halt_time || ''}">
+                <div class="halt-content">
+                    <div class="halt-badges">
+                        <div class="halt-symbol-badge" data-clickable="true" data-symbol="${halt.symbol}">${halt.symbol}</div>
+                        <div class="halt-state-badge ${stateClass}">${halt.state}</div>
+                        <div class="halt-reason-badge">${combinedText}</div>
+                        <div class="halt-countdown-badge countdown ${colorClass} ${criticalClass}" data-halt-time="${halt.halt_time || ''}">${countdownStr}</div>
+                    </div>
                 </div>
-                <div class="halt-state ${stateClass}">${haltTypeDisplay}</div>
-                <div class="halt-time countdown ${colorClass} ${criticalClass}" data-halt-time="${halt.halt_time || ''}">${countdownStr}</div>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        // Small card layout - compact single line
+        return `
+            <div class="halt-event small ${stateClass}${animateClass}" id="halt-${haltId}" data-symbol="${halt.symbol}" data-halt-time="${halt.halt_time || ''}">
+                <div class="halt-content">
+                    <div class="halt-symbol-container" data-clickable="true" data-symbol="${halt.symbol}">${halt.symbol}</div>
+                    <div class="halt-state ${stateClass}">${haltTypeDisplay}</div>
+                    <div class="halt-time countdown ${colorClass} ${criticalClass}" data-halt-time="${halt.halt_time || ''}">${countdownStr}</div>
+                </div>
+            </div>
+        `;
+    }
 }
 
 
@@ -553,18 +592,36 @@ function handleHaltDelta(haltData, metadata = {}) {
         // Re-render the display
         renderHalts();
 
-        // Add visual indicator for new halt with slide-down animation
+        // Add visual indicator for new halt with stack animation
         if (metadata.isDelta) {
             const haltId = `${haltData.symbol}-${haltData.halt_time || Date.now()}`;
             const haltElement = document.getElementById(`halt-${haltId}`);
             if (haltElement) {
+                console.log(`🎭 Starting stack animation for ${haltData.symbol}`);
+                
+                // Position the new halt above the container initially
+                haltElement.style.transform = 'translateY(-150px)';
+                haltElement.style.opacity = '0';
+                
+                // Force a reflow to ensure the initial position is applied
+                haltElement.offsetHeight;
+                
+                // Animate existing halts shifting down one position
+                const existingHalts = document.querySelectorAll('.halt-event:not(.new)');
+                existingHalts.forEach((element, index) => {
+                    element.classList.add('shifting-down');
+                    setTimeout(() => {
+                        element.classList.remove('shifting-down');
+                    }, 600);
+                });
+                
+                // Start the slide down animation
                 haltElement.classList.add('new');
-                console.log(`🎭 Starting slide-down animation for ${haltData.symbol}`);
                 
                 // Remove the 'new' class after animation completes
                 setTimeout(() => {
                     haltElement.classList.remove('new');
-                }, 800); // Match the slideDown animation duration
+                }, 600);
             }
         }
 
@@ -780,5 +837,362 @@ function startMockLoop() {
 
 
 
-// Make mock loop function available globally for testing
-window.startMockLoop = startMockLoop;
+// Mock system implementation
+function startMockSystem() {
+    console.log("🧪 Starting mock halt system...");
+    mockSystem.enabled = true;
+    
+    // Initialize all symbols as not halted
+    mockSystem.symbols.forEach(symbol => {
+        mockSystem.haltStates.set(symbol, {
+            state: 'NONE',
+            haltTime: null,
+            resumePendingTime: null,
+            reason: null,
+            exchange: null
+        });
+    });
+    
+    // Start the mock cycle
+    startMockCycle();
+}
+
+function startMockCycle() {
+    if (!mockSystem.enabled) return;
+    
+    // Randomly halt a symbol every 10-30 seconds
+    const nextHaltDelay = Math.random() * 20000 + 10000; // 10-30 seconds
+    
+    setTimeout(() => {
+        if (mockSystem.enabled) {
+            haltRandomSymbol();
+            startMockCycle(); // Continue the cycle
+        }
+    }, nextHaltDelay);
+}
+
+function haltRandomSymbol() {
+    // Find symbols that are not currently halted
+    const availableSymbols = mockSystem.symbols.filter(symbol => {
+        const state = mockSystem.haltStates.get(symbol);
+        return state.state === 'NONE';
+    });
+    
+    if (availableSymbols.length === 0) {
+        console.log("🧪 All symbols are already halted, skipping...");
+        return;
+    }
+    
+    // Pick a random symbol
+    const symbol = availableSymbols[Math.floor(Math.random() * availableSymbols.length)];
+    const reason = mockSystem.reasons[Math.floor(Math.random() * mockSystem.reasons.length)];
+    const exchange = mockSystem.exchanges[Math.floor(Math.random() * mockSystem.exchanges.length)];
+    
+    // Create halt data with random elapsed time (0-4 minutes) to show different countdown colors
+    const now = Math.floor(Date.now() / 1000);
+    const elapsedSeconds = Math.floor(Math.random() * 240); // 0-4 minutes elapsed
+    const haltTime = now - elapsedSeconds;
+    
+    const mockHalt = {
+        symbol: symbol,
+        state: 'HALTED',
+        reason: reason,
+        halt_time: haltTime,
+        timestamp: haltTime * 1000000000, // Nanoseconds
+        timestamp_et: new Date(haltTime * 1000).toISOString(),
+        et_date: new Date(haltTime * 1000).toISOString().split('T')[0],
+        tape: 1,
+        tape_description: exchange,
+        band_high: 0,
+        band_low: 0,
+        indicators: []
+    };
+    
+    // Update mock state
+    mockSystem.haltStates.set(symbol, {
+        state: 'HALTED',
+        haltTime: haltTime,
+        resumePendingTime: haltTime + 240, // 4 minutes (240 seconds) before resume pending
+        reason: reason,
+        exchange: exchange
+    });
+    
+    console.log(`🧪 Mock halt: ${symbol} - ${reason} on ${exchange} (${elapsedSeconds}s elapsed)`);
+    
+    // Add to halts and render
+    allHalts.push(mockHalt);
+    updateHaltedSymbols();
+    renderHalts();
+    
+    // Trigger animation for new halt
+    setTimeout(() => {
+        const haltId = `${symbol}-${haltTime}`;
+        const haltElement = document.getElementById(`halt-${haltId}`);
+        if (haltElement) {
+            console.log(`🎭 Starting stack animation for ${symbol}`);
+            
+            // Position the new halt above the container initially
+            haltElement.style.transform = 'translateY(-150px)';
+            haltElement.style.opacity = '0';
+            
+            // Force a reflow to ensure the initial position is applied
+            haltElement.offsetHeight;
+            
+            // Animate existing halts shifting down one position
+            const existingHalts = document.querySelectorAll('.halt-event:not(.new)');
+            existingHalts.forEach((element, index) => {
+                element.classList.add('shifting-down');
+                setTimeout(() => {
+                    element.classList.remove('shifting-down');
+                }, 600);
+            });
+            
+            // Start the slide down animation
+            haltElement.classList.add('new');
+            
+            // Remove the 'new' class after animation completes
+            setTimeout(() => {
+                haltElement.classList.remove('new');
+            }, 600);
+        }
+    }, 100); // Small delay to ensure DOM is ready
+    
+    // Schedule state transitions based on remaining time
+    scheduleHaltTransitions(symbol, haltTime, elapsedSeconds);
+}
+
+function scheduleHaltTransitions(symbol, haltTime, elapsedSeconds = 0) {
+    const remainingToResumePending = Math.max(0, (240 - elapsedSeconds) * 1000); // Time until RESUME_PENDING
+    const remainingToResumed = Math.max(0, (300 - elapsedSeconds) * 1000); // Time until RESUMED
+    
+    // After remaining time to 4 minutes, change to RESUME_PENDING
+    if (remainingToResumePending > 0) {
+        setTimeout(() => {
+            if (mockSystem.enabled && mockSystem.haltStates.get(symbol)?.state === 'HALTED') {
+                transitionToResumePending(symbol);
+            }
+        }, remainingToResumePending);
+    }
+    
+    // After remaining time to 5 minutes, change to RESUMED
+    if (remainingToResumed > 0) {
+        setTimeout(() => {
+            if (mockSystem.enabled && mockSystem.haltStates.get(symbol)?.state === 'RESUME_PENDING') {
+                transitionToResumed(symbol);
+            }
+        }, remainingToResumed);
+    }
+}
+
+function transitionToResumePending(symbol) {
+    const state = mockSystem.haltStates.get(symbol);
+    if (!state || state.state !== 'HALTED') return;
+    
+    // Update mock state
+    state.state = 'RESUME_PENDING';
+    mockSystem.haltStates.set(symbol, state);
+    
+    // Update halt data
+    const haltIndex = allHalts.findIndex(halt => halt.symbol === symbol && halt.state === 'HALTED');
+    if (haltIndex !== -1) {
+        allHalts[haltIndex].state = 'RESUME_PENDING';
+        allHalts[haltIndex].reason = 'Trading Resumed - ' + state.reason;
+        
+        console.log(`🧪 Mock transition: ${symbol} -> RESUME_PENDING`);
+        
+        updateHaltedSymbols();
+        renderHalts();
+    }
+}
+
+function transitionToResumed(symbol) {
+    const state = mockSystem.haltStates.get(symbol);
+    if (!state || state.state !== 'RESUME_PENDING') return;
+    
+    // Update mock state to RESUMED
+    state.state = 'RESUMED';
+    mockSystem.haltStates.set(symbol, state);
+    
+    // Update halt data to RESUMED state
+    const haltIndex = allHalts.findIndex(halt => halt.symbol === symbol && halt.state === 'RESUME_PENDING');
+    if (haltIndex !== -1) {
+        allHalts[haltIndex].state = 'RESUMED';
+        allHalts[haltIndex].reason = 'Trading Resumed - ' + state.reason;
+        // Clear the countdown by removing halt_time
+        allHalts[haltIndex].halt_time = null;
+        
+        console.log(`🧪 Mock transition: ${symbol} -> RESUMED (countdown cleared, will fade out in 10s)`);
+        
+        updateHaltedSymbols();
+        renderHalts();
+        
+        // Wait 10 seconds, then fade out and remove
+        setTimeout(() => {
+            fadeOutAndRemoveHalt(symbol);
+        }, 10000); // 10 seconds
+    }
+}
+
+function fadeOutAndRemoveHalt(symbol) {
+    const haltElement = document.querySelector(`[data-symbol="${symbol}"]`);
+    if (haltElement) {
+        console.log(`🎭 Starting fadeout and stack drop for ${symbol}`);
+        
+        // Find all halts above this one to animate them dropping down
+        const allHaltElements = document.querySelectorAll('.halt-event');
+        const currentIndex = Array.from(allHaltElements).indexOf(haltElement);
+        
+        // Animate halts above this one to drop down
+        for (let i = 0; i < currentIndex; i++) {
+            allHaltElements[i].classList.add('stack-dropping');
+            setTimeout(() => {
+                allHaltElements[i].classList.remove('stack-dropping');
+            }, 400);
+        }
+        
+        // Add fadeout class to the expiring halt
+        haltElement.classList.add('fading-out');
+        
+        // After animations complete, remove the halt
+        setTimeout(() => {
+            removeHaltFromData(symbol);
+        }, 1000);
+    } else {
+        // If element not found, just remove from data
+        removeHaltFromData(symbol);
+    }
+}
+
+function removeHaltFromData(symbol) {
+    console.log(`🧪 Removing ${symbol} from data after fadeout`);
+    
+    // Update mock state
+    const state = mockSystem.haltStates.get(symbol);
+    if (state) {
+        state.state = 'NONE';
+        state.haltTime = null;
+        state.resumePendingTime = null;
+        mockSystem.haltStates.set(symbol, state);
+    }
+    
+    // Remove from halts
+    allHalts = allHalts.filter(halt => !(halt.symbol === symbol && halt.state === 'RESUMED'));
+    
+    updateHaltedSymbols();
+    renderHalts();
+}
+
+// Make mock system functions available globally for testing
+window.startMockSystem = startMockSystem;
+window.stopMockSystem = () => { mockSystem.enabled = false; };
+window.mockSystem = mockSystem;
+
+// Card layout control functions
+window.setCardLayout = (layout) => {
+    if (layout === 'large' || layout === 'small') {
+        cardLayoutConfig.currentLayout = layout;
+        renderHalts();
+        console.log(`🎨 Card layout set to: ${layout}`);
+    }
+};
+
+window.setMaxLargeCards = (max) => {
+    cardLayoutConfig.maxLargeCards = max;
+    renderHalts();
+    console.log(`🎨 Max large cards set to: ${max}`);
+};
+
+// Test function to create halts with specific countdown states
+window.createTestHalts = () => {
+    const testSymbols = ['TEST1', 'TEST2', 'TEST3', 'TEST4'];
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Create halts with different elapsed times to show different countdown colors
+    const testHalts = [
+        { symbol: 'TEST1', elapsed: 30, reason: 'Green Countdown' },    // Green (>3min)
+        { symbol: 'TEST2', elapsed: 120, reason: 'Yellow Countdown' },  // Yellow (1-3min)
+        { symbol: 'TEST3', elapsed: 250, reason: 'Red Countdown' },     // Red (<1min)
+        { symbol: 'TEST4', elapsed: 290, reason: 'Critical Countdown' } // Critical (<10s)
+    ];
+    
+    testHalts.forEach(test => {
+        const haltTime = now - test.elapsed;
+        const mockHalt = {
+            symbol: test.symbol,
+            state: 'HALTED',
+            reason: test.reason,
+            halt_time: haltTime,
+            timestamp: haltTime * 1000000000,
+            timestamp_et: new Date(haltTime * 1000).toISOString(),
+            et_date: new Date(haltTime * 1000).toISOString().split('T')[0],
+            tape: 1,
+            tape_description: 'NYSE',
+            band_high: 0,
+            band_low: 0,
+            indicators: []
+        };
+        
+        allHalts.push(mockHalt);
+    });
+    
+    updateHaltedSymbols();
+    renderHalts();
+    console.log('🧪 Created test halts with different countdown states');
+};
+
+// Test function to manually trigger animation
+window.testAnimation = () => {
+    const now = Math.floor(Date.now() / 1000);
+    const testHalt = {
+        symbol: 'ANIMTEST',
+        state: 'HALTED',
+        reason: 'Animation Test',
+        halt_time: now,
+        timestamp: now * 1000000000,
+        timestamp_et: new Date(now * 1000).toISOString(),
+        et_date: new Date(now * 1000).toISOString().split('T')[0],
+        tape: 1,
+        tape_description: 'NYSE',
+        band_high: 0,
+        band_low: 0,
+        indicators: []
+    };
+    
+    allHalts.push(testHalt);
+    updateHaltedSymbols();
+    renderHalts();
+    
+    // Trigger animation
+    setTimeout(() => {
+        const haltId = `ANIMTEST-${now}`;
+        const haltElement = document.getElementById(`halt-${haltId}`);
+        if (haltElement) {
+            console.log(`🎭 Testing animation for ANIMTEST`);
+            
+            // Position the new halt above the container initially
+            haltElement.style.transform = 'translateY(-150px)';
+            haltElement.style.opacity = '0';
+            
+            // Force a reflow
+            haltElement.offsetHeight;
+            
+            // Animate existing halts
+            const existingHalts = document.querySelectorAll('.halt-event:not(.new)');
+            existingHalts.forEach((element, index) => {
+                element.classList.add('shifting-down');
+                setTimeout(() => {
+                    element.classList.remove('shifting-down');
+                }, 600);
+            });
+            
+            // Start animation
+            haltElement.classList.add('new');
+            
+            setTimeout(() => {
+                haltElement.classList.remove('new');
+            }, 600);
+        }
+    }, 100);
+};
+
+window.cardLayoutConfig = cardLayoutConfig;
