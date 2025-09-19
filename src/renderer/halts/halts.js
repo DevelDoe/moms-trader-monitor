@@ -573,16 +573,21 @@ function handleHaltDelta(haltData, metadata = {}) {
                     // Set initial hidden state
                     haltElement.style.opacity = '0';
                     haltElement.style.transform = 'translateY(-80px)';
+                    haltElement.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
                     
                     // Force reflow to apply initial state
                     haltElement.offsetHeight;
                     
-                    // Start the slide down animation
-                    haltElement.classList.add('new');
+                    // Animate to final state
+                    requestAnimationFrame(() => {
+                        haltElement.style.opacity = '1';
+                        haltElement.style.transform = 'translateY(0)';
+                    });
                     
-                    // Remove the 'new' class after animation completes
+                    // Clean up after animation
                     setTimeout(() => {
-                        haltElement.classList.remove('new');
+                        haltElement.style.transition = '';
+                        haltElement.style.transform = '';
                     }, 600);
                 } else {
                     console.log(`🎭 Skipping animation for ${haltData.symbol} (not first position)`);
@@ -894,16 +899,21 @@ function haltRandomSymbol() {
                 // Set initial hidden state
                 haltElement.style.opacity = '0';
                 haltElement.style.transform = 'translateY(-80px)';
+                haltElement.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
                 
                 // Force reflow to apply initial state
                 haltElement.offsetHeight;
                 
-                // Start the slide down animation
-                haltElement.classList.add('new');
+                // Animate to final state
+                requestAnimationFrame(() => {
+                    haltElement.style.opacity = '1';
+                    haltElement.style.transform = 'translateY(0)';
+                });
                 
-                // Remove the 'new' class after animation completes
+                // Clean up after animation
                 setTimeout(() => {
-                    haltElement.classList.remove('new');
+                    haltElement.style.transition = '';
+                    haltElement.style.transform = '';
                 }, 600);
             } else {
                 console.log(`🎭 Skipping animation for ${symbol} (not first position)`);
@@ -1126,15 +1136,21 @@ window.testAnimation = () => {
             // Set initial hidden state
             haltElement.style.opacity = '0';
             haltElement.style.transform = 'translateY(-80px)';
+            haltElement.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
             
             // Force reflow to apply initial state
             haltElement.offsetHeight;
             
-            // Start animation
-            haltElement.classList.add('new');
+            // Animate to final state
+            requestAnimationFrame(() => {
+                haltElement.style.opacity = '1';
+                haltElement.style.transform = 'translateY(0)';
+            });
             
+            // Clean up after animation
             setTimeout(() => {
-                haltElement.classList.remove('new');
+                haltElement.style.transition = '';
+                haltElement.style.transform = '';
             }, 600);
         }
     }, 100);

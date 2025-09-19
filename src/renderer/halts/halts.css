@@ -516,7 +516,7 @@
 
 /* Ensure smooth transitions for all halt events */
 .halt-event {
-    transition: all 0.3s ease;
+    /* Remove transition to prevent conflicts with animations */
     overflow: hidden;
 }
 
