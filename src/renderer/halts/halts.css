@@ -4,19 +4,23 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    padding: 0 10px 0 0; /* Extra padding on right for countdown animations */
     position: relative;
     overflow: hidden;
 }
 
 /* Tube effect - subtle background gradient */
 .halts-list::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.1) 100%);
+    background: linear-gradient(180deg, 
+        rgba(0, 0, 0, 0.1) 0%, 
+        rgba(0, 0, 0, 0.05) 50%, 
+        rgba(0, 0, 0, 0.1) 100%);
     pointer-events: none;
     z-index: -1;
 }
@@ -25,6 +29,7 @@
 .halt-event.large {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 1px;
+    padding: 12px 16px;
     border-left: 4px solid;
     transition: all 0.3s ease;
     cursor: pointer;
@@ -194,7 +199,7 @@
     font-size: 16px;
     font-weight: bold;
     text-align: center;
-    font-family: "Courier New", monospace;
+    font-family: 'Courier New', monospace;
 }
 
 /* Countdown badge color states - colored text instead of background */
@@ -295,7 +300,7 @@
 }
 
 .halt-time.countdown {
-    font-family: "Courier New", monospace;
+    font-family: 'Courier New', monospace;
     font-weight: bold;
     padding: 2px 6px;
     border-radius: 1px;
@@ -324,12 +329,11 @@
 
 /* Pulsing animation for red countdown */
 @keyframes redPulse {
-    0%,
-    100% {
+    0%, 100% { 
         opacity: 1;
         transform: scale(1);
     }
-    50% {
+    50% { 
         opacity: 0.8;
         transform: scale(1.02);
     }
@@ -337,13 +341,11 @@
 
 /* Blinking animation for critical countdown (last 10 seconds) */
 @keyframes criticalBlink {
-    0%,
-    50% {
+    0%, 50% { 
         opacity: 1;
         transform: scale(1);
     }
-    25%,
-    75% {
+    25%, 75% { 
         opacity: 0.3;
         transform: scale(1.1);
     }
@@ -369,20 +371,18 @@
 
 /* Expired pulse animation */
 @keyframes expiredPulse {
-    0%,
-    100% {
+    0%, 100% { 
         opacity: 0.6;
         transform: scale(1);
     }
-    50% {
+    50% { 
         opacity: 1;
         transform: scale(1.02);
     }
 }
 
 /* State badge styling for large and small cards */
-.halt-state,
-.halt-state-badge {
+.halt-state, .halt-state-badge {
     display: inline-block;
     padding: 4px 8px;
     border-radius: 1px;
@@ -392,26 +392,22 @@
     text-align: center;
 }
 
-.halt-state.halted,
-.halt-state-badge.halted {
+.halt-state.halted, .halt-state-badge.halted {
     background: none;
     color: #ff4444;
 }
 
-.halt-state.resume-pending,
-.halt-state-badge.resume-pending {
+.halt-state.resume-pending, .halt-state-badge.resume-pending {
     background: none;
     color: #ffaa44;
 }
 
-.halt-state.resumed,
-.halt-state-badge.resumed {
+.halt-state.resumed, .halt-state-badge.resumed {
     background: none;
     color: #44ff44;
 }
 
-.halt-state.expired,
-.halt-state-badge.expired {
+.halt-state.expired, .halt-state-badge.expired {
     background: none;
     color: #ff6b6b;
     opacity: 0.8;
@@ -439,11 +435,11 @@
 
 /* Animation for new halt sliding down to position 1 */
 @keyframes slideDownToFirst {
-    0% {
+    0% { 
         transform: translateY(-150px);
         opacity: 0;
     }
-    100% {
+    100% { 
         transform: translateY(0);
         opacity: 1;
     }
@@ -451,37 +447,37 @@
 
 /* Animation for existing halts shifting down one position */
 @keyframes shiftDownOne {
-    0% {
+    0% { 
         transform: translateY(0);
     }
-    100% {
+    100% { 
         transform: translateY(calc(100% + 8px));
     }
 }
 
 /* Animation for stack dropping down when one is removed */
 @keyframes stackDropDown {
-    0% {
+    0% { 
         transform: translateY(0);
     }
-    100% {
+    100% { 
         transform: translateY(calc(-100% - 8px));
     }
 }
 
 /* Animation for halts dropping down when one is removed */
 @keyframes dropDown {
-    0% {
+    0% { 
         transform: translateY(0);
     }
-    100% {
+    100% { 
         transform: translateY(0);
     }
 }
 
 /* Animation for fading out when countdown ends */
 @keyframes fadeOut {
-    0% {
+    0% { 
         opacity: 1;
         transform: scale(1);
     }
@@ -489,7 +485,7 @@
         opacity: 0.5;
         transform: scale(0.98);
     }
-    100% {
+    100% { 
         opacity: 0;
         transform: scale(0.95);
         max-height: 0;
@@ -520,12 +516,8 @@
 
 /* Ensure smooth transitions for all halt events */
 .halt-event {
-    /* avoid animating transform/opacity here; FLIP sets those inline */
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.3s ease;
     overflow: hidden;
-    /* isolates layout/paint so big cards animate smoothly */
-    contain: layout paint;
-    will-change: transform, opacity;
 }
 
 /* Empty state - compact */
@@ -548,37 +540,15 @@
     .halt-content {
         gap: 4px;
     }
-
+    
     .halt-time {
         font-size: 16px;
         min-width: 60px;
     }
-
+    
     .halt-state {
         font-size: 16px;
         min-width: 40px;
         padding: 2px 4px;
-    }
-}
-
-.halts-list {
-    position: relative;
-    overflow: hidden; /* tube vibe */
-}
-
-.halt-event {
-    will-change: transform, opacity;
-}
-
-/* Optional: gentle bounce when landing */
-.halt-event.landed {
-    animation: landedBounce 250ms ease-out;
-}
-@keyframes landedBounce {
-    0% {
-        transform: translateY(-2px);
-    }
-    100% {
-        transform: translateY(0);
     }
 }
