@@ -495,9 +495,7 @@
 }
 
 .halt-event.new {
-    animation: slideDownToFirst 0.6s ease-out;
-    opacity: 0; /* Start hidden, animation will transition to opacity: 1 */
-    transform: translateY(-80px); /* Start above, animation will transition to translateY(0) */
+    display: none; /* Start completely hidden */
 }
 
 .halt-event.shifting-down {

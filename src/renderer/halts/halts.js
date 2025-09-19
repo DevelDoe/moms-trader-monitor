@@ -570,7 +570,8 @@ function handleHaltDelta(haltData, metadata = {}) {
                 if (isFirstHalt) {
                     console.log(`🎭 Starting stack animation for ${haltData.symbol} (first position)`);
                     
-                    // Start the slide down animation (CSS handles the initial position)
+                    // Start the slide down animation
+                    haltElement.style.display = 'block';
                     haltElement.classList.add('new');
                     
                     // Remove the 'new' class after animation completes
@@ -884,7 +885,8 @@ function haltRandomSymbol() {
             if (isFirstHalt) {
                 console.log(`🎭 Starting stack animation for ${symbol} (first position)`);
                 
-                // Start the slide down animation (CSS handles the initial position)
+                // Start the slide down animation
+                haltElement.style.display = 'block';
                 haltElement.classList.add('new');
                 
                 // Remove the 'new' class after animation completes
@@ -1109,7 +1111,8 @@ window.testAnimation = () => {
         if (haltElement) {
             console.log(`🎭 Testing animation for ANIMTEST`);
             
-            // Start animation (CSS handles the initial position)
+            // Start animation
+            haltElement.style.display = 'block';
             haltElement.classList.add('new');
             
             setTimeout(() => {
