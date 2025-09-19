@@ -597,31 +597,29 @@ function handleHaltDelta(haltData, metadata = {}) {
             const haltId = `${haltData.symbol}-${haltData.halt_time || Date.now()}`;
             const haltElement = document.getElementById(`halt-${haltId}`);
             if (haltElement) {
-                console.log(`🎭 Starting stack animation for ${haltData.symbol}`);
+                // Check if this is the first halt (newest)
+                const isFirstHalt = haltElement.previousElementSibling === null;
                 
-                // Position the new halt above the container initially
-                haltElement.style.transform = 'translateY(-80px)';
-                haltElement.style.opacity = '0';
-                
-                // Force a reflow to ensure the initial position is applied
-                haltElement.offsetHeight;
-                
-                // Animate existing halts shifting down one position
-                const existingHalts = document.querySelectorAll('.halt-event:not(.new)');
-                existingHalts.forEach((element, index) => {
-                    element.classList.add('shifting-down');
+                if (isFirstHalt) {
+                    console.log(`🎭 Starting stack animation for ${haltData.symbol} (first position)`);
+                    
+                    // Position the new halt above the container initially
+                    haltElement.style.transform = 'translateY(-80px)';
+                    haltElement.style.opacity = '0';
+                    
+                    // Force a reflow to ensure the initial position is applied
+                    haltElement.offsetHeight;
+                    
+                    // Start the slide down animation
+                    haltElement.classList.add('new');
+                    
+                    // Remove the 'new' class after animation completes
                     setTimeout(() => {
-                        element.classList.remove('shifting-down');
+                        haltElement.classList.remove('new');
                     }, 600);
-                });
-                
-                // Start the slide down animation
-                haltElement.classList.add('new');
-                
-                // Remove the 'new' class after animation completes
-                setTimeout(() => {
-                    haltElement.classList.remove('new');
-                }, 600);
+                } else {
+                    console.log(`🎭 Skipping animation for ${haltData.symbol} (not first position)`);
+                }
             }
         }
 
@@ -919,41 +917,52 @@ function haltRandomSymbol() {
     
     console.log(`🧪 Mock halt: ${symbol} - ${reason} on ${exchange} (${elapsedSeconds}s elapsed)`);
     
-    // Add to halts and render
+    // Add to halts and sort properly
     allHalts.push(mockHalt);
+    
+    // Sort halts by timestamp (newest first) to ensure proper order
+    allHalts.sort((a, b) => {
+        const timeA = a.halt_time || a.timestamp_et || a.timestamp || a.received_at;
+        const timeB = b.halt_time || b.timestamp_et || b.timestamp || b.received_at;
+        
+        // Compare timestamps (newest first)
+        if (typeof timeA === 'number' && typeof timeB === 'number') {
+            return timeB - timeA;
+        }
+        return timeB.localeCompare(timeA);
+    });
+    
     updateHaltedSymbols();
     renderHalts();
     
-    // Trigger animation for new halt
+    // Trigger animation for new halt (only if it's the first one)
     setTimeout(() => {
         const haltId = `${symbol}-${haltTime}`;
         const haltElement = document.getElementById(`halt-${haltId}`);
         if (haltElement) {
-            console.log(`🎭 Starting stack animation for ${symbol}`);
+            // Check if this is the first halt (newest)
+            const isFirstHalt = haltElement.previousElementSibling === null;
             
-            // Position the new halt above the container initially
-            haltElement.style.transform = 'translateY(-80px)';
-            haltElement.style.opacity = '0';
-            
-            // Force a reflow to ensure the initial position is applied
-            haltElement.offsetHeight;
-            
-            // Animate existing halts shifting down one position
-            const existingHalts = document.querySelectorAll('.halt-event:not(.new)');
-            existingHalts.forEach((element, index) => {
-                element.classList.add('shifting-down');
+            if (isFirstHalt) {
+                console.log(`🎭 Starting stack animation for ${symbol} (first position)`);
+                
+                // Position the new halt above the container initially
+                haltElement.style.transform = 'translateY(-80px)';
+                haltElement.style.opacity = '0';
+                
+                // Force a reflow to ensure the initial position is applied
+                haltElement.offsetHeight;
+                
+                // Start the slide down animation
+                haltElement.classList.add('new');
+                
+                // Remove the 'new' class after animation completes
                 setTimeout(() => {
-                    element.classList.remove('shifting-down');
+                    haltElement.classList.remove('new');
                 }, 600);
-            });
-            
-            // Start the slide down animation
-            haltElement.classList.add('new');
-            
-            // Remove the 'new' class after animation completes
-            setTimeout(() => {
-                haltElement.classList.remove('new');
-            }, 600);
+            } else {
+                console.log(`🎭 Skipping animation for ${symbol} (not first position)`);
+            }
         }
     }, 100); // Small delay to ensure DOM is ready
     
