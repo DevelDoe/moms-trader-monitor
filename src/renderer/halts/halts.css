@@ -495,7 +495,7 @@
 }
 
 .halt-event.new {
-    display: none; /* Start completely hidden */
+    animation: slideDownToFirst 0.6s ease-out;
 }
 
 .halt-event.shifting-down {

@@ -570,8 +570,14 @@ function handleHaltDelta(haltData, metadata = {}) {
                 if (isFirstHalt) {
                     console.log(`🎭 Starting stack animation for ${haltData.symbol} (first position)`);
                     
+                    // Set initial hidden state
+                    haltElement.style.opacity = '0';
+                    haltElement.style.transform = 'translateY(-80px)';
+                    
+                    // Force reflow to apply initial state
+                    haltElement.offsetHeight;
+                    
                     // Start the slide down animation
-                    haltElement.style.display = 'block';
                     haltElement.classList.add('new');
                     
                     // Remove the 'new' class after animation completes
@@ -885,8 +891,14 @@ function haltRandomSymbol() {
             if (isFirstHalt) {
                 console.log(`🎭 Starting stack animation for ${symbol} (first position)`);
                 
+                // Set initial hidden state
+                haltElement.style.opacity = '0';
+                haltElement.style.transform = 'translateY(-80px)';
+                
+                // Force reflow to apply initial state
+                haltElement.offsetHeight;
+                
                 // Start the slide down animation
-                haltElement.style.display = 'block';
                 haltElement.classList.add('new');
                 
                 // Remove the 'new' class after animation completes
@@ -1111,8 +1123,14 @@ window.testAnimation = () => {
         if (haltElement) {
             console.log(`🎭 Testing animation for ANIMTEST`);
             
+            // Set initial hidden state
+            haltElement.style.opacity = '0';
+            haltElement.style.transform = 'translateY(-80px)';
+            
+            // Force reflow to apply initial state
+            haltElement.offsetHeight;
+            
             // Start animation
-            haltElement.style.display = 'block';
             haltElement.classList.add('new');
             
             setTimeout(() => {
