@@ -119,18 +119,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
             
             console.log(`📊 Filtered to ${validHalts.length} non-expired halts from ${halts.length} total`);
+            // Add halts in the order they arrived (no sorting)
             allHalts = [...allHalts, ...validHalts];
-            
-            // Sort halts by timestamp (newest first)
-            allHalts.sort((a, b) => {
-                const timeA = a.halt_time || a.timestamp_et || a.timestamp || a.received_at;
-                const timeB = b.halt_time || b.timestamp_et || b.timestamp || b.received_at;
-                // Compare timestamps (newest first)
-                if (typeof timeA === 'number' && typeof timeB === 'number') {
-                    return timeB - timeA;
-                }
-                return timeB.localeCompare(timeA);
-            });
             
             updateHaltedSymbols();
             renderHalts();
@@ -401,19 +391,8 @@ function renderHalts() {
         return;
     }
 
-    // Sort halts by timestamp (newest first)
-    const sortedHalts = [...allHalts].sort((a, b) => {
-        const timeA = a.halt_time || a.timestamp_et || a.timestamp || a.received_at;
-        const timeB = b.halt_time || b.timestamp_et || b.timestamp || b.received_at;
-        
-        // Compare timestamps (newest first)
-        if (typeof timeA === 'number' && typeof timeB === 'number') {
-            return timeB - timeA;
-        }
-        return timeB.localeCompare(timeA);
-    });
-    
-    container.innerHTML = sortedHalts.map(halt => createHaltElement(halt)).join('');
+    // Render halts in the order they arrived (no sorting)
+    container.innerHTML = allHalts.map(halt => createHaltElement(halt)).join('');
 }
 
 // Create HTML element for a halt event (large or small card)
@@ -566,20 +545,8 @@ function handleHaltDelta(haltData, metadata = {}) {
         // Remove any existing halt for this symbol first
         allHalts = allHalts.filter(halt => halt.symbol !== haltData.symbol);
         
-        // Add new halt to array
-        allHalts.push(haltData);
-
-        // Sort halts by timestamp (newest first) and keep only the most recent
-        allHalts.sort((a, b) => {
-            const timeA = a.halt_time || a.timestamp_et || a.timestamp || a.received_at;
-            const timeB = b.halt_time || b.timestamp_et || b.timestamp || b.received_at;
-            
-            // Compare timestamps (newest first)
-            if (typeof timeA === 'number' && typeof timeB === 'number') {
-                return timeB - timeA;
-            }
-            return timeB.localeCompare(timeA);
-        });
+        // Add new halt to the beginning of the array (newest first, no sorting)
+        allHalts.unshift(haltData);
 
         // Keep only the most recent halts
         if (allHalts.length > maxHaltsLength) {
@@ -675,17 +642,7 @@ function handleHaltHeadlines(haltsData, metadata = {}) {
         allHalts = [...validHalts, ...allHalts];
     }
 
-    // Sort halts by timestamp (newest first)
-    allHalts.sort((a, b) => {
-        const timeA = a.halt_time || a.timestamp_et || a.timestamp || a.received_at;
-        const timeB = b.halt_time || b.timestamp_et || b.timestamp || b.received_at;
-        
-        // Compare timestamps (newest first)
-        if (typeof timeA === 'number' && typeof timeB === 'number') {
-            return timeB - timeA;
-        }
-        return timeB.localeCompare(timeA);
-    });
+    // Keep halts in the order they arrived (no sorting)
 
     // Keep only the most recent halts
     if (allHalts.length > maxHaltsLength) {
@@ -917,20 +874,8 @@ function haltRandomSymbol() {
     
     console.log(`🧪 Mock halt: ${symbol} - ${reason} on ${exchange} (${elapsedSeconds}s elapsed)`);
     
-    // Add to halts and sort properly
-    allHalts.push(mockHalt);
-    
-    // Sort halts by timestamp (newest first) to ensure proper order
-    allHalts.sort((a, b) => {
-        const timeA = a.halt_time || a.timestamp_et || a.timestamp || a.received_at;
-        const timeB = b.halt_time || b.timestamp_et || b.timestamp || b.received_at;
-        
-        // Compare timestamps (newest first)
-        if (typeof timeA === 'number' && typeof timeB === 'number') {
-            return timeB - timeA;
-        }
-        return timeB.localeCompare(timeA);
-    });
+    // Add new halt to the beginning of the array (newest first, no sorting)
+    allHalts.unshift(mockHalt);
     
     updateHaltedSymbols();
     renderHalts();
